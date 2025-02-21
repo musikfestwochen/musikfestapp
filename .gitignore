@@ -16,7 +16,6 @@ bun.lockb
 
 # Laravel environment & security
 .env
-.env.*
 .env.backup
 .env.production
 storage/*.key
