@@ -50,6 +50,9 @@ jobs:
           mkdir -p storage/framework/{sessions,views,cache}
           chmod -R 775 storage
 
+      - name: Run SCA
+        run: ./vendor/bin/phpstan analyse -c phpstan.neon --quiet --no-progress
+
       - name: Execute tests (Unit and Feature tests) via Pest
         env:
           DB_CONNECTION: sqlite
