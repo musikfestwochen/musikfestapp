@@ -53,8 +53,11 @@ jobs:
       - name: Run SCA
         run: ./vendor/bin/phpstan analyse -c phpstan.neon --quiet --no-progress
 
+      - name: Run Type Coverage
+        run: ./vendor/bin/pest --type-coverage --min=100 --ci
+
       - name: Execute tests (Unit and Feature tests) via Pest
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan test
+        run: ./vendor/bin/pest --ci
