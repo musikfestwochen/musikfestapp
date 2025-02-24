@@ -1,6 +1,8 @@
 name: Pest Tests and PHPstan
 
-on: [ push ]
+on:
+  push:
+  pull_request:
 
 jobs:
   tests:
@@ -56,8 +58,16 @@ jobs:
       - name: Run Type Coverage
         run: ./vendor/bin/pest --type-coverage --min=100 --ci
 
-      - name: Execute tests (Unit and Feature tests) via Pest
+      - name: Execute tests w/o mutation
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
+        if: github.event_name != 'pull_request'
         run: ./vendor/bin/pest --ci --coverage --min=100
+
+      - name: Run Mutation Tests (only on PR)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        if: github.event_name == 'pull_request'
+        run: ./vendor/bin/pest --ci --coverage --mutate --everything --min=100 --parallel
