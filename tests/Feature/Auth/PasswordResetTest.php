@@ -58,3 +58,16 @@ test('password can be reset with valid token', function () {
         return true;
     });
 });
+
+test('password reset fails and validation exception is thrown', function () {
+    // Mock the Password facade to return a failure status
+    Password::shouldReceive('sendResetLink')
+        ->once()
+        ->andReturn(Password::INVALID_TOKEN);
+
+    $response = $this->post('/forgot-password', [
+        'email' => 'test@example.com',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+});
