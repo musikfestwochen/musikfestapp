@@ -1,0 +1,55 @@
+name: Deploy Laravel App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to server and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
+          username: ${{ secrets.INFOMANIAK_SSH_USER }}
+          password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
+          script: |
+            set -e  # Exit immediately if any command fails
+
+            echo "Starting Deployment"
+
+            # Navigate to Laravel project directory
+            cd /home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp
+
+            # Put application into maintenance mode
+            if php artisan down; then
+              echo "Application in maintenance mode."
+            else
+              echo "Failed to put application in maintenance mode. Continuing deployment..."
+            fi
+
+            # Pull latest changes
+            echo "Pulling latest changes..."
+            git reset --hard
+            git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
+
+            # Install/update dependencies
+            echo "Installing dependencies..."
+            composer install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
+
+            # Run database migrations
+            echo "Running migrations..."
+            php artisan migrate --force || { echo "Migrations failed! Exiting."; exit 1; }
+
+            # Clear and optimize caches
+            echo "Optimizing application..."
+            php artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
+
+            # Bring application back online
+            php artisan up || { echo "Failed to bring the application online! Exiting."; exit 1; }
+
+            echo "Deployment Completed Successfully"
