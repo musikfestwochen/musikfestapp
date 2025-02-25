@@ -22,7 +22,6 @@ storage/*.key
 
 # Laravel framework generated files
 /public/hot
-/public/build
 /public/storage
 /storage/pail
 /storage/logs/
