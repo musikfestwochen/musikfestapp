@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
           source: |
             public/build
-          target: '/home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp/public'
+          target: '/home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp'
 
       # SSH into the server and finalize the deployment
       - name: Run Laravel deployment commands on server
