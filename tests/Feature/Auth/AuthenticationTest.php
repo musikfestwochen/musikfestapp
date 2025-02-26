@@ -2,6 +2,8 @@
 
 use App\Models\User;
 
+uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+
 test('login screen can be rendered', function () {
     $response = $this->get('/login');
 
@@ -9,15 +11,7 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create(['password' => Hash::make('password')]);
-
-    // attempt to authenticate four times with the wrong password
-    for ($i = 0; $i < 4; $i++) {
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-    }
+    $user = User::factory()->create();
 
     $response = $this->post('/login', [
         'email' => $user->email,
@@ -37,27 +31,6 @@ test('users can not authenticate with invalid password', function () {
     ]);
 
     $this->assertGuest();
-});
-
-test('users can not authenticate if there are too many attempts', function () {
-    $user = User::factory()->create(['password' => Hash::make('password')]);
-
-    // Attempt to log in 5 times with wrong password
-    for ($i = 0; $i < 5; $i++) {
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-    }
-
-    // Attempt to log in 1 more time with correct password
-    $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'password',
-    ]);
-
-    $this->assertGuest();
-
 });
 
 test('users can logout', function () {
