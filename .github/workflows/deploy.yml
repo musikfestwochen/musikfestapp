@@ -22,11 +22,15 @@ jobs:
 
             echo "Starting Deployment"
 
+            # Define PHP and Composer paths
+            PHP_BIN="/opt/php8.4/bin/php"
+            COMPOSER_BIN="/opt/php8.4/bin/composer"
+
             # Navigate to Laravel project directory
             cd /home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp
 
             # Put application into maintenance mode
-            if php artisan down; then
+            if $PHP_BIN artisan down; then
               echo "Application in maintenance mode."
             else
               echo "Failed to put application in maintenance mode. Continuing deployment..."
@@ -39,17 +43,17 @@ jobs:
 
             # Install/update dependencies
             echo "Installing dependencies..."
-            composer install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
+            $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
 
             # Run database migrations
             echo "Running migrations..."
-            php artisan migrate --force || { echo "Migrations failed! Exiting."; exit 1; }
+            $PHP_BIN artisan migrate --force || { echo "Migrations failed! Exiting."; exit 1; }
 
             # Clear and optimize caches
             echo "Optimizing application..."
-            php artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
+            $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
 
             # Bring application back online
-            php artisan up || { echo "Failed to bring the application online! Exiting."; exit 1; }
+            $PHP_BIN artisan up || { echo "Failed to bring the application online! Exiting."; exit 1; }
 
             echo "Deployment Completed Successfully"
