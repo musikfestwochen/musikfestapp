@@ -96,6 +96,8 @@ jobs:
           script: |
             set -e  # Exit immediately if any command fails
 
+            cd /home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp
+
             echo "Bringing application back online..."
             /opt/php8.4/bin/php artisan up
 
