@@ -12,30 +12,45 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install Node.js and Dependencies
-        uses: actions/setup-node@v3
+      # Install PHP and Composer dependencies
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          node-version: '18'
+          php-version: 8.4
+          tools: composer:v2
+          coverage: none # No need for code coverage in deployment
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+      # Install Node.js and build assets
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
           cache: 'npm'
 
-      - name: Install frontend dependencies
-        run: npm ci # Use 'ci' for a clean install based on package-lock.json
+      - name: Install Node dependencies
+        run: npm clean-install
 
       - name: Build assets
         run: npm run build
 
-      - name: Deploy built assets to server
+      # Deploy built assets and PHP dependencies to the server
+      - name: Deploy application files
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
           username: ${{ secrets.INFOMANIAK_SSH_USER }}
           password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
-          source: 'public/build'
+          source: |
+            public/build
           target: '/home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp/public'
 
-      - name: Connect to server and deploy
+      # SSH into the server and finalize the deployment
+      - name: Run Laravel deployment commands on server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
@@ -60,15 +75,28 @@ jobs:
             git reset --hard
             git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
 
-            echo "Installing dependencies..."
+            echo "Installing PHP dependencies on the server..."
             $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
 
-            echo "Running migrations..."
+            echo "Running database migrations..."
             $PHP_BIN artisan migrate --force || { echo "Migrations failed! Exiting."; exit 1; }
 
             echo "Optimizing application..."
             $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
 
-            $PHP_BIN artisan up || { echo "Failed to bring the application online! Exiting."; exit 1; }
+            echo "Generating Ziggy routes..."
+            $PHP_BIN artisan ziggy:generate || { echo "Ziggy generation failed! Exiting."; exit 1; }
 
-            echo "Deployment Completed Successfully"
+      - name: Bring the application back online
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
+          username: ${{ secrets.INFOMANIAK_SSH_USER }}
+          password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
+          script: |
+            set -e  # Exit immediately if any command fails
+
+            echo "Bringing application back online..."
+            /opt/php8.4/bin/php artisan up
+
+            echo "Deployment complete!"
