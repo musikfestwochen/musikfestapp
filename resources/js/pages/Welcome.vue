@@ -34,7 +34,7 @@ import { Head, Link } from '@inertiajs/vue3';
             </nav>
         </header>
         <div class="flex flex-col justify-around text-2xl lg:grow">
-            <h1>Dear ZHAW ICT-Security, I'm a safe and secure Laravel application. Why am I flagged as a security risk?</h1>
+            <h1>Musikfestapp</h1>
         </div>
     </div>
 </template>
