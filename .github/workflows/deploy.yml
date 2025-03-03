@@ -72,8 +72,12 @@ jobs:
               echo "Failed to put application in maintenance mode. Continuing deployment..."
             fi
 
+            echo "Pulling latest changes from the repository..."
             git reset --hard
             git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
+
+            echo "Decrypting environment file..."
+            $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY }} --force || { echo "Environment decryption failed! Exiting."; exit 1; }
 
             echo "Installing PHP dependencies on the server..."
             $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
