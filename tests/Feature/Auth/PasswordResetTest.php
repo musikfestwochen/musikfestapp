@@ -60,3 +60,26 @@ test('password can be reset with valid token', function () {
         return true;
     });
 });
+
+test('password cannot be reset with an invalid token', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->post('/forgot-password', ['email' => $user->email]);
+
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        $response = $this->post('/reset-password', [
+            'token' => $notification->token . 'a',
+            'email' => $user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response
+            ->assertSessionHasErrors('email');
+
+        return true;
+    });
+
+});
