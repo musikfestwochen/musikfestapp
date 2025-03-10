@@ -2,17 +2,16 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Inertia\Testing\AssertableInertia;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 it('can show the password update page', function () {
     $user = User::factory()->create();
 
-   $response = $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->get('/settings/password');
 
-   $response->assertStatus(200);
+    $response->assertStatus(200);
 });
 
 test('password can be updated', function () {
