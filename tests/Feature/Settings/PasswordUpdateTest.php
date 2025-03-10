@@ -5,6 +5,15 @@ use Illuminate\Support\Facades\Hash;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
+it('can show the password update page', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->get('/settings/password');
+
+    $response->assertStatus(200);
+});
+
 test('password can be updated', function () {
     $user = User::factory()->create();
 
