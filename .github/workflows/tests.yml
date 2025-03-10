@@ -48,5 +48,8 @@ jobs:
       - name: Build Assets
         run: npm run build
 
-      - name: Tests
+      - name: SCA Tests
+        run: ./vendor/bin/phpstan analyse
+
+      - name: Pest Tests
         run: ./vendor/bin/pest --ci
