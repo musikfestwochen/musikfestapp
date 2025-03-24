@@ -66,10 +66,5 @@ it('tests login rate limitation', function ($falseAttempts, $canLogin) {
 
 })->with([
     [5, false],
-    [4, true]
+    [4, true],
 ]);
-
-
-
-
-
