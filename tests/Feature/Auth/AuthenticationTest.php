@@ -1,8 +1,9 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('login screen can be rendered', function () {
     $response = $this->get('/login');
@@ -41,3 +42,34 @@ test('users can logout', function () {
     $this->assertGuest();
     $response->assertRedirect('/');
 });
+
+it('tests login rate limitation', function ($falseAttempts, $canLogin) {
+    $user = User::factory()->create();
+
+    for ($i = 0; $i < $falseAttempts; $i++) {
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+    }
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    if ($canLogin) {
+        $this->assertAuthenticated();
+    } else {
+        $this->assertGuest();
+    }
+
+})->with([
+    [5, false],
+    [4, true]
+]);
+
+
+
+
+
