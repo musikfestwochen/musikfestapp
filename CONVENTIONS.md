@@ -25,6 +25,6 @@ Use **kebab-case** for the short description.
 | `ci`         | CI/CD pipeline updates                      | `ci/github-actions-laravel-tests`          |
 | `deps`       | Dependency updates (Laravel, Vue, NPM, PHP) | `deps/update-laravel-10`                   |
 | `security`   | Security patches (fixing vulnerabilities)   | `security/fix-sql-injection`               |
-| `ux`         | UX/UI improvements without adding features  | `ux/improve-dashboard-spacing`             |
+| `ui`         | UX/UI improvements without adding features  | `ux/improve-dashboard-spacing`             |
 | `i18n`       | Internationalization/localization changes   | `i18n/add-french-translations`             |
 | `migration`  | Major database schema changes               | `migration/refactor-user-tables`           |
