@@ -6,7 +6,7 @@ interface Props {
     showEmail?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const { user, showEmail } = withDefaults(defineProps<Props>(), {
     showEmail: false,
 });
 </script>
