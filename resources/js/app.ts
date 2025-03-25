@@ -11,6 +11,7 @@ import { initializeTheme } from './composables/useAppearance';
 declare module 'vite/client' {
     interface ImportMetaEnv {
         readonly VITE_APP_NAME: string;
+
         [key: string]: string | boolean | undefined;
     }
 
@@ -38,3 +39,5 @@ createInertiaApp({
 
 // This will set light / dark mode on page load...
 initializeTheme();
+
+import.meta.glob(['../img/**']);
