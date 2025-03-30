@@ -2,7 +2,12 @@
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { FolderGit2Icon, LayoutGrid } from 'lucide-vue-next';
@@ -23,20 +28,15 @@ const footerNavItems: NavItem[] = [
         icon: FolderGit2Icon,
     },
 ];
+
 </script>
 
 <template>
     <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton as-child size="lg">
+        <SidebarHeader class="self-center">
                         <Link :href="route('dashboard')">
                             <AppLogo />
                         </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
         </SidebarHeader>
 
         <SidebarContent>
