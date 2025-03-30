@@ -17,7 +17,7 @@ defineProps<{
         </Link>
     </SidebarMenuButton>
     <SidebarMenuButton v-else-if="item.url" as-child>
-        <a :href="item.url" target="_blank">
+        <a :href="item.url" rel="noopener noreferrer" target="_blank">
             <component :is="item.icon" />
             <span class="flex space-x-2">
                 <span>{{ item.title }}</span>
