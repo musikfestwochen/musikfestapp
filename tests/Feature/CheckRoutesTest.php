@@ -30,7 +30,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => 'up'],
         ['method' => 'GET|HEAD', 'uri' => 'verify-email'],
         ['method' => 'GET|HEAD', 'uri' => 'verify-email/{id}/{hash}'],
-        ['method' => 'GET|HEAD', 'uri' => 'users']
+        ['method' => 'GET|HEAD', 'uri' => 'users'],
     ];
 
     Artisan::call('route:list --json');
