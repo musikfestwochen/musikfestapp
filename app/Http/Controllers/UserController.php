@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -17,7 +16,6 @@ class UserController extends Controller
     public function index(Request $request): Response
     {
         $users = User::query();
-
 
         $sort = $request->input('sort', 'name');
         $direction = $request->input('order', 'asc');

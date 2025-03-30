@@ -1,7 +1,7 @@
 <script lang="ts" setup>
+import SidebarMenuAutoInternalExternalButton from '@/components/SidebarMenuAutoInternalExternalButton.vue';
 import { SidebarGroup, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import SidebarMenuAutoInternalExternalButton from '@/components/SidebarMenuAutoInternalExternalButton.vue';
 
 defineProps<{
     items: NavItem[];
