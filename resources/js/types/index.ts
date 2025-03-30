@@ -12,9 +12,9 @@ export interface BreadcrumbItem {
 
 export interface NavItem {
     title: string;
-    href: string;
+    route?: string; // Route name (internal Inertia route)
+    url?: string; // External URL
     icon?: LucideIcon;
-    isActive?: boolean;
 }
 
 export interface SharedData extends PageProps {

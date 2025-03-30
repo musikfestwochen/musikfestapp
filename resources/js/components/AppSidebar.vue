@@ -10,21 +10,26 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { FolderGit2Icon, LayoutGrid } from 'lucide-vue-next';
+import { FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: '/dashboard',
+        route: 'dashboard',
         icon: LayoutGrid,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
+        title: 'Users',
+        route: 'user.index',
+        icon: Users2Icon,
+    },
+    {
         title: 'Github Repo',
-        href: 'https://github.com/musikfestwochen/musikfestapp',
+        url: 'https://github.com/musikfestwochen/musikfestapp',
         icon: FolderGit2Icon,
     },
 ];
