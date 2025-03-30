@@ -39,7 +39,7 @@ const columns = [
     },
 ];
 
-const props = defineProps<{
+const { users } = defineProps<{
     users: object;
 }>();
 </script>
