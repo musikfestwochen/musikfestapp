@@ -1,13 +1,12 @@
 <script lang="ts" setup>
-import { Head } from '@inertiajs/vue3';
-
 import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/vue3';
 
 import Heading from '@/components/Heading.vue';
+import Icon from '@/components/Icon.vue';
 import Pagination from '@/components/Pagination.vue';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ColumnDef, FlexRender, getCoreRowModel, useVueTable } from '@tanstack/vue-table';
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -16,34 +15,33 @@ const breadcrumbItems: BreadcrumbItem[] = [
     },
 ];
 
-const props = defineProps<{
-    users: object;
-}>();
-
-const columns: ColumnDef<(typeof props.users)[0]>[] = [
+const columns = [
     {
-        accessorKey: 'name',
-        header: 'Name',
+        name: 'Name',
+        sortable: true,
+        accessor: 'name',
+        width: '52',
     },
     {
-        accessorKey: 'email',
-        header: 'Email',
+        name: 'Email',
+        sortable: true,
+        accessor: 'email',
+        width: '52',
     },
     {
-        accessorKey: 'email_verified_at',
-        header: 'Email Verified At',
-        cell: ({ getValue }) => {
-            const value = getValue();
-            return value ? new Date(value).toLocaleDateString() : 'Not Verified';
+        name: 'Verified',
+        sortable: false,
+        accessor: 'email_verified_at',
+        mapping: (value: string) => {
+            return value ? 'Yes' : '<span class="text-red-500">No</span>';
         },
+        width: '22',
     },
 ];
 
-const table = useVueTable({
-    data: props.users.data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-});
+const props = defineProps<{
+    users: object;
+}>();
 </script>
 
 <template>
@@ -55,16 +53,35 @@ const table = useVueTable({
 
             <Table class="mt-4">
                 <TableHeader>
-                    <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                        <TableHead v-for="header in headerGroup.headers" :key="header.id">
-                            <FlexRender :props="header.getContext()" :render="header.column.columnDef.header" />
+                    <TableRow>
+                        <TableHead v-for="column in columns" :key="column.name">
+                            <span :class="`w-${column.width}`" class="inline-block truncate">
+                                {{ column.name }}
+                                <Button v-if="column.sortable" as-child variant="ghost">
+                                    <Link
+                                        :href="
+                                            route('user.index', {
+                                                sort: column.accessor,
+                                                order: route().current() === 'user.index' && route().params.order === 'asc' ? 'desc' : 'asc',
+                                            })
+                                        "
+                                    >
+                                        <Icon v-if="column.sortable" class="ml-1" name="ArrowUpDown" />
+                                    </Link>
+                                </Button>
+                            </span>
                         </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
-                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                            <FlexRender :props="cell.getContext()" :render="cell.column.columnDef.cell" />
+                    <TableRow v-for="user in users.data" :key="user.id">
+                        <TableCell v-for="column in columns" :key="column.accessor">
+                            <span
+                                :class="`w-${column.width}`"
+                                :title="user[column.accessor]"
+                                class="inline-block truncate"
+                                v-html="column.mapping ? column.mapping(user[column.accessor]) : user[column.accessor]"
+                            />
                         </TableCell>
                     </TableRow>
                 </TableBody>

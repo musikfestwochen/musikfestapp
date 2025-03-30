@@ -12,12 +12,20 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::paginate();
+        $users = User::query();
+
+
+        $sort = $request->input('sort', 'name');
+        $direction = $request->input('order', 'asc');
+
+        if (in_array($sort, ['name', 'email', 'created_at'])) {
+            $users->orderBy($sort, $direction);
+        }
 
         return Inertia::render('admin/Users', [
-            'users' => $users,
+            'users' => $users->paginate(10)->withQueryString(),
         ]);
     }
 
