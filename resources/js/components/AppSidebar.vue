@@ -2,24 +2,29 @@
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { FolderGit2Icon, LayoutGrid } from 'lucide-vue-next';
+import { FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: '/dashboard',
+        route: 'dashboard',
         icon: LayoutGrid,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
+        title: 'Users',
+        route: 'user.index',
+        icon: Users2Icon,
+    },
+    {
         title: 'Github Repo',
-        href: 'https://github.com/musikfestwochen/musikfestapp',
+        url: 'https://github.com/musikfestwochen/musikfestapp',
         icon: FolderGit2Icon,
     },
 ];
@@ -27,16 +32,10 @@ const footerNavItems: NavItem[] = [
 
 <template>
     <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton as-child size="lg">
-                        <Link :href="route('dashboard')">
-                            <AppLogo />
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
+        <SidebarHeader class="self-center">
+            <Link :href="route('dashboard')">
+                <AppLogo />
+            </Link>
         </SidebarHeader>
 
         <SidebarContent>
