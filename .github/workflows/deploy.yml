@@ -83,7 +83,7 @@ jobs:
             $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
 
             echo "Running database migrations..."
-            $PHP_BIN artisan migrate:fresh seed --force || { echo "Migrations failed! Exiting."; exit 1; }
+            $PHP_BIN artisan migrate:fresh --seed --force || { echo "Migrations failed! Exiting."; exit 1; }
 
             echo "Optimizing application..."
             $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
