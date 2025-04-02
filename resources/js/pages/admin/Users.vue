@@ -51,6 +51,7 @@ const columns = [
             {
                 name: 'Delete',
                 href: (user: any) => route('users.destroy', user.id),
+                method: 'delete',
                 icon: 'TrashIcon',
                 button_variant: 'destructive',
             },
@@ -114,7 +115,7 @@ defineProps<{
                                     v-html="column.mapping ? column.mapping(user[column.accessor]) : user[column.accessor]"
                                 />
                                 <Button v-for="action in column.actions" :key="action.name" :variant="action.button_variant" as-child class="ml-2">
-                                    <Link :href="action.href(user)">
+                                    <Link :href="action.href(user)" method="delete">
                                         <Icon :name="action.icon" class="mr-1" />
                                         {{ action.name }}
                                     </Link>

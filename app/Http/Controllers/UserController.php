@@ -48,7 +48,7 @@ class UserController extends Controller
 
         $user = User::create($request->all());
 
-        return redirect()->route('users.index')->with('status', 'User created successfully.');
+        return redirect()->route('users.index')->with('status', 'User ' . $user->name . ' created successfully.');
     }
 
     /**
@@ -86,8 +86,13 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user): Response
+    public function destroy(User $user): RedirectResponse
     {
-        throw new Exception('Not implemented');
+        // save user name for redirect message
+        $name = $user->name;
+
+        // delete user
+        $user->delete();
+        return redirect()->route('users.index')->with('status', 'User ' . $name . ' deleted successfully.');
     }
 }
