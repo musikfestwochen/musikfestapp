@@ -56,7 +56,9 @@ class UserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('admin/UserForm');
+        return Inertia::render('admin/NewUserPage', [
+            'status' => request()->session()->get('status'),
+        ]);
     }
 
     /**
@@ -72,15 +74,24 @@ class UserController extends Controller
      */
     public function edit(User $user): Response
     {
-        throw new Exception('Not implemented');
+        return Inertia::render('admin/EditUserPage', [
+            'user' => $user
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user): Response
+    public function update(Request $request, User $user): RedirectResponse
     {
-        throw new Exception('Not implemented');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($request->all());
+
+        return redirect()->route('users.index')->with('status', 'User ' . $user->name . ' updated successfully.');
     }
 
     /**

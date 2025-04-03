@@ -115,7 +115,7 @@ defineProps<{
                                     v-html="column.mapping ? column.mapping(user[column.accessor]) : user[column.accessor]"
                                 />
                                 <Button v-for="action in column.actions" :key="action.name" :variant="action.button_variant" as-child class="ml-2">
-                                    <Link :href="action.href(user)" method="delete">
+                                    <Link :href="action.href(user)" :method="action.method || 'get'">
                                         <Icon :name="action.icon" class="mr-1" />
                                         {{ action.name }}
                                     </Link>

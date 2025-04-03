@@ -25,6 +25,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'pirmin@musikfestapp.ch',
         ]);
 
-        User::factory(50)->randomVerified()->create();
+        User::factory(20)->randomVerified()->create();
     }
 }

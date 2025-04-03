@@ -1,15 +1,15 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { cn } from '@/lib/utils';
 import { useEventListener, useMediaQuery, useVModel } from '@vueuse/core';
 import { TooltipProvider } from 'radix-vue';
-import { computed, ref, type HTMLAttributes, type Ref } from 'vue';
+import { computed, type HTMLAttributes, ref, type Ref } from 'vue';
 import {
+    provideSidebarContext,
     SIDEBAR_COOKIE_MAX_AGE,
     SIDEBAR_COOKIE_NAME,
     SIDEBAR_KEYBOARD_SHORTCUT,
     SIDEBAR_WIDTH,
-    SIDEBAR_WIDTH_ICON,
-    provideSidebarContext,
+    SIDEBAR_WIDTH_ICON
 } from './utils';
 
 const props = withDefaults(
@@ -20,8 +20,8 @@ const props = withDefaults(
     }>(),
     {
         defaultOpen: true,
-        open: undefined,
-    },
+        open: undefined
+    }
 );
 
 const emits = defineEmits<{
@@ -33,7 +33,7 @@ const openMobile = ref(false);
 
 const open = useVModel(props, 'open', emits, {
     defaultValue: props.defaultOpen ?? false,
-    passive: (props.open === undefined) as false,
+    passive: (props.open === undefined) as false
 }) as Ref<boolean>;
 
 function setOpen(value: boolean) {
@@ -70,18 +70,18 @@ provideSidebarContext({
     isMobile,
     openMobile,
     setOpenMobile,
-    toggleSidebar,
+    toggleSidebar
 });
 </script>
 
 <template>
     <TooltipProvider :delay-duration="0">
         <div
+            :class="cn('group/sidebar-wrapper flex min-h-svh w-full max-w-screen text-sidebar-foreground has-[[data-variant=inset]]:bg-sidebar', props.class)"
             :style="{
                 '--sidebar-width': SIDEBAR_WIDTH,
                 '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
             }"
-            :class="cn('group/sidebar-wrapper flex min-h-svh w-full text-sidebar-foreground has-[[data-variant=inset]]:bg-sidebar', props.class)"
         >
             <slot />
         </div>
