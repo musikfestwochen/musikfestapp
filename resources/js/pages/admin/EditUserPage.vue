@@ -14,7 +14,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
     },
     {
         title: 'Edit ' + props.user.name,
-        href: '/users/create',
+        href: '/users/' + props.user.id + '/edit',
     },
 ];
 </script>
@@ -24,7 +24,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         <Head title="Users" />
 
         <div class="px-4 py-6">
-            <Heading class="mb-4" description="Create a new user" level="2" title="Create User" />
+            <Heading class="mb-4" description="Edit user details" level="2" title="Edit User" />
             <UserForm :user="props.user" />
         </div>
     </AppLayout>
