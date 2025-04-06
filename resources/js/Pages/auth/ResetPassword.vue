@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,14 +31,14 @@ const submit = () => {
 </script>
 
 <template>
-    <AuthLayout title="Reset password" description="Please enter your new password below">
+    <AuthLayout description="Please enter your new password below" title="Reset password">
         <Head title="Reset password" />
 
         <form @submit.prevent="submit">
             <div class="grid gap-6">
                 <div class="grid gap-2">
                     <Label for="email">Email</Label>
-                    <Input id="email" type="email" name="email" autocomplete="email" v-model="form.email" class="mt-1 block w-full" readonly />
+                    <Input id="email" v-model="form.email" autocomplete="email" class="mt-1 block w-full" name="email" readonly type="email" />
                     <InputError :message="form.errors.email" class="mt-2" />
                 </div>
 
@@ -46,13 +46,13 @@ const submit = () => {
                     <Label for="password">Password</Label>
                     <Input
                         id="password"
-                        type="password"
-                        name="password"
-                        autocomplete="new-password"
                         v-model="form.password"
-                        class="mt-1 block w-full"
+                        autocomplete="new-password"
                         autofocus
+                        class="mt-1 block w-full"
+                        name="password"
                         placeholder="Password"
+                        type="password"
                     />
                     <InputError :message="form.errors.password" />
                 </div>
@@ -61,17 +61,17 @@ const submit = () => {
                     <Label for="password_confirmation"> Confirm Password </Label>
                     <Input
                         id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        autocomplete="new-password"
                         v-model="form.password_confirmation"
+                        autocomplete="new-password"
                         class="mt-1 block w-full"
+                        name="password_confirmation"
                         placeholder="Confirm password"
+                        type="password"
                     />
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
 
-                <Button type="submit" class="mt-4 w-full" :disabled="form.processing">
+                <Button :disabled="form.processing" class="mt-4 w-full" type="submit">
                     <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                     Reset password
                 </Button>
