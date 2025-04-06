@@ -63,10 +63,11 @@ class UserController extends Controller
 
     /**
      * Display the specified resource.
+     * @throws Exception
      */
-    public function show(User $user): Response
+    public function show(User $user): RedirectResponse
     {
-        throw new Exception('Not implemented');
+        return redirect()->route('users.edit', $user);
     }
 
     /**
