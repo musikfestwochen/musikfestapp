@@ -15,17 +15,32 @@ it('shows the user index page with paginated users', function () {
 
     $this->actingAs($admin)
         ->get(route('users.index'))
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/Users')
+        ->assertInertia(fn(AssertableInertia $page) => $page->component('admin/Users')
             ->has('users.data', 10) // pagination limit
         );
 });
+
+it('sorts users by the requested field and order', function (string $sort, string $order, int $status) {
+    User::factory()->count(3)->create();
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->get(route('users.index', ['sort' => $sort, 'order' => $order]))
+        ->assertStatus($status);
+})->with([
+    ['name', 'asc', 200],
+    ['email', 'desc', 200],
+    ['created_at', 'asc', 302],
+    ['invalid', 'asc', 302],
+]);
+
 
 it('shows the create user page', function () {
     $admin = User::factory()->create();
 
     $this->actingAs($admin)
         ->get(route('users.create'))
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/NewUserPage')
+        ->assertInertia(fn(AssertableInertia $page) => $page->component('admin/NewUserPage')
         );
 });
 
@@ -52,6 +67,14 @@ it('fails to create user with invalid email', function () {
     $response->assertSessionHasErrors('email');
 });
 
+it('fails to store user without name', function () {
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('users.store'), ['email' => 'foo@example.com'])
+        ->assertSessionHasErrors('name');
+});
+
 it('redirects to the edit page when trying to show a user', function () {
     $admin = User::factory()->create();
     $user = User::factory()->create();
@@ -68,7 +91,7 @@ it('shows the edit user page', function () {
 
     $this->actingAs($admin)
         ->get(route('users.edit', $user))
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/EditUserPage')
+        ->assertInertia(fn(AssertableInertia $page) => $page->component('admin/EditUserPage')
             ->where('user.id', $user->id)
         );
 });
@@ -89,13 +112,34 @@ it('updates a user successfully', function () {
     ]);
 });
 
-it('deletes a user', function () {
+it('fails to update without name', function () {
     $admin = User::factory()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)
+        ->put(route('users.update', $user), ['email' => 'new@example.com'])
+        ->assertSessionHasErrors('name');
+});
+
+it('fails to update without email', function () {
+    $admin = User::factory()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('users.update', $user), ['name' => 'New Name'])
+        ->assertSessionHasErrors('email');
+});
+
+it('deletes a user', function () {
+    $admin = User::factory()->create();
+    $user = User::factory()->create([
+        'name' => 'Ursula Peter'
+    ]);
+
+    $response = $this->actingAs($admin)
         ->delete(route('users.destroy', $user))
         ->assertRedirect(route('users.index'));
 
+    $response->assertSessionHas('status', 'User Ursula Peter deleted successfully.');
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
 });
