@@ -54,7 +54,7 @@ class UserController extends Controller
 
         $user = User::create($request->all());
 
-        return redirect()->route('users.index')->with('status', 'User ' . $user->name . ' created successfully.');
+        return redirect()->route('users.index')->with('status', 'User '.$user->name.' created successfully.');
     }
 
     /**
@@ -94,12 +94,12 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
         ]);
 
         $user->update($request->all());
 
-        return redirect()->route('users.index')->with('status', 'User ' . $user->name . ' updated successfully.');
+        return redirect()->route('users.index')->with('status', 'User '.$user->name.' updated successfully.');
     }
 
     /**
@@ -113,6 +113,6 @@ class UserController extends Controller
         // delete user
         $user->delete();
 
-        return redirect()->route('users.index')->with('status', 'User ' . $name . ' deleted successfully.');
+        return redirect()->route('users.index')->with('status', 'User '.$name.' deleted successfully.');
     }
 }

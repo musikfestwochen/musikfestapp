@@ -15,7 +15,7 @@ it('shows the user index page with paginated users', function () {
 
     $this->actingAs($admin)
         ->get(route('users.index'))
-        ->assertInertia(fn(AssertableInertia $page) => $page->component('admin/Users')
+        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/Users')
             ->has('users.data', 10) // pagination limit
         );
 });
@@ -34,13 +34,12 @@ it('sorts users by the requested field and order', function (string $sort, strin
     ['invalid', 'asc', 302],
 ]);
 
-
 it('shows the create user page', function () {
     $admin = User::factory()->create();
 
     $this->actingAs($admin)
         ->get(route('users.create'))
-        ->assertInertia(fn(AssertableInertia $page) => $page->component('admin/NewUserPage')
+        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/NewUserPage')
         );
 });
 
@@ -91,7 +90,7 @@ it('shows the edit user page', function () {
 
     $this->actingAs($admin)
         ->get(route('users.edit', $user))
-        ->assertInertia(fn(AssertableInertia $page) => $page->component('admin/EditUserPage')
+        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/EditUserPage')
             ->where('user.id', $user->id)
         );
 });
@@ -133,7 +132,7 @@ it('fails to update without email', function () {
 it('deletes a user', function () {
     $admin = User::factory()->create();
     $user = User::factory()->create([
-        'name' => 'Ursula Peter'
+        'name' => 'Ursula Peter',
     ]);
 
     $response = $this->actingAs($admin)
