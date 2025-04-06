@@ -50,7 +50,7 @@ class UserController extends Controller
         ]);
 
         // create user a random password
-        $request->merge(['password' => Str::random(8)]);
+        $request->merge(['password' => Str::random()]);
 
         $user = User::create($request->all());
 

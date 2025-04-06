@@ -1,13 +1,10 @@
 <?php
 
-use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
-
-covers(UserController::class);
 
 it('shows the user index page with paginated users', function () {
     User::factory()->count(12)->create();
@@ -18,6 +15,11 @@ it('shows the user index page with paginated users', function () {
         ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/Users')
             ->has('users.data', 10) // pagination limit
         );
+});
+
+it('doesnt show the user index page to non-admin users', function () {
+    $this->get(route('users.index'))
+        ->assertRedirect(route('login'));
 });
 
 it('sorts users by the requested field and order', function (string $sort, string $order, int $status) {
@@ -61,6 +63,20 @@ it('fails to create user with invalid email', function () {
     $response = $this->actingAs($admin)->post(route('users.store'), [
         'name' => 'Invalid Email User',
         'email' => 'invalid-email',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+});
+
+it('fails to create a user with an existing email', function () {
+    $admin = User::factory()->create();
+    $user = User::factory()->create([
+        'email' => 'existing@email.test',
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('users.store'), [
+        'name' => 'Duplicate Email User',
+        'email' => $user->email,
     ]);
 
     $response->assertSessionHasErrors('email');
@@ -126,6 +142,18 @@ it('fails to update without email', function () {
 
     $this->actingAs($admin)
         ->put(route('users.update', $user), ['name' => 'New Name'])
+        ->assertSessionHasErrors('email');
+});
+
+it('fails to update with existing email', function () {
+    $admin = User::factory()->create();
+    $user1 = User::factory()->create([
+        'email' => 'existing@email.test',
+    ]);
+    $user2 = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('users.update', $user2), ['email' => $user1->email])
         ->assertSessionHasErrors('email');
 });
 
