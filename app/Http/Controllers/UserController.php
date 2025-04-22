@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,6 +17,12 @@ class UserController extends Controller
      */
     public function index(Request $request): Response
     {
+
+        $request->validate([
+            'sort' => 'in:name,email',
+            'order' => 'in:asc,desc',
+        ]);
+
         $users = User::query();
 
         $sort = $request->input('sort', 'name');
@@ -26,31 +34,47 @@ class UserController extends Controller
 
         return Inertia::render('admin/Users', [
             'users' => $users->paginate(10)->withQueryString(),
+            'status' => $request->session()->get('status'),
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(User $user): Response
-    {
-        throw new Exception('Not implemented');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, User $user): Response
+    public function store(Request $request): RedirectResponse
     {
-        throw new Exception('Not implemented');
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+        ]);
+
+        // create user a random password
+        $request->merge(['password' => Str::random()]);
+
+        $user = User::create($request->all());
+
+        return redirect()->route('users.index')->with('status', 'User '.$user->name.' created successfully.');
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(): Response
+    {
+        return Inertia::render('admin/NewUserPage', [
+            'status' => request()->session()->get('status'),
+        ]);
     }
 
     /**
      * Display the specified resource.
+     *
+     * @throws Exception
      */
-    public function show(User $user): Response
+    public function show(User $user): RedirectResponse
     {
-        throw new Exception('Not implemented');
+        return redirect()->route('users.edit', $user);
     }
 
     /**
@@ -58,22 +82,37 @@ class UserController extends Controller
      */
     public function edit(User $user): Response
     {
-        throw new Exception('Not implemented');
+        return Inertia::render('admin/EditUserPage', [
+            'user' => $user,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user): Response
+    public function update(Request $request, User $user): RedirectResponse
     {
-        throw new Exception('Not implemented');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+        ]);
+
+        $user->update($request->all());
+
+        return redirect()->route('users.index')->with('status', 'User '.$user->name.' updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user): Response
+    public function destroy(User $user): RedirectResponse
     {
-        throw new Exception('Not implemented');
+        // save user name for redirect message
+        $name = $user->name;
+
+        // delete user
+        $user->delete();
+
+        return redirect()->route('users.index')->with('status', 'User '.$name.' deleted successfully.');
     }
 }

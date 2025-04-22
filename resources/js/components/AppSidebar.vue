@@ -19,7 +19,7 @@ const mainNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
     {
         title: 'Users',
-        route: 'user.index',
+        route: 'users.index',
         icon: Users2Icon,
     },
     {
