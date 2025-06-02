@@ -5,7 +5,7 @@ on:
   workflow_call:
 
 permissions:
-  contents: ${{ (github.event_name == 'pull_request') && 'write' || 'read' }}
+  contents: write
 
 jobs:
   quality:
