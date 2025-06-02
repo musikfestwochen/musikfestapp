@@ -57,7 +57,43 @@ To ensure a productive development environment, install the following extensions
 - **GitLens**: Git supercharged
 - **Peacock**: Custom VSCode color themes per project
 
-### 🚀 Additional Notes
+### 3️⃣ Environment Configuration
 
-- **Database:** Use SQLite locally
-- **Code Standards:** Use Prettier & ESLint for formatting
+Musikfestapp uses different environment files for different scenarios:
+
+- **Local Development:**
+    - Use `.env.local` as the template for your local environment.
+    - To set up your local environment, copy `.env.local` to `.env`:
+        ```sh
+        cp .env.local .env
+        ```
+    - Then generate your application key:
+        ```sh
+        php artisan key:generate
+        ```
+- **Production:**
+    - The production server uses its own `.env.production` file (not committed to version control).
+- **CI/CD & Examples:**
+    - `.env.example` is used as a generic template for CI/CD and as a reference for required variables.
+
+> **Note:** Always keep your `.env` files out of version control to protect sensitive data.
+
+---
+
+#### ➡️ Install Mailpit
+
+Follow the official installation guide [here](https://mailpit.axllent.org/docs/install/).
+
+#### 🚀 Features & Benefits of Mailpit:
+
+- **Local SMTP server** for testing emails
+- **Web interface** to view sent emails
+- **Lightweight and easy to set up**
+
+#### 📌 After installing Mailpit, make sure:
+
+- run `mailpit` in a separate terminal window
+- you can access the Mailpit web interface at `http://localhost:8025`
+- you can send test emails from the application
+
+---
