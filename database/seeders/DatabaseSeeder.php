@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -25,6 +26,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'pirmin@musikfestapp.ch',
         ]);
 
-        User::factory(20)->randomVerified()->create();
+        Organization::factory(10)->create();
+        Organization::factory(3)->deleted()->create();
+        User::factory(20)->randomVerified()->withOrganizations()->create();
     }
 }

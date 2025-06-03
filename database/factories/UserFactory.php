@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -51,5 +52,22 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => fake()->boolean() ? now() : null,
         ]);
+    }
+
+    /**
+     * Configure the factory.
+     */
+    public function withOrganizations(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            // 20% chance user has no organizations
+            if (fake()->boolean(20)) {
+                return;
+            }
+            // 80% chance user has 0-3 organizations
+            $orgCount = fake()->numberBetween(0, 3);
+            $orgIds = Organization::inRandomOrder(1)->limit($orgCount)->pluck('id');
+            $user->organizations()->attach($orgIds);
+        });
     }
 }

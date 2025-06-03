@@ -11,8 +11,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
-        title: 'Users',
-        href: '/users',
+        title: 'Organizations',
+        href: '/organizations',
     },
 ];
 
@@ -30,13 +30,10 @@ const columns = [
         width: '52',
     },
     {
-        name: 'Verified',
-        sortable: false,
-        accessor: 'email_verified_at',
-        mapping: (value: string) => {
-            return value ? 'Yes' : '<span class="text-red-500">No</span>';
-        },
-        width: '22',
+        name: 'Website',
+        sortable: true,
+        accessor: 'website',
+        width: '52',
     },
     {
         name: 'Actions',
@@ -44,13 +41,13 @@ const columns = [
         actions: [
             {
                 name: 'Edit',
-                href: (user: any) => route('users.edit', user.id),
+                href: (organization: any) => route('organizations.edit', organization.id),
                 icon: 'PencilIcon',
                 button_variant: 'outline',
             },
             {
                 name: 'Delete',
-                href: (user: any) => route('users.destroy', user.id),
+                href: (organization: any) => route('organizations.destroy', organization.id),
                 method: 'delete',
                 icon: 'TrashIcon',
                 button_variant: 'destructive',
@@ -61,23 +58,23 @@ const columns = [
 ];
 
 defineProps<{
-    users: object;
+    organizations: object;
     status?: string;
 }>();
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbItems">
-        <Head title="Users" />
+        <Head title="Organizations" />
 
         <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
             {{ status }}
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your users" title="Users">
+            <Heading description="See all your organizations" title="Organizations">
                 <Button as-child variant="secondary">
-                    <Link :href="route('users.create')">Create User</Link>
+                    <Link :href="route('organizations.create')">Create Organization</Link>
                 </Button>
             </Heading>
 
@@ -91,9 +88,12 @@ defineProps<{
                                     <Button v-if="column.sortable" as-child variant="ghost">
                                         <Link
                                             :href="
-                                                route('users.index', {
+                                                route('organizations.index', {
                                                     sort: column.accessor,
-                                                    order: route().current() === 'users.index' && route().params.order === 'asc' ? 'desc' : 'asc',
+                                                    order:
+                                                        route().current() === 'organizations.index' && route().params.order === 'asc'
+                                                            ? 'desc'
+                                                            : 'asc',
                                                 })
                                             "
                                         >
@@ -105,17 +105,17 @@ defineProps<{
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="user in users.data" :key="user.id">
+                        <TableRow v-for="organization in organizations.data" :key="organization.id">
                             <TableCell v-for="column in columns" :key="column.accessor">
                                 <span
                                     v-if="column.accessor"
                                     :class="`w-${column.width}`"
-                                    :title="user[column.accessor]"
+                                    :title="organization[column.accessor]"
                                     class="inline-block truncate"
-                                    v-html="column.mapping ? column.mapping(user[column.accessor]) : user[column.accessor]"
+                                    v-html="column.mapping ? column.mapping(organization[column.accessor]) : organization[column.accessor]"
                                 />
                                 <Button v-for="action in column.actions" :key="action.name" :variant="action.button_variant" as-child class="ml-2">
-                                    <Link :href="action.href(user)" :method="action.method || 'get'">
+                                    <Link :href="action.href(organization)" :method="action.method || 'get'">
                                         <Icon :name="action.icon" class="mr-1" />
                                         {{ action.name }}
                                     </Link>
@@ -126,7 +126,7 @@ defineProps<{
                 </Table>
             </div>
 
-            <Pagination :items="users" />
+            <Pagination :items="organizations" />
         </div>
     </AppLayout>
 </template>

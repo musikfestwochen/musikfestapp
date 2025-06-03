@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
+import { Building2Icon, FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -21,6 +21,11 @@ const footerNavItems: NavItem[] = [
         title: 'Users',
         route: 'users.index',
         icon: Users2Icon,
+    },
+    {
+        title: 'Organizations',
+        route: 'organizations.index',
+        icon: Building2Icon,
     },
     {
         title: 'Github Repo',

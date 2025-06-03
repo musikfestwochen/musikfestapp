@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
@@ -166,4 +167,12 @@ it('deletes a user', function () {
 
     $response->assertSessionHas('status', 'User Ursula Peter deleted successfully.');
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
+});
+
+it('can attach an organization to a user', function () {
+    $user = User::factory()->create();
+    $org = Organization::factory()->create();
+    $user->organizations()->attach($org);
+
+    $this->assertTrue($user->organizations->contains($org));
 });
