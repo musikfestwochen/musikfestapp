@@ -1,10 +1,7 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
-
-uses(RefreshDatabase::class);
 
 it('shows the user index page with paginated users', function () {
     User::factory()->count(12)->create();
