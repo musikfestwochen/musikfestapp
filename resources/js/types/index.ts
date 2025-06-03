@@ -34,3 +34,17 @@ export interface User {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface Organization {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    email?: string;
+    phone?: string;
+    website?: string;
+    logo?: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string;
+}
