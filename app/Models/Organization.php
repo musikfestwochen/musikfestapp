@@ -34,6 +34,8 @@ class Organization extends Model
 
     /**
      * The users that belong to the organization.
+     *
+     * @return BelongsToMany<User, $this>
      */
     public function users(): BelongsToMany
     {

@@ -41,6 +41,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * The organizations that belong to the user.
+     *
+     * @return BelongsToMany<Organization, $this>
      */
     public function organizations(): BelongsToMany
     {
