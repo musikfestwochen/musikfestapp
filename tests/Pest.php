@@ -32,8 +32,7 @@ pest()->extend(Tests\TestCase::class)
  * Mock the auth() helper function to return an auth manager that can be configured
  * to return true or false for check() calls.
  *
- * @param bool $authenticated Whether the user is authenticated
- * @return void
+ * @param  bool  $authenticated  Whether the user is authenticated
  */
 function mockAuth(bool $authenticated): void
 {

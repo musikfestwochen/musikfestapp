@@ -22,13 +22,14 @@ test('authorize returns false when user is not authenticated', function () {
 
 test('rules returns expected validation rules', function () {
     // Create a mock organization
-    $organization = new Organization();
+    $organization = new Organization;
     $organization->id = 1;
 
     // Create the request and set the organization
-    $request = new OrganizationUpdateRequest();
+    $request = new OrganizationUpdateRequest;
     $request->setRouteResolver(function () use ($organization) {
-        return new class($organization) {
+        return new class($organization)
+        {
             protected $organization;
 
             public function __construct($organization)
