@@ -33,21 +33,14 @@ test('rules returns expected validation rules with user ID', function () {
     // Get the rules
     $rules = $request->rules();
 
-    expect($rules)->toHaveKey('name')
-        ->and($rules)->toHaveKey('email')
-        ->and($rules['name'])->toContain('required')
-        ->and($rules['name'])->toContain('string')
-        ->and($rules['name'])->toContain('max:255')
-        ->and($rules['email'])->toContain('required')
-        ->and($rules['email'])->toContain('string')
-        ->and($rules['email'])->toContain('email')
-        ->and($rules['email'])->toContain('max:255')
-        ->and($rules['email'][4])->toContain('unique:users,email,123');
+    // Define expected rules
+    $expectedRules = [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,123'],
+    ];
 
-    // If the test fails, output the actual value for debugging
-    if (! str_contains($rules['email'][4], 'unique:users,email,123')) {
-        test()->fail('Expected unique rule to contain user ID. Actual value: '.$rules['email'][4]);
-    }
+    // Assert that the rules match the expected rules
+    expect($rules)->toEqualCanonicalizing($expectedRules);
 });
 
 test('rules returns expected validation rules with null user', function () {
@@ -60,19 +53,12 @@ test('rules returns expected validation rules with null user', function () {
     // Get the rules
     $rules = $request->rules();
 
-    expect($rules)->toHaveKey('name')
-        ->and($rules)->toHaveKey('email')
-        ->and($rules['name'])->toContain('required')
-        ->and($rules['name'])->toContain('string')
-        ->and($rules['name'])->toContain('max:255')
-        ->and($rules['email'])->toContain('required')
-        ->and($rules['email'])->toContain('string')
-        ->and($rules['email'])->toContain('email')
-        ->and($rules['email'])->toContain('max:255')
-        ->and($rules['email'][4])->toContain('unique:users,email,');
+    // Define expected rules
+    $expectedRules = [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'],
+    ];
 
-    // If the test fails, output the actual value for debugging
-    if (! str_contains($rules['email'][4], 'unique:users,email,')) {
-        test()->fail('Expected unique rule to contain empty string. Actual value: '.$rules['email'][4]);
-    }
+    // Assert that the rules match the expected rules
+    expect($rules)->toEqualCanonicalizing($expectedRules);
 });

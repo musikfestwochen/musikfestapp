@@ -22,18 +22,12 @@ test('rules returns expected validation rules', function () {
     $request = new UserStoreRequest;
     $rules = $request->rules();
 
-    expect($rules)->toHaveKey('name')
-        ->and($rules)->toHaveKey('email')
-        ->and($rules['name'])->toContain('required')
-        ->and($rules['name'])->toContain('string')
-        ->and($rules['name'])->toContain('max:255')
-        ->and($rules['email'])->toContain('required')
-        ->and($rules['email'])->toContain('string')
-        ->and($rules['email'])->toContain('email')
-        ->and($rules['email'])->toContain('max:255')
-        ->and($rules['email'])->toContain('unique:users');
+    // Define expected rules
+    $expectedRules = [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+    ];
 
-    // Check name validation rules
-
-    // Check email validation rules
+    // Assert that the rules match the expected rules
+    expect($rules)->toEqualCanonicalizing($expectedRules);
 });

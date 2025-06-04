@@ -48,36 +48,19 @@ test('rules returns expected validation rules with organization ID', function ()
 
     $rules = $request->rules();
 
-    expect($rules)->toHaveKey('name')
-        ->and($rules)->toHaveKey('slug')
-        ->and($rules)->toHaveKey('description')
-        ->and($rules)->toHaveKey('email')
-        ->and($rules)->toHaveKey('phone')
-        ->and($rules)->toHaveKey('website')
-        ->and($rules)->toHaveKey('logo')
-        ->and($rules['name'])->toContain('required')
-        ->and($rules['name'])->toContain('string')
-        ->and($rules['name'])->toContain('max:255')
-        ->and($rules['name'])->toContain('unique:organizations,name,1')
-        ->and($rules['slug'])->toContain('required')
-        ->and($rules['slug'])->toContain('string')
-        ->and($rules['slug'])->toContain('max:255')
-        ->and($rules['slug'])->toContain('unique:organizations,slug,1')
-        ->and($rules['description'])->toContain('nullable')
-        ->and($rules['description'])->toContain('string')
-        ->and($rules['email'])->toContain('nullable')
-        ->and($rules['email'])->toContain('string')
-        ->and($rules['email'])->toContain('email')
-        ->and($rules['email'])->toContain('max:255')
-        ->and($rules['phone'])->toContain('nullable')
-        ->and($rules['phone'])->toContain('string')
-        ->and($rules['phone'])->toContain('max:255')
-        ->and($rules['website'])->toContain('nullable')
-        ->and($rules['website'])->toContain('string')
-        ->and($rules['website'])->toContain('max:255')
-        ->and($rules['logo'])->toContain('nullable')
-        ->and($rules['logo'])->toContain('string')
-        ->and($rules['logo'])->toContain('max:255');
+    // Define expected rules
+    $expectedRules = [
+        'name' => ['required', 'string', 'max:255', 'unique:organizations,name,1'],
+        'slug' => ['required', 'string', 'max:255', 'unique:organizations,slug,1'],
+        'description' => ['nullable', 'string'],
+        'email' => ['nullable', 'string', 'email', 'max:255'],
+        'phone' => ['nullable', 'string', 'max:255'],
+        'website' => ['nullable', 'string', 'max:255'],
+        'logo' => ['nullable', 'string', 'max:255'],
+    ];
+
+    // Assert that the rules match the expected rules
+    expect($rules)->toEqualCanonicalizing($expectedRules);
 });
 
 test('rules returns expected validation rules with null organization', function () {
@@ -95,42 +78,17 @@ test('rules returns expected validation rules with null organization', function 
 
     $rules = $request->rules();
 
-    expect($rules)->toHaveKey('name')
-        ->and($rules)->toHaveKey('slug')
-        ->and($rules)->toHaveKey('description')
-        ->and($rules)->toHaveKey('email')
-        ->and($rules)->toHaveKey('phone')
-        ->and($rules)->toHaveKey('website')
-        ->and($rules)->toHaveKey('logo')
-        ->and($rules['name'])->toContain('required')
-        ->and($rules['name'])->toContain('string')
-        ->and($rules['name'])->toContain('max:255')
-        ->and($rules['name'])->toContain('unique:organizations,name,')
-        ->and($rules['slug'])->toContain('required')
-        ->and($rules['slug'])->toContain('string')
-        ->and($rules['slug'])->toContain('max:255')
-        ->and($rules['slug'])->toContain('unique:organizations,slug,')
-        ->and($rules['description'])->toContain('nullable')
-        ->and($rules['description'])->toContain('string')
-        ->and($rules['email'])->toContain('nullable')
-        ->and($rules['email'])->toContain('string')
-        ->and($rules['email'])->toContain('email')
-        ->and($rules['email'])->toContain('max:255')
-        ->and($rules['phone'])->toContain('nullable')
-        ->and($rules['phone'])->toContain('string')
-        ->and($rules['phone'])->toContain('max:255')
-        ->and($rules['website'])->toContain('nullable')
-        ->and($rules['website'])->toContain('string')
-        ->and($rules['website'])->toContain('max:255')
-        ->and($rules['logo'])->toContain('nullable')
-        ->and($rules['logo'])->toContain('string')
-        ->and($rules['logo'])->toContain('max:255');
+    // Define expected rules
+    $expectedRules = [
+        'name' => ['required', 'string', 'max:255', 'unique:organizations,name,'],
+        'slug' => ['required', 'string', 'max:255', 'unique:organizations,slug,'],
+        'description' => ['nullable', 'string'],
+        'email' => ['nullable', 'string', 'email', 'max:255'],
+        'phone' => ['nullable', 'string', 'max:255'],
+        'website' => ['nullable', 'string', 'max:255'],
+        'logo' => ['nullable', 'string', 'max:255'],
+    ];
 
-    // If the test fails, output the actual values for debugging
-    if (! str_contains($rules['name'], 'unique:organizations,name,')) {
-        test()->fail('Expected name unique rule to contain empty string. Actual value: '.$rules['name']);
-    }
-    if (! str_contains($rules['slug'], 'unique:organizations,slug,')) {
-        test()->fail('Expected slug unique rule to contain empty string. Actual value: '.$rules['slug']);
-    }
+    // Assert that the rules match the expected rules
+    expect($rules)->toEqualCanonicalizing($expectedRules);
 });

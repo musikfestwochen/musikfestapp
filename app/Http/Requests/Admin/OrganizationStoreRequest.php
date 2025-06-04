@@ -23,13 +23,13 @@ class OrganizationStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:organizations',
-            'slug' => 'required|string|max:255|unique:organizations',
-            'description' => 'nullable|string',
-            'email' => 'nullable|string|email|max:255',
-            'phone' => 'nullable|string|max:255',
-            'website' => 'nullable|string|max:255',
-            'logo' => 'nullable|string|max:255',
+            'name' => ['required', 'string', 'max:255', 'unique:organizations'],
+            'slug' => ['required', 'string', 'max:255', 'unique:organizations'],
+            'description' => ['nullable', 'string'],
+            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255'],
+            'logo' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
