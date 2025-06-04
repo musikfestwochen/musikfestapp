@@ -1,0 +1,53 @@
+<?php
+
+use App\Http\Requests\Admin\OrganizationStoreRequest;
+
+test('authorize returns true when user is authenticated', function () {
+    mockAuth(true);
+
+    $request = new OrganizationStoreRequest;
+    expect($request->authorize())->toBeTrue();
+});
+
+test('authorize returns false when user is not authenticated', function () {
+    mockAuth(false);
+
+    $request = new OrganizationStoreRequest;
+    expect($request->authorize())->toBeFalse();
+});
+
+test('rules returns expected validation rules', function () {
+    $request = new OrganizationStoreRequest;
+    $rules = $request->rules();
+
+    expect($rules)->toHaveKey('name')
+        ->and($rules)->toHaveKey('slug')
+        ->and($rules)->toHaveKey('description')
+        ->and($rules)->toHaveKey('email')
+        ->and($rules)->toHaveKey('phone')
+        ->and($rules)->toHaveKey('website')
+        ->and($rules)->toHaveKey('logo')
+        ->and($rules['name'])->toContain('required')
+        ->and($rules['name'])->toContain('string')
+        ->and($rules['name'])->toContain('max:255')
+        ->and($rules['name'])->toContain('unique:organizations')
+        ->and($rules['slug'])->toContain('required')
+        ->and($rules['slug'])->toContain('string')
+        ->and($rules['slug'])->toContain('max:255')
+        ->and($rules['slug'])->toContain('unique:organizations')
+        ->and($rules['description'])->toContain('nullable')
+        ->and($rules['description'])->toContain('string')
+        ->and($rules['email'])->toContain('nullable')
+        ->and($rules['email'])->toContain('string')
+        ->and($rules['email'])->toContain('email')
+        ->and($rules['email'])->toContain('max:255')
+        ->and($rules['phone'])->toContain('nullable')
+        ->and($rules['phone'])->toContain('string')
+        ->and($rules['phone'])->toContain('max:255')
+        ->and($rules['website'])->toContain('nullable')
+        ->and($rules['website'])->toContain('string')
+        ->and($rules['website'])->toContain('max:255')
+        ->and($rules['logo'])->toContain('nullable')
+        ->and($rules['logo'])->toContain('string')
+        ->and($rules['logo'])->toContain('max:255');
+});
