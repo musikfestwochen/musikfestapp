@@ -6,6 +6,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+covers(OrganizationUpdateRequest::class);
+
 test('authorize returns true when user is authenticated', function () {
     mockAuth(true);
 

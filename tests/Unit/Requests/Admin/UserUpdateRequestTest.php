@@ -3,6 +3,8 @@
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\User;
 
+covers(UserUpdateRequest::class);
+
 test('authorize returns true when user is authenticated', function () {
     mockAuth(true);
 

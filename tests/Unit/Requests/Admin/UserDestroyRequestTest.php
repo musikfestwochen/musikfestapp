@@ -2,6 +2,8 @@
 
 use App\Http\Requests\Admin\UserDestroyRequest;
 
+covers(UserDestroyRequest::class);
+
 test('authorize returns true when user is authenticated', function () {
     mockAuth(true);
 

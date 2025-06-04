@@ -2,6 +2,8 @@
 
 use App\Http\Requests\Admin\OrganizationCreateRequest;
 
+covers(OrganizationCreateRequest::class);
+
 test('authorize returns true when user is authenticated', function () {
     mockAuth(true);
 

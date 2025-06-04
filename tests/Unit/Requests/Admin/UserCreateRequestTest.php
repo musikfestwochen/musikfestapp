@@ -2,6 +2,8 @@
 
 use App\Http\Requests\Admin\UserCreateRequest;
 
+covers(UserCreateRequest::class);
+
 test('authorize returns true when user is authenticated', function () {
     mockAuth(true);
 
