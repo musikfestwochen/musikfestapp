@@ -19,13 +19,13 @@ test('authorize returns false when user is not authenticated', function () {
     expect($request->authorize())->toBeFalse();
 });
 
-test('rules returns expected validation rules', function () {
+test('rules returns expected validation rules with user ID', function () {
     // Create a mock User model with an ID
     $user = new User;
     $user->id = 123;
 
     // Create a partial mock of the UserUpdateRequest class
-    $request = \Mockery::mock(UserUpdateRequest::class)->makePartial();
+    $request = Mockery::mock(UserUpdateRequest::class)->makePartial();
     $request->shouldReceive('route')
         ->with('user')
         ->andReturn($user);
@@ -44,14 +44,35 @@ test('rules returns expected validation rules', function () {
         ->and($rules['email'])->toContain('max:255')
         ->and($rules['email'][4])->toContain('unique:users,email,123');
 
-    // Check name validation rules
-
-    // Check email validation rules
-
-    // Check the unique rule contains the user ID
-
     // If the test fails, output the actual value for debugging
     if (! str_contains($rules['email'][4], 'unique:users,email,123')) {
         test()->fail('Expected unique rule to contain user ID. Actual value: '.$rules['email'][4]);
+    }
+});
+
+test('rules returns expected validation rules with null user', function () {
+    // Create a partial mock of the UserUpdateRequest class
+    $request = Mockery::mock(UserUpdateRequest::class)->makePartial();
+    $request->shouldReceive('route')
+        ->with('user')
+        ->andReturn(null);
+
+    // Get the rules
+    $rules = $request->rules();
+
+    expect($rules)->toHaveKey('name')
+        ->and($rules)->toHaveKey('email')
+        ->and($rules['name'])->toContain('required')
+        ->and($rules['name'])->toContain('string')
+        ->and($rules['name'])->toContain('max:255')
+        ->and($rules['email'])->toContain('required')
+        ->and($rules['email'])->toContain('string')
+        ->and($rules['email'])->toContain('email')
+        ->and($rules['email'])->toContain('max:255')
+        ->and($rules['email'][4])->toContain('unique:users,email,');
+
+    // If the test fails, output the actual value for debugging
+    if (! str_contains($rules['email'][4], 'unique:users,email,')) {
+        test()->fail('Expected unique rule to contain empty string. Actual value: '.$rules['email'][4]);
     }
 });
