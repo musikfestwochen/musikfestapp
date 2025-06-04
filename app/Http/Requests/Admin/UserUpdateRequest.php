@@ -25,7 +25,7 @@ use Illuminate\Foundation\Http\FormRequest;
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$this->user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.($this->route('user')->id ?? '')],
         ];
     }
 }

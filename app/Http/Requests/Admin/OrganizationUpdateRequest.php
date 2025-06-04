@@ -23,8 +23,8 @@ class OrganizationUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255|unique:organizations,name,'.$this->organization->id,
-            'slug' => 'required|string|max:255|unique:organizations,slug,'.$this->organization->id,
+            'name' => 'required|string|max:255|unique:organizations,name,'.($this->route('organization')->id ?? ''),
+            'slug' => 'required|string|max:255|unique:organizations,slug,'.($this->route('organization')->id ?? ''),
             'description' => 'nullable|string',
             'email' => 'nullable|string|email|max:255',
             'phone' => 'nullable|string|max:255',

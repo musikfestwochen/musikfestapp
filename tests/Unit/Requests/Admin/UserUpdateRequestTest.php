@@ -22,9 +22,11 @@ test('rules returns expected validation rules', function () {
     $user = new User;
     $user->id = 123;
 
-    // Create a request instance and set the user property directly
-    $request = new UserUpdateRequest;
-    $request->user = $user;
+    // Create a partial mock of the UserUpdateRequest class
+    $request = \Mockery::mock(UserUpdateRequest::class)->makePartial();
+    $request->shouldReceive('route')
+        ->with('user')
+        ->andReturn($user);
 
     // Get the rules
     $rules = $request->rules();
