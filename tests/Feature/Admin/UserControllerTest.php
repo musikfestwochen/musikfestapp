@@ -1,12 +1,26 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Requests\Admin\UserCreateRequest;
+use App\Http\Requests\Admin\UserDestroyRequest;
+use App\Http\Requests\Admin\UserEditRequest;
+use App\Http\Requests\Admin\UserIndexRequest;
+use App\Http\Requests\Admin\UserShowRequest;
+use App\Http\Requests\Admin\UserStoreRequest;
+use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Organization;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
+covers(UserController::class);
+
+beforeEach(function () {
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+});
+
 it('shows the user index page with paginated users', function () {
     User::factory()->count(12)->create();
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->get(route('users.index'))
@@ -22,7 +36,7 @@ it('doesnt show the user index page to non-admin users', function () {
 
 it('sorts users by the requested field and order', function (string $sort, string $order, int $status) {
     User::factory()->count(3)->create();
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->get(route('users.index', ['sort' => $sort, 'order' => $order]))
@@ -35,7 +49,7 @@ it('sorts users by the requested field and order', function (string $sort, strin
 ]);
 
 it('shows the create user page', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->get(route('users.create'))
@@ -44,7 +58,7 @@ it('shows the create user page', function () {
 });
 
 it('creates a user with a random password', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $response = $this->actingAs($admin)->post(route('users.store'), [
         'name' => 'Jane Doe',
@@ -56,7 +70,7 @@ it('creates a user with a random password', function () {
 });
 
 it('fails to create user with invalid email', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $response = $this->actingAs($admin)->post(route('users.store'), [
         'name' => 'Invalid Email User',
@@ -67,7 +81,7 @@ it('fails to create user with invalid email', function () {
 });
 
 it('fails to create a user with an existing email', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create([
         'email' => 'existing@email.test',
     ]);
@@ -81,7 +95,7 @@ it('fails to create a user with an existing email', function () {
 });
 
 it('fails to store user without name', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->post(route('users.store'), ['email' => 'foo@example.com'])
@@ -89,7 +103,7 @@ it('fails to store user without name', function () {
 });
 
 it('redirects to the edit page when trying to show a user', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin);
@@ -99,7 +113,7 @@ it('redirects to the edit page when trying to show a user', function () {
 });
 
 it('shows the edit user page', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)
@@ -110,7 +124,7 @@ it('shows the edit user page', function () {
 });
 
 it('updates a user successfully', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)->put(route('users.update', $user), [
@@ -126,7 +140,7 @@ it('updates a user successfully', function () {
 });
 
 it('fails to update without name', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)
@@ -135,7 +149,7 @@ it('fails to update without name', function () {
 });
 
 it('fails to update without email', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)
@@ -144,7 +158,7 @@ it('fails to update without email', function () {
 });
 
 it('fails to update with existing email', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user1 = User::factory()->create([
         'email' => 'existing@email.test',
     ]);
@@ -156,7 +170,7 @@ it('fails to update with existing email', function () {
 });
 
 it('deletes a user', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create([
         'name' => 'Ursula Peter',
     ]);
@@ -175,4 +189,71 @@ it('can attach an organization to a user', function () {
     $user->organizations()->attach($org);
 
     $this->assertTrue($user->organizations->contains($org));
+});
+
+it('uses the correct form requests', function () {
+
+    // create
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'create',
+        UserCreateRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.create',
+        UserCreateRequest::class);
+
+    // destroy
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'destroy',
+        UserDestroyRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.destroy',
+        UserDestroyRequest::class);
+
+    // edit
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'edit',
+        UserEditRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.edit',
+        UserEditRequest::class);
+
+    // index
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'index',
+        UserIndexRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.index',
+        UserIndexRequest::class);
+
+    // show
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'show',
+        UserShowRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.show',
+        UserShowRequest::class);
+
+    // store
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'store',
+        UserStoreRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.store',
+        UserStoreRequest::class);
+
+    // update
+    $this->assertActionUsesFormRequest(
+        UserController::class,
+        'update',
+        UserUpdateRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'users.update',
+        UserUpdateRequest::class);
+
 });

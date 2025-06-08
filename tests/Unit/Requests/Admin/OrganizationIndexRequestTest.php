@@ -1,29 +1,26 @@
 <?php
 
 use App\Http\Requests\Admin\OrganizationIndexRequest;
+use App\Models\User;
 
 covers(OrganizationIndexRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new OrganizationIndexRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new OrganizationIndexRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new OrganizationIndexRequest;
-    expect($request->authorize())->toBeFalse();
+it('has correct rules', function () {
+    $this->assertExactValidationRules([
+        'sort' => 'in:name,email,website',
+        'order' => 'in:asc,desc',
+    ], $this->request->rules());
 });
 
-test('rules returns expected validation rules', function () {
-    $request = new OrganizationIndexRequest;
-    $rules = $request->rules();
+it('authorizes when user can index organizations', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('organizations.index')->andReturn(true);
 
-    expect($rules)->toHaveKey('sort')
-        ->and($rules)->toHaveKey('order')
-        ->and($rules['sort'])->toBe('in:name,email,website')
-        ->and($rules['order'])->toBe('in:asc,desc');
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });

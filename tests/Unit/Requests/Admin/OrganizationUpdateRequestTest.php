@@ -2,27 +2,27 @@
 
 use App\Http\Requests\Admin\OrganizationUpdateRequest;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 covers(OrganizationUpdateRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new OrganizationUpdateRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new OrganizationUpdateRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
+it('authorizes when user can update organizations', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('organizations.update')->andReturn(true);
 
-    $request = new OrganizationUpdateRequest;
-    expect($request->authorize())->toBeFalse();
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });
 
-test('rules returns expected validation rules with organization ID', function () {
+it('has correct rules with organization ID', function () {
     // Create a mock organization
     $organization = new Organization;
     $organization->id = 1;
@@ -46,10 +46,7 @@ test('rules returns expected validation rules with organization ID', function ()
         };
     });
 
-    $rules = $request->rules();
-
-    // Define expected rules
-    $expectedRules = [
+    $this->assertExactValidationRules([
         'name' => ['required', 'string', 'max:255', 'unique:organizations,name,1'],
         'slug' => ['required', 'string', 'max:255', 'unique:organizations,slug,1'],
         'description' => ['nullable', 'string'],
@@ -57,13 +54,10 @@ test('rules returns expected validation rules with organization ID', function ()
         'phone' => ['nullable', 'string', 'max:255'],
         'website' => ['nullable', 'string', 'max:255'],
         'logo' => ['nullable', 'string', 'max:255'],
-    ];
-
-    // Assert that the rules match the expected rules
-    expect($rules)->toEqualCanonicalizing($expectedRules);
+    ], $request->rules());
 });
 
-test('rules returns expected validation rules with null organization', function () {
+it('has correct rules with null organization', function () {
     // Create the request and set the organization to null
     $request = new OrganizationUpdateRequest;
     $request->setRouteResolver(function () {
@@ -76,10 +70,7 @@ test('rules returns expected validation rules with null organization', function 
         };
     });
 
-    $rules = $request->rules();
-
-    // Define expected rules
-    $expectedRules = [
+    $this->assertExactValidationRules([
         'name' => ['required', 'string', 'max:255', 'unique:organizations,name,'],
         'slug' => ['required', 'string', 'max:255', 'unique:organizations,slug,'],
         'description' => ['nullable', 'string'],
@@ -87,8 +78,5 @@ test('rules returns expected validation rules with null organization', function 
         'phone' => ['nullable', 'string', 'max:255'],
         'website' => ['nullable', 'string', 'max:255'],
         'logo' => ['nullable', 'string', 'max:255'],
-    ];
-
-    // Assert that the rules match the expected rules
-    expect($rules)->toEqualCanonicalizing($expectedRules);
+    ], $request->rules());
 });

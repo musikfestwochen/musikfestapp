@@ -70,4 +70,14 @@ class UserFactory extends Factory
             $user->organizations()->attach($orgIds);
         });
     }
+
+    public function globalAdmin(): static
+    {
+        return $this->afterCreating(function (User $user) {
+
+            // the team ID is set to 0 indicating a global admin
+            setPermissionsTeamId(0);
+            $user->assignRole('Admin');
+        });
+    }
 }

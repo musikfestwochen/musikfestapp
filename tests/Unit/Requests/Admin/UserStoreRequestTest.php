@@ -1,33 +1,26 @@
 <?php
 
 use App\Http\Requests\Admin\UserStoreRequest;
+use App\Models\User;
 
 covers(UserStoreRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new UserStoreRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new UserStoreRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new UserStoreRequest;
-    expect($request->authorize())->toBeFalse();
-});
-
-test('rules returns expected validation rules', function () {
-    $request = new UserStoreRequest;
-    $rules = $request->rules();
-
-    // Define expected rules
-    $expectedRules = [
+it('has correct rules', function () {
+    $this->assertExactValidationRules([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-    ];
+    ], $this->request->rules());
+});
 
-    // Assert that the rules match the expected rules
-    expect($rules)->toEqualCanonicalizing($expectedRules);
+it('authorizes when user can store users', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('users.store')->andReturn(true);
+
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });

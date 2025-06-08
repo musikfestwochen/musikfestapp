@@ -1,27 +1,25 @@
 <?php
 
 use App\Http\Requests\Admin\OrganizationDestroyRequest;
+use App\Models\User;
 
 covers(OrganizationDestroyRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new OrganizationDestroyRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new OrganizationDestroyRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new OrganizationDestroyRequest;
-    expect($request->authorize())->toBeFalse();
+it('has correct rules', function () {
+    $this->assertExactValidationRules(
+        [], $this->request->rules()
+    );
 });
 
-test('rules returns expected validation rules', function () {
-    $request = new OrganizationDestroyRequest;
-    $rules = $request->rules();
+it('authorizes when user can destroy organizations', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('organizations.destroy')->andReturn(true);
 
-    // The destroy request doesn't have any specific validation rules
-    expect($rules)->toBeArray()->toBeEmpty();
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });

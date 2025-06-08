@@ -1,29 +1,16 @@
 <?php
 
 use App\Http\Requests\Admin\OrganizationStoreRequest;
+use App\Models\User;
 
 covers(OrganizationStoreRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new OrganizationStoreRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new OrganizationStoreRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new OrganizationStoreRequest;
-    expect($request->authorize())->toBeFalse();
-});
-
-test('rules returns expected validation rules', function () {
-    $request = new OrganizationStoreRequest;
-    $rules = $request->rules();
-
-    // Define expected rules
-    $expectedRules = [
+it('has correct rules', function () {
+    $this->assertExactValidationRules([
         'name' => ['required', 'string', 'max:255', 'unique:organizations'],
         'slug' => ['required', 'string', 'max:255', 'unique:organizations'],
         'description' => ['nullable', 'string'],
@@ -31,8 +18,14 @@ test('rules returns expected validation rules', function () {
         'phone' => ['nullable', 'string', 'max:255'],
         'website' => ['nullable', 'string', 'max:255'],
         'logo' => ['nullable', 'string', 'max:255'],
-    ];
+    ], $this->request->rules());
+});
 
-    // Assert that the rules match the expected rules
-    expect($rules)->toEqualCanonicalizing($expectedRules);
+it('authorizes when user can store organizations', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('organizations.store')->andReturn(true);
+
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });
