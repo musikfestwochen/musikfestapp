@@ -12,8 +12,6 @@ use App\Models\Organization;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
-covers(OrganizationController::class);
-
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
