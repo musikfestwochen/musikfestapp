@@ -1,27 +1,25 @@
 <?php
 
 use App\Http\Requests\Admin\OrganizationShowRequest;
+use App\Models\User;
 
 covers(OrganizationShowRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new OrganizationShowRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new OrganizationShowRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new OrganizationShowRequest;
-    expect($request->authorize())->toBeFalse();
+it('has correct rules', function () {
+    $this->assertExactValidationRules(
+        [], $this->request->rules()
+    );
 });
 
-test('rules returns expected validation rules', function () {
-    $request = new OrganizationShowRequest;
-    $rules = $request->rules();
+it('authorizes when user can show organizations', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('organizations.show')->andReturn(true);
 
-    // The show request doesn't have any specific validation rules
-    expect($rules)->toBeArray()->toBeEmpty();
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });

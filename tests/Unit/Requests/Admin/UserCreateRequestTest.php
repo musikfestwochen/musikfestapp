@@ -1,24 +1,25 @@
 <?php
 
 use App\Http\Requests\Admin\UserCreateRequest;
+use App\Models\User;
 
 covers(UserCreateRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new UserCreateRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new UserCreateRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new UserCreateRequest;
-    expect($request->authorize())->toBeFalse();
+it('has correct rules', function () {
+    $this->assertExactValidationRules(
+        [], $this->request->rules()
+    );
 });
 
-test('rules returns empty array', function () {
-    $request = new UserCreateRequest;
-    expect($request->rules())->toBe([]);
+it('authorizes when user can create users', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('users.create')->andReturn(true);
+
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });

@@ -1,30 +1,26 @@
 <?php
 
 use App\Http\Requests\Admin\UserIndexRequest;
+use App\Models\User;
 
 covers(UserIndexRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new UserIndexRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new UserIndexRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new UserIndexRequest;
-    expect($request->authorize())->toBeFalse();
+it('has correct rules', function () {
+    $this->assertExactValidationRules([
+        'sort' => ['in:name,email'],
+        'order' => ['in:asc,desc'],
+    ], $this->request->rules());
 });
 
-test('rules returns expected validation rules', function () {
-    $request = new UserIndexRequest;
-    $rules = $request->rules();
+it('authorizes when user can index users', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('users.index')->andReturn(true);
 
-    expect($rules)->toHaveKey('sort')
-        ->and($rules)->toHaveKey('order')
-        ->and($rules['sort'])->toBe(['in:name,email'])
-        ->and($rules['order'])->toBe(['in:asc,desc']);
+    Auth::shouldReceive('user')->andReturn($user);
 
+    $this->assertTrue($this->request->authorize());
 });

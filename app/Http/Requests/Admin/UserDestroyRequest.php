@@ -12,7 +12,7 @@ class UserDestroyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        return auth()->user()->can('users.destroy');
     }
 
     /**

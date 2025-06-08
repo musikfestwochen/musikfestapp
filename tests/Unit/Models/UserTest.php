@@ -33,3 +33,10 @@ it('organization relationship returns BelongsToMany', function () {
         ->not()->toBeNull()
         ->and($returnType->getName())->toBe(BelongsToMany::class);
 });
+
+it('BelongsToMany org', function () {
+    $user = new User;
+    $relation = $user->organizations();
+
+    expect($relation)->toBeInstanceOf(BelongsToMany::class);
+});

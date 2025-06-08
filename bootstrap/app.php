@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+        $middleware->alias(
+            ['permissions.global_organization' => App\Http\Middleware\Permissions\GlobalOrganization::class],
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

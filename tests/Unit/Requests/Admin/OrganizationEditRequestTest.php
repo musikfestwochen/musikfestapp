@@ -1,27 +1,25 @@
 <?php
 
 use App\Http\Requests\Admin\OrganizationEditRequest;
+use App\Models\User;
 
 covers(OrganizationEditRequest::class);
 
-test('authorize returns true when user is authenticated', function () {
-    mockAuth(true);
-
-    $request = new OrganizationEditRequest;
-    expect($request->authorize())->toBeTrue();
+beforeEach(function () {
+    $this->request = new OrganizationEditRequest;
 });
 
-test('authorize returns false when user is not authenticated', function () {
-    mockAuth(false);
-
-    $request = new OrganizationEditRequest;
-    expect($request->authorize())->toBeFalse();
+it('has correct rules', function () {
+    $this->assertExactValidationRules(
+        [], $this->request->rules()
+    );
 });
 
-test('rules returns expected validation rules', function () {
-    $request = new OrganizationEditRequest;
-    $rules = $request->rules();
+it('authorizes when user can edit organizations', function () {
+    $user = Mockery::mock(User::class);
+    $user->shouldReceive('can')->with('organizations.edit')->andReturn(true);
 
-    // The edit request doesn't have any specific validation rules
-    expect($rules)->toBeArray()->toBeEmpty();
+    Auth::shouldReceive('user')->andReturn($user);
+
+    $this->assertTrue($this->request->authorize());
 });

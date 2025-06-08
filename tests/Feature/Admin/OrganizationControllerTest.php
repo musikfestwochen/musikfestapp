@@ -1,12 +1,25 @@
 <?php
 
+use App\Http\Controllers\Admin\OrganizationController;
+use App\Http\Requests\Admin\OrganizationCreateRequest;
+use App\Http\Requests\Admin\OrganizationDestroyRequest;
+use App\Http\Requests\Admin\OrganizationEditRequest;
+use App\Http\Requests\Admin\OrganizationIndexRequest;
+use App\Http\Requests\Admin\OrganizationShowRequest;
+use App\Http\Requests\Admin\OrganizationStoreRequest;
+use App\Http\Requests\Admin\OrganizationUpdateRequest;
 use App\Models\Organization;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
+beforeEach(function () {
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+});
+
 it('shows the organization index page with paginated organizations', function () {
+
     Organization::factory()->count(12)->create();
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->get(route('organizations.index'))
@@ -22,7 +35,7 @@ it('doesnt show the organization index page to non-admin users', function () {
 
 it('sorts organizations by the requested field and order', function (string $sort, string $order, int $status) {
     Organization::factory()->count(3)->create();
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->get(route('organizations.index', ['sort' => $sort, 'order' => $order]))
@@ -36,7 +49,7 @@ it('sorts organizations by the requested field and order', function (string $sor
 ]);
 
 it('shows the create organization page', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->get(route('organizations.create'))
@@ -45,7 +58,7 @@ it('shows the create organization page', function () {
 });
 
 it('creates an organization successfully', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $response = $this->actingAs($admin)->post(route('organizations.store'), [
         'name' => 'Test Organization',
@@ -61,7 +74,7 @@ it('creates an organization successfully', function () {
 });
 
 it('fails to create organization without name', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->post(route('organizations.store'), [
@@ -72,7 +85,7 @@ it('fails to create organization without name', function () {
 });
 
 it('fails to create organization without slug', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
         ->post(route('organizations.store'), [
@@ -83,7 +96,7 @@ it('fails to create organization without slug', function () {
 });
 
 it('fails to create organization with duplicate name', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     Organization::factory()->create(['name' => 'Existing Organization']);
 
     $this->actingAs($admin)
@@ -95,7 +108,7 @@ it('fails to create organization with duplicate name', function () {
 });
 
 it('fails to create organization with duplicate slug', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     Organization::factory()->create(['slug' => 'existing-slug']);
 
     $this->actingAs($admin)
@@ -107,7 +120,7 @@ it('fails to create organization with duplicate slug', function () {
 });
 
 it('redirects to the edit page when trying to show an organization', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin);
@@ -117,7 +130,7 @@ it('redirects to the edit page when trying to show an organization', function ()
 });
 
 it('shows the edit organization page', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)
@@ -128,7 +141,7 @@ it('shows the edit organization page', function () {
 });
 
 it('updates an organization successfully', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)->put(route('organizations.update', $organization), [
@@ -152,7 +165,7 @@ it('updates an organization successfully', function () {
 });
 
 it('fails to update without name', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)
@@ -164,7 +177,7 @@ it('fails to update without name', function () {
 });
 
 it('fails to update without slug', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)
@@ -176,7 +189,7 @@ it('fails to update without slug', function () {
 });
 
 it('fails to update with existing name', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization1 = Organization::factory()->create(['name' => 'Existing Organization']);
     $organization2 = Organization::factory()->create();
 
@@ -189,7 +202,7 @@ it('fails to update with existing name', function () {
 });
 
 it('fails to update with existing slug', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization1 = Organization::factory()->create(['slug' => 'existing-slug']);
     $organization2 = Organization::factory()->create();
 
@@ -202,7 +215,7 @@ it('fails to update with existing slug', function () {
 });
 
 it('deletes an organization', function () {
-    $admin = User::factory()->create();
+    $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create([
         'name' => 'Organization To Delete',
     ]);
@@ -221,4 +234,71 @@ it('can attach a user to an organization', function () {
     $org->users()->attach($user);
 
     $this->assertTrue($org->users->contains($user));
+});
+
+it('uses the correct form requests', function () {
+
+    // create
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'create',
+        OrganizationCreateRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.create',
+        OrganizationCreateRequest::class);
+
+    // destroy
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'destroy',
+        OrganizationDestroyRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.destroy',
+        OrganizationDestroyRequest::class);
+
+    // edit
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'edit',
+        OrganizationEditRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.edit',
+        OrganizationEditRequest::class);
+
+    // index
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'index',
+        OrganizationIndexRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.index',
+        OrganizationIndexRequest::class);
+
+    // show
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'show',
+        OrganizationShowRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.show',
+        OrganizationShowRequest::class);
+
+    // store
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'store',
+        OrganizationStoreRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.store',
+        OrganizationStoreRequest::class);
+
+    // update
+    $this->assertActionUsesFormRequest(
+        OrganizationController::class,
+        'update',
+        OrganizationUpdateRequest::class);
+    $this->assertRouteUsesFormRequest(
+        'organizations.update',
+        OrganizationUpdateRequest::class);
+
 });
