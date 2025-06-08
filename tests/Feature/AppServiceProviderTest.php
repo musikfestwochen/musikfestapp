@@ -1,9 +1,6 @@
 <?php
 
 use App\Models\User;
-use App\Providers\AppServiceProvider;
-
-covers(AppServiceProvider::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);

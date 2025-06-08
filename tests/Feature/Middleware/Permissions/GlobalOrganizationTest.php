@@ -6,8 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-covers(GlobalOrganization::class);
-
 beforeEach(function () {
     $this->middleware = new GlobalOrganization;
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
