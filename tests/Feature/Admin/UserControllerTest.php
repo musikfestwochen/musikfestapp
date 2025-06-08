@@ -193,6 +193,12 @@ it('can attach an organization to a user', function () {
 
 it('uses the correct form requests', function () {
 
+    // middleware
+    $this->assertRouteUsesMiddleware(
+        'users.index',
+        ['permissions.global_organization', 'auth', 'verified'],
+    );
+
     // create
     $this->assertActionUsesFormRequest(
         UserController::class,
