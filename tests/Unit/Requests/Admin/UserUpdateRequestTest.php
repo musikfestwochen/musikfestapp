@@ -28,7 +28,7 @@ it('has correct rules with user ID', function () {
 
     // Create the request and set the user
     $request = new UserUpdateRequest;
-    $request->setRouteResolver(function () use ($user) {
+    $request->setRouteResolver(function () use ($user): object {
         return new class($user)
         {
             protected $user;
@@ -54,10 +54,10 @@ it('has correct rules with user ID', function () {
 it('has correct rules with null user', function () {
     // Create the request and set the user to null
     $request = new UserUpdateRequest;
-    $request->setRouteResolver(function () {
+    $request->setRouteResolver(function (): object {
         return new class
         {
-            public function parameter($name)
+            public function parameter($name): null
             {
                 return null;
             }

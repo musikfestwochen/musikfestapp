@@ -39,7 +39,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $attributes): array => [
             'email_verified_at' => null,
         ]);
     }
@@ -49,7 +49,7 @@ class UserFactory extends Factory
      */
     public function randomVerified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $attributes): array => [
             'email_verified_at' => fake()->boolean() ? now() : null,
         ]);
     }
@@ -64,9 +64,10 @@ class UserFactory extends Factory
             if (fake()->boolean(20)) {
                 return;
             }
+
             // 80% chance user has 0-3 organizations
             $orgCount = fake()->numberBetween(0, 3);
-            $orgIds = Organization::inRandomOrder(1)->limit($orgCount)->pluck('id');
+            $orgIds = Organization::query()->inRandomOrder(1)->limit($orgCount)->pluck('id');
             $user->organizations()->attach($orgIds);
         });
     }

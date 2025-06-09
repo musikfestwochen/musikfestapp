@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::automaticallyEagerLoadRelationships();
 
-        Gate::before(function ($user) {
+        Gate::before(function ($user): ?true {
             return $user->hasRole('SuperAdmin') ? true : null;
         });
     }

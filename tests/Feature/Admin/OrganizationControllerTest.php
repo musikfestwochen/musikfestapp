@@ -23,7 +23,7 @@ it('shows the organization index page with paginated organizations', function ()
 
     $this->actingAs($admin)
         ->get(route('organizations.index'))
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/Organizations')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/Organizations')
             ->has('organizations.data', 10) // pagination limit
         );
 });
@@ -53,7 +53,7 @@ it('shows the create organization page', function () {
 
     $this->actingAs($admin)
         ->get(route('organizations.create'))
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/NewOrganizationPage')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/NewOrganizationPage')
         );
 });
 
@@ -135,7 +135,7 @@ it('shows the edit organization page', function () {
 
     $this->actingAs($admin)
         ->get(route('organizations.edit', $organization))
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('admin/EditOrganizationPage')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/EditOrganizationPage')
             ->where('organization.id', $organization->id)
         );
 });

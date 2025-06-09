@@ -29,7 +29,7 @@ it('has correct rules with organization ID', function () {
 
     // Create the request and set the organization
     $request = new OrganizationUpdateRequest;
-    $request->setRouteResolver(function () use ($organization) {
+    $request->setRouteResolver(function () use ($organization): object {
         return new class($organization)
         {
             protected $organization;
@@ -60,10 +60,10 @@ it('has correct rules with organization ID', function () {
 it('has correct rules with null organization', function () {
     // Create the request and set the organization to null
     $request = new OrganizationUpdateRequest;
-    $request->setRouteResolver(function () {
+    $request->setRouteResolver(function (): object {
         return new class
         {
-            public function parameter($name)
+            public function parameter($name): null
             {
                 return null;
             }
