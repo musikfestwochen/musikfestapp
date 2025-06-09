@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class GlobalOrganization
+class GlobalOrganizationMiddleware
 {
     /**
      * Handle an incoming request.
@@ -15,10 +15,7 @@ class GlobalOrganization
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! empty(auth()->user())) {
-            // session value set on login
-            setPermissionsTeamId(0);
-        }
+        setPermissionsTeamId(0);
 
         return $next($request);
     }

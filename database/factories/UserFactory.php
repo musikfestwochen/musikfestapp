@@ -81,4 +81,13 @@ class UserFactory extends Factory
             $user->assignRole('Admin');
         });
     }
+
+    public function superAdmin(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            // the team ID is set to 0 indicating a global admin
+            setPermissionsTeamId(0);
+            $user->assignRole('SuperAdmin');
+        });
+    }
 }

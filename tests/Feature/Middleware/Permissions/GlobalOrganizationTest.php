@@ -1,13 +1,13 @@
 <?php
 
-use App\Http\Middleware\Permissions\GlobalOrganization;
+use App\Http\Middleware\Permissions\GlobalOrganizationMiddleware;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function () {
-    $this->middleware = new GlobalOrganization;
+    $this->middleware = new GlobalOrganizationMiddleware;
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 

@@ -20,12 +20,12 @@ class DatabaseSeeder extends Seeder
         $rolePermissionsSeeder = new RolesAndPermissionsSeeder;
         $rolePermissionsSeeder->run();
 
-        User::factory()->globalAdmin()->create([
+        User::factory()->globalAdmin()->superAdmin()->create([
             'name' => 'Simon',
             'email' => 'simon@musikfestapp.ch',
         ]);
 
-        User::factory()->create([
+        User::factory()->globalAdmin()->create([
             'name' => 'Pirmin',
             'email' => 'pirmin@musikfestapp.ch',
         ]);
