@@ -70,10 +70,10 @@
             "phpstan"
         ],
         "test:coverage": [
-            "pest --coverage -p"
+            "pest --coverage -p --min=100"
         ],
         "test:types": [
-            "pest --type-coverage -p"
+            "pest --type-coverage -p --min=100"
         ],
         "test:mutation": [
             "pest --mutate -p"
