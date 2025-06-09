@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\UserShowRequest;
 use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -23,17 +24,13 @@ class UserController extends Controller
      */
     public function index(UserIndexRequest $request): Response
     {
-        $users = User::query();
-
-        $sort = $request->input('sort', 'name');
-        $direction = $request->input('order', 'asc');
-
-        if (in_array($sort, ['name', 'email', 'created_at'])) {
-            $users->orderBy($sort, $direction);
-        }
+        $userService = app(UserService::class);
 
         return Inertia::render('admin/Users', [
-            'users' => $users->paginate(10)->withQueryString(),
+            'users' => $userService->getPaginatedUsers(
+                $request->input('sort', 'name'),
+                $request->input('order', 'asc')
+            ),
             'status' => $request->session()->get('status'),
         ]);
     }
