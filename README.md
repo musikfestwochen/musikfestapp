@@ -12,7 +12,6 @@ Counter IPCam**.
 
 - Laravel-based backend with Inertia.js and Vue.js frontend.
 - **People Counting Module**: Displays real-time data from the Axis 3D People Counter camera.
-- Modular structure for future expansion.
 
 ## 🌐 Hosted at
 
@@ -29,6 +28,7 @@ Ensure you have the following installed and configured on your system:
 - [Laravel Herd](https://herd.laravel.com/) (for PHP)
 - [Composer](https://getcomposer.org/)
 - [Node.js & npm](https://nodejs.org/)
+- [Mailpit](https://mailpit.axllent.org/) (for email testing)
 
 > [!NOTE]
 > Configure everything to use PHP 8.4 and Node.js 22
@@ -52,7 +52,7 @@ Ensure you have the following installed and configured on your system:
 3. **Environment Setup**
 
     ```sh
-    cp .env.example .env
+    cp .env.local .env
     php artisan key:generate
     ```
 
@@ -67,11 +67,56 @@ Ensure you have the following installed and configured on your system:
     npm run dev
     ```
 
+6. **Start Mailpit** (in a separate terminal)
+    ```sh
+    composer mailpit
+    ```
+   Access the Mailpit web interface at `http://localhost:8025`
+
+## 🧰 Development Tools
+
+Musikfestapp comes with several helpful Composer scripts to streamline development:
+
+### Testing & Quality Assurance
+
+- **Run all tests**: `composer test`
+- **Static code analysis**: `composer test:sca`
+- **Test coverage**: `composer test:coverage`
+- **Type coverage**: `composer test:types`
+- **Mutation testing**: `composer test:mutation`
+
+### Code Quality
+
+- **Check for typos**: `composer typos`
+- **Lint code**: `composer lint`
+- **Run Rector (code refactoring)**: `composer rector`
+- **Pre-commit checks**: `composer precommit`
+
+### Email Testing
+
+- **Start Mailpit**: `composer mailpit`
+
 ## 🎛 Tech Stack
 
-- **Backend:** Laravel (PHP)
+### Core Technologies
+
+- **Backend:** Laravel (PHP 8.4)
 - **Frontend:** Inertia.js + Vue.js
 - **Database:** SQLite (locally) / MariaDB (production)
+
+### Key Packages & Libraries
+
+- **Authentication:** Laravel's built-in authentication
+- **Authorization:** Spatie Laravel Permission
+- **API:** Laravel's built-in API resources
+- **Frontend Routing:** Ziggy (for Laravel routes in JavaScript)
+
+### Development & Testing
+
+- **Testing Framework:** Pest PHP
+- **Static Analysis:** PHPStan (Larastan)
+- **Code Quality:** Laravel Pint, Rector, Peck
+- **Email Testing:** Mailpit
 
 ## 📦 Modules
 
