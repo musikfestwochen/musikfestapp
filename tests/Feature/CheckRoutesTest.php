@@ -44,6 +44,8 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => 'organizations/{organization}/edit'],
         ['method' => 'PUT|PATCH', 'uri' => 'organizations/{organization}'],
         ['method' => 'DELETE', 'uri' => 'organizations/{organization}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/dashboard'],
     ];
 
     Artisan::call('route:list --json');
