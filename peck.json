@@ -1,0 +1,24 @@
+{
+    "preset": "laravel",
+    "ignore": {
+        "words": [
+            "php",
+            "filesystems",
+            "eslint",
+            "favicon",
+            "img",
+            "mfw",
+            "js",
+            "nav",
+            "dropdown",
+            "viewport",
+            "prev",
+            "utils",
+            "textarea",
+            "tooltip",
+            "composables",
+            "tsconfig"
+        ],
+        "paths": []
+    }
+}
