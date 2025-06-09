@@ -16,9 +16,9 @@ it('sets permissions team ID to 0 when user is authenticated', function () {
     $user = User::factory()->create();
 
     // Assign the Admin role to the user
-    // Note: We need to set the permissions team ID to 0 before assigning the role
+    // Note: We need to set the permissions team ID to the global organization ID before assigning the role
     // to make it a global role assignment
-    setPermissionsTeamId(999);
+    setPermissionsOrgId(GLOBAL_ORG_ID);
     $user->assignRole('Admin');
 
     // Authenticate as the user
