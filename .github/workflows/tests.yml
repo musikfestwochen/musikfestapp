@@ -52,5 +52,8 @@ jobs:
       - name: Pest Tests
         run: ./vendor/bin/pest --ci --coverage --min=100
 
+      - name: Type Coverage Tests
+        run: ./vendor/bin/pest --type-coverage
+
       - name: Mutation Tests
         run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations

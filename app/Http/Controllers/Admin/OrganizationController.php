@@ -43,7 +43,7 @@ class OrganizationController extends Controller
      */
     public function store(OrganizationStoreRequest $request): RedirectResponse
     {
-        $organization = Organization::create($request->all());
+        $organization = Organization::query()->create($request->all());
 
         return redirect()->route('organizations.index')->with('status', 'Organization '.$organization->name.' created successfully.');
     }

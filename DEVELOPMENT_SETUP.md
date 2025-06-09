@@ -2,13 +2,15 @@
 
 #### 📌 Overview
 
-This guide provides the recommended development environment setup for **Musikfestapp**, a Laravel, Vue, and Inertia-based web application. The goal is to ensure a standardized and smooth development workflow.
+This guide provides the recommended development environment setup for **Musikfestapp**, a Laravel, Vue, and
+Inertia-based web application. The goal is to ensure a standardized and smooth development workflow.
 
 ## 🛠️ Development Setup
 
 ### 1️⃣ **Local Development Environment - Herd**
 
-We use **[Herd](https://herd.laravel.com/)** as the **local dependency manager** for **PHP**, **Node.js**, and as the **local web server**.
+We use **[Herd](https://herd.laravel.com/)** as the **local dependency manager** for **PHP**, **Node.js**, and as the *
+*local web server**.
 
 #### ➡️ Install Herd
 
@@ -40,7 +42,7 @@ Download from: [https://code.visualstudio.com/](https://code.visualstudio.com/)
 To ensure a productive development environment, install the following extensions:
 
 | Extension                     | Description                                 |
-| ----------------------------- | ------------------------------------------- |
+|-------------------------------|---------------------------------------------|
 | **Laravel**                   | Official Laravel extension for VSCode       |
 | **Better Pest**               | Pest test runner for Laravel projects       |
 | **Pest Snippets**             | Snippets for Pest tests in Laravel projects |
@@ -54,7 +56,7 @@ To ensure a productive development environment, install the following extensions
 #### 📌 Optional (For Productivity)
 
 - **GitHub Actions**: For CI/CD workflows
-- **GitLens**: Git supercharged
+- **GitHub Pull Requests**: For managing pull requests
 - **Peacock**: Custom VSCode color themes per project
 
 ### 3️⃣ Environment Configuration
@@ -92,8 +94,41 @@ Follow the official installation guide [here](https://mailpit.axllent.org/docs/i
 
 #### 📌 After installing Mailpit, make sure:
 
-- run `mailpit` in a separate terminal window
+- run `composer mailpit` in a separate terminal window
 - you can access the Mailpit web interface at `http://localhost:8025`
 - you can send test emails from the application
+
+---
+
+### 4️⃣ Development Tools & Composer Scripts
+
+Musikfestapp comes with several helpful Composer scripts to streamline development:
+
+#### 🧪 Testing & Quality Assurance
+
+| Command                   | Description                                      |
+|---------------------------|--------------------------------------------------|
+| `composer test`           | Run all tests (includes SCA, coverage, types)    |
+| `composer test:sca`       | Run static code analysis with PHPStan            |
+| `composer test:coverage`  | Run tests with code coverage                     |
+| `composer test:types`     | Run tests with type coverage                     |
+| `composer test:mutation`  | Run mutation testing                             |
+
+#### 🧹 Code Quality
+
+| Command                   | Description                                      |
+|---------------------------|--------------------------------------------------|
+| `composer typos`          | Check for typos using Peck                       |
+| `composer lint`           | Lint code with Pint and run npm lint/format      |
+| `composer rector`         | Run Rector for automated code refactoring        |
+| `composer precommit`      | Run all quality checks (typos, lint, rector, test) |
+
+#### 📧 Email Testing
+
+| Command                   | Description                                      |
+|---------------------------|--------------------------------------------------|
+| `composer mailpit`        | Start Mailpit email testing server               |
+
+> **Note:** The `composer dev` command is intentionally disabled as we use Herd for local development.
 
 ---

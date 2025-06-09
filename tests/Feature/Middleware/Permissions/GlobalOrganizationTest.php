@@ -30,7 +30,7 @@ it('sets permissions team ID to 0 when user is authenticated', function () {
 
     // Create a next closure that returns the response and checks the permissions team ID
     $permissionsTeamIdWasSet = false;
-    $next = function ($req) use ($response, &$permissionsTeamIdWasSet) {
+    $next = function ($req) use ($response, &$permissionsTeamIdWasSet): Response {
         // Check if the permissions team ID was set to 0
         // We can't directly access the permissions team ID, but we can check if
         // the user has a specific permission that requires global permissions
@@ -65,7 +65,7 @@ it('passes request to next middleware when no user is authenticated', function (
     $nextWasCalled = false;
 
     // Create a next closure that returns the response
-    $next = function ($req) use ($response, &$nextWasCalled) {
+    $next = function ($req) use ($response, &$nextWasCalled): \Symfony\Component\HttpFoundation\Response {
         $nextWasCalled = true;
 
         return $response;

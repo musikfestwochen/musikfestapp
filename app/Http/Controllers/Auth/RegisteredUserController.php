@@ -16,14 +16,6 @@ use Inertia\Response;
 class RegisteredUserController extends Controller
 {
     /**
-     * Show the registration page.
-     */
-    public function create(): Response
-    {
-        return Inertia::render('auth/Register');
-    }
-
-    /**
      * Handle an incoming registration request.
      *
      * @throws \Illuminate\Validation\ValidationException
@@ -36,7 +28,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $user = User::query()->create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -47,5 +39,13 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         return to_route('dashboard');
+    }
+
+    /**
+     * Show the registration page.
+     */
+    public function create(): Response
+    {
+        return Inertia::render('auth/Register');
     }
 }

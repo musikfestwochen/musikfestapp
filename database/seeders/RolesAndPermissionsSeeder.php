@@ -15,18 +15,18 @@ class RolesAndPermissionsSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Role::create(['name' => 'SuperAdmin']);
 
         // create permissions
         foreach (['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'] as $action) {
-            Permission::create(['name' => "users.$action"]);
-            Permission::create(['name' => "organizations.$action"]);
+            Permission::create(['name' => 'users.'.$action]);
+            Permission::create(['name' => 'organizations.'.$action]);
         }
 
         // update cache to know about the newly created permissions (required if using WithoutModelEvents in seeders)
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // this can be done as separate statements
         Role::create(['name' => 'Admin'])

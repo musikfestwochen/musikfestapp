@@ -49,7 +49,7 @@ it('tests if no unwanted routes are exposed', function () {
     Artisan::call('route:list --json');
     $output = json_decode(Artisan::output(), true);
 
-    $output = collect($output)->map(function ($route) {
+    $output = collect($output)->map(function (array $route): array {
         return [
             'method' => $route['method'],
             'uri' => $route['uri'],

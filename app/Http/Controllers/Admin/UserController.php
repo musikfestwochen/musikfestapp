@@ -46,7 +46,7 @@ class UserController extends Controller
         // create user a random password
         $request->merge(['password' => Str::random()]);
 
-        $user = User::create($request->all());
+        $user = User::query()->create($request->all());
 
         return redirect()->route('users.index')->with('status', 'User '.$user->name.' created successfully.');
     }
