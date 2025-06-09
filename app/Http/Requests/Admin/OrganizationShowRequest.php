@@ -12,7 +12,7 @@ class OrganizationShowRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('organizations.show');
+        return auth()->user()->can('admin.organizations.show');
     }
 
     /**

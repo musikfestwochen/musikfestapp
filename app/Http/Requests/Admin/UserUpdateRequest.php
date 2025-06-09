@@ -13,7 +13,7 @@ use Illuminate\Foundation\Http\FormRequest;
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('users.update');
+        return auth()->user()->can('admin.users.update');
     }
 
     /**

@@ -17,7 +17,7 @@ it('has correct rules', function () {
 
 it('authorizes when user can edit users', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('users.edit')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.users.edit')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

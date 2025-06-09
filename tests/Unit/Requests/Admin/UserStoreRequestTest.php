@@ -18,7 +18,7 @@ it('has correct rules', function () {
 
 it('authorizes when user can store users', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('users.store')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.users.store')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

@@ -12,7 +12,7 @@ class UserShowRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('users.show');
+        return auth()->user()->can('admin.users.show');
     }
 
     /**

@@ -15,7 +15,7 @@ beforeEach(function () {
 
 it('authorizes when user can update organizations', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('organizations.update')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.organizations.update')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

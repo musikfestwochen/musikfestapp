@@ -23,7 +23,7 @@ it('has correct rules', function () {
 
 it('authorizes when user can store organizations', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('organizations.store')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.organizations.store')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

@@ -12,7 +12,7 @@ class UserIndexRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('users.index');
+        return auth()->user()->can('admin.users.index');
     }
 
     /**

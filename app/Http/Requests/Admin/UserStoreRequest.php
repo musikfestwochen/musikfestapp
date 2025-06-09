@@ -12,7 +12,7 @@ class UserStoreRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('users.store');
+        return auth()->user()->can('admin.users.store');
     }
 
     /**

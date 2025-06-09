@@ -12,7 +12,7 @@ class OrganizationStoreRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('organizations.store');
+        return auth()->user()->can('admin.organizations.store');
     }
 
     /**

@@ -18,7 +18,7 @@ it('has correct rules', function () {
 
 it('authorizes when user can index organizations', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('organizations.index')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.organizations.index')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

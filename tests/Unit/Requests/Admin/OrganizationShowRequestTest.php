@@ -17,7 +17,7 @@ it('has correct rules', function () {
 
 it('authorizes when user can show organizations', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('organizations.show')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.organizations.show')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

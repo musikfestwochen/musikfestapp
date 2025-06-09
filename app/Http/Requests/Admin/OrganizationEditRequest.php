@@ -12,7 +12,7 @@ class OrganizationEditRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('organizations.edit');
+        return auth()->user()->can('admin.organizations.edit');
     }
 
     /**
