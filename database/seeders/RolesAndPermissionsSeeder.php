@@ -21,8 +21,8 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // create permissions
         foreach (['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'] as $action) {
-            Permission::create(['name' => 'users.' . $action]);
-            Permission::create(['name' => 'organizations.' . $action]);
+            Permission::create(['name' => 'users.'.$action]);
+            Permission::create(['name' => 'organizations.'.$action]);
         }
 
         // update cache to know about the newly created permissions (required if using WithoutModelEvents in seeders)
