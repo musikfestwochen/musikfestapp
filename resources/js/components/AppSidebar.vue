@@ -8,6 +8,11 @@ import { Link } from '@inertiajs/vue3';
 import { Building2Icon, FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
+// Import the usePermissions composable
+import { usePermissions } from '@/composables/usePermissions';
+
+const { can } = usePermissions();
+
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -16,16 +21,18 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
+const allFooterNavItems: NavItem[] = [
     {
         title: 'Users',
         route: 'users.index',
         icon: Users2Icon,
+        permission: 'users.index',
     },
     {
         title: 'Organizations',
         route: 'organizations.index',
         icon: Building2Icon,
+        permission: 'organizations.index',
     },
     {
         title: 'Github Repo',
@@ -33,6 +40,16 @@ const footerNavItems: NavItem[] = [
         icon: FolderGit2Icon,
     },
 ];
+
+// Filter items based on permissions
+const footerNavItems = allFooterNavItems.filter((item) => {
+    // If the item has a permission requirement, check if the user has that permission
+    if (item.permission) {
+        return can(item.permission);
+    }
+    // If no permission is required, always show the item
+    return true;
+});
 </script>
 
 <template>
