@@ -15,7 +15,7 @@ class GlobalOrganizationMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        setPermissionsTeamId(0);
+        setPermissionsTeamId(999);
 
         return $next($request);
     }

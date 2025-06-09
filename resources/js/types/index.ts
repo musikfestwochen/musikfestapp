@@ -15,6 +15,7 @@ export interface NavItem {
     route?: string; // Route name (internal Inertia route)
     url?: string; // External URL
     icon?: LucideIcon;
+    permission?: string; // Permission required to view this item
 }
 
 export interface SharedData extends PageProps {

@@ -18,7 +18,7 @@ it('sets permissions team ID to 0 when user is authenticated', function () {
     // Assign the Admin role to the user
     // Note: We need to set the permissions team ID to 0 before assigning the role
     // to make it a global role assignment
-    setPermissionsTeamId(0);
+    setPermissionsTeamId(999);
     $user->assignRole('Admin');
 
     // Authenticate as the user

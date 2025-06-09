@@ -26,6 +26,16 @@ return Application::configure(basePath: dirname(__DIR__))
                 'permission' => PermissionMiddleware::class,
                 'role_or_permission' => RoleOrPermissionMiddleware::class, ],
         );
+        $middleware->priority(
+            [
+                GlobalOrganizationMiddleware::class,
+                RoleMiddleware::class,
+                PermissionMiddleware::class,
+                RoleOrPermissionMiddleware::class,
+                HandleInertiaRequests::class,
+                AddLinkHeadersForPreloadedAssets::class,
+            ],
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
