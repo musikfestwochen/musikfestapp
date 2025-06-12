@@ -46,6 +46,8 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => 'admin/organizations/{organization}'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/dashboard'],
+        ['method' => 'GET|HEAD', 'uri' => 'start'],
+        ['method' => 'POST', 'uri' => 'organization/select'],
     ];
 
     Artisan::call('route:list --json');
