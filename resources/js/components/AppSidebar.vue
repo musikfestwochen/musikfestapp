@@ -55,7 +55,7 @@ const footerNavItems = allFooterNavItems.filter((item) => {
 <template>
     <Sidebar collapsible="icon" variant="inset">
         <SidebarHeader class="self-center">
-            <Link :href="route('dashboard')">
+            <Link :href="route('home')">
                 <AppLogo />
             </Link>
         </SidebarHeader>

@@ -24,5 +24,5 @@ it('redirects to dashboard if email is already verified', function () {
     $response = $this->actingAs($user)->post(route('verification.send'));
 
     Notification::assertNothingSent();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
 });

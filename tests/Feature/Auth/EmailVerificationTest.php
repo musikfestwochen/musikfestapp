@@ -28,7 +28,7 @@ test('email can be verified', function () {
 
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+    $response->assertRedirect(route('admin.dashboard', absolute: false).'?verified=1');
 });
 
 test('email is not verified with invalid hash', function () {
@@ -58,7 +58,7 @@ test('forwards if the email is already verified with valid hash', function () {
 
     $response = $this->actingAs($user)->get($verificationUrl);
 
-    $response->assertRedirect(route('dashboard', absolute: false, parameters: ['verified' => 1]));
+    $response->assertRedirect(route('admin.dashboard', absolute: false, parameters: ['verified' => 1]));
 });
 
 it('forwards if the email is already verified', function () {
@@ -66,5 +66,5 @@ it('forwards if the email is already verified', function () {
 
     $response = $this->actingAs($user)->get('/verify-email');
 
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
 });
