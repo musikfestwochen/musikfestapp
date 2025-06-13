@@ -35,8 +35,8 @@ class GlobalPermissionService
             }
 
             // Check if the user can perform the ability globally
-            $globalPermissionService = app(GlobalPermissionService::class);
-            $result = $globalPermissionService->checkGlobalPermission($ability, $user);
+            // Use the direct permission check to avoid infinite recursion
+            $result = $user->hasPermissionTo($ability);
 
             // Reset the permissions organization ID to its original value
             if ($oldPermissionsOrgId !== GLOBAL_ORG_ID) {
