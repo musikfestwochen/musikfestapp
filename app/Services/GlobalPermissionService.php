@@ -22,7 +22,7 @@ class GlobalPermissionService
 
         // Get all user permissions from cache
         $permissions = self::getUserGlobalPermissions($user);
-        
+
         // Check if the user has the specific ability
         return in_array($ability, $permissions) ? true : null;
     }
@@ -49,6 +49,7 @@ class GlobalPermissionService
      * Get all global permissions for a user.
      *
      * @param  \App\Models\User|null  $user
+     * @return array<string> List of permission names
      */
     public static function getUserGlobalPermissions($user): array
     {
