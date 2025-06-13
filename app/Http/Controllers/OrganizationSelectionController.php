@@ -11,10 +11,7 @@ use Inertia\Response;
 
 class OrganizationSelectionController extends Controller
 {
-    /**
-     * @var OrganizationSelectionService
-     */
-    protected $organizationSelectionService;
+    protected \App\Services\OrganizationSelectionService $organizationSelectionService;
 
     /**
      * Create a new controller instance.
@@ -50,9 +47,9 @@ class OrganizationSelectionController extends Controller
             $organizationSlug = $this->organizationSelectionService->processOrganizationSelection($request->organization_id);
 
             return redirect()->route('organization.dashboard', ['organization' => $organizationSlug]);
-        } catch (AuthorizationException $e) {
+        } catch (AuthorizationException $authorizationException) {
 
-            return redirect()->route('organization.select')->with('error', $e->getMessage());
+            return redirect()->route('organization-selection.index')->with('error', $authorizationException->getMessage());
         }
     }
 }

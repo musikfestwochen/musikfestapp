@@ -11,20 +11,24 @@ class OrganizationSelectionService
 {
     /**
      * Get organizations available for the current user.
+     *
+     * @return Collection<int, Organization>
      */
     public function getOrganizationsForUser(): Collection
     {
         $user = Auth::user();
 
         if ($user->can('admin.organizations.index')) {
-            $organizations = Organization::select('id', 'name', 'slug')->get();
+            $organizations = \App\Models\Organization::query()->select('id', 'name', 'slug')->get();
 
             // add an "Administration" option for admins
-            $organizations->prepend((object) [
+            $adminOrg = new Organization([
                 'id' => GLOBAL_ORG_ID,
                 'name' => 'Administration',
                 'slug' => 'admin',
             ]);
+            $adminOrg->id = GLOBAL_ORG_ID;
+            $organizations->prepend($adminOrg);
         } else {
             $organizations = $user->organizations()->select('organizations.id', 'organizations.name', 'organizations.slug')->get();
         }
@@ -44,13 +48,11 @@ class OrganizationSelectionService
             return 'admin';
         }
 
-        $organization = Organization::findOrFail($organizationId);
+        $organization = \App\Models\Organization::query()->findOrFail($organizationId);
         $user = Auth::user();
 
         // Check if the user belongs to the selected organization
-        if (! $user->organizations->contains($organization->id) && ! $user->can('admin.organizations.index')) {
-            throw new AuthorizationException('You do not have access to this organization.');
-        }
+        throw_if(! $user->organizations->contains($organization->id) && ! $user->can('admin.organizations.index'), new AuthorizationException('You do not have access to this organization.'));
 
         return $organization->slug;
     }

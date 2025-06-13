@@ -26,7 +26,7 @@ class OrganizationSelectionRequest extends FormRequest
             'organization_id' => [
                 'required',
                 function ($attribute, $value, $fail) {
-                    if ($value != GLOBAL_ORG_ID && ! \App\Models\Organization::where('id', $value)->exists()) {
+                    if ($value != GLOBAL_ORG_ID && ! \App\Models\Organization::query()->where('id', $value)->exists()) {
                         $fail('The selected organization is invalid.');
                     }
                 },

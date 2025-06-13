@@ -24,8 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias(
             ['permissions.global_organization' => GlobalOrganizationMiddleware::class,
-             'permissions.organization_slug' => OrganizationSlugMiddleware::class,
-             'role' => RoleMiddleware::class,
+                'permissions.organization_slug' => OrganizationSlugMiddleware::class,
+                'role' => RoleMiddleware::class,
                 'permission' => PermissionMiddleware::class,
                 'role_or_permission' => RoleOrPermissionMiddleware::class, ],
         );
