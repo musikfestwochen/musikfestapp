@@ -30,7 +30,7 @@ class RoleDetachedListener implements ShouldQueue
 
         if ($userId) {
             // Delete all global cached permissions for this user
-            $this->globalPermissionService::clearCache($userId);
+            GlobalPermissionService::clearCache($userId);
         }
     }
 
