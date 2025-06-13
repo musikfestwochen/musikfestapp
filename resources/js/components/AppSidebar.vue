@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Building2Icon, FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
+import { Building2Icon, FolderGit2Icon, LayoutGrid, UnplugIcon, Users2Icon } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 // Import the usePermissions composable
@@ -16,8 +16,13 @@ const { can } = usePermissions();
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        route: 'dashboard',
+        route: 'admin.dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Organization Selection',
+        route: 'organization-selection.index',
+        icon: UnplugIcon,
     },
 ];
 

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import InputError from '@/components/InputError.vue';
+import TextLink from '@/components/TextLink.vue';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { Organization } from '@/types';
@@ -48,6 +49,10 @@ const submit = (organizationId: number) => {
                         <CardDescription>Click to select {{ organization.name }}</CardDescription>
                     </CardHeader>
                 </Card>
+            </div>
+
+            <div class="mt-8 text-center">
+                <TextLink :href="route('logout')" as="button" class="mx-auto block text-sm" method="post">Log out</TextLink>
             </div>
         </div>
     </AuthLayout>
