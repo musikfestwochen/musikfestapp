@@ -107,7 +107,7 @@ it('caches the permission check result', function () {
 
     // Reset user relations to ensure fresh DB data would be loaded
     $this->user->unsetRelation('roles')->unsetRelation('permissions');
-    
+
     // But don't clear the cache - this simulates the permissions being changed
     // but the cache not being updated yet
 

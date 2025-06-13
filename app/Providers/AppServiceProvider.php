@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::automaticallyEagerLoadRelationships();
 
-        Gate::before(function (User $user, $ability): ?bool {
+        Gate::before(function (User $user, string $ability): ?bool {
             return GlobalPermissionService::canGlobally($user, $ability);
         });
 

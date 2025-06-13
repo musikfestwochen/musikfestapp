@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Cache;
 class GlobalPermissionService
 {
     // Cache duration in minutes
-    private const CACHE_DURATION = 60;
+    private const int CACHE_DURATION = 60;
 
     // Cache key prefix for global permissions
-    private const CACHE_PREFIX = 'global_permission';
+    private const string CACHE_PREFIX = 'global_permission';
 
     public static function canGlobally(User $user, string $ability): ?bool
     {
@@ -48,10 +48,9 @@ class GlobalPermissionService
     /**
      * Get all global permissions for a user.
      *
-     * @param  \App\Models\User|null  $user
      * @return array<string> List of permission names
      */
-    public static function getUserGlobalPermissions($user): array
+    public static function getUserGlobalPermissions(?User $user): array
     {
         if (! $user || ! $user->id) {
             return [];
