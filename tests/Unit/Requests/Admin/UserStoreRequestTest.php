@@ -10,10 +10,10 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    $this->assertExactValidationRules([
+    expect($this->request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-    ], $this->request->rules());
+    ]);
 });
 
 it('authorizes when user can store users', function () {
@@ -22,5 +22,5 @@ it('authorizes when user can store users', function () {
 
     Auth::shouldReceive('user')->andReturn($user);
 
-    $this->assertTrue($this->request->authorize());
+    expect($this->request->authorize())->toBeTrue();
 });
