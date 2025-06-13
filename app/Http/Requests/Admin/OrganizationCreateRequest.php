@@ -12,7 +12,7 @@ class OrganizationCreateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('organizations.create');
+        return auth()->user()->can('admin.organizations.create');
     }
 
     /**

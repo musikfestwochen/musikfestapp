@@ -12,7 +12,7 @@ class OrganizationIndexRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('organizations.index');
+        return auth()->user()->can('admin.organizations.index');
     }
 
     /**

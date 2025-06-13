@@ -76,9 +76,18 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) {
 
-            // the team ID is set to 0 indicating a global admin
-            setPermissionsTeamId(0);
+            // Set the permissions organization ID to the global organization ID
+            setPermissionsOrgId(GLOBAL_ORG_ID);
             $user->assignRole('Admin');
+        });
+    }
+
+    public function superAdmin(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            // Set the permissions organization ID to the global organization ID
+            setPermissionsOrgId(GLOBAL_ORG_ID);
+            $user->assignRole('SuperAdmin');
         });
     }
 }

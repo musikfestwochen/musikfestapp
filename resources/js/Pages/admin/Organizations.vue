@@ -7,7 +7,10 @@ import Icon from '@/components/Icon.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermissions } from '@/composables/usePermissions';
 import AppLayout from '@/layouts/AppLayout.vue';
+
+const { can } = usePermissions();
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -44,6 +47,7 @@ const columns = [
                 href: (organization: any) => route('organizations.edit', organization.id),
                 icon: 'PencilIcon',
                 button_variant: 'outline',
+                permission: 'organizations.update',
             },
             {
                 name: 'Delete',
@@ -51,6 +55,7 @@ const columns = [
                 method: 'delete',
                 icon: 'TrashIcon',
                 button_variant: 'destructive',
+                permission: 'organizations.delete',
             },
         ],
         width: '52',
@@ -115,7 +120,7 @@ defineProps<{
                                     v-html="column.mapping ? column.mapping(organization[column.accessor]) : organization[column.accessor]"
                                 />
                                 <Button v-for="action in column.actions" :key="action.name" :variant="action.button_variant" as-child class="ml-2">
-                                    <Link :href="action.href(organization)" :method="action.method || 'get'">
+                                    <Link v-if="can(action.permission)" :href="action.href(organization)" :method="action.method || 'get'">
                                         <Icon :name="action.icon" class="mr-1" />
                                         {{ action.name }}
                                     </Link>

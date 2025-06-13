@@ -9,7 +9,7 @@ beforeEach(function () {
 it('verifies that the Gate::before callback (Super Admin)', function () {
     $user = User::factory()->create();
 
-    setPermissionsTeamId(0);
+    setPermissionsOrgId(GLOBAL_ORG_ID);
     $user->assignRole('SuperAdmin');
 
     $result = Gate::forUser($user)->allows('anything'); // 'anything' triggers the before hook

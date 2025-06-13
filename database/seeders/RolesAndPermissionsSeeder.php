@@ -21,16 +21,25 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // create permissions
         foreach (['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'] as $action) {
-            Permission::create(['name' => 'users.'.$action]);
-            Permission::create(['name' => 'organizations.'.$action]);
+
+            // Admin Module
+            Permission::create(['name' => 'admin.users.'.$action]);
+            Permission::create(['name' => 'admin.organizations.'.$action]);
+
+            // Organization Management Module
+            Permission::create(['name' => 'orgmgmt.users.'.$action]);
         }
 
         // update cache to know about the newly created permissions (required if using WithoutModelEvents in seeders)
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // this can be done as separate statements
+        // Create roles and assign created permissions
+
         Role::create(['name' => 'Admin'])
-            ->givePermissionTo('users.*')
-            ->givePermissionTo('organizations.*');
+            ->givePermissionTo('admin.users.*')
+            ->givePermissionTo('admin.organizations.*');
+
+        Role::create(['name' => 'OrganizationAdministrator'])
+            ->givePermissionTo('orgmgmt.users.*');
     }
 }

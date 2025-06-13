@@ -17,7 +17,7 @@ it('has correct rules', function () {
 
 it('authorizes when user can destroy users', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('users.destroy')->andReturn(true);
+    $user->shouldReceive('can')->with('admin.users.destroy')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

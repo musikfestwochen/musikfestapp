@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\OrganizationShowRequest;
 use App\Http\Requests\Admin\OrganizationStoreRequest;
 use App\Http\Requests\Admin\OrganizationUpdateRequest;
 use App\Models\Organization;
+use App\Services\OrganizationService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -23,17 +24,13 @@ class OrganizationController extends Controller
      */
     public function index(OrganizationIndexRequest $request): Response
     {
-        $organizations = Organization::query();
-
-        $sort = $request->input('sort', 'name');
-        $direction = $request->input('order', 'asc');
-
-        if (in_array($sort, ['name', 'email', 'website', 'created_at'])) {
-            $organizations->orderBy($sort, $direction);
-        }
+        $organizationService = app(OrganizationService::class);
 
         return Inertia::render('admin/Organizations', [
-            'organizations' => $organizations->paginate(10)->withQueryString(),
+            'organizations' => $organizationService->getPaginatedOrganizations(
+                $request->input('sort', 'name'),
+                $request->input('order', 'asc')
+            ),
             'status' => $request->session()->get('status'),
         ]);
     }
