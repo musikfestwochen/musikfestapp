@@ -18,7 +18,7 @@ it('authorizes when user can update users', function () {
 
     Auth::shouldReceive('user')->andReturn($user);
 
-    $this->assertTrue($this->request->authorize());
+    expect($this->request->authorize())->toBeTrue();
 });
 
 it('has correct rules with user ID', function () {
@@ -45,10 +45,10 @@ it('has correct rules with user ID', function () {
         };
     });
 
-    $this->assertExactValidationRules([
+    expect($request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,123'],
-    ], $request->rules());
+    ]);
 });
 
 it('has correct rules with null user', function () {
@@ -64,8 +64,8 @@ it('has correct rules with null user', function () {
         };
     });
 
-    $this->assertExactValidationRules([
+    expect($request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'],
-    ], $request->rules());
+    ]);
 });

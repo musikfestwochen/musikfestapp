@@ -10,10 +10,10 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    $this->assertExactValidationRules([
+    expect($this->request->rules())->toBe([
         'sort' => ['in:name,email'],
         'order' => ['in:asc,desc'],
-    ], $this->request->rules());
+    ]);
 });
 
 it('authorizes when user can index users', function () {
@@ -22,5 +22,5 @@ it('authorizes when user can index users', function () {
 
     Auth::shouldReceive('user')->andReturn($user);
 
-    $this->assertTrue($this->request->authorize());
+    expect($this->request->authorize())->toBeTrue();
 });

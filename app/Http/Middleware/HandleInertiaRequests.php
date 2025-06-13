@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\GlobalPermissionService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -16,6 +17,19 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    /**
+     * The GlobalPermissionService instance.
+     */
+    protected \App\Services\GlobalPermissionService $globalPermissionService;
+
+    /**
+     * Create a new middleware instance.
+     */
+    public function __construct(GlobalPermissionService $globalPermissionService)
+    {
+        $this->globalPermissionService = $globalPermissionService;
+    }
 
     /**
      * Determines the current asset version.
@@ -38,14 +52,17 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
-                'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name') : [],
-                'roles' => $request->user() ? $request->user()->getRoleNames() : [],
+                'user' => $user,
+                'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
+                'global_permissions' => $this->globalPermissionService->getUserGlobalPermissions($user),
+                'roles' => $user ? $user->getRoleNames() : [],
             ],
         ];
     }

@@ -19,7 +19,7 @@ it('authorizes when user can update organizations', function () {
 
     Auth::shouldReceive('user')->andReturn($user);
 
-    $this->assertTrue($this->request->authorize());
+    expect($this->request->authorize())->toBeTrue();
 });
 
 it('has correct rules with organization ID', function () {
@@ -46,7 +46,7 @@ it('has correct rules with organization ID', function () {
         };
     });
 
-    $this->assertExactValidationRules([
+    expect($request->rules())->toBe([
         'name' => ['required', 'string', 'max:255', 'unique:organizations,name,1'],
         'slug' => ['required', 'string', 'max:255', 'unique:organizations,slug,1'],
         'description' => ['nullable', 'string'],
@@ -54,7 +54,7 @@ it('has correct rules with organization ID', function () {
         'phone' => ['nullable', 'string', 'max:255'],
         'website' => ['nullable', 'string', 'max:255'],
         'logo' => ['nullable', 'string', 'max:255'],
-    ], $request->rules());
+    ]);
 });
 
 it('has correct rules with null organization', function () {
@@ -70,7 +70,7 @@ it('has correct rules with null organization', function () {
         };
     });
 
-    $this->assertExactValidationRules([
+    expect($request->rules())->toBe([
         'name' => ['required', 'string', 'max:255', 'unique:organizations,name,'],
         'slug' => ['required', 'string', 'max:255', 'unique:organizations,slug,'],
         'description' => ['nullable', 'string'],
@@ -78,5 +78,5 @@ it('has correct rules with null organization', function () {
         'phone' => ['nullable', 'string', 'max:255'],
         'website' => ['nullable', 'string', 'max:255'],
         'logo' => ['nullable', 'string', 'max:255'],
-    ], $request->rules());
+    ]);
 });

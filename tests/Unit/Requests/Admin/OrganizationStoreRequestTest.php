@@ -10,7 +10,7 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    $this->assertExactValidationRules([
+    expect($this->request->rules())->toBe([
         'name' => ['required', 'string', 'max:255', 'unique:organizations'],
         'slug' => ['required', 'string', 'max:255', 'unique:organizations'],
         'description' => ['nullable', 'string'],
@@ -18,7 +18,7 @@ it('has correct rules', function () {
         'phone' => ['nullable', 'string', 'max:255'],
         'website' => ['nullable', 'string', 'max:255'],
         'logo' => ['nullable', 'string', 'max:255'],
-    ], $this->request->rules());
+    ]);
 });
 
 it('authorizes when user can store organizations', function () {
@@ -27,5 +27,5 @@ it('authorizes when user can store organizations', function () {
 
     Auth::shouldReceive('user')->andReturn($user);
 
-    $this->assertTrue($this->request->authorize());
+    expect($this->request->authorize())->toBeTrue();
 });

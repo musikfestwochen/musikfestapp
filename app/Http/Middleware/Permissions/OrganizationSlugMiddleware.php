@@ -18,10 +18,18 @@ class OrganizationSlugMiddleware
     {
         // Check if the route has an organization parameter
         $organization = $request->route('organization');
+        $user = $request->user();
 
         // Set the organization context for permissions
         if ($organization && is_object($organization) && isset($organization->id)) {
-            setPermissionsOrgId($organization->id);
+            if (getPermissionsOrgId() !== $organization->id) {
+                // If the current permissions organization ID is different, update it
+                setPermissionsOrgId($organization->id);
+
+                if ($user) {
+                    $user->unsetRelation('roles')->unsetRelation('permissions');
+                }
+            }
         } else {
             // If no organization is found, set the global organization ID
             setPermissionsOrgId(GLOBAL_ORG_ID);

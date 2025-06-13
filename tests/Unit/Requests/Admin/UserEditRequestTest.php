@@ -10,9 +10,7 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    $this->assertExactValidationRules(
-        [], $this->request->rules()
-    );
+    expect($this->request->rules())->toBe([]);
 });
 
 it('authorizes when user can edit users', function () {
@@ -21,5 +19,5 @@ it('authorizes when user can edit users', function () {
 
     Auth::shouldReceive('user')->andReturn($user);
 
-    $this->assertTrue($this->request->authorize());
+    expect($this->request->authorize())->toBeTrue();
 });
