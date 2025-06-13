@@ -37,7 +37,8 @@ class RolesAndPermissionsSeeder extends Seeder
 
         Role::create(['name' => 'Admin'])
             ->givePermissionTo('admin.users.*')
-            ->givePermissionTo('admin.organizations.*');
+            ->givePermissionTo('admin.organizations.*')
+            ->givePermissionTo('orgmgmt.users.*');
 
         Role::create(['name' => 'OrganizationAdministrator'])
             ->givePermissionTo('orgmgmt.users.*');

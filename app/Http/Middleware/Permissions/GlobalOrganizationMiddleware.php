@@ -15,7 +15,13 @@ class GlobalOrganizationMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
+
+        $user = $request->user();
+
+        if (getPermissionsOrgId() !== GLOBAL_ORG_ID) {
+            setPermissionsOrgId(GLOBAL_ORG_ID);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+        }
 
         return $next($request);
     }
