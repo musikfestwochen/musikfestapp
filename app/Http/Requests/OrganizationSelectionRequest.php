@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Organization;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class OrganizationSelectionRequest extends FormRequest
 {
@@ -25,11 +27,10 @@ class OrganizationSelectionRequest extends FormRequest
         return [
             'organization_id' => [
                 'required',
-                function ($attribute, $value, $fail) {
-                    if ($value != GLOBAL_ORG_ID && ! \App\Models\Organization::query()->where('id', $value)->exists()) {
-                        $fail('The selected organization is invalid.');
-                    }
-                },
+                Rule::in(array_merge(
+                    Organization::query()->pluck('id')->toArray(),
+                    [GLOBAL_ORG_ID]
+                )),
             ],
         ];
     }

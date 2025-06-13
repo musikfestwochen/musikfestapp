@@ -17,9 +17,14 @@ class OrganizationSlugMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         // Check if the route has an organization parameter
+        $organization = $request->route('organization');
+
         // Set the organization context for permissions
-        if (($organization = $request->route('organization')) && (is_object($organization) && property_exists($organization, 'id'))) {
+        if ($organization && is_object($organization) && isset($organization->id)) {
             setPermissionsOrgId($organization->id);
+        } else {
+            // If no organization is found, set the global organization ID
+            setPermissionsOrgId(GLOBAL_ORG_ID);
         }
 
         return $next($request);

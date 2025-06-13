@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class UserService
@@ -16,7 +17,7 @@ class UserService
         $query = User::query();
 
         if ($currentOrgId != GLOBAL_ORG_ID) {
-            $query->whereHas('organizations', function ($query) use ($currentOrgId) {
+            $query->whereHas('organizations', function (Builder $query) use ($currentOrgId) {
                 $query->where('organizations.id', $currentOrgId);
             });
         }
