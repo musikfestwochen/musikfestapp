@@ -43,10 +43,6 @@ class PermissionDetachedListener implements ShouldQueue
             return $event->model->id;
         }
 
-        if (property_exists($event, 'modelId') && $event->modelId !== null) {
-            return $event->modelId;
-        }
-
         return null;
     }
 }
