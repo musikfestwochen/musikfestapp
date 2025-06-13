@@ -19,7 +19,7 @@ class GlobalOrganizationMiddleware
 
         if (getPermissionsOrgId() !== GLOBAL_ORG_ID) {
             setPermissionsOrgId(GLOBAL_ORG_ID);
-            
+
             if ($user) {
                 $user->unsetRelation('roles')->unsetRelation('permissions');
             }

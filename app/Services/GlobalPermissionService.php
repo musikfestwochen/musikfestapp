@@ -20,75 +20,21 @@ class GlobalPermissionService
             return true;
         }
 
-        // Create a unique cache key based on user ID and ability
-        $cacheKey = self::getCacheKey($user->id, $ability);
-
-        // Try to get the result from cache
-        return Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($user, $ability) {
-            // Store the old permissions organization ID
-            $oldPermissionsOrgId = getPermissionsOrgId();
-
-            // Temporarily set the global organization ID
-            if ($oldPermissionsOrgId !== GLOBAL_ORG_ID) {
-                setPermissionsOrgId(GLOBAL_ORG_ID);
-                $user->unsetRelation('roles')->unsetRelation('permissions');
-            }
-
-            // Check if the user can perform the ability globally
-            // Use the direct permission check to avoid infinite recursion
-            $result = $user->hasPermissionTo($ability);
-
-            // Reset the permissions organization ID to its original value
-            if ($oldPermissionsOrgId !== GLOBAL_ORG_ID) {
-                setPermissionsOrgId($oldPermissionsOrgId);
-                $user->unsetRelation('roles')->unsetRelation('permissions');
-            }
-
-            // Return the result or null to continue checking
-            return $result ?: null;
-        });
+        // Get all user permissions from cache
+        $permissions = self::getUserGlobalPermissions($user);
+        
+        // Check if the user has the specific ability
+        return in_array($ability, $permissions) ? true : null;
     }
 
     /**
-     * Generate a cache key for a user and ability
-     */
-    public static function getCacheKey(int $userId, string $ability): string
-    {
-        return self::CACHE_PREFIX.sprintf(':%d:%s', $userId, $ability);
-    }
-
-    /**
-     * Clear the permission cache for a specific user and ability
+     * Clear the permission cache for a specific user
      */
     public static function clearCache(int $userId, ?string $ability = null): void
     {
-        if ($ability) {
-            // Clear cache for specific ability
-            Cache::forget(self::getCacheKey($userId, $ability));
-
-            // Also clear the cache for all global permissions as they might be affected
-            Cache::forget(self::getGlobalPermissionsCacheKey($userId));
-        } else {
-            // Clear all permission caches for this user
-            // This uses a cache tag-based approach which requires Redis or Memcached
-            // For simpler drivers like file or database, we'd need a different approach
-            $pattern = self::CACHE_PREFIX.sprintf(':%d:*', $userId);
-
-            // Get cache driver
-            $driver = Cache::getDefaultDriver();
-
-            // For Redis or Memcached, we can use pattern-based deletion
-            if (in_array($driver, ['redis', 'memcached'])) {
-                // This is a simplified approach - actual implementation would depend on the specific driver
-                $keys = Cache::getRedis()->keys($pattern);
-                foreach ($keys as $key) {
-                    Cache::forget($key);
-                }
-            } else {
-                // For other drivers, we can't easily clear by pattern, so we clear the known keys
-                Cache::forget(self::getGlobalPermissionsCacheKey($userId));
-            }
-        }
+        // Since we're now storing all permissions in a single cache entry,
+        // we'll clear the entire cache for the user regardless of the specific ability
+        Cache::forget(self::getGlobalPermissionsCacheKey($userId));
     }
 
     /**
@@ -96,7 +42,7 @@ class GlobalPermissionService
      */
     public static function getGlobalPermissionsCacheKey(int $userId): string
     {
-        return self::CACHE_PREFIX.sprintf(':%d:global_all', $userId);
+        return self::CACHE_PREFIX.sprintf(':%d:permissions', $userId);
     }
 
     /**

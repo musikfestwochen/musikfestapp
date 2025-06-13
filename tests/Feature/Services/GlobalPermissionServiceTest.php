@@ -6,7 +6,6 @@ use App\Services\GlobalPermissionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Events\PermissionAttached;
-use Spatie\Permission\Events\RoleAttached;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -102,8 +101,15 @@ it('caches the permission check result', function () {
     // Check if user can perform the ability globally (this should cache the result)
     $result1 = GlobalPermissionService::canGlobally($this->user, 'test.permission');
 
-    // Remove the permission from the user
-    $this->user->revokePermissionTo($this->testPermission);
+    // Remove the permission from the user directly in the database
+    // but don't trigger cache clearing events
+    $this->user->permissions()->detach();
+
+    // Reset user relations to ensure fresh DB data would be loaded
+    $this->user->unsetRelation('roles')->unsetRelation('permissions');
+    
+    // But don't clear the cache - this simulates the permissions being changed
+    // but the cache not being updated yet
 
     // Check again without clearing the cache (should return the cached result)
     $result2 = GlobalPermissionService::canGlobally($this->user, 'test.permission');
@@ -185,16 +191,16 @@ it('clears the cache when roles are attached', function () {
 
     // Reset user relations to ensure fresh data is loaded
     $user->unsetRelation('roles')->unsetRelation('permissions');
-    
+
     // Flush the cache completely to ensure no stale data
     Cache::flush();
-    
+
     // Check again after the permission is given
     $result2 = GlobalPermissionService::canGlobally($user, 'admin.permission');
 
     // Assert that the first result is null and the second is true
     expect($result1)->toBeNull();
-    expect($result2)->toBeTrue("Global permission check should recognize direct permission");
+    expect($result2)->toBeTrue('Global permission check should recognize direct permission');
 });
 
 it('returns all global permissions for a user', function () {
@@ -218,7 +224,7 @@ it('returns empty array for null or invalid user', function () {
     $permissions1 = GlobalPermissionService::getUserGlobalPermissions(null);
 
     // Create a user without an ID
-    $invalidUser = new User();
+    $invalidUser = new User;
 
     // Get global permissions for invalid user
     $permissions2 = GlobalPermissionService::getUserGlobalPermissions($invalidUser);

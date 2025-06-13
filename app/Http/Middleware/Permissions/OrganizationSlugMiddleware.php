@@ -25,7 +25,7 @@ class OrganizationSlugMiddleware
             if (getPermissionsOrgId() !== $organization->id) {
                 // If the current permissions organization ID is different, update it
                 setPermissionsOrgId($organization->id);
-                
+
                 if ($user) {
                     $user->unsetRelation('roles')->unsetRelation('permissions');
                 }
