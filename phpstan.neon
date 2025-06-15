@@ -10,6 +10,12 @@ parameters:
     # Level 10 is the highest level
     level: 7
 
+services:
+    -
+        class: App\PHPStan\Rules\ForbiddenMethodsRule
+        tags:
+            - phpstan.rules.rule
+
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'
 #
