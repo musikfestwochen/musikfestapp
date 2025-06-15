@@ -18,20 +18,20 @@ class ForbiddenMethodsRule implements Rule
 {
     /**
      * Configuration of forbidden methods with their reasons and alternatives.
-     * 
+     *
      * To add new forbidden methods, simply add them to this array:
-     * 
+     *
      * 'methodName' => [
      *     'message' => 'Descriptive error message with alternative',
      *     'identifier' => 'unique.error.identifier'
      * ]
-     * 
+     *
      * @var array<string, array{message: string, identifier: string}>
      */
     private array $forbiddenMethods = [
         'hasPermissionTo' => [
             'message' => 'Method hasPermissionTo() is forbidden. Use can() method instead to ensure Gate::before is called.',
-            'identifier' => 'laravel.hasPermissionTo.forbidden'
+            'identifier' => 'laravel.hasPermissionTo.forbidden',
         ],
         // Example for additional forbidden methods:
         // 'directPermissionCheck' => [
@@ -60,13 +60,13 @@ class ForbiddenMethodsRule implements Rule
 
     public function processNode(Node $node, Scope $scope): array
     {
-        if (!$node->name instanceof Node\Identifier) {
+        if (! $node->name instanceof Node\Identifier) {
             return [];
         }
 
         $methodName = $node->name->toString();
 
-        if (!isset($this->forbiddenMethods[$methodName])) {
+        if (! isset($this->forbiddenMethods[$methodName])) {
             return [];
         }
 
@@ -83,7 +83,7 @@ class ForbiddenMethodsRule implements Rule
     /**
      * Get all currently configured forbidden methods.
      * Useful for testing and debugging.
-     * 
+     *
      * @return array<string, array{message: string, identifier: string}>
      */
     public function getForbiddenMethods(): array

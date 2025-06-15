@@ -9,7 +9,7 @@ use PhpParser\Node\Identifier;
 use PHPStan\Analyser\Scope;
 
 it('detects forbidden hasPermissionTo method', function () {
-    $rule = new ForbiddenMethodsRule();
+    $rule = new ForbiddenMethodsRule;
     $scope = Mockery::mock(Scope::class);
 
     // Create a method call node for hasPermissionTo
@@ -26,7 +26,7 @@ it('detects forbidden hasPermissionTo method', function () {
 });
 
 it('ignores allowed methods', function () {
-    $rule = new ForbiddenMethodsRule();
+    $rule = new ForbiddenMethodsRule;
     $scope = Mockery::mock(Scope::class);
 
     // Create a method call node for can (allowed method)
@@ -41,7 +41,7 @@ it('ignores allowed methods', function () {
 });
 
 it('ignores non-identifier method names', function () {
-    $rule = new ForbiddenMethodsRule();
+    $rule = new ForbiddenMethodsRule;
     $scope = Mockery::mock(Scope::class);
 
     // Create a method call node with a variable method name
@@ -56,8 +56,8 @@ it('ignores non-identifier method names', function () {
 });
 
 it('supports multiple forbidden methods', function () {
-    $rule = new ForbiddenMethodsRule();
-    
+    $rule = new ForbiddenMethodsRule;
+
     $forbiddenMethods = $rule->getForbiddenMethods();
 
     expect($forbiddenMethods)->toBeArray()
@@ -66,14 +66,14 @@ it('supports multiple forbidden methods', function () {
 });
 
 it('can be extended with new forbidden methods', function () {
-    $rule = new ForbiddenMethodsRule();
-    
+    $rule = new ForbiddenMethodsRule;
+
     // Verify the rule returns the correct node type
     expect($rule->getNodeType())->toBe(MethodCall::class);
-    
+
     // Verify that forbidden methods are configurable via public method
     $forbiddenMethods = $rule->getForbiddenMethods();
-    
+
     // Verify each entry has the required structure
     foreach ($forbiddenMethods as $methodName => $config) {
         expect($methodName)->toBeString();
@@ -84,7 +84,7 @@ it('can be extended with new forbidden methods', function () {
 });
 
 it('includes helpful error tips', function () {
-    $rule = new ForbiddenMethodsRule();
+    $rule = new ForbiddenMethodsRule;
     $scope = Mockery::mock(Scope::class);
 
     $methodCall = new MethodCall(

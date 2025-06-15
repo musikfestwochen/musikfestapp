@@ -3,9 +3,6 @@
 use App\Http\Requests\Admin\OrganizationUpdateRequest;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 covers(OrganizationUpdateRequest::class);
 
