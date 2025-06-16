@@ -4,7 +4,9 @@ import { twMerge } from 'tailwind-merge';
 import type { Ref } from 'vue';
 
 export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
+    // Merge Tailwind classes, then remove all duplicate class names
+    const merged = twMerge(clsx(inputs));
+    return Array.from(new Set(merged.split(/\s+/))).join(' ');
 }
 
 export function valueUpdater<T extends Updater<any>>(updaterOrValue: T, ref: Ref) {

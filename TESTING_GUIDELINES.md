@@ -117,74 +117,75 @@ Use **Vitest** with Vue Test Utils for component testing:
 - Use shallow mounting when testing component logic in isolation
 - Mock all external dependencies (Inertia, stores, composables)
 
-### Component Integration Tests
-
-Test components that interact with framework features and other components:
-
-- **Inertia Feature Integration**
-
-    - Components using `usePage()`, `useForm()`, or `router` methods
-    - Form submission flows with Inertia forms
-    - Page component props and shared data handling
-    - Navigation and link behavior
-
-- **Multi-Component Interactions**
-    - Parent-child component communication
-    - Event bubbling and prop drilling
-    - Slot content and dynamic component rendering
-
-**Integration Test Rules for Vue:**
-
-- Test with minimal mocking of Vue/Inertia features
-- Use full mounting when testing component interactions
-- Verify actual DOM output and user interactions
-
-### End-to-End Tests (Playwright)
-
-Full browser-based testing for critical user journeys:
-
-- Complete authentication flows
-- Multi-step form processes
-- Navigation between pages
-- Real user interactions (clicks, typing, file uploads)
-
 ---
 
-## Directory Structure
+## Pragmatic Frontend Testing Strategy
 
-```
-tests/
-├── Unit/
-│   ├── Models/
-│   ├── Requests/
-│   ├── Services/       # Pure services
-│   └── Helpers/        # Pure helpers
-├── Integration/
-│   ├── Services/       # DB-aware services
-│   ├── Jobs/
-│   ├── Listeners/
-│   └── Helpers/        # Laravel-aware helpers
-├── Feature/
-│   ├── Controllers/
-│   ├── Middleware/
-│   ├── Auth/
-│   ├── Requests/
-│   └── Views/
-├── Architecture/
-├── frontend/           # Frontend test utilities and setup
-├── e2e/                # Full-stack browser tests
-└── TestCase.php
+> **"Test business logic, skip the obvious, trust E2E for the rest."**
 
-resources/js/
-├── Components/
-│   └── __tests__/      # Component unit tests
-├── Pages/
-│   └── __tests__/      # Page component tests
-├── Composables/
-│   └── __tests__/      # Vue composables tests
-└── Utils/
-    └── __tests__/      # Utility function tests
-```
+### What to Test (High Priority)
+
+**Composables** - These contain the most critical business logic:
+
+- Complex business logic (e.g., permission checking with wildcards like `usePermissions`)
+- State management with external integrations (localStorage, APIs)
+- Data transformation and processing utilities
+- Custom composables with business rules
+
+**Business Logic Components** - Components with computed properties, conditional logic, or data transformation:
+
+- Components with computed properties that transform data
+- Components with conditional rendering based on business rules
+- Form components with validation or complex state management
+- Components that process props before display
+
+**Utility Functions**:
+
+- Pure functions with business logic
+- Data transformation utilities
+- Helper functions used across multiple components
+
+### What to Test (Medium Priority)
+
+**Display Components with Logic**:
+
+- Components with conditional rendering based on props
+- Components that process or format data for display
+- Modal and form components with state management
+- Components with interactive behavior beyond simple display
+
+**Layout Components**:
+
+- Components with variant props or conditional layouts
+- Components that manage application state
+- Navigation components with dynamic behavior
+
+### What NOT to Test (Skip Entirely)
+
+**Shadcn/UI Components** - These are mostly styling wrappers:
+
+- All `components/ui/*` components (these are styling wrappers around Radix Vue)
+- Simple wrapper components around third-party UI libraries
+- Components that only apply CSS classes without logic
+
+**Simple Display Components**:
+
+- Components that only display props without transformation
+- Pure presentational components without logic
+- Basic slot wrapper components
+
+**Page Components** (Leave to E2E):
+
+- Full page components (test integration via E2E)
+- Components heavily dependent on Inertia page props
+- Complex multi-component interactions
+
+### Test Coverage Goals
+
+- **Composables**: 100% line coverage (they contain core business logic)
+- **Business Logic Components**: 80-90% line coverage
+- **Display Components**: 60-70% line coverage (focus on conditional logic)
+- **Overall Frontend**: ~70% line coverage (quality over quantity)
 
 ---
 
@@ -242,10 +243,18 @@ Order:
 
 ### Frontend (Vue + Inertia) Testing
 
-| Type                  | Inertia-Free | Component-Isolated | Target Scope        | Folder                     |
-| --------------------- | ------------ | ------------------ | ------------------- | -------------------------- |
-| Vue Unit Test         | Yes          | Yes                | Component Logic     | `resources/js/*/__tests__` |
-| Component Integration | No           | No                 | Component + Inertia | `resources/js/*/__tests__` |
-| E2E Test              | No           | No                 | Full User Journey   | `tests/e2e`                |
+| Type                     | Test What                         | Priority | Coverage Goal | Folder                       |
+| ------------------------ | --------------------------------- | -------- | ------------- | ---------------------------- |
+| **Composables**          | Business logic, state management  | High     | 100%          | `tests/Frontend/Composables` |
+| **Business Components**  | Computed props, conditional logic | High     | 80-90%        | `tests/Frontend/Components`  |
+| **Utils**                | Pure functions, transformations   | High     | 100%          | `tests/Frontend/Utils`       |
+| **Display Components**   | Conditional rendering             | Medium   | 60-70%        | `tests/Frontend/Components`  |
+| **Shadcn/UI Components** | Skip entirely                     | None     | 0%            | Skip                         |
+| **Page Components**      | Leave to E2E                      | Low      | E2E only      | `tests/e2e`                  |
 
-> **Key Rule:** Always test business logic. Choose isolation level based on practicality, not ideology.
+**Testing Philosophy**: Test business logic thoroughly, skip obvious styling components, trust E2E for complex integrations.
+| E2E Test | No | No | Full User Journey | `tests/e2e` |
+
+**Testing Philosophy**: Test business logic thoroughly, skip obvious styling components, trust E2E for complex integrations.
+
+> **Key Rule:** Always test business logic. Choose isolation level based on practicality, not ideology. Focus testing effort where bugs would cause the most damage to users and business.
