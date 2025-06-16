@@ -16,7 +16,7 @@ class UserService
         $currentOrgId = getPermissionsOrgId();
         $query = User::query();
 
-        if ($currentOrgId != GLOBAL_ORG_ID) {
+        if ($currentOrgId !== GLOBAL_ORG_ID) {
             $query->whereHas('organizations', function (Builder $query) use ($currentOrgId) {
                 $query->where('organizations.id', $currentOrgId);
             });

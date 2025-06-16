@@ -233,71 +233,71 @@ it('can attach a user to an organization', function () {
     $user = User::factory()->create();
     $org->users()->attach($user);
 
-    $this->assertTrue($org->users->contains($user));
+    expect($org->users->contains($user))->toBeTrue();
 });
 
 it('uses the correct form requests', function () {
 
     // create
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'create',
         OrganizationCreateRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.create',
         OrganizationCreateRequest::class);
 
     // destroy
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'destroy',
         OrganizationDestroyRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.destroy',
         OrganizationDestroyRequest::class);
 
     // edit
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'edit',
         OrganizationEditRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.edit',
         OrganizationEditRequest::class);
 
     // index
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'index',
         OrganizationIndexRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.index',
         OrganizationIndexRequest::class);
 
     // show
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'show',
         OrganizationShowRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.show',
         OrganizationShowRequest::class);
 
     // store
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'store',
         OrganizationStoreRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.store',
         OrganizationStoreRequest::class);
 
     // update
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         OrganizationController::class,
         'update',
         OrganizationUpdateRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'organizations.update',
         OrganizationUpdateRequest::class);
 

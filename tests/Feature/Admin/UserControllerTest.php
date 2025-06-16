@@ -186,77 +186,77 @@ it('can attach an organization to a user', function () {
     $org = Organization::factory()->create();
     $user->organizations()->attach($org);
 
-    $this->assertTrue($user->organizations->contains($org));
+    expect($user->organizations->contains($org))->toBeTrue();
 });
 
 it('uses the correct form requests', function () {
 
     // middleware
-    $this->assertRouteUsesMiddleware(
+    test()->assertRouteUsesMiddleware(
         'users.index',
         ['permissions.global_organization', 'auth', 'verified'],
     );
 
     // create
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'create',
         UserCreateRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.create',
         UserCreateRequest::class);
 
     // destroy
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'destroy',
         UserDestroyRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.destroy',
         UserDestroyRequest::class);
 
     // edit
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'edit',
         UserEditRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.edit',
         UserEditRequest::class);
 
     // index
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'index',
         UserIndexRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.index',
         UserIndexRequest::class);
 
     // show
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'show',
         UserShowRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.show',
         UserShowRequest::class);
 
     // store
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'store',
         UserStoreRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.store',
         UserStoreRequest::class);
 
     // update
-    $this->assertActionUsesFormRequest(
+    test()->assertActionUsesFormRequest(
         UserController::class,
         'update',
         UserUpdateRequest::class);
-    $this->assertRouteUsesFormRequest(
+    test()->assertRouteUsesFormRequest(
         'users.update',
         UserUpdateRequest::class);
 

@@ -7,7 +7,11 @@ use Illuminate\Support\Facades\Cache;
 
 class GlobalPermissionService
 {
-    // Cache duration in minutes
+    /**
+     * Cache duration in minutes.
+     *
+     * @pest-mutate-ignore
+     */
     private const int CACHE_DURATION = 60;
 
     // Cache key prefix for global permissions
@@ -25,24 +29,6 @@ class GlobalPermissionService
 
         // Check if the user has the specific ability
         return in_array($ability, $permissions) ? true : null;
-    }
-
-    /**
-     * Clear the permission cache for a specific user
-     */
-    public static function clearCache(int $userId, ?string $ability = null): void
-    {
-        // Since we're now storing all permissions in a single cache entry,
-        // we'll clear the entire cache for the user regardless of the specific ability
-        Cache::forget(self::getGlobalPermissionsCacheKey($userId));
-    }
-
-    /**
-     * Generate a cache key for all global permissions of a user
-     */
-    public static function getGlobalPermissionsCacheKey(int $userId): string
-    {
-        return self::CACHE_PREFIX.sprintf(':%d:permissions', $userId);
     }
 
     /**
@@ -81,5 +67,23 @@ class GlobalPermissionService
 
             return $globalPermissions;
         });
+    }
+
+    /**
+     * Generate a cache key for all global permissions of a user
+     */
+    public static function getGlobalPermissionsCacheKey(int $userId): string
+    {
+        return self::CACHE_PREFIX.sprintf(':%d:permissions', $userId);
+    }
+
+    /**
+     * Clear the permission cache for a specific user
+     */
+    public static function clearCache(int $userId, ?string $ability = null): void
+    {
+        // Since we're now storing all permissions in a single cache entry,
+        // we'll clear the entire cache for the user regardless of the specific ability
+        Cache::forget(self::getGlobalPermissionsCacheKey($userId));
     }
 }

@@ -2,9 +2,6 @@
 
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 covers(UserUpdateRequest::class);
 

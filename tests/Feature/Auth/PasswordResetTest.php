@@ -4,13 +4,13 @@ use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
 
-test('reset password link screen can be rendered', function () {
+it('can render reset password link screen', function () {
     $response = $this->get('/forgot-password');
 
     $response->assertStatus(200);
 });
 
-test('reset password link can be requested', function () {
+it('can request reset password link', function () {
     Notification::fake();
 
     $user = User::factory()->create();
@@ -20,7 +20,7 @@ test('reset password link can be requested', function () {
     Notification::assertSentTo($user, ResetPassword::class);
 });
 
-test('reset password screen can be rendered', function () {
+it('can render reset password screen with token', function () {
     Notification::fake();
 
     $user = User::factory()->create();
@@ -36,7 +36,7 @@ test('reset password screen can be rendered', function () {
     });
 });
 
-test('password can be reset with valid token', function () {
+it('can reset password with valid token', function () {
     Notification::fake();
 
     $user = User::factory()->create();
@@ -59,7 +59,7 @@ test('password can be reset with valid token', function () {
     });
 });
 
-test('password cannot be reset with an invalid token', function () {
+it('cannot reset password with invalid token', function () {
     Notification::fake();
 
     $user = User::factory()->create();

@@ -23,7 +23,6 @@ class OrganizationSelectionService
 
             // add an "Administration" option for admins
             $adminOrg = new Organization([
-                'id' => GLOBAL_ORG_ID,
                 'name' => 'Administration',
                 'slug' => 'admin',
             ]);

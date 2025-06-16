@@ -12,7 +12,7 @@ it('can show the password update page', function () {
     $response->assertStatus(200);
 });
 
-test('password can be updated', function () {
+it('can update password with correct current password', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -31,7 +31,7 @@ test('password can be updated', function () {
     expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
 });
 
-test('correct password must be provided to update password', function () {
+it('requires correct password to update password', function () {
     $user = User::factory()->create();
 
     $response = $this
