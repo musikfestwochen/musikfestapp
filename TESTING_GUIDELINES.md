@@ -90,21 +90,63 @@ Examples:
 
 ---
 
-## Frontend Testing Guidelines
+## Frontend Testing Guidelines (Vue 3 + Inertia.js)
 
-Use the same principle of isolation vs. integration:
+Apply the same principle of isolation vs. integration to frontend testing:
 
-- **Unit Tests (Vitest)**
+### Unit Testing Vue Components
 
-    - Props, emitted events, local logic
+Use **Vitest** with Vue Test Utils for component testing:
 
-- **Component Integration Tests**
+- **Component Logic Tests**
 
-    - Interactions with other components, stores, or Inertia
+    - Props validation and reactivity
+    - Computed properties and watchers
+    - Event emissions and handling
+    - Conditional rendering logic
+    - Method behavior with various inputs
 
-- **End-to-End Tests (Playwright)**
+- **Isolation Requirements**
+    - Mock Inertia.js dependencies (`router`, `page`, `form` helpers)
+    - Mock external API calls and services
+    - Test component behavior independent of parent/child components
 
-    - Full browser-based testing for key flows
+**Unit Test Rules for Vue:**
+
+- Focus on component's internal logic, not DOM interactions
+- Use shallow mounting when testing component logic in isolation
+- Mock all external dependencies (Inertia, stores, composables)
+
+### Component Integration Tests
+
+Test components that interact with framework features and other components:
+
+- **Inertia Feature Integration**
+
+    - Components using `usePage()`, `useForm()`, or `router` methods
+    - Form submission flows with Inertia forms
+    - Page component props and shared data handling
+    - Navigation and link behavior
+
+- **Multi-Component Interactions**
+    - Parent-child component communication
+    - Event bubbling and prop drilling
+    - Slot content and dynamic component rendering
+
+**Integration Test Rules for Vue:**
+
+- Test with minimal mocking of Vue/Inertia features
+- Use full mounting when testing component interactions
+- Verify actual DOM output and user interactions
+
+### End-to-End Tests (Playwright)
+
+Full browser-based testing for critical user journeys:
+
+- Complete authentication flows
+- Multi-step form processes
+- Navigation between pages
+- Real user interactions (clicks, typing, file uploads)
 
 ---
 
@@ -129,19 +171,43 @@ tests/
 │   ├── Requests/
 │   └── Views/
 ├── Architecture/
-├── frontend/           # Vue + Inertia logic tests
+├── frontend/           # Frontend test utilities and setup
 ├── e2e/                # Full-stack browser tests
 └── TestCase.php
+
+resources/js/
+├── Components/
+│   └── __tests__/      # Component unit tests
+├── Pages/
+│   └── __tests__/      # Page component tests
+├── Composables/
+│   └── __tests__/      # Vue composables tests
+└── Utils/
+    └── __tests__/      # Utility function tests
 ```
 
 ---
 
 ## Naming and Style Conventions
 
-- **Files:** `*Test.php` or `*.spec.js`
-- **PHP Tests:** Use `test()` or `it()` syntax
-- **JavaScript Tests:** Use `describe()` and `it()`
+### PHP Tests
+
+- **Files:** `*Test.php`
+- **Methods:** Use `test()` or `it()` syntax (PestPHP)
 - **Use `covers()`** for all unit tests
+
+### Frontend Tests
+
+- **Files:** `*.test.js` or `*.spec.js`
+- **Structure:** Use `describe()` and `it()` blocks
+- **Component Tests:** Match component file names (e.g., `UserCard.vue` → `UserCard.test.js`)
+- **Page Tests:** Match page file names (e.g., `Dashboard.vue` → `Dashboard.test.js`)
+
+### Test Naming Patterns
+
+- **PHP:** `it('should do something when condition')`
+- **JavaScript:** `it('should do something when condition')`
+- **Descriptive test names** that explain behavior, not implementation
 
 ---
 
@@ -166,11 +232,20 @@ Order:
 
 ## Summary
 
+### Backend (PHP) Testing
+
 | Type             | Framework-Free | DB-Independent | Target Scope   | Folder              |
 | ---------------- | -------------- | -------------- | -------------- | ------------------- |
 | Unit Test        | Yes            | Yes            | Logic/Method   | `tests/Unit`        |
 | Integration Test | No             | No             | Class/Service  | `tests/Integration` |
 | Feature Test     | No             | No             | HTTP/User Flow | `tests/Feature`     |
-| E2E Test         | No             | No             | Full-stack     | `tests/e2e`         |
+
+### Frontend (Vue + Inertia) Testing
+
+| Type                  | Inertia-Free | Component-Isolated | Target Scope        | Folder                     |
+| --------------------- | ------------ | ------------------ | ------------------- | -------------------------- |
+| Vue Unit Test         | Yes          | Yes                | Component Logic     | `resources/js/*/__tests__` |
+| Component Integration | No           | No                 | Component + Inertia | `resources/js/*/__tests__` |
+| E2E Test              | No           | No                 | Full User Journey   | `tests/e2e`                |
 
 > **Key Rule:** Always test business logic. Choose isolation level based on practicality, not ideology.
