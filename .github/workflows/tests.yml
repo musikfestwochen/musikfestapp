@@ -5,7 +5,7 @@ on:
   workflow_call:
 
 jobs:
-  ci:
+  backend-and-fullstack-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -45,6 +45,11 @@ jobs:
 
       - name: Build Assets
         run: npm run build
+
+      - name: Run Vitest
+        run: npx vitest run
+        env:
+          LARAVEL_BYPASS_ENV_CHECK: 1
 
       - name: SCA Tests
         run: ./vendor/bin/phpstan analyse
