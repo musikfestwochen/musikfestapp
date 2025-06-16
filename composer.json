@@ -80,6 +80,7 @@
             "pest --mutate -p"
         ],
         "test": [
+            "npm run test",
             "@test:sca",
             "@test:coverage",
             "@test:types",

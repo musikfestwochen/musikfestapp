@@ -13,7 +13,7 @@ export function updateTheme(value: Appearance) {
 
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-const handleSystemThemeChange = () => {
+export const handleSystemThemeChange = () => {
     const currentAppearance = localStorage.getItem('appearance') as Appearance | null;
     updateTheme(currentAppearance || 'system');
 };
