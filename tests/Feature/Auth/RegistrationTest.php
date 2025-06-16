@@ -1,12 +1,12 @@
 <?php
 
-test('registration screen can be rendered', function () {
+it('can render registration screen', function () {
     $response = $this->get('/register');
 
     $response->assertStatus(200);
 });
 
-test('new users can register', function () {
+it('allows new users to register', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -14,6 +14,6 @@ test('new users can register', function () {
         'password_confirmation' => 'password',
     ]);
 
-    $this->assertAuthenticated();
+    expect(auth()->check())->toBeTrue();
     $response->assertRedirect(route('admin.dashboard', absolute: false));
 });

@@ -14,5 +14,5 @@ it('verifies that the Gate::before callback (Super Admin)', function () {
 
     $result = Gate::forUser($user)->allows('anything'); // 'anything' triggers the before hook
 
-    $this->assertTrue($result);
+    expect($result)->toBeTrue();
 });

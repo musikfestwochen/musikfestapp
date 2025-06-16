@@ -2,13 +2,13 @@
 
 use App\Models\User;
 
-test('login screen can be rendered', function () {
+it('can render login screen', function () {
     $response = $this->get('/login');
 
     $response->assertStatus(200);
 });
 
-test('users can authenticate using the login screen', function () {
+it('allows users to authenticate using the login screen', function () {
     $user = User::factory()->create();
 
     $response = $this->post('/login', [
@@ -16,11 +16,11 @@ test('users can authenticate using the login screen', function () {
         'password' => 'password',
     ]);
 
-    $this->assertAuthenticated();
+    expect(auth()->check())->toBeTrue();
     $response->assertRedirect(route('home', absolute: false));
 });
 
-test('users can not authenticate with invalid password', function () {
+it('prevents users from authenticating with invalid password', function () {
     $user = User::factory()->create();
 
     $this->post('/login', [
@@ -28,19 +28,19 @@ test('users can not authenticate with invalid password', function () {
         'password' => 'wrong-password',
     ]);
 
-    $this->assertGuest();
+    expect(auth()->guest())->toBeTrue();
 });
 
-test('users can logout', function () {
+it('allows users to logout', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post('/logout');
 
-    $this->assertGuest();
+    expect(auth()->guest())->toBeTrue();
     $response->assertRedirect('/');
 });
 
-it('tests login rate limitation', function ($falseAttempts, $canLogin) {
+it('implements login rate limitation', function ($falseAttempts, $canLogin) {
     $user = User::factory()->create();
 
     for ($i = 0; $i < $falseAttempts; $i++) {
@@ -56,9 +56,9 @@ it('tests login rate limitation', function ($falseAttempts, $canLogin) {
     ]);
 
     if ($canLogin) {
-        $this->assertAuthenticated();
+        expect(auth()->check())->toBeTrue();
     } else {
-        $this->assertGuest();
+        expect(auth()->guest())->toBeTrue();
     }
 
 })->with([

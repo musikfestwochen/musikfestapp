@@ -2,7 +2,7 @@
 
 use App\Models\User;
 
-test('profile page is displayed', function () {
+it('displays profile page', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -12,7 +12,7 @@ test('profile page is displayed', function () {
     $response->assertOk();
 });
 
-test('profile information can be updated', function () {
+it('can update profile information', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -33,7 +33,7 @@ test('profile information can be updated', function () {
     expect($user->email_verified_at)->toBeNull();
 });
 
-test('email verification status is unchanged when the email address is unchanged', function () {
+it('keeps email verification status unchanged when email address is unchanged', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -50,7 +50,7 @@ test('email verification status is unchanged when the email address is unchanged
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
 
-test('user can delete their account', function () {
+it('allows user to delete their account', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -63,11 +63,11 @@ test('user can delete their account', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect('/');
 
-    $this->assertGuest();
+    expect(auth()->guest())->toBeTrue();
     expect($user->fresh())->toBeNull();
 });
 
-test('correct password must be provided to delete account', function () {
+it('requires correct password to delete account', function () {
     $user = User::factory()->create();
 
     $response = $this
