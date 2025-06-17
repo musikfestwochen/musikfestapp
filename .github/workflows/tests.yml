@@ -25,6 +25,24 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-
+
       - name: Install Node Dependencies
         run: npm ci
 
@@ -45,6 +63,12 @@ jobs:
 
       - name: Build Assets
         run: npm run build
+
+      - name: Upload Built Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-assets
+          path: public/build
 
       - name: Run Vitest
         run: npx vitest run
@@ -62,7 +86,7 @@ jobs:
 
   coverage-and-mutation-tests:
     runs-on: ubuntu-latest
-
+    needs: basic-tests
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,6 +103,24 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-
 
       - name: Install Node Dependencies
         run: npm ci
@@ -98,8 +140,11 @@ jobs:
       - name: Publish Ziggy Configuration
         run: php artisan ziggy:generate
 
-      - name: Build Assets
-        run: npm run build
+      - name: Download Built Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: public/build
 
       - name: Run Coverage Tests
         run: ./vendor/bin/pest --coverage --min=100 -p
@@ -133,6 +178,24 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-
+
       - name: Install Node Dependencies
         run: npm ci
 
@@ -151,8 +214,11 @@ jobs:
       - name: Publish Ziggy Configuration
         run: php artisan ziggy:generate
 
-      - name: Build Assets
-        run: npm run build
+      - name: Download Built Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: public/build
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
