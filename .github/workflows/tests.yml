@@ -4,6 +4,10 @@ on:
   pull_request:
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   basic-tests:
     runs-on: ubuntu-latest
@@ -32,16 +36,6 @@ jobs:
           key: composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             composer-
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            node_modules
-          key: npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            npm-
 
       - name: Install Node Dependencies
         run: npm ci
@@ -112,16 +106,6 @@ jobs:
           restore-keys: |
             composer-
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            node_modules
-          key: npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            npm-
-
       - name: Install Node Dependencies
         run: npm ci
 
@@ -186,16 +170,6 @@ jobs:
           restore-keys: |
             composer-
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            node_modules
-          key: npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            npm-
-
       - name: Install Node Dependencies
         run: npm ci
 
@@ -219,6 +193,14 @@ jobs:
         with:
           name: built-assets
           path: public/build
+
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            playwright-browsers-
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
