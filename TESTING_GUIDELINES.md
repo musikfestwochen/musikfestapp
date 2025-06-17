@@ -253,8 +253,61 @@ Order:
 | **Page Components**      | Leave to E2E                      | Low      | E2E only      | `tests/e2e`                  |
 
 **Testing Philosophy**: Test business logic thoroughly, skip obvious styling components, trust E2E for complex integrations.
-| E2E Test | No | No | Full User Journey | `tests/e2e` |
+| E2E Test | No | No | Full User Journey | `e2e/` |
 
 **Testing Philosophy**: Test business logic thoroughly, skip obvious styling components, trust E2E for complex integrations.
+
+---
+
+## E2E Testing with Playwright
+
+E2E (End-to-End) tests simulate real user interactions across the entire application stack. These tests validate complete user journeys from UI interactions to backend processes and back.
+
+### Structure and Organization
+
+- **Test Files:** `e2e/**/*.spec.ts`
+- **Test Utils:** `e2e/utils/*.ts`
+- **Global Setup:** `e2e/global-setup.ts`
+
+### E2E Testing Guidelines
+
+#### Test Organization
+
+- Organize tests by user journey or feature area
+- Group tests by logged-in/logged-out states (`e2e/logged_out/`, `e2e/logged_in/`)
+- Create utility functions for common workflows in `e2e/utils/`
+
+#### Test Implementation
+
+- **User-Centric:** Write tests from the user perspective
+- **Resilient Selectors:** Prefer role-based selectors (`getByRole()`, `getByLabel()`) over CSS selectors
+- **Realistic Data:** Use `@faker-js/faker` to generate realistic test data
+- **Isolation:** Each test should be independent and handle its own setup
+
+#### Common Utilities
+
+- **Authentication:** Use `loginUser()`, `createVerifiedUser()` from `e2e/utils/user.ts`
+- **Email Testing:** Use `getEmailVerificationLink()` from `e2e/utils/email.ts` for email verification flows
+- **Test Data:** Generate realistic test data with `generateTestUser()` from `e2e/utils/user.ts`
+
+### Running E2E Tests
+
+```bash
+# Run all E2E tests
+npm run e2e
+
+# Run with UI mode for debugging
+npm run e2e:ui
+
+# Run with headed browsers
+npm run e2e:headed
+
+# Run with fresh database setup
+npm run e2e:with-db-setup
+```
+
+> **Note:** E2E tests are configured to use SQLite for fast, isolated testing. The test database is refreshed before each test run via `global-setup.ts`.
+
+---
 
 > **Key Rule:** Always test business logic. Choose isolation level based on practicality, not ideology. Focus testing effort where bugs would cause the most damage to users and business.
