@@ -79,12 +79,16 @@
         "test:mutation": [
             "pest --mutate -p"
         ],
+        "test:e2e": [
+            "npm run e2e"
+        ],
         "test": [
             "npm run test",
             "@test:sca",
             "@test:coverage",
             "@test:types",
-            "@test:mutation"
+            "@test:mutation",
+            "@test:e2e"
         ],
         "precommit": [
             "@typos",
