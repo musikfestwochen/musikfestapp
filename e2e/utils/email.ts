@@ -26,6 +26,42 @@ export async function getLatestEmail(page: Page, email: string, config: EmailTes
     for (let attempt = 1; attempt <= finalConfig.maxRetries; attempt++) {
         try {
             await page.goto(`${finalConfig.mailcatcherUrl}/view/latest.html?query=to:${encodeURIComponent(email)}`);
+            // Use Mailpit's HTTP API to fetch messages for the given email
+            const response = await page.request.get(`${finalConfig.mailcatcherUrl}/api/v1/messages?query=to:${encodeURIComponent(email)}`);
+            if (!response.ok()) {
+                throw new Error(`Failed to fetch emails: ${response.status()} ${response.statusText()}`);
+            }
+            const data = await response.json();
+            if (data.total > 0 && data.messages && data.messages.length > 0) {
+                const message = data.messages[0];
+                // Try to get the HTML or Text content directly from the message object
+                if (message.HTML && message.HTML.Body) {
+                    return message.HTML.Body;
+                }
+                if (message.Text && message.Text.Body) {
+                    return message.Text.Body;
+                }
+                // Fallback: fetch the full message body using the message ID
+                const messageId = message.ID || message.id;
+                if (messageId) {
+                    const messageResponse = await page.request.get(`${finalConfig.mailcatcherUrl}/api/v1/message/${messageId}.html`);
+                    if (messageResponse.ok()) {
+                        const emailContent = await messageResponse.text();
+                        if (emailContent && emailContent.trim().length > 0) {
+                            return emailContent;
+                        }
+                    } else {
+                        // If .html endpoint fails, try .txt endpoint as a last resort
+                        const txtResponse = await page.request.get(`${finalConfig.mailcatcherUrl}/api/v1/message/${messageId}.txt`);
+                        if (txtResponse.ok()) {
+                            const emailContent = await txtResponse.text();
+                            if (emailContent && emailContent.trim().length > 0) {
+                                return emailContent;
+                            }
+                        }
+                    }
+                }
+            }
             await page.waitForTimeout(finalConfig.waitTime);
 
             const emailContent = await page.textContent('body');
