@@ -173,6 +173,9 @@ jobs:
       - name: Install Node Dependencies
         run: npm ci
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
       - name: Create SQLite Database
         run: touch database/database.sqlite
 
@@ -193,17 +196,6 @@ jobs:
         with:
           name: built-assets
           path: public/build
-
-      - name: Cache Playwright Browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
 
       - name: Start Laravel Server
         run: php artisan serve --port=8000 &
