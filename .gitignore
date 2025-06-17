@@ -24,3 +24,10 @@ yarn-error.log
 *.code-workspace
 .GITHUB_SECRETS
 coverage/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
