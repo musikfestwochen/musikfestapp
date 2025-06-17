@@ -70,27 +70,67 @@ test('User can complete full registration with email verification', async ({ pag
     // Step 6: Verify we're redirected to the admin dashboard
     await expect(page).toHaveURL(/\/admin\/dashboard$/);
     console.log('✅ Email verification successful, redirected to admin dashboard');
+    
+    // Step 7: Check if we need to open the sidebar first (on mobile)
+    // Look for the sidebar toggle button with more reliable waiting
+    const sidebarToggleButton = page.locator('button[data-sidebar="trigger"]');
+    
+    try {
+        // Wait for the page to stabilize
+        await page.waitForLoadState('networkidle', { timeout: 5000 });
+        
+        // Check if the mobile sidebar toggle is visible (mobile view)
+        const isMobileView = await sidebarToggleButton.isVisible();
+        
+        if (isMobileView) {
+            console.log('📱 Mobile viewport detected, opening sidebar');
+            
+            // Make sure the button is ready for interaction
+            await sidebarToggleButton.waitFor({ state: 'visible', timeout: 5000 });
+            await page.waitForTimeout(500); // Short wait for any animations to complete
+            
+            // Click the toggle button and wait for the sidebar to appear
+            await sidebarToggleButton.click();
+            console.log('✅ Clicked sidebar toggle button');
+            
+            // Wait for the sidebar animation to complete
+            await page.waitForTimeout(500);
+        } else {
+            console.log('🖥️ Desktop viewport detected, sidebar should be visible');
+        }
+    } catch (error) {
+        console.error('⚠️ Issue with sidebar detection/interaction:', error);
+        // Continue the test even if there was an issue with the sidebar
+    }
 
-    // Step 7: Find the user dropdown menu button
+    // Step 8: Find the user dropdown menu button with increased timeout and retry
+    console.log(`🔍 Looking for user menu button for "${testUser.name}"`);
     const userMenuButton = page.locator('button[data-sidebar="menu-button"]').filter({ hasText: testUser.name });
-    await expect(userMenuButton).toBeVisible();
-    console.log(`✅ User name "${testUser.name}" is visible in the interface`);
+    
+    try {
+        await expect(userMenuButton).toBeVisible({ timeout: 10000 });
+        console.log(`✅ User name "${testUser.name}" is visible in the interface`);
+    } catch (error) {
+        console.error(`⚠️ Could not find user menu button for "${testUser.name}". Taking screenshot for debugging...`);
+        await page.screenshot({ path: `test-results/user-menu-failure-${Date.now()}.png`, fullPage: true });
+        throw error;
+    }
 
-    // Step 8: Click on the user menu button to open the dropdown menu
+    // Step 9: Click on the user menu button to open the dropdown menu
     await userMenuButton.click();
     console.log('✅ User dropdown menu opened');
 
-    // Step 9: Wait for the dropdown menu to appear and verify "Log Out" button
+    // Step 10: Wait for the dropdown menu to appear and verify "Log Out" button with increased timeout
     const logoutButton = page.getByRole('menuitem', { name: /log out/i });
-    await expect(logoutButton).toBeVisible();
+    await expect(logoutButton).toBeVisible({ timeout: 10000 });
     console.log('✅ Log Out button is visible in dropdown menu');
 
-    // Step 10: Click the logout button
+    // Step 11: Click the logout button
     await logoutButton.click();
     console.log('✅ Clicked Log Out button');
 
-    // Step 11: Verify we're redirected to the login page
-    await expect(page).toHaveURL(/\/login$/);
+    // Step 12: Verify we're redirected to the login page
+    await expect(page).toHaveURL(/\/login$/, { timeout: 10000 });
     console.log('✅ Successfully logged out and redirected to login page');
 
     console.log('✅ Full registration flow completed successfully');

@@ -52,6 +52,28 @@ export default defineConfig({
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
         },
+        {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+        },
+        {
+            name: 'webkit',
+            use: { ...devices['Desktop Safari'] },
+        },
+
+        /* Test mobile viewports */
+        {
+            name: 'mobile-chrome',
+            use: { ...devices['Pixel 5'] },
+        },
+        {
+            name: 'mobile-safari',
+            use: { ...devices['iPhone 12'] },
+        },
+        {
+            name: 'tablet',
+            use: { ...devices['iPad Air'] },
+        },
     ],
 
     /* Run your local dev server before starting the tests */
