@@ -1,14 +1,13 @@
 <script lang="ts" setup>
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
-
 import Heading from '@/components/Heading.vue';
 import Icon from '@/components/Icon.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/composables/usePermissions';
-import AppLayout from '@/layouts/AppLayout.vue';
+import AdminAppLayout from '@/layouts/admin/AdminAppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/vue3';
 
 const { can } = usePermissions();
 
@@ -72,7 +71,7 @@ defineProps<{
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbItems">
+    <AdminAppLayout :breadcrumbs="breadcrumbItems">
         <Head title="Users" />
 
         <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
@@ -133,5 +132,5 @@ defineProps<{
 
             <Pagination :items="users" />
         </div>
-    </AppLayout>
+    </AdminAppLayout>
 </template>
