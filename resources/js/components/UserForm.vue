@@ -16,9 +16,9 @@ const form = useForm({
 
 const submit = () => {
     if (props.user) {
-        form.put(route('users.update', props.user.id));
+        form.put(route('admin.users.update', { id: props.user.id }));
     } else {
-        form.post(route('users.store'));
+        form.post(route('admin.users.store'));
     }
 };
 </script>

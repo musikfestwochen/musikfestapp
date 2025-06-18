@@ -22,9 +22,6 @@ class OrganizationIndexRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'sort' => 'in:name,email,website',
-            'order' => 'in:asc,desc',
-        ];
+        return [];
     }
 }

@@ -9,6 +9,6 @@ Route::middleware(['permissions.global_organization', 'auth', 'verified'])->grou
     Route::get('admin/dashboard', function () {
         return Inertia::render('admin/AdminDashboard');
     })->name('admin.dashboard');
-    Route::resource('admin/users', UserController::class);
-    Route::resource('admin/organizations', OrganizationController::class);
+    Route::resource('admin/users', UserController::class)->names('admin.users');
+    Route::resource('admin/organizations', OrganizationController::class)->names('admin.organizations');
 });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -12,6 +13,12 @@ class UserDestroyRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        $userRoute = $this->route('user');
+        if (is_object($userRoute) && property_exists($userRoute, 'id')) {
+            // Prevent the user from deleting themselves
+            throw_if($userRoute->id === auth()->id(), new AuthorizationException('You cannot delete your own account.'));
+        }
+
         return auth()->user()->can('admin.users.destroy');
     }
 

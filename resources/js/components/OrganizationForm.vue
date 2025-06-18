@@ -22,9 +22,9 @@ const form = useForm({
 
 const submit = () => {
     if (props.organization) {
-        form.put(route('organizations.update', props.organization.id));
+        form.put(route('admin.organizations.update', { id: props.organization.id }));
     } else {
-        form.post(route('organizations.store'));
+        form.post(route('admin.organizations.store'));
     }
 };
 </script>

@@ -16,15 +16,15 @@ export const adminMainNavItems = [
 export const adminFooterNavItems = [
     {
         title: 'Users',
-        route: 'users.index',
+        route: 'admin.users.index',
         icon: Users2Icon,
-        permission: 'users.index',
+        permission: 'admin.users.index',
     },
     {
         title: 'Organizations',
-        route: 'organizations.index',
+        route: 'admin.organizations.index',
         icon: Building2Icon,
-        permission: 'organizations.index',
+        permission: 'admin.organizations.index',
     },
     {
         title: 'Github Repo',

@@ -8,11 +8,11 @@ import { Head } from '@inertiajs/vue3';
 const breadcrumbItems: BreadcrumbItem[] = [
     {
         title: 'Users',
-        href: '/users',
+        href: route('admin.users.index'),
     },
     {
         title: 'Create',
-        href: '/users/create',
+        href: route('admin.users.create'),
     },
 ];
 </script>

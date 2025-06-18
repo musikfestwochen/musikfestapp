@@ -23,8 +23,7 @@ class UserIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sort' => ['in:name,email'],
-            'order' => ['in:asc,desc'],
+            // No specific validation rules needed for listing users
         ];
     }
 }

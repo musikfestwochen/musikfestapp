@@ -27,10 +27,7 @@ class OrganizationController extends Controller
         $organizationService = app(OrganizationService::class);
 
         return Inertia::render('admin/AdminOrganizations', [
-            'organizations' => $organizationService->getPaginatedOrganizations(
-                $request->input('sort', 'name'),
-                $request->input('order', 'asc')
-            ),
+            'organizations' => Inertia::defer(fn () => $organizationService->getOrganizations()),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -42,7 +39,7 @@ class OrganizationController extends Controller
     {
         $organization = Organization::query()->create($request->all());
 
-        return redirect()->route('organizations.index')->with('status', 'Organization '.$organization->name.' created successfully.');
+        return redirect()->route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' created successfully.');
     }
 
     /**
@@ -64,7 +61,7 @@ class OrganizationController extends Controller
      */
     public function show(OrganizationShowRequest $request, Organization $organization): RedirectResponse
     {
-        return redirect()->route('organizations.edit', $organization);
+        return redirect()->route('admin.organizations.edit', $organization);
     }
 
     /**
@@ -86,7 +83,7 @@ class OrganizationController extends Controller
     {
         $organization->update($request->all());
 
-        return redirect()->route('organizations.index')->with('status', 'Organization '.$organization->name.' updated successfully.');
+        return redirect()->route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' updated successfully.');
     }
 
     /**
@@ -102,6 +99,6 @@ class OrganizationController extends Controller
         // delete organization
         $organization->delete();
 
-        return redirect()->route('organizations.index')->with('status', 'Organization '.$name.' deleted successfully.');
+        return redirect()->route('admin.organizations.index')->with('status', 'Organization '.$name.' deleted successfully.');
     }
 }

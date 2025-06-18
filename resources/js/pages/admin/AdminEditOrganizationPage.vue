@@ -10,11 +10,11 @@ const props = defineProps<{ organization: Organization }>();
 const breadcrumbItems: BreadcrumbItem[] = [
     {
         title: 'Organizations',
-        href: '/organizations',
+        href: route('admin.organizations.index'),
     },
     {
         title: 'Edit ' + props.organization.name,
-        href: '/organizations/' + props.organization.id + '/edit',
+        href: route('admin.organizations.edit', { id: props.organization.id }),
     },
 ];
 </script>

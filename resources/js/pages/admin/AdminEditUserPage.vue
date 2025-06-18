@@ -10,11 +10,11 @@ const props = defineProps<{ user: User }>();
 const breadcrumbItems: BreadcrumbItem[] = [
     {
         title: 'Users',
-        href: '/users',
+        href: route('admin.users.index'),
     },
     {
         title: 'Edit ' + props.user.name,
-        href: '/users/' + props.user.id + '/edit',
+        href: route('admin.users.edit', { id: props.user.id }),
     },
 ];
 </script>
