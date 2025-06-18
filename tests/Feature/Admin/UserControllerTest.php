@@ -22,7 +22,7 @@ it('shows the user index page with paginated users', function () {
 
     $this->actingAs($admin)
         ->get(route('users.index'))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/Users')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/AdminUsers')
             ->has('users.data', 10) // pagination limit
         );
 });
@@ -51,7 +51,7 @@ it('shows the create user page', function () {
 
     $this->actingAs($admin)
         ->get(route('users.create'))
-        ->assertInertia(fn (AssertableInertia $page): \Inertia\Testing\AssertableInertia => $page->component('admin/NewUserPage')
+        ->assertInertia(fn (AssertableInertia $page): \Inertia\Testing\AssertableInertia => $page->component('admin/AdminNewUserPage')
         );
 });
 
@@ -116,7 +116,7 @@ it('shows the edit user page', function () {
 
     $this->actingAs($admin)
         ->get(route('users.edit', $user))
-        ->assertInertia(fn (AssertableInertia $page): \Illuminate\Testing\Fluent\AssertableJson => $page->component('admin/EditUserPage')
+        ->assertInertia(fn (AssertableInertia $page): \Illuminate\Testing\Fluent\AssertableJson => $page->component('admin/AdminEditUserPage')
             ->where('user.id', $user->id)
         );
 });
