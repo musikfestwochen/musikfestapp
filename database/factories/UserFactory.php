@@ -90,7 +90,7 @@ class UserFactory extends Factory
             $user->assignRole('SuperAdmin');
         });
     }
-    
+
     /**
      * Creates a user with exactly one organization
      */
@@ -101,7 +101,7 @@ class UserFactory extends Factory
             $user->organizations()->attach($organization->id);
         });
     }
-    
+
     /**
      * Creates a user with multiple organizations (default is 2-3)
      */
@@ -113,18 +113,18 @@ class UserFactory extends Factory
             $user->organizations()->attach($organizations->pluck('id'));
         });
     }
-    
+
     /**
      * Creates a user with OrganizationAdministrator role
-     * 
-     * @param Organization|null $organization A specific organization to attach to the user
-     * @param array|null $organizations Array of organization IDs to attach to the user
+     *
+     * @param  Organization|null  $organization  A specific organization to attach to the user
+     * @param  array|null  $organizations  Array of organization IDs to attach to the user
      */
-    public function organizationAdmin(Organization $organization = null, array $organizations = null): static
+    public function organizationAdmin(?Organization $organization = null, ?array $organizations = null): static
     {
         return $this->afterCreating(function (User $user) use ($organization, $organizations) {
             // Handle organization attachment
-            if ($organization !== null) {
+            if ($organization instanceof \App\Models\Organization) {
                 $user->organizations()->attach($organization->id);
                 setPermissionsOrgId($organization->id);
             } elseif ($organizations !== null) {
@@ -136,7 +136,7 @@ class UserFactory extends Factory
                 $user->organizations()->attach($newOrg->id);
                 setPermissionsOrgId($newOrg->id);
             }
-            
+
             $user->assignRole('OrganizationAdministrator');
         });
     }
