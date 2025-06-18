@@ -3,56 +3,29 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
+import { usePermissions } from '@/composables/usePermissions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Building2Icon, FolderGit2Icon, LayoutGrid, UnplugIcon, Users2Icon } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
-// Import the usePermissions composable
-import { usePermissions } from '@/composables/usePermissions';
+const props = defineProps<{
+    mainNavItems: NavItem[];
+    footerNavItems: NavItem[];
+}>();
 
 const { can } = usePermissions();
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        route: 'admin.dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Organization Selection',
-        route: 'organization-selection.index',
-        icon: UnplugIcon,
-    },
-];
-
-const allFooterNavItems: NavItem[] = [
-    {
-        title: 'Users',
-        route: 'users.index',
-        icon: Users2Icon,
-        permission: 'users.index',
-    },
-    {
-        title: 'Organizations',
-        route: 'organizations.index',
-        icon: Building2Icon,
-        permission: 'organizations.index',
-    },
-    {
-        title: 'Github Repo',
-        url: 'https://github.com/musikfestwochen/musikfestapp',
-        icon: FolderGit2Icon,
-    },
-];
-
-// Filter items based on permissions
-const footerNavItems = allFooterNavItems.filter((item) => {
-    // If the item has a permission requirement, check if the user has that permission
+const filteredMainNavItems = props.mainNavItems.filter((item) => {
     if (item.permission) {
         return can(item.permission);
     }
-    // If no permission is required, always show the item
+    return true;
+});
+
+const filteredFooterNavItems = props.footerNavItems.filter((item) => {
+    if (item.permission) {
+        return can(item.permission);
+    }
     return true;
 });
 </script>
@@ -66,11 +39,11 @@ const footerNavItems = allFooterNavItems.filter((item) => {
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="filteredMainNavItems" />
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
+            <NavFooter :items="filteredFooterNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

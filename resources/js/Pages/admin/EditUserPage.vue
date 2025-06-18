@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import UserForm from '@/components/UserForm.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import AdminAppLayout from '@/layouts/admin/AdminAppLayout.vue';
 import { BreadcrumbItem, User } from '@/types';
 import { Head } from '@inertiajs/vue3';
 
@@ -20,12 +20,12 @@ const breadcrumbItems: BreadcrumbItem[] = [
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbItems">
+    <AdminAppLayout :breadcrumbs="breadcrumbItems">
         <Head title="Users" />
 
         <div class="px-4 py-6">
             <Heading class="mb-4" description="Edit user details" level="2" title="Edit User" />
             <UserForm :user="props.user" />
         </div>
-    </AppLayout>
+    </AdminAppLayout>
 </template>
