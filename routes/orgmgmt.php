@@ -6,12 +6,12 @@ use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(function () {
     Route::get('{organization:slug}', function (Organization $organization) {
-        return Inertia::render('Dashboard', [
+        return Inertia::render('orgmgmt/OrganizationDashboard', [
             'organization' => $organization,
         ]);
     });
     Route::get('{organization:slug}/dashboard', function (Organization $organization) {
-        return Inertia::render('Dashboard', [
+        return Inertia::render('orgmgmt/OrganizationDashboard', [
             'organization' => $organization,
         ]);
     })->name('organization.dashboard');

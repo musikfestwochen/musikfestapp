@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
     <SidebarMenuButton v-if="item.route" :is-active="route().current() == item.route" as-child>
-        <Link :href="route(item.route)">
+        <Link :href="route(item.route, item.params)">
             <component :is="item.icon" />
             <span>{{ item.title }}</span>
         </Link>

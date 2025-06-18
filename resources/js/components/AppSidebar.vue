@@ -66,11 +66,15 @@ const footerNavItems = allFooterNavItems.filter((item) => {
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <slot name="nav-main">
+                <NavMain :items="mainNavItems" />
+            </slot>
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
+            <slot name="nav-footer">
+                <NavFooter :items="footerNavItems" />
+            </slot>
             <NavUser />
         </SidebarFooter>
     </Sidebar>
