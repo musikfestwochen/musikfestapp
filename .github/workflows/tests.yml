@@ -4,8 +4,12 @@ on:
   pull_request:
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  backend-and-fullstack-tests:
+  basic-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +28,14 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
 
       - name: Install Node Dependencies
         run: npm ci
@@ -46,6 +58,12 @@ jobs:
       - name: Build Assets
         run: npm run build
 
+      - name: Upload Built Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-assets
+          path: public/build
+
       - name: Run Vitest
         run: npx vitest run
         env:
@@ -55,10 +73,150 @@ jobs:
         run: ./vendor/bin/phpstan analyse
 
       - name: Pest Tests
-        run: ./vendor/bin/pest --ci --coverage --min=100
+        run: ./vendor/bin/pest --ci -p
 
       - name: Type Coverage Tests
         run: ./vendor/bin/pest --type-coverage
 
-      - name: Mutation Tests
-        run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations
+  coverage-and-mutation-tests:
+    runs-on: ubuntu-latest
+    needs: basic-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Create SQLite Database
+        run: touch database/database.sqlite
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Publish Ziggy Configuration
+        run: php artisan ziggy:generate
+
+      - name: Download Built Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: public/build
+
+      - name: Run Coverage Tests
+        run: ./vendor/bin/pest --coverage --min=100 -p
+
+      - name: Run Mutation Tests
+        run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations -p
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: basic-tests
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Create SQLite Database
+        run: touch database/database.sqlite
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Publish Ziggy Configuration
+        run: php artisan ziggy:generate
+
+      - name: Download Built Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: public/build
+
+      - name: Start Laravel Server
+        run: php artisan serve --port=8000 &
+        env:
+          APP_URL: http://localhost:8000
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+
+      - name: Run E2E Tests
+        run: npx playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:8000
+          CI: true
+
+      - name: Upload Playwright Test Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
