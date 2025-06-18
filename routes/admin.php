@@ -7,7 +7,7 @@ use Inertia\Inertia;
 
 Route::middleware(['permissions.global_organization', 'auth', 'verified'])->group(function () {
     Route::get('admin/dashboard', function () {
-        return Inertia::render('Dashboard');
+        return Inertia::render('admin/AdminDashboard');
     })->name('admin.dashboard');
     Route::resource('admin/users', UserController::class);
     Route::resource('admin/organizations', OrganizationController::class);

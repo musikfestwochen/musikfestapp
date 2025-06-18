@@ -13,6 +13,7 @@ export interface BreadcrumbItem {
 export interface NavItem {
     title: string;
     route?: string; // Route name (internal Inertia route)
+    params?: Record<string, any>; // Route parameters for the internal route
     url?: string; // External URL
     icon?: LucideIcon;
     permission?: string; // Permission required to view this item

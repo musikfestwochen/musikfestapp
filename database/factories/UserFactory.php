@@ -90,4 +90,54 @@ class UserFactory extends Factory
             $user->assignRole('SuperAdmin');
         });
     }
+
+    /**
+     * Creates a user with exactly one organization
+     */
+    public function withSingleOrganization(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $organization = Organization::factory()->create();
+            $user->organizations()->attach($organization->id);
+        });
+    }
+
+    /**
+     * Creates a user with multiple organizations (default is 2-3)
+     */
+    public function withMultipleOrganizations(int $min = 2, int $max = 3): static
+    {
+        return $this->afterCreating(function (User $user) use ($min, $max) {
+            $orgCount = fake()->numberBetween($min, $max);
+            $organizations = Organization::factory()->count($orgCount)->create();
+            $user->organizations()->attach($organizations->pluck('id'));
+        });
+    }
+
+    /**
+     * Creates a user with OrganizationAdministrator role
+     *
+     * @param  Organization|null  $organization  A specific organization to attach to the user
+     * @param  array|null  $organizations  Array of organization IDs to attach to the user
+     */
+    public function organizationAdmin(?Organization $organization = null, ?array $organizations = null): static
+    {
+        return $this->afterCreating(function (User $user) use ($organization, $organizations) {
+            // Handle organization attachment
+            if ($organization instanceof \App\Models\Organization) {
+                $user->organizations()->attach($organization->id);
+                setPermissionsOrgId($organization->id);
+            } elseif ($organizations !== null) {
+                $user->organizations()->attach($organizations);
+                setPermissionsOrgId($organizations[0]);
+            } else {
+                // Create one if none provided
+                $newOrg = Organization::factory()->create();
+                $user->organizations()->attach($newOrg->id);
+                setPermissionsOrgId($newOrg->id);
+            }
+
+            $user->assignRole('OrganizationAdministrator');
+        });
+    }
 }
