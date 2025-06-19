@@ -10,47 +10,39 @@ use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
-it('shows the user index page with paginated users', function () {
+it('shows the user index page with all users', function () {
     User::factory()->count(12)->create();
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->get(route('users.index'))
+        ->get(route('admin.users.index'))
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/AdminUsers')
-            ->has('users.data', 10) // pagination limit
+            ->has('users', 13) // pagination limit
         );
 });
 
 it('doesnt show the user index page to non-admin users', function () {
-    $this->get(route('users.index'))
-        ->assertRedirect(route('login'));
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('admin.users.index'))
+        ->assertForbidden();
 });
-
-it('sorts users by the requested field and order', function (string $sort, string $order, int $status) {
-    User::factory()->count(3)->create();
-    $admin = User::factory()->globalAdmin()->create();
-
-    $this->actingAs($admin)
-        ->get(route('users.index', ['sort' => $sort, 'order' => $order]))
-        ->assertStatus($status);
-})->with([
-    ['name', 'asc', 200],
-    ['email', 'desc', 200],
-    ['created_at', 'asc', 302],
-    ['invalid', 'asc', 302],
-]);
 
 it('shows the create user page', function () {
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->get(route('users.create'))
+        ->get(route('admin.users.create'))
         ->assertInertia(fn (AssertableInertia $page): \Inertia\Testing\AssertableInertia => $page->component('admin/AdminNewUserPage')
         );
 });
@@ -58,19 +50,19 @@ it('shows the create user page', function () {
 it('creates a user with a random password', function () {
     $admin = User::factory()->globalAdmin()->create();
 
-    $response = $this->actingAs($admin)->post(route('users.store'), [
+    $response = $this->actingAs($admin)->post(route('admin.users.store'), [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
 
-    $response->assertRedirect(route('users.index'));
+    $response->assertRedirect(route('admin.users.index'));
     $this->assertDatabaseHas('users', ['email' => 'jane@example.com']);
 });
 
 it('fails to create user with invalid email', function () {
     $admin = User::factory()->globalAdmin()->create();
 
-    $response = $this->actingAs($admin)->post(route('users.store'), [
+    $response = $this->actingAs($admin)->post(route('admin.users.store'), [
         'name' => 'Invalid Email User',
         'email' => 'invalid-email',
     ]);
@@ -84,7 +76,7 @@ it('fails to create a user with an existing email', function () {
         'email' => 'existing@email.test',
     ]);
 
-    $response = $this->actingAs($admin)->post(route('users.store'), [
+    $response = $this->actingAs($admin)->post(route('admin.users.store'), [
         'name' => 'Duplicate Email User',
         'email' => $user->email,
     ]);
@@ -96,7 +88,7 @@ it('fails to store user without name', function () {
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->post(route('users.store'), ['email' => 'foo@example.com'])
+        ->post(route('admin.users.store'), ['email' => 'foo@example.com'])
         ->assertSessionHasErrors('name');
 });
 
@@ -105,9 +97,9 @@ it('redirects to the edit page when trying to show a user', function () {
     $user = User::factory()->create();
 
     $this->actingAs($admin);
-    $response = $this->get(route('users.show', $user));
+    $response = $this->get(route('admin.users.show', $user));
 
-    $response->assertRedirect(route('users.edit', $user));
+    $response->assertRedirect(route('admin.users.edit', $user));
 });
 
 it('shows the edit user page', function () {
@@ -115,7 +107,7 @@ it('shows the edit user page', function () {
     $user = User::factory()->create();
 
     $this->actingAs($admin)
-        ->get(route('users.edit', $user))
+        ->get(route('admin.users.edit', $user))
         ->assertInertia(fn (AssertableInertia $page): \Illuminate\Testing\Fluent\AssertableJson => $page->component('admin/AdminEditUserPage')
             ->where('user.id', $user->id)
         );
@@ -125,7 +117,7 @@ it('updates a user successfully', function () {
     $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
 
-    $this->actingAs($admin)->put(route('users.update', $user), [
+    $this->actingAs($admin)->put(route('admin.users.update', $user), [
         'name' => 'Updated Name',
         'email' => 'updated@example.com',
     ]);
@@ -142,7 +134,7 @@ it('fails to update without name', function () {
     $user = User::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('users.update', $user), ['email' => 'new@example.com'])
+        ->put(route('admin.users.update', $user), ['email' => 'new@example.com'])
         ->assertSessionHasErrors('name');
 });
 
@@ -151,7 +143,7 @@ it('fails to update without email', function () {
     $user = User::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('users.update', $user), ['name' => 'New Name'])
+        ->put(route('admin.users.update', $user), ['name' => 'New Name'])
         ->assertSessionHasErrors('email');
 });
 
@@ -163,7 +155,7 @@ it('fails to update with existing email', function () {
     $user2 = User::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('users.update', $user2), ['email' => $user1->email])
+        ->put(route('admin.users.update', $user2), ['email' => $user1->email])
         ->assertSessionHasErrors('email');
 });
 
@@ -174,8 +166,8 @@ it('deletes a user', function () {
     ]);
 
     $response = $this->actingAs($admin)
-        ->delete(route('users.destroy', $user))
-        ->assertRedirect(route('users.index'));
+        ->delete(route('admin.users.destroy', $user))
+        ->assertRedirect(route('admin.users.index'));
 
     $response->assertSessionHas('status', 'User Ursula Peter deleted successfully.');
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
@@ -193,7 +185,7 @@ it('uses the correct form requests', function () {
 
     // middleware
     test()->assertRouteUsesMiddleware(
-        'users.index',
+        'admin.users.index',
         ['permissions.global_organization', 'auth', 'verified'],
     );
 
@@ -203,7 +195,7 @@ it('uses the correct form requests', function () {
         'create',
         UserCreateRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.create',
+        'admin.users.create',
         UserCreateRequest::class);
 
     // destroy
@@ -212,7 +204,7 @@ it('uses the correct form requests', function () {
         'destroy',
         UserDestroyRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.destroy',
+        'admin.users.destroy',
         UserDestroyRequest::class);
 
     // edit
@@ -221,7 +213,7 @@ it('uses the correct form requests', function () {
         'edit',
         UserEditRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.edit',
+        'admin.users.edit',
         UserEditRequest::class);
 
     // index
@@ -230,7 +222,7 @@ it('uses the correct form requests', function () {
         'index',
         UserIndexRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.index',
+        'admin.users.index',
         UserIndexRequest::class);
 
     // show
@@ -239,7 +231,7 @@ it('uses the correct form requests', function () {
         'show',
         UserShowRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.show',
+        'admin.users.show',
         UserShowRequest::class);
 
     // store
@@ -248,7 +240,7 @@ it('uses the correct form requests', function () {
         'store',
         UserStoreRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.store',
+        'admin.users.store',
         UserStoreRequest::class);
 
     // update
@@ -257,7 +249,7 @@ it('uses the correct form requests', function () {
         'update',
         UserUpdateRequest::class);
     test()->assertRouteUsesFormRequest(
-        'users.update',
+        'admin.users.update',
         UserUpdateRequest::class);
 
 });

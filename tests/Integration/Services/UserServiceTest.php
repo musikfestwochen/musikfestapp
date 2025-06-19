@@ -4,7 +4,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
@@ -18,86 +18,15 @@ beforeEach(function () {
     $this->service = new UserService;
 });
 
-describe('getPaginatedUsers', function () {
-    it('returns paginated users with default sorting', function () {
+describe('getUsers', function () {
+    it('returns users', function () {
         setPermissionsOrgId(GLOBAL_ORG_ID);
         User::factory()->count(15)->create();
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
-        expect($result)->toBeInstanceOf(LengthAwarePaginator::class);
-        expect($result->perPage())->toBe(10);
-        expect($result->total())->toBe(15);
-        expect($result->currentPage())->toBe(1);
-    });
-
-    it('sorts users by name in ascending order by default', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        User::factory()->create(['name' => 'Zulu User']);
-        User::factory()->create(['name' => 'Alpha User']);
-        User::factory()->create(['name' => 'Beta User']);
-
-        $result = $this->service->getPaginatedUsers();
-
-        $names = $result->items();
-        expect($names[0]->name)->toBe('Alpha User');
-        expect($names[1]->name)->toBe('Beta User');
-        expect($names[2]->name)->toBe('Zulu User');
-    });
-
-    it('sorts users by name in descending order when specified', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        User::factory()->create(['name' => 'Alpha User']);
-        User::factory()->create(['name' => 'Beta User']);
-        User::factory()->create(['name' => 'Zulu User']);
-
-        $result = $this->service->getPaginatedUsers('name', 'desc');
-
-        $names = $result->items();
-        expect($names[0]->name)->toBe('Zulu User');
-        expect($names[1]->name)->toBe('Beta User');
-        expect($names[2]->name)->toBe('Alpha User');
-    });
-
-    it('sorts users by email when specified', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        User::factory()->create(['email' => 'zulu@example.com']);
-        User::factory()->create(['email' => 'alpha@example.com']);
-        User::factory()->create(['email' => 'beta@example.com']);
-
-        $result = $this->service->getPaginatedUsers('email', 'asc');
-
-        $emails = $result->items();
-        expect($emails[0]->email)->toBe('alpha@example.com');
-        expect($emails[1]->email)->toBe('beta@example.com');
-        expect($emails[2]->email)->toBe('zulu@example.com');
-    });
-
-    it('sorts users by created_at when specified', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        $oldest = User::factory()->create(['created_at' => now()->subDays(3)]);
-        $newest = User::factory()->create(['created_at' => now()->subDays(1)]);
-        $middle = User::factory()->create(['created_at' => now()->subDays(2)]);
-
-        $result = $this->service->getPaginatedUsers('created_at', 'asc');
-
-        $items = $result->items();
-        expect($items[0]->id)->toBe($oldest->id);
-        expect($items[1]->id)->toBe($middle->id);
-        expect($items[2]->id)->toBe($newest->id);
-    });
-
-    it('does not apply sorting when invalid sort field is provided', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        $first = User::factory()->create(['name' => 'Zulu User']);
-        $second = User::factory()->create(['name' => 'Alpha User']);
-
-        $result = $this->service->getPaginatedUsers('invalid_field', 'desc');
-
-        // Should return in natural database order (by ID) when invalid sort field is provided
-        $items = $result->items();
-        expect($items[0]->id)->toBe($first->id);
-        expect($items[1]->id)->toBe($second->id);
+        expect($result)->toBeInstanceOf(Collection::class)
+            ->and($result->count())->toBe(15);
     });
 
     it('filters users by organization when not in global organization', function () {
@@ -109,10 +38,9 @@ describe('getPaginatedUsers', function () {
 
         $userInOrg->organizations()->attach($organization);
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
-        expect($result->total())->toBe(1);
-        expect($result->items()[0]->id)->toBe($userInOrg->id);
+        expect($result->count())->toBe(1);
     });
 
     it('returns all users when in global organization', function () {
@@ -124,61 +52,18 @@ describe('getPaginatedUsers', function () {
 
         $userInOrg->organizations()->attach($organization);
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
-        expect($result->total())->toBe(2);
-        $userIds = collect($result->items())->pluck('id')->toArray();
-        expect($userIds)->toContain($userInOrg->id);
-        expect($userIds)->toContain($userNotInOrg->id);
+        expect($result->count())->toBe(2);
     });
 
-    it('accepts valid direction parameter', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        User::factory()->create(['name' => 'Alpha']);
-        User::factory()->create(['name' => 'Beta']);
-
-        $resultAsc = $this->service->getPaginatedUsers('name', 'asc');
-        $resultDesc = $this->service->getPaginatedUsers('name', 'desc');
-
-        expect($resultAsc->items()[0]->name)->toBe('Alpha');
-        expect($resultDesc->items()[0]->name)->toBe('Beta');
-    });
-
-    it('preserves query string in pagination', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        User::factory()->count(15)->create();
-
-        $result = $this->service->getPaginatedUsers();
-
-        expect($result->hasPages())->toBeTrue();
-        expect($result)->toBeInstanceOf(LengthAwarePaginator::class);
-    });
-
-    it('returns empty paginator when no users exist', function () {
+    it('returns empty collection when no users exist', function () {
         setPermissionsOrgId(GLOBAL_ORG_ID);
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
-        expect($result)->toBeInstanceOf(LengthAwarePaginator::class);
-        expect($result->total())->toBe(0);
-        expect($result->items())->toBeEmpty();
-    });
-
-    it('handles all valid sort fields correctly', function () {
-        setPermissionsOrgId(GLOBAL_ORG_ID);
-        $validSortFields = ['name', 'email', 'created_at'];
-
-        foreach ($validSortFields as $field) {
-            User::factory()->count(3)->create();
-
-            $result = $this->service->getPaginatedUsers($field, 'asc');
-
-            expect($result)->toBeInstanceOf(LengthAwarePaginator::class);
-            expect($result->total())->toBeGreaterThan(0);
-
-            // Clean up for next iteration
-            User::query()->delete();
-        }
+        expect($result)->toBeInstanceOf(Collection::class)
+            ->and($result->count())->toBe(0);
     });
 
     it('filters correctly when organization has no users', function () {
@@ -187,15 +72,14 @@ describe('getPaginatedUsers', function () {
 
         User::factory()->count(3)->create(); // Users not attached to any organization
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
-        expect($result->total())->toBe(0);
-        expect($result->items())->toBeEmpty();
+        expect($result->count())->toBe(0);
     });
 
-    it('uses strict comparison for GLOBAL_ORG_ID check', function () {
+    it('uses strict comparison for GLOBAL_ORG_ID check', function ($orgId, $expectedCount) {
         // Test that string "0" is not treated as integer 0
-        setPermissionsOrgId('0'); // String zero instead of integer zero
+        setPermissionsOrgId($orgId); // String zero instead of integer zero
 
         $organization = Organization::factory()->create();
         $userInOrg = User::factory()->create();
@@ -203,12 +87,17 @@ describe('getPaginatedUsers', function () {
 
         $userInOrg->organizations()->attach($organization);
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
         // With loose comparison (!=), "0" == 0, so it returns all users (no filtering)
         // With strict comparison (!==), "0" !== 0, so it would filter by organization
-        expect($result->total())->toBe(0);
-    });
+        expect($result->count())->toBe($expectedCount);
+    })->with(
+        [
+            [GLOBAL_ORG_ID, 2],
+            [Str(GLOBAL_ORG_ID), 0], // String "0" should not match integer 0
+        ]
+    );
 
     it('properly filters users when multiple organizations exist', function () {
         $targetOrg = Organization::factory()->create();
@@ -224,15 +113,14 @@ describe('getPaginatedUsers', function () {
         $userInOtherOrg->organizations()->attach($otherOrg);
         $userInBothOrgs->organizations()->attach([$targetOrg->id, $otherOrg->id]);
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
         // Should only return users that belong to the target organization
-        expect($result->total())->toBe(2);
-        $userIds = collect($result->items())->pluck('id')->toArray();
-        expect($userIds)->toContain($userInTargetOrg->id);
-        expect($userIds)->toContain($userInBothOrgs->id);
-        expect($userIds)->not->toContain($userInOtherOrg->id);
-        expect($userIds)->not->toContain($userInNoOrg->id);
+        expect($result->count())->toBe(2)
+            ->and($result->pluck('name')->toArray())->toContain('User In Target Org')
+            ->and($result->pluck('name')->toArray())->toContain('User In Both Orgs')
+            ->and($result->pluck('name')->toArray())->not->toContain('User In Other Org')
+            ->and($result->pluck('name')->toArray())->not->toContain('User In No Org');
     });
 
     it('enforces organization ID matching in whereHas clause', function () {
@@ -246,12 +134,13 @@ describe('getPaginatedUsers', function () {
         $userInCorrectOrg->organizations()->attach($correctOrg);
         $userInWrongOrg->organizations()->attach($wrongOrg);
 
-        $result = $this->service->getPaginatedUsers();
+        $result = $this->service->getUsers();
 
         // This test specifically verifies that the where clause filters by organization ID
         // If the where clause is removed, this test should fail
-        expect($result->total())->toBe(1);
-        expect($result->items()[0]->id)->toBe($userInCorrectOrg->id);
-        expect(collect($result->items())->pluck('id')->toArray())->not->toContain($userInWrongOrg->id);
+        expect($result)->toBeInstanceOf(Collection::class)
+            ->and($result->count())->toBe(1)
+            ->and($result->pluck('id')->toArray())->toContain($userInCorrectOrg->id)
+            ->and($result->pluck('id')->toArray())->not->toContain($userInWrongOrg->id);
     });
 });
