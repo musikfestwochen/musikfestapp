@@ -27,7 +27,7 @@ class OrganizationController extends Controller
         $organizationService = app(OrganizationService::class);
 
         return Inertia::render('admin/AdminOrganizations', [
-            'organizations' => Inertia::defer(fn () => $organizationService->getOrganizations()),
+            'organizations' => $organizationService->getOrganizations(),
             'status' => $request->session()->get('status'),
         ]);
     }

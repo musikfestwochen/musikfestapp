@@ -13,7 +13,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
 ];
 
 defineProps<{
-    users?: User[];
+    users: User[];
     status?: string;
 }>();
 </script>

@@ -27,7 +27,7 @@ class UserController extends Controller
         $userService = app(UserService::class);
 
         return Inertia::render('admin/AdminUsers', [
-            'users' => Inertia::defer(fn () => $userService->getUsers()),
+            'users' => $userService->getUsers(),
             'status' => $request->session()->get('status'),
         ]);
     }

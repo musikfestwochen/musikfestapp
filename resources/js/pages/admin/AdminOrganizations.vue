@@ -13,7 +13,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
 ];
 
 defineProps<{
-    organizations?: Organization[];
+    organizations: Organization[];
     status?: string;
 }>();
 </script>
