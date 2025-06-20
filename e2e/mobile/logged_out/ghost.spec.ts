@@ -6,7 +6,7 @@ test.use({
 
 test('Mobile Ghost Test', async ({ page }) => {
     console.log('Navigating to login page');
-    await page.goto('http://musikfestapp.test/login');
+    await page.goto('/login');
     console.log('Filling in login credentials');
     await page.getByRole('textbox', { name: 'Email address' }).click();
     await page.getByRole('textbox', { name: 'Email address' }).fill('superadmin@e2e.test');

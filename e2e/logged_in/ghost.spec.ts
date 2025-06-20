@@ -14,7 +14,8 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
 
     // Login
     console.log('Navigating to login page...');
-    await page.goto('http://musikfestapp.test/login');
+    // Use relative URL for login page
+    await page.goto('/login');
     console.log('Filling in superadmin credentials...');
     await page.getByRole('textbox', { name: 'Email address' }).fill('superadmin@e2e.test');
     await page.getByRole('textbox', { name: 'Password' }).fill('superadminpassword');
