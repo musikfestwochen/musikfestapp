@@ -16,51 +16,36 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
-it('shows the organization index page with paginated organizations', function () {
+it('shows the organization index page with organizations', function () {
 
     Organization::factory()->count(12)->create();
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->get(route('organizations.index'))
+        ->get(route('admin.organizations.index'))
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/Organizations')
-            ->has('organizations.data', 10) // pagination limit
+            ->has('organizations', 12)
         );
 });
 
 it('doesnt show the organization index page to non-admin users', function () {
-    $this->get(route('organizations.index'))
+    $this->get(route('admin.organizations.index'))
         ->assertRedirect(route('login'));
 });
-
-it('sorts organizations by the requested field and order', function (string $sort, string $order, int $status) {
-    Organization::factory()->count(3)->create();
-    $admin = User::factory()->globalAdmin()->create();
-
-    $this->actingAs($admin)
-        ->get(route('organizations.index', ['sort' => $sort, 'order' => $order]))
-        ->assertStatus($status);
-})->with([
-    ['name', 'asc', 200],
-    ['email', 'desc', 200],
-    ['website', 'asc', 200],
-    ['created_at', 'asc', 302],
-    ['invalid', 'asc', 302],
-]);
 
 it('shows the create organization page', function () {
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->get(route('organizations.create'))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/NewOrganizationPage')
+        ->get(route('admin.organizations.create'))
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/NewOrganization')
         );
 });
 
 it('creates an organization successfully', function () {
     $admin = User::factory()->globalAdmin()->create();
 
-    $response = $this->actingAs($admin)->post(route('organizations.store'), [
+    $response = $this->actingAs($admin)->post(route('admin.organizations.store'), [
         'name' => 'Test Organization',
         'slug' => 'test-organization',
         'description' => 'Test description',
@@ -69,7 +54,7 @@ it('creates an organization successfully', function () {
         'website' => 'https://example.com',
     ]);
 
-    $response->assertRedirect(route('organizations.index'));
+    $response->assertRedirect(route('admin.organizations.index'));
     $this->assertDatabaseHas('organizations', ['name' => 'Test Organization']);
 });
 
@@ -77,7 +62,7 @@ it('fails to create organization without name', function () {
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->post(route('organizations.store'), [
+        ->post(route('admin.organizations.store'), [
             'slug' => 'test-slug',
             'email' => 'org@example.com',
         ])
@@ -88,7 +73,7 @@ it('fails to create organization without slug', function () {
     $admin = User::factory()->globalAdmin()->create();
 
     $this->actingAs($admin)
-        ->post(route('organizations.store'), [
+        ->post(route('admin.organizations.store'), [
             'name' => 'Test Organization',
             'email' => 'org@example.com',
         ])
@@ -100,7 +85,7 @@ it('fails to create organization with duplicate name', function () {
     Organization::factory()->create(['name' => 'Existing Organization']);
 
     $this->actingAs($admin)
-        ->post(route('organizations.store'), [
+        ->post(route('admin.organizations.store'), [
             'name' => 'Existing Organization',
             'slug' => 'new-slug',
         ])
@@ -112,7 +97,7 @@ it('fails to create organization with duplicate slug', function () {
     Organization::factory()->create(['slug' => 'existing-slug']);
 
     $this->actingAs($admin)
-        ->post(route('organizations.store'), [
+        ->post(route('admin.organizations.store'), [
             'name' => 'New Organization',
             'slug' => 'existing-slug',
         ])
@@ -124,9 +109,9 @@ it('redirects to the edit page when trying to show an organization', function ()
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin);
-    $response = $this->get(route('organizations.show', $organization));
+    $response = $this->get(route('admin.organizations.show', $organization));
 
-    $response->assertRedirect(route('organizations.edit', $organization));
+    $response->assertRedirect(route('admin.organizations.edit', $organization));
 });
 
 it('shows the edit organization page', function () {
@@ -134,8 +119,8 @@ it('shows the edit organization page', function () {
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)
-        ->get(route('organizations.edit', $organization))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/EditOrganizationPage')
+        ->get(route('admin.organizations.edit', $organization))
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/EditOrganization')
             ->where('organization.id', $organization->id)
         );
 });
@@ -144,7 +129,7 @@ it('updates an organization successfully', function () {
     $admin = User::factory()->globalAdmin()->create();
     $organization = Organization::factory()->create();
 
-    $this->actingAs($admin)->put(route('organizations.update', $organization), [
+    $this->actingAs($admin)->put(route('admin.organizations.update', $organization), [
         'name' => 'Updated Organization',
         'slug' => 'updated-organization',
         'description' => 'Updated description',
@@ -169,7 +154,7 @@ it('fails to update without name', function () {
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('organizations.update', $organization), [
+        ->put(route('admin.organizations.update', $organization), [
             'slug' => 'updated-slug',
             'email' => 'updated@example.com',
         ])
@@ -181,7 +166,7 @@ it('fails to update without slug', function () {
     $organization = Organization::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('organizations.update', $organization), [
+        ->put(route('admin.organizations.update', $organization), [
             'name' => 'Updated Organization',
             'email' => 'updated@example.com',
         ])
@@ -194,7 +179,7 @@ it('fails to update with existing name', function () {
     $organization2 = Organization::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('organizations.update', $organization2), [
+        ->put(route('admin.organizations.update', $organization2), [
             'name' => 'Existing Organization',
             'slug' => 'updated-slug',
         ])
@@ -207,7 +192,7 @@ it('fails to update with existing slug', function () {
     $organization2 = Organization::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('organizations.update', $organization2), [
+        ->put(route('admin.organizations.update', $organization2), [
             'name' => 'Updated Organization',
             'slug' => 'existing-slug',
         ])
@@ -221,8 +206,8 @@ it('deletes an organization', function () {
     ]);
 
     $response = $this->actingAs($admin)
-        ->delete(route('organizations.destroy', $organization))
-        ->assertRedirect(route('organizations.index'));
+        ->delete(route('admin.organizations.destroy', $organization))
+        ->assertRedirect(route('admin.organizations.index'));
 
     $response->assertSessionHas('status', 'Organization Organization To Delete deleted successfully.');
     $this->assertSoftDeleted('organizations', ['id' => $organization->id]);
@@ -244,7 +229,7 @@ it('uses the correct form requests', function () {
         'create',
         OrganizationCreateRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.create',
+        'admin.organizations.create',
         OrganizationCreateRequest::class);
 
     // destroy
@@ -253,7 +238,7 @@ it('uses the correct form requests', function () {
         'destroy',
         OrganizationDestroyRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.destroy',
+        'admin.organizations.destroy',
         OrganizationDestroyRequest::class);
 
     // edit
@@ -262,7 +247,7 @@ it('uses the correct form requests', function () {
         'edit',
         OrganizationEditRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.edit',
+        'admin.organizations.edit',
         OrganizationEditRequest::class);
 
     // index
@@ -271,7 +256,7 @@ it('uses the correct form requests', function () {
         'index',
         OrganizationIndexRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.index',
+        'admin.organizations.index',
         OrganizationIndexRequest::class);
 
     // show
@@ -280,7 +265,7 @@ it('uses the correct form requests', function () {
         'show',
         OrganizationShowRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.show',
+        'admin.organizations.show',
         OrganizationShowRequest::class);
 
     // store
@@ -289,7 +274,7 @@ it('uses the correct form requests', function () {
         'store',
         OrganizationStoreRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.store',
+        'admin.organizations.store',
         OrganizationStoreRequest::class);
 
     // update
@@ -298,7 +283,7 @@ it('uses the correct form requests', function () {
         'update',
         OrganizationUpdateRequest::class);
     test()->assertRouteUsesFormRequest(
-        'organizations.update',
+        'admin.organizations.update',
         OrganizationUpdateRequest::class);
 
 });

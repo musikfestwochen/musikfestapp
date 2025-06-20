@@ -71,38 +71,6 @@ test('User can complete full registration with email verification', async ({ pag
     await expect(page).toHaveURL(/\/admin\/dashboard$/);
     console.log('✅ Email verification successful, redirected to admin dashboard');
 
-    // Step 7: Check if we need to open the sidebar first (on mobile)
-    // Look for the sidebar toggle button with more reliable waiting
-    const sidebarToggleButton = page.locator('button[data-sidebar="trigger"]');
-
-    try {
-        // Wait for the page to stabilize
-        await page.waitForLoadState('networkidle', { timeout: 5000 });
-
-        // Check if the mobile sidebar toggle is visible (mobile view)
-        const isMobileView = await sidebarToggleButton.isVisible();
-
-        if (isMobileView) {
-            console.log('📱 Mobile viewport detected, opening sidebar');
-
-            // Make sure the button is ready for interaction
-            await sidebarToggleButton.waitFor({ state: 'visible', timeout: 5000 });
-
-            // Click the toggle button and wait for the sidebar to appear
-            await sidebarToggleButton.click();
-            console.log('✅ Clicked sidebar toggle button');
-
-            // Wait for the sidebar element to become visible
-            const sidebarElement = page.locator('div[data-sidebar="content"]');
-            await sidebarElement.waitFor({ state: 'visible', timeout: 5000 });
-        } else {
-            console.log('🖥️ Desktop viewport detected, sidebar should be visible');
-        }
-    } catch (error) {
-        console.error('⚠️ Issue with sidebar detection/interaction:', error);
-        // Continue the test even if there was an issue with the sidebar
-    }
-
     // Step 8: Find the user dropdown menu button with increased timeout and retry
     console.log(`🔍 Looking for user menu button for "${testUser.name}"`);
     const userMenuButton = page.locator('button[data-sidebar="menu-button"]').filter({ hasText: testUser.name });

@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
-import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
+import UserNav from '@/components/users/UserNav.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
@@ -44,7 +44,7 @@ const filteredFooterNavItems = props.footerNavItems.filter((item) => {
 
         <SidebarFooter>
             <NavFooter :items="filteredFooterNavItems" />
-            <NavUser />
+            <UserNav />
         </SidebarFooter>
     </Sidebar>
     <slot />

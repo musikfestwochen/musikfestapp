@@ -10,10 +10,7 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([
-        'sort' => 'in:name,email,website',
-        'order' => 'in:asc,desc',
-    ]);
+    expect($this->request->rules())->toBe([]);
 });
 
 it('authorizes when user can index organizations', function () {

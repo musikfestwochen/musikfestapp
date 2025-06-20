@@ -4,14 +4,14 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class UserService
 {
     /**
-     * @return LengthAwarePaginator<int, User>
+     * @return Collection<int, User>
      */
-    public function getPaginatedUsers(string $sort = 'name', string $direction = 'asc'): LengthAwarePaginator
+    public function getUsers(): Collection
     {
         $currentOrgId = getPermissionsOrgId();
         $query = User::query();
@@ -22,10 +22,6 @@ class UserService
             });
         }
 
-        if (in_array($sort, ['name', 'email', 'created_at'])) {
-            $query->orderBy($sort, $direction);
-        }
-
-        return $query->paginate(10)->withQueryString();
+        return $query->get();
     }
 }

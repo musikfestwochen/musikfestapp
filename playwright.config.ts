@@ -51,28 +51,14 @@ export default defineConfig({
         {
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
+            /* Exclude the mobile ghost test from desktop runs */
+            testIgnore: 'e2e/mobile/**/*.spec.ts',
         },
         {
-            name: 'firefox',
-            use: { ...devices['Desktop Firefox'] },
-        },
-        {
-            name: 'webkit',
-            use: { ...devices['Desktop Safari'] },
-        },
-
-        /* Test mobile viewports */
-        {
-            name: 'mobile-chrome',
+            name: 'mobile-ghost',
             use: { ...devices['Pixel 5'] },
-        },
-        {
-            name: 'mobile-safari',
-            use: { ...devices['iPhone 12'] },
-        },
-        {
-            name: 'tablet',
-            use: { ...devices['iPad Air'] },
+            /* Only run the ghost test in mobile emulation */
+            testMatch: 'e2e/mobile/**/*.spec.ts',
         },
     ],
 
@@ -80,7 +66,7 @@ export default defineConfig({
     webServer: process.env.CI
         ? undefined
         : {
-              command: '', // Assuming Laravel Herd is managing the server
+              command: 'npm run dev',
               url: 'http://musikfestapp.test',
               reuseExistingServer: true,
           },

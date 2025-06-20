@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import AuthLayout from '@/layouts/auth/AuthSplitLayout.vue';
+import SplitLayout from '@/layouts/auth/SplitLayout.vue';
 
 defineProps<{
     title?: string;
@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-    <AuthLayout :description="description" :title="title">
+    <SplitLayout :description="description" :title="title">
         <slot />
-    </AuthLayout>
+    </SplitLayout>
 </template>

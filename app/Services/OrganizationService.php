@@ -3,21 +3,15 @@
 namespace App\Services;
 
 use App\Models\Organization;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class OrganizationService
 {
     /**
-     * @return LengthAwarePaginator<int, Organization>
+     * @return Collection<int, Organization>
      */
-    public function getPaginatedOrganizations(string $sort = 'name', string $direction = 'asc'): LengthAwarePaginator
+    public function getOrganizations(): Collection
     {
-        $query = Organization::query();
-
-        if (in_array($sort, ['name', 'email', 'website', 'created_at'])) {
-            $query->orderBy($sort, $direction);
-        }
-
-        return $query->paginate(10)->withQueryString();
+        return Organization::query()->get();
     }
 }

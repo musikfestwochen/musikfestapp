@@ -2,12 +2,20 @@
 
 namespace App\Providers;
 
+use App\Listeners\Permissions\PermissionAttachedListener;
+use App\Listeners\Permissions\PermissionDetachedListener;
+use App\Listeners\Permissions\RoleAttachedListener;
+use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Events\PermissionAttached;
+use Spatie\Permission\Events\PermissionDetached;
+use Spatie\Permission\Events\RoleAttached;
+use Spatie\Permission\Events\RoleDetached;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,23 +40,23 @@ class AppServiceProvider extends ServiceProvider
 
         // Register event listeners directly using the Event facade
         Event::listen(
-            \Spatie\Permission\Events\RoleAttached::class,
-            \App\Listeners\Permissions\RoleAttachedListener::class
+            RoleAttached::class,
+            RoleAttachedListener::class
         );
 
         Event::listen(
-            \Spatie\Permission\Events\RoleDetached::class,
-            \App\Listeners\Permissions\RoleDetachedListener::class
+            RoleDetached::class,
+            RoleDetachedListener::class
         );
 
         Event::listen(
-            \Spatie\Permission\Events\PermissionAttached::class,
-            \App\Listeners\Permissions\PermissionAttachedListener::class
+            PermissionAttached::class,
+            PermissionAttachedListener::class
         );
 
         Event::listen(
-            \Spatie\Permission\Events\PermissionDetached::class,
-            \App\Listeners\Permissions\PermissionDetachedListener::class
+            PermissionDetached::class,
+            PermissionDetachedListener::class
         );
     }
 }

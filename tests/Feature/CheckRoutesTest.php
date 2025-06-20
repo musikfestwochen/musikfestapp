@@ -46,6 +46,13 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => 'admin/organizations/{organization}'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/dashboard'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/users'],
+        ['method' => 'POST', 'uri' => '{organization}/users'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/users/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/users/{user}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/users/{user}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/users/{user}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/users/{user}'],
         ['method' => 'GET|HEAD', 'uri' => 'start'],
         ['method' => 'POST', 'uri' => 'organization/select'],
     ];
