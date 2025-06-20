@@ -103,6 +103,12 @@ it('ensures each class appears exactly once in covers() annotations', function (
             $violations[] = sprintf('Missing covers() annotation: Class %s (from %s) is not covered by any test file', $className, $sourceFile);
         } elseif (count($classToTestFileMap[$className]) > 1) {
             $testFiles = implode(', ', $classToTestFileMap[$className]);
+            // Print all locations to the console for duplicate covers
+            echo "Duplicate covers() annotation for class {$className} found in the following files:\n";
+            foreach ($classToTestFileMap[$className] as $file) {
+                echo sprintf(' - %s%s', $file, PHP_EOL);
+            }
+
             $violations[] = sprintf('Duplicate covers() annotation: Class %s is covered by multiple test files: %s', $className, $testFiles);
         }
     }

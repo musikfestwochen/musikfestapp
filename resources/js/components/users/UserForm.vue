@@ -3,11 +3,11 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User } from '@/types';
+import { Organization, User } from '@/types';
 import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
-const props = defineProps<{ user?: User }>();
+const props = defineProps<{ user?: User; organization?: Organization }>();
 
 const form = useForm({
     name: props.user?.name || '',
@@ -15,9 +15,13 @@ const form = useForm({
 });
 
 const submit = () => {
-    if (props.user) {
+    if (props.user && props.organization) {
+        form.put(route('orgmgmt.users.update', { id: props.user.id, organization: props.organization.slug }));
+    } else if (props.user) {
         form.put(route('admin.users.update', { id: props.user.id }));
-    } else {
+    } else if (props.organization) {
+        form.post(route('orgmgmt.users.store', { organization: props.organization.slug }));
+    } else if (!props.user && !props.organization) {
         form.post(route('admin.users.store'));
     }
 };

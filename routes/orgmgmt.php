@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Orgmgmt\UserController;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -15,4 +16,10 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             'organization' => $organization,
         ]);
     })->name('organization.dashboard');
+    Route::resource(
+        '{organization:slug}/users',
+        UserController::class
+    )
+        ->scoped(['organization' => 'slug'])
+        ->names('orgmgmt.users');
 });

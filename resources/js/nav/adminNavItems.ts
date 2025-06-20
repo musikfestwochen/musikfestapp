@@ -7,14 +7,6 @@ export const adminMainNavItems = [
         icon: LayoutGrid,
     },
     {
-        title: 'Organization Selection',
-        route: 'organization-selection.index',
-        icon: UnplugIcon,
-    },
-];
-
-export const adminFooterNavItems = [
-    {
         title: 'Users',
         route: 'admin.users.index',
         icon: Users2Icon,
@@ -25,6 +17,14 @@ export const adminFooterNavItems = [
         route: 'admin.organizations.index',
         icon: Building2Icon,
         permission: 'admin.organizations.index',
+    },
+];
+
+export const adminFooterNavItems = [
+    {
+        title: 'Organization Selection',
+        route: 'organization-selection.index',
+        icon: UnplugIcon,
     },
     {
         title: 'Github Repo',

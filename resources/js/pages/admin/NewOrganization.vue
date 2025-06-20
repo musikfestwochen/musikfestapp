@@ -22,7 +22,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         <Head title="Organizations" />
 
         <div class="px-4 py-6">
-            <Heading class="mb-4" description="Create a new organization" level="2" title="Create Organization" />
+            <Heading description="Create a new organization" title="Create Organization" />
             <OrganizationForm />
         </div>
     </Layout>

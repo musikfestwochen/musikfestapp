@@ -1,4 +1,4 @@
-import { FolderGit2Icon, LayoutGrid } from 'lucide-vue-next';
+import { FolderGit2Icon, LayoutGrid, Users2Icon } from 'lucide-vue-next';
 
 // Function that returns nav items with the organization parameter already injected
 export const orgMainNavItems = (organization: string | number) => [
@@ -8,7 +8,13 @@ export const orgMainNavItems = (organization: string | number) => [
         icon: LayoutGrid,
         params: { organization },
     },
-    // Add more org-specific nav items here
+    {
+        title: 'Users',
+        route: 'orgmgmt.users.index',
+        icon: Users2Icon,
+        permission: 'orgmgmt.users.index',
+        params: { organization },
+    },
 ];
 
 export const orgFooterNavItems = [

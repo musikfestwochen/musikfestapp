@@ -1,18 +1,26 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import UserForm from '@/components/users/UserForm.vue';
-import Layout from '@/layouts/admin/Layout.vue';
-import type { BreadcrumbItem } from '@/types';
+import Layout from '@/layouts/orgmgmt/Layout.vue';
+import { BreadcrumbItem, Organization } from '@/types';
 import { Head } from '@inertiajs/vue3';
+
+const props = defineProps<{
+    organization: Organization;
+}>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
+        title: props.organization.name,
+        href: `/${props.organization.slug}/dashboard`,
+    },
+    {
         title: 'Users',
-        href: route('admin.users.index'),
+        href: route('orgmgmt.users.index', { organization: props.organization.slug }),
     },
     {
         title: 'Create',
-        href: route('admin.users.create'),
+        href: route('orgmgmt.users.create', { organization: props.organization.slug }),
     },
 ];
 </script>
@@ -23,7 +31,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
 
         <div class="px-4 py-6">
             <Heading description="Create a new user" title="Create User" />
-            <UserForm />
+            <UserForm :organization="props.organization" />
         </div>
     </Layout>
 </template>

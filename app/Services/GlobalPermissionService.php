@@ -27,8 +27,12 @@ class GlobalPermissionService
         // Get all user permissions from cache
         $permissions = self::getUserGlobalPermissions($user);
 
-        // Check if the user has the specific ability
-        return in_array($ability, $permissions) ? true : null;
+        // Check if the user has the specific ability, supporting wildcards
+        if (array_any($permissions, fn (string $permission): bool => fnmatch($permission, $ability) || fnmatch($ability, $permission))) {
+            return true;
+        }
+
+        return null;
     }
 
     /**

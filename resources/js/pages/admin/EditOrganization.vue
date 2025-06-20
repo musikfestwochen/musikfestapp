@@ -24,7 +24,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         <Head title="Organizations" />
 
         <div class="px-4 py-6">
-            <Heading class="mb-4" description="Edit organization details" level="2" title="Edit Organization" />
+            <Heading description="Edit organization details" title="Edit Organization" />
             <OrganizationForm :organization="props.organization" />
         </div>
     </Layout>
