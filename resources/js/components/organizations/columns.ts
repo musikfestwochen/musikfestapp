@@ -56,7 +56,7 @@ export const organizationsColumns: ColumnDef<Organization>[] = [
             // Use the can function from usePermissions composable
             const { can } = usePermissions();
             const canEdit = can('admin.organizations.edit') || can('orgmgmt.organizations.edit');
-            const canDelete = can('admin.organizations.delete') || can('orgmgmt.organizations.delete');
+            const canDelete = can('admin.organizations.destroy') || can('orgmgmt.organizations.delete');
 
             return h(
                 'div',

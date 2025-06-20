@@ -56,7 +56,7 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                 // Use the can function from usePermissions composable
                 const { can } = usePermissions();
                 const canEdit = can('admin.users.edit') || can('orgmgmt.users.edit');
-                const canDelete = can('admin.users.delete') || can('orgmgmt.users.delete');
+                const canDelete = can('admin.users.destroy') || can('orgmgmt.users.destroy');
 
                 return h(
                     'div',
