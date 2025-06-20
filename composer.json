@@ -80,6 +80,7 @@
             "pest --mutate -p"
         ],
         "test:e2e": [
+            "npm run build",
             "npm run e2e"
         ],
         "test": [

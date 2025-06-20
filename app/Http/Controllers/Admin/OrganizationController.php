@@ -26,7 +26,7 @@ class OrganizationController extends Controller
     {
         $organizationService = app(OrganizationService::class);
 
-        return Inertia::render('admin/AdminOrganizations', [
+        return Inertia::render('admin/Organizations', [
             'organizations' => $organizationService->getOrganizations(),
             'status' => $request->session()->get('status'),
         ]);
@@ -47,7 +47,7 @@ class OrganizationController extends Controller
      */
     public function create(OrganizationCreateRequest $request): Response
     {
-        return Inertia::render('admin/AdminNewOrganizationPage', [
+        return Inertia::render('admin/NewOrganization', [
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -71,7 +71,7 @@ class OrganizationController extends Controller
      */
     public function edit(OrganizationEditRequest $request, Organization $organization): Response
     {
-        return Inertia::render('admin/AdminEditOrganizationPage', [
+        return Inertia::render('admin/EditOrganization', [
             'organization' => $organization,
         ]);
     }

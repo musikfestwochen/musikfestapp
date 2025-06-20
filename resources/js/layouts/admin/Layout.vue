@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
+<script lang="ts" setup>
+import SidebarLayout from '@/layouts/app/SidebarLayout.vue';
 import { adminFooterNavItems, adminMainNavItems } from '@/nav/adminNavItems';
 import type { BreadcrumbItemType } from '@/types';
 
@@ -13,7 +13,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-    <AppSidebarLayout :mainNavItems="adminMainNavItems" :footerNavItems="adminFooterNavItems" :breadcrumbs="breadcrumbs">
+    <SidebarLayout :breadcrumbs="breadcrumbs" :footerNavItems="adminFooterNavItems" :mainNavItems="adminMainNavItems">
         <slot />
-    </AppSidebarLayout>
+    </SidebarLayout>
 </template>

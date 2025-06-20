@@ -66,7 +66,7 @@ export default defineConfig({
     webServer: process.env.CI
         ? undefined
         : {
-              command: '', // Assuming Laravel Herd is managing the server
+              command: 'npm run dev',
               url: 'http://musikfestapp.test',
               reuseExistingServer: true,
           },

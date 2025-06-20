@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
+<script lang="ts" setup>
+import SidebarLayout from '@/layouts/app/SidebarLayout.vue';
 import { orgFooterNavItems, orgMainNavItems } from '@/nav/orgNavItems';
 import type { BreadcrumbItemType, Organization } from '@/types';
 import { usePage } from '@inertiajs/vue3';
@@ -23,7 +23,7 @@ const navItems = computed(() => {
 </script>
 
 <template>
-    <AppSidebarLayout :mainNavItems="navItems" :footerNavItems="orgFooterNavItems" :breadcrumbs="breadcrumbs">
+    <SidebarLayout :breadcrumbs="breadcrumbs" :footerNavItems="orgFooterNavItems" :mainNavItems="navItems">
         <slot />
-    </AppSidebarLayout>
+    </SidebarLayout>
 </template>

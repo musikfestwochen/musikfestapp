@@ -3,7 +3,9 @@
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -12,11 +14,11 @@ beforeEach(function () {
     // Create permissions first
     foreach (['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'] as $action) {
         // Admin Module
-        \Spatie\Permission\Models\Permission::create(['name' => 'admin.users.'.$action]);
-        \Spatie\Permission\Models\Permission::create(['name' => 'admin.organizations.'.$action]);
+        Permission::create(['name' => 'admin.users.'.$action]);
+        Permission::create(['name' => 'admin.organizations.'.$action]);
 
         // Organization Management Module
-        \Spatie\Permission\Models\Permission::create(['name' => 'orgmgmt.users.'.$action]);
+        Permission::create(['name' => 'orgmgmt.users.'.$action]);
     }
 
     // Create the Admin role with necessary permissions
@@ -36,7 +38,7 @@ it('renders organization selection and admin dashboard for admins', function () 
     // Log in as admin
     $response = $this->actingAs($admin)->get('/start');
     // Organization selection should be rendered with admin option included
-    $response->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
+    $response->assertInertia(fn (Assert $page): AssertableJson => $page
         ->component('OrganizationSelection')
         ->has('organizations')
         ->where('organizations.0.name', 'Administration')
@@ -55,8 +57,8 @@ it('renders organization selection and admin dashboard for admins', function () 
 
     // Verify admin dashboard is rendered
     $response->assertOk()
-        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
-            ->component('admin/AdminDashboard')
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('admin/Dashboard')
         );
 });
 
@@ -69,7 +71,7 @@ it('shows both admin and organization options to admins', function () {
     // Visit organization selection
     $response = $this->actingAs($admin)->get('/start');
     // Should have admin option plus the organization options
-    $response->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
+    $response->assertInertia(fn (Assert $page): AssertableJson => $page
         ->component('OrganizationSelection')
         ->has('organizations', $organizations->count() + 1) // +1 for Admin option
         ->where('organizations.0.name', 'Administration')
@@ -88,8 +90,8 @@ it('shows both admin and organization options to admins', function () {
     $response = $this->actingAs($admin)->get('/'.$organization->slug.'/dashboard');
     // Verify organization dashboard is rendered
     $response->assertOk()
-        ->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
-            ->component('orgmgmt/OrganizationDashboard')
+        ->assertInertia(fn (Assert $page): AssertableJson => $page
+            ->component('orgmgmt/Dashboard')
             ->has('organization')
             ->where('organization.id', $organization->id)
             ->where('organization.slug', $organization->slug)

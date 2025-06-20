@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import UserDelete from '@/components/users/UserDelete.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { type SharedData, type User } from '@/types';
@@ -97,7 +97,7 @@ const submit = () => {
                 </form>
             </div>
 
-            <DeleteUser />
+            <UserDelete />
         </SettingsLayout>
     </AuthLayout>
 </template>

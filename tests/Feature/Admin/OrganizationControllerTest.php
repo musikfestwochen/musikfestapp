@@ -23,7 +23,7 @@ it('shows the organization index page with organizations', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.organizations.index'))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/AdminOrganizations')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/Organizations')
             ->has('organizations', 12)
         );
 });
@@ -38,7 +38,7 @@ it('shows the create organization page', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.organizations.create'))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/AdminNewOrganizationPage')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/NewOrganization')
         );
 });
 
@@ -120,7 +120,7 @@ it('shows the edit organization page', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.organizations.edit', $organization))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/AdminEditOrganizationPage')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/EditOrganization')
             ->where('organization.id', $organization->id)
         );
 });

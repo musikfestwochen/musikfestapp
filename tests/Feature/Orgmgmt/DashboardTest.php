@@ -2,8 +2,12 @@
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\OrganizationSelectionService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -12,11 +16,11 @@ beforeEach(function () {
     // Create permissions first
     foreach (['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'] as $action) {
         // Admin Module
-        \Spatie\Permission\Models\Permission::create(['name' => 'admin.users.'.$action]);
-        \Spatie\Permission\Models\Permission::create(['name' => 'admin.organizations.'.$action]);
+        Permission::create(['name' => 'admin.users.'.$action]);
+        Permission::create(['name' => 'admin.organizations.'.$action]);
 
         // Organization Management Module
-        \Spatie\Permission\Models\Permission::create(['name' => 'orgmgmt.users.'.$action]);
+        Permission::create(['name' => 'orgmgmt.users.'.$action]);
     }
 
     // Create the necessary roles
@@ -30,10 +34,10 @@ it('redirects directly to organization dashboard when user has only one organiza
     $user = User::factory()->organizationAdmin($organization)->create();
 
     // Mock the organization selection service
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organization) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organization) {
         $mock->shouldReceive('getOrganizationsForUser')
             ->once()
-            ->andReturn(new \Illuminate\Database\Eloquent\Collection([$organization]));
+            ->andReturn(new Collection([$organization]));
     });
 
     // Log in as the user
@@ -46,8 +50,8 @@ it('redirects directly to organization dashboard when user has only one organiza
     $response = $this->actingAs($user)->get('/'.$organization->slug.'/dashboard');
     // Verify organization dashboard is rendered
     $response->assertOk()
-        ->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
-            ->component('orgmgmt/OrganizationDashboard')
+        ->assertInertia(fn (Assert $page): AssertableJson => $page
+            ->component('orgmgmt/Dashboard')
             ->has('organization')
             ->where('organization.id', $organization->id)
             ->where('organization.slug', $organization->slug)
@@ -55,21 +59,21 @@ it('redirects directly to organization dashboard when user has only one organiza
 });
 
 it('shows organization selection and then dashboard when user has multiple organizations', function () {
-    // Create organizations and a user with organization admin role
+    // Create organizations and a user with an organization admin role
     $organizations = Organization::factory()->count(2)->create();
     $user = User::factory()->organizationAdmin(null, $organizations->pluck('id')->toArray())->create();
 
     // Mock the organization selection service
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organizations) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organizations) {
         $mock->shouldReceive('getOrganizationsForUser')
             ->once()
-            ->andReturn(new \Illuminate\Database\Eloquent\Collection($organizations));
+            ->andReturn(new Collection($organizations));
     });
 
     // Log in as the user
     $response = $this->actingAs($user)->get('/start');
     // Should render organization selection
-    $response->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
+    $response->assertInertia(fn (Assert $page): AssertableJson => $page
         ->component('OrganizationSelection')
         ->has('organizations', $organizations->count())
     );
@@ -78,7 +82,7 @@ it('shows organization selection and then dashboard when user has multiple organ
     $organization = $organizations->first();
 
     // Mock the organization selection service for processing selection
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organization) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organization) {
         $mock->shouldReceive('processOrganizationSelection')
             ->once()
             ->with($organization->id)
@@ -90,16 +94,16 @@ it('shows organization selection and then dashboard when user has multiple organ
         'organization_id' => $organization->id,
     ]);
 
-    // Should redirect to organization dashboard
+    // Should redirect to the organization dashboard
     $response->assertRedirect('/'.$organization->slug.'/dashboard');
 
-    // Visit organization dashboard
+    // Visit the organization dashboard
     $response = $this->actingAs($user)->get('/'.$organization->slug.'/dashboard');
 
     // Verify organization dashboard is rendered
     $response->assertOk()
-        ->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
-            ->component('orgmgmt/OrganizationDashboard')
+        ->assertInertia(fn (Assert $page): AssertableJson => $page
+            ->component('orgmgmt/Dashboard')
             ->has('organization')
             ->where('organization.id', $organization->id)
             ->where('organization.slug', $organization->slug)

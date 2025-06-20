@@ -26,7 +26,7 @@ class UserController extends Controller
     {
         $userService = app(UserService::class);
 
-        return Inertia::render('admin/AdminUsers', [
+        return Inertia::render('admin/Users', [
             'users' => $userService->getUsers(),
             'status' => $request->session()->get('status'),
         ]);
@@ -50,7 +50,7 @@ class UserController extends Controller
      */
     public function create(UserCreateRequest $request): Response
     {
-        return Inertia::render('admin/AdminNewUserPage', [
+        return Inertia::render('admin/NewUser', [
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -72,7 +72,7 @@ class UserController extends Controller
      */
     public function edit(UserEditRequest $request, User $user): Response
     {
-        return Inertia::render('admin/AdminEditUserPage', [
+        return Inertia::render('admin/EditUser', [
             'user' => $user,
         ]);
     }

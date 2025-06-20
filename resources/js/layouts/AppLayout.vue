@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import AppLayout from '@/layouts/app/AppSidebarLayout.vue';
+<script lang="ts" setup>
+import SidebarLayout from '@/layouts/app/SidebarLayout.vue';
 import type { BreadcrumbItemType } from '@/types';
 
 interface Props {
@@ -12,7 +12,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <SidebarLayout :breadcrumbs="breadcrumbs">
         <slot />
-    </AppLayout>
+    </SidebarLayout>
 </template>

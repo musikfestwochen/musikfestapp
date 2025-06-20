@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -44,7 +44,7 @@ const closeModal = () => {
 
 <template>
     <div class="space-y-6">
-        <HeadingSmall title="Delete account" description="Delete your account and all of its resources" />
+        <HeadingSmall description="Delete your account and all of its resources" title="Delete account" />
         <div class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
             <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
                 <p class="font-medium">Warning</p>
@@ -65,17 +65,17 @@ const closeModal = () => {
                         </DialogHeader>
 
                         <div class="grid gap-2">
-                            <Label for="password" class="sr-only">Password</Label>
-                            <Input id="password" type="password" name="password" ref="passwordInput" v-model="form.password" placeholder="Password" />
+                            <Label class="sr-only" for="password">Password</Label>
+                            <Input id="password" ref="passwordInput" v-model="form.password" name="password" placeholder="Password" type="password" />
                             <InputError :message="form.errors.password" />
                         </div>
 
                         <DialogFooter class="gap-2">
                             <DialogClose as-child>
-                                <Button variant="secondary" @click="closeModal"> Cancel </Button>
+                                <Button variant="secondary" @click="closeModal"> Cancel</Button>
                             </DialogClose>
 
-                            <Button variant="destructive" :disabled="form.processing">
+                            <Button :disabled="form.processing" variant="destructive">
                                 <button type="submit">Delete account</button>
                             </Button>
                         </DialogFooter>

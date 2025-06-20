@@ -1,11 +1,9 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { waitForVite } from './utils/waitForVite';
 
 const execAsync = promisify(exec);
 
 async function globalSetup() {
-    await waitForVite();
     console.log('Running database migrations and seeding...');
 
     try {

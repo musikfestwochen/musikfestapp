@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import UsersTable from '@/components/users/UsersTable.vue';
-import AdminAppLayout from '@/layouts/admin/AdminAppLayout.vue';
+import Layout from '@/layouts/admin/Layout.vue';
 import { type BreadcrumbItem, User } from '@/types';
 import { Head } from '@inertiajs/vue3';
 
@@ -19,7 +19,7 @@ defineProps<{
 </script>
 
 <template>
-    <AdminAppLayout :breadcrumbs="breadcrumbItems">
+    <Layout :breadcrumbs="breadcrumbItems">
         <Head title="Users" />
 
         <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
@@ -33,5 +33,5 @@ defineProps<{
                 <UsersTable :users="users" />
             </div>
         </div>
-    </AdminAppLayout>
+    </Layout>
 </template>

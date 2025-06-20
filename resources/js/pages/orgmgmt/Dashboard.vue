@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
-import OrganizationAppLayout from '@/layouts/orgmgmt/OrganizationAppLayout.vue';
+import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -23,7 +23,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
 
 <template>
     <Head :title="`${props.organization.name} Dashboard`" />
-    <OrganizationAppLayout :breadcrumbs="breadcrumbs">
+    <Layout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
             <div class="mb-4">
                 <h1 class="text-2xl font-bold">{{ props.organization.name }} Dashboard</h1>
@@ -43,5 +43,5 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
                 <PlaceholderPattern />
             </div>
         </div>
-    </OrganizationAppLayout>
+    </Layout>
 </template>

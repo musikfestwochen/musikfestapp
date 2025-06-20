@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
@@ -25,7 +26,7 @@ it('shows the user index page with all users', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.users.index'))
-        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/AdminUsers')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/Users')
             ->has('users', 13) // pagination limit
         );
 });
@@ -43,7 +44,7 @@ it('shows the create user page', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.users.create'))
-        ->assertInertia(fn (AssertableInertia $page): \Inertia\Testing\AssertableInertia => $page->component('admin/AdminNewUserPage')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/NewUser')
         );
 });
 
@@ -108,7 +109,7 @@ it('shows the edit user page', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.users.edit', $user))
-        ->assertInertia(fn (AssertableInertia $page): \Illuminate\Testing\Fluent\AssertableJson => $page->component('admin/AdminEditUserPage')
+        ->assertInertia(fn (AssertableInertia $page): AssertableJson => $page->component('admin/EditUser')
             ->where('user.id', $user->id)
         );
 });
