@@ -24,11 +24,11 @@ const currentRoute = route().current();
 </script>
 
 <template>
-    <div class="px-4 py-6">
+    <div>
         <Heading description="Manage your profile and account settings" title="Settings" />
 
-        <div class="flex flex-col space-y-8 md:space-y-0 lg:flex-row lg:space-x-12 lg:space-y-0">
-            <aside class="w-full max-w-xl lg:w-48">
+        <div class="flex flex-col space-y-8">
+            <aside class="w-full">
                 <nav class="flex flex-col space-x-0 space-y-1">
                     <Button
                         v-for="item in sidebarNavItems"
@@ -40,6 +40,13 @@ const currentRoute = route().current();
                         <Link :href="route(item.route)">
                             {{ item.title }}
                         </Link>
+                    </Button>
+                    <Separator class="my-2" />
+                    <Button class="w-full justify-start" as-child variant="ghost">
+                        <Link :href="route('organization-selection.index')">Back to Home</Link>
+                    </Button>
+                    <Button class="w-full justify-start" as-child variant="ghost">
+                        <Link :href="route('logout')" method="post" as="button">Logout</Link>
                     </Button>
                 </nav>
             </aside>
