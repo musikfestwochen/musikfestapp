@@ -91,9 +91,9 @@
             "@test:e2e"
         ],
         "precommit": [
+            "@rector",
             "@typos",
             "@lint",
-            "@rector",
             "@test"
         ]
     },

@@ -24,6 +24,9 @@ jobs:
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
           npm install
 
+      - name: Run Rector
+        run: vendor/bin/rector --dry-run
+
       - name: Run Pint
         run: vendor/bin/pint
 
@@ -35,9 +38,6 @@ jobs:
 
       - name: Run Typos Check
         run: vendor/bin/peck
-
-      - name: Run Rector
-        run: vendor/bin/rector --dry-run
 
       - name: Commit Changes
         if: github.event_name == 'pull_request'
