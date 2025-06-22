@@ -1,8 +1,4 @@
-import { devices, test } from '@playwright/test';
-
-test.use({
-    ...devices['iPhone 14'],
-});
+import { test } from '@playwright/test';
 
 test('Mobile Ghost Test', async ({ page }) => {
     console.log('Navigating to login page');

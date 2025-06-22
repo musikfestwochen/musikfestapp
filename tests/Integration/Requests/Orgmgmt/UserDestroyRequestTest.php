@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Requests\Orgmgmt\UserDestroyRequest;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -10,6 +11,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->request = new UserDestroyRequest;
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
 it('has correct rules', function () {
@@ -17,16 +19,25 @@ it('has correct rules', function () {
 });
 
 it('authorizes when user can destroy users', function () {
-    $user = Mockery::mock(User::class);
-    // Updated to match the actual permission string used in the request
-    $user->shouldReceive('can')->with('orgmgmt.users.destroy')->andReturn(true);
-    Auth::shouldReceive('user')->andReturn($user);
-    expect($this->request->authorize())->toBeTrue();
+    $user = User::factory()->globalAdmin()->create();
+    $userToDestroy = User::factory()->create();
+    $organization = Organization::factory()->create();
+    $user->organizations()->attach($organization);
+    $userToDestroy->organizations()->attach($organization);
+    $orgSlug = $user->organizations()->first()->slug;
+
+    $response = $this->actingAs($user)->call('DELETE', route('orgmgmt.users.destroy', [
+        'organization' => $orgSlug,
+        'user' => $userToDestroy->id,
+    ]));
+
+    expect($response->getStatusCode())->toBe(302)
+        ->and($response->getContent())->not()->toContain('You cannot delete your own account.');
 });
 
 it('denies authorization to delete themself', function () {
     $user = User::factory()->create();
-    $organization = \App\Models\Organization::factory()->create();
+    $organization = Organization::factory()->create();
     // Attach the organization to the user so $user->organization is not null
     $user->organizations()->attach($organization);
     // Use the first organization for the slug
@@ -36,5 +47,6 @@ it('denies authorization to delete themself', function () {
         'organization' => $orgSlug,
         'user' => $user->id,
     ]));
-    expect($response->getStatusCode())->toBe(403);
+    expect($response->getStatusCode())->toBe(403)
+        ->and($response->getContent())->toContain('You cannot delete your own account.');
 });

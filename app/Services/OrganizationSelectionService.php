@@ -19,7 +19,7 @@ class OrganizationSelectionService
         $user = Auth::user();
 
         if ($user->can('admin.organizations.index')) {
-            $organizations = \App\Models\Organization::query()->select('id', 'name', 'slug')->get();
+            $organizations = Organization::query()->select('id', 'name', 'slug')->get();
 
             // add an "Administration" option for admins
             $adminOrg = new Organization([
@@ -47,7 +47,7 @@ class OrganizationSelectionService
             return 'admin';
         }
 
-        $organization = \App\Models\Organization::query()->findOrFail($organizationId);
+        $organization = Organization::query()->findOrFail($organizationId);
         $user = Auth::user();
 
         // Check if the user belongs to the selected organization

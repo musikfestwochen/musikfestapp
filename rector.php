@@ -43,6 +43,7 @@ return static function (RectorConfig $rectorConfig): void {
         SetList::CODE_QUALITY,
         SetList::CODING_STYLE,
         SetList::TYPE_DECLARATION,
+        SetList::STRICT_BOOLEANS,
     ]);
 
     // Define PHP version for Rector

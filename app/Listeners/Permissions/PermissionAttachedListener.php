@@ -28,7 +28,7 @@ class PermissionAttachedListener implements ShouldQueue
         // We need to extract the user ID from the event
         $userId = $this->getUserId($event);
 
-        if ($userId) {
+        if ($userId !== null && $userId !== 0) {
             // Clear existing cache for this user to ensure fresh data
             $this->globalPermissionService::clearCache($userId);
 

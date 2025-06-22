@@ -49,14 +49,14 @@ export default defineConfig({
     /* Configure projects for major browsers */
     projects: [
         {
-            name: 'chromium',
+            name: 'desktop',
             use: { ...devices['Desktop Chrome'] },
             /* Exclude the mobile ghost test from desktop runs */
             testIgnore: 'e2e/mobile/**/*.spec.ts',
         },
         {
-            name: 'mobile-ghost',
-            use: { ...devices['Pixel 5'] },
+            name: 'mobile',
+            use: { ...devices['iPhone 15 Pro'] },
             /* Only run the ghost test in mobile emulation */
             testMatch: 'e2e/mobile/**/*.spec.ts',
         },

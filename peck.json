@@ -18,7 +18,8 @@
             "textarea",
             "tooltip",
             "composables",
-            "tsconfig"
+            "tsconfig",
+            "debugbar"
         ],
         "paths": []
     }

@@ -3,6 +3,7 @@ name: tests
 on:
   pull_request:
   workflow_call:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -174,7 +175,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright Browsers
-        run: npx playwright install chromium
+        run: npx playwright install chromium webkit --with-deps
 
       - name: Create SQLite Database
         run: touch database/database.sqlite
