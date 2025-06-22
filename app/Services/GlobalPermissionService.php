@@ -17,10 +17,22 @@ class GlobalPermissionService
     // Cache key prefix for global permissions
     private const string CACHE_PREFIX = 'global_permission';
 
+    // Cache key for super admin status
+    private const string SUPER_ADMIN_CACHE_KEY = 'global_permission:%d:super_admin';
+
     public static function canGlobally(User $user, string $ability): ?bool
     {
-        // If user is a super admin, always return true
-        if ($user->hasRole('SuperAdmin')) {
+        // Check super admin status using cache remember
+        $superAdminCacheKey = sprintf(self::SUPER_ADMIN_CACHE_KEY, $user->id);
+        $isSuperAdmin = Cache::remember($superAdminCacheKey, self::CACHE_DURATION, function () use ($user): bool {
+            $oldPermissionsOrgId = getPermissionsOrgId();
+            setPermissionsOrgId(GLOBAL_ORG_ID);
+            $result = $user->hasRole('SuperAdmin');
+            setPermissionsOrgId($oldPermissionsOrgId);
+
+            return $result;
+        });
+        if ($isSuperAdmin) {
             return true;
         }
 
@@ -84,10 +96,9 @@ class GlobalPermissionService
     /**
      * Clear the permission cache for a specific user
      */
-    public static function clearCache(int $userId, ?string $ability = null): void
+    public static function clearCache(int $userId): void
     {
-        // Since we're now storing all permissions in a single cache entry,
-        // we'll clear the entire cache for the user regardless of the specific ability
         Cache::forget(self::getGlobalPermissionsCacheKey($userId));
+        Cache::forget(sprintf(self::SUPER_ADMIN_CACHE_KEY, $userId));
     }
 }

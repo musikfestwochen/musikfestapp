@@ -11,7 +11,7 @@ use Inertia\Response;
 
 class OrganizationSelectionController extends Controller
 {
-    protected \App\Services\OrganizationSelectionService $organizationSelectionService;
+    protected OrganizationSelectionService $organizationSelectionService;
 
     /**
      * Create a new controller instance.

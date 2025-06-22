@@ -30,7 +30,7 @@ beforeEach(function () {
     Cache::shouldReceive('remember')->byDefault();
 
     // Mock PermissionRegistrar for helper functions
-    $this->permissionRegistrar = \Mockery::mock(PermissionRegistrar::class);
+    $this->permissionRegistrar = Mockery::mock(PermissionRegistrar::class);
     $this->app->instance(PermissionRegistrar::class, $this->permissionRegistrar);
 
     $this->permissionRegistrar->shouldReceive('setPermissionsTeamId')->byDefault();
@@ -40,7 +40,7 @@ beforeEach(function () {
 // Helper functions for common mock setups
 function createMockUser(int $userId = TEST_USER_ID): MockInterface
 {
-    $user = \Mockery::mock(User::class);
+    $user = Mockery::mock(User::class);
     $user->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn($userId);
@@ -50,7 +50,7 @@ function createMockUser(int $userId = TEST_USER_ID): MockInterface
 
 function createMockUserWithoutId(): MockInterface
 {
-    $user = \Mockery::mock(User::class);
+    $user = Mockery::mock(User::class);
     $user->shouldReceive('getAttribute')
         ->with('id')
         ->andReturn(null);
@@ -69,7 +69,7 @@ function mockUserRole(MockInterface $user, string $role, bool $hasRole): void
 function mockCacheRemember(string $cacheKey, array $returnValue): void
 {
     Cache::shouldReceive('remember')
-        ->with($cacheKey, CACHE_DURATION, \Mockery::type('Closure'))
+        ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
         ->once()
         ->andReturn($returnValue);
 }
@@ -77,7 +77,7 @@ function mockCacheRemember(string $cacheKey, array $returnValue): void
 function mockCacheRememberWithClosure(string $cacheKey): void
 {
     Cache::shouldReceive('remember')
-        ->with($cacheKey, CACHE_DURATION, \Mockery::type('Closure'))
+        ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
         ->once()
         ->andReturnUsing(function ($key, $duration, $closure) {
             return $closure();
@@ -94,8 +94,8 @@ function mockCacheForget(string $cacheKey): void
 
 function createPermissionCollectionMock(array $permissions): array
 {
-    $permissionCollection = \Mockery::mock(Collection::class);
-    $pluckedCollection = \Mockery::mock(Collection::class);
+    $permissionCollection = Mockery::mock(Collection::class);
+    $pluckedCollection = Mockery::mock(Collection::class);
 
     $permissionCollection->shouldReceive('pluck')
         ->with('name')
@@ -149,38 +149,32 @@ function getCacheKey(int $userId): string
 }
 
 describe('canGlobally', function () {
+    function getSuperAdminCacheKey($userId): string
+    {
+        return sprintf('global_permission:%d:super_admin', $userId);
+    }
+
     it('returns true for super admin users regardless of permissions', function () {
-        $user = \Mockery::mock(User::class);
-        mockUserRole($user, 'SuperAdmin', true);
+        $user = createMockUser();
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturn(true);
 
         $result = GlobalPermissionService::canGlobally($user, 'any-ability');
-
-        expect($result)->toBeTrue();
-    });
-
-    it('super admin users bypass permission checking entirely', function () {
-        $user = \Mockery::mock(User::class);
-        mockUserRole($user, 'SuperAdmin', true);
-
-        // SuperAdmin should NOT call getAttribute (which would be needed for getUserGlobalPermissions)
-        // If the early return is removed, this would fail because getAttribute would be called
-        $user->shouldNotReceive('getAttribute');
-
-        // Cache should not be accessed for SuperAdmins
-        Cache::shouldNotReceive('remember');
-
-        $result = GlobalPermissionService::canGlobally($user, 'any-ability');
-
         expect($result)->toBeTrue();
     });
 
     it('returns exactly true (not truthy) for super admin users', function () {
-        $user = \Mockery::mock(User::class);
-        mockUserRole($user, 'SuperAdmin', true);
+        $user = createMockUser();
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturn(true);
 
         $result = GlobalPermissionService::canGlobally($user, 'any-ability');
-
-        // This test specifically checks that we get boolean true, not just a truthy value
         expect($result)->toBe(true);
         expect($result)->not->toBe(false);
         expect($result)->not->toBeNull();
@@ -188,42 +182,71 @@ describe('canGlobally', function () {
 
     it('returns true when user has the specific global permission', function () {
         $user = createMockUser();
-        mockUserRole($user, 'SuperAdmin', false);
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturn(false);
         mockCacheRemember(getCacheKey(TEST_USER_ID), ['test-permission', 'other-permission']);
 
         $result = GlobalPermissionService::canGlobally($user, 'test-permission');
-
         expect($result)->toBeTrue();
     });
 
     it('returns null when user does not have the specific global permission', function () {
         $user = createMockUser();
-        mockUserRole($user, 'SuperAdmin', false);
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturn(false);
         mockCacheRemember(getCacheKey(TEST_USER_ID), ['other-permission', 'another-permission']);
 
         $result = GlobalPermissionService::canGlobally($user, 'test-permission');
-
         expect($result)->toBeNull();
     });
 
     it('returns null when user has no global permissions', function () {
         $user = createMockUser();
-        mockUserRole($user, 'SuperAdmin', false);
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturn(false);
         mockCacheRemember(getCacheKey(TEST_USER_ID), []);
 
         $result = GlobalPermissionService::canGlobally($user, 'test-permission');
-
         expect($result)->toBeNull();
     });
 
     it('returns null for users without SuperAdmin role and without specific permission', function () {
         $user = createMockUser();
-        mockUserRole($user, 'SuperAdmin', false);
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturn(false);
         mockCacheRemember(getCacheKey(TEST_USER_ID), []);
 
         $result = GlobalPermissionService::canGlobally($user, 'any-ability');
-
         expect($result)->toBeNull();
+    });
+
+    it('checks the super admin role if cache is missed', function () {
+        $user = createMockUser();
+        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
+        $user->shouldReceive('hasRole')
+            ->with('SuperAdmin')
+            ->once()
+            ->andReturn(true);
+        Cache::shouldReceive('remember')
+            ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturnUsing(function ($key, $duration, $closure) {
+                return $closure();
+            });
+        $result = GlobalPermissionService::canGlobally($user, 'any-ability');
+        expect($result)->toBeTrue();
     });
 });
 
@@ -237,7 +260,7 @@ describe('clearCache', function () {
     it('clears cache even when ability parameter is provided', function () {
         mockCacheForget(getCacheKey(TEST_USER_ID_2));
 
-        GlobalPermissionService::clearCache(TEST_USER_ID_2, 'specific-ability');
+        GlobalPermissionService::clearCache(TEST_USER_ID_2);
     });
 });
 

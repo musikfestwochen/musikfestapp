@@ -55,6 +55,14 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => '{organization}/users/{user}'],
         ['method' => 'GET|HEAD', 'uri' => 'start'],
         ['method' => 'POST', 'uri' => 'organization/select'],
+
+        // Debugbar routes
+        ['method' => 'GET|HEAD', 'uri' => '_debugbar/assets/javascript'],
+        ['method' => 'GET|HEAD', 'uri' => '_debugbar/assets/stylesheets'],
+        ['method' => 'DELETE', 'uri' => '_debugbar/cache/{key}/{tags?}'],
+        ['method' => 'GET|HEAD', 'uri' => '_debugbar/clockwork/{id}'],
+        ['method' => 'GET|HEAD', 'uri' => '_debugbar/open'],
+        ['method' => 'POST', 'uri' => '_debugbar/queries/explain'],
     ];
 
     Artisan::call('route:list --json');
