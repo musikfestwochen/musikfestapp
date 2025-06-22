@@ -175,7 +175,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright Browsers
-        run: npx playwright install chromium webkit
+        run: npx playwright install chromium webkit --with-deps
 
       - name: Create SQLite Database
         run: touch database/database.sqlite
