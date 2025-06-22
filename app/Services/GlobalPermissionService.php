@@ -42,7 +42,7 @@ class GlobalPermissionService
      */
     public static function getUserGlobalPermissions(?User $user): array
     {
-        if (! $user || ! $user->id) {
+        if (! $user instanceof User || ! $user->id) {
             return [];
         }
 

@@ -28,7 +28,7 @@ class PermissionDetachedListener implements ShouldQueue
         // We need to extract the user ID from the event
         $userId = $this->getUserId($event);
 
-        if ($userId) {
+        if ($userId !== null && $userId !== 0) {
             // Delete all global cached permissions for this user
             $this->globalPermissionService::clearCache($userId);
         }
