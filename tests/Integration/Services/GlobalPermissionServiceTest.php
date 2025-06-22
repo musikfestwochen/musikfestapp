@@ -248,6 +248,41 @@ describe('canGlobally', function () {
         $result = GlobalPermissionService::canGlobally($user, 'any-ability');
         expect($result)->toBeTrue();
     });
+
+    it('switches permission context when checking SuperAdmin on cache miss', function () {
+        $user = createMockUser();
+
+        // simulate “not in cache → run the Closure”
+        $superKey = sprintf('global_permission:%d:super_admin', TEST_USER_ID);
+        mockContextSwitching($this->permissionRegistrar, TEST_ORG_ID, GLOBAL_ORG_ID);
+        Cache::shouldReceive('remember')
+            ->with($superKey, CACHE_DURATION, Mockery::type('Closure'))
+            ->once()
+            ->andReturnUsing(fn ($k, $t, $c) => $c());
+
+        mockUserRole($user, 'SuperAdmin', true);
+
+        expect(GlobalPermissionService::canGlobally($user, 'anything'))->toBeTrue();
+    });
+
+    it('matches wildcard permissions in either direction', function () {
+        $user = createMockUser();
+
+        // super-admin check twice
+        Cache::shouldReceive('remember')
+            ->with(sprintf('global_permission:%d:super_admin', TEST_USER_ID), CACHE_DURATION, Mockery::type('Closure'))
+            ->twice()
+            ->andReturn(false);
+
+        // permissions cache hit twice
+        Cache::shouldReceive('remember')
+            ->with(sprintf('global_permission:%d:permissions', TEST_USER_ID), CACHE_DURATION, Mockery::type('Closure'))
+            ->twice()                      // ← now allows 2 calls
+            ->andReturn(['foo-*']);
+
+        expect(GlobalPermissionService::canGlobally($user, 'foo-bar'))->toBeTrue();
+        expect(GlobalPermissionService::canGlobally($user, 'bar-foo'))->toBeNull();
+    });
 });
 
 describe('clearCache', function () {
@@ -261,6 +296,16 @@ describe('clearCache', function () {
         mockCacheForget(getCacheKey(TEST_USER_ID_2));
 
         GlobalPermissionService::clearCache(TEST_USER_ID_2);
+    });
+
+    it('forgets both the permissions and the super_admin cache keys', function () {
+        $permKey = sprintf('global_permission:%d:permissions', TEST_USER_ID);
+        $adminKey = sprintf('global_permission:%d:super_admin', TEST_USER_ID);
+
+        mockCacheForget($permKey);
+        mockCacheForget($adminKey);
+
+        GlobalPermissionService::clearCache(TEST_USER_ID);
     });
 });
 
