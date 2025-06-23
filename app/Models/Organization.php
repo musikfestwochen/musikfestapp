@@ -6,7 +6,9 @@ use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,9 +19,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $phone
  * @property string|null $website
  * @property string|null $logo
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class Organization extends Model
 {
@@ -53,5 +55,15 @@ class Organization extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class);
+    }
+
+    /**
+     * The sensors that belong to the organization.
+     *
+     * @return HasMany<Peoplecount\Sensor, $this>
+     */
+    public function sensors(): HasMany
+    {
+        return $this->hasMany(Peoplecount\Sensor::class);
     }
 }

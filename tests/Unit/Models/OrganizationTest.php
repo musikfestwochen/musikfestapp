@@ -2,6 +2,7 @@
 
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 covers(Organization::class);
@@ -38,4 +39,11 @@ it('BelongsToMany Users', function () {
     $relation = $org->users();
 
     expect($relation)->toBeInstanceOf(BelongsToMany::class);
+});
+
+it('has many sensors', function () {
+    $org = new Organization;
+    $relation = $org->sensors();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
 });

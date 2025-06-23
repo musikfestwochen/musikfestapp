@@ -56,6 +56,18 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => 'start'],
         ['method' => 'POST', 'uri' => 'organization/select'],
 
+        // People Count Module Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors/{sensor}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
+
+        // Laravel Sanctum routes
+        ['method' => 'GET|HEAD', 'uri' => 'sanctum/csrf-cookie'],
+
         // Debugbar routes
         ['method' => 'GET|HEAD', 'uri' => '_debugbar/assets/javascript'],
         ['method' => 'GET|HEAD', 'uri' => '_debugbar/assets/stylesheets'],
@@ -65,6 +77,12 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'POST', 'uri' => '_debugbar/queries/explain'],
     ];
 
+    // Sort allowedRoutes by method and uri
+    $allowedRoutes = collect($allowedRoutes)
+        ->sortBy(['method', 'uri'])
+        ->values()
+        ->toArray();
+
     Artisan::call('route:list --json');
     $output = json_decode(Artisan::output(), true);
 
@@ -73,7 +91,11 @@ it('tests if no unwanted routes are exposed', function () {
             'method' => $route['method'],
             'uri' => $route['uri'],
         ];
-    });
+    })
+        // Sort output by method and uri
+        ->sortBy(['method', 'uri'])
+        ->values();
 
-    expect($output->toArray())->toEqualCanonicalizing($allowedRoutes);
+    expect($output->toArray())->toEqualCanonicalizing($allowedRoutes)->and($output->toArray())->not()->toBeEmpty()
+        ->and($output->count())->toEqual(count($output));
 });

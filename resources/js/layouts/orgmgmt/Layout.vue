@@ -23,7 +23,7 @@ const navItems = computed(() => {
 </script>
 
 <template>
-    <SidebarLayout :breadcrumbs="breadcrumbs" :footerNavItems="orgFooterNavItems" :mainNavItems="navItems">
+    <SidebarLayout :breadcrumbs="breadcrumbs" :footer-nav-items="orgFooterNavItems" :main-nav-items="navItems">
         <slot />
     </SidebarLayout>
 </template>

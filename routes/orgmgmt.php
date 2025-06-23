@@ -11,11 +11,13 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             'organization' => $organization,
         ]);
     });
+
     Route::get('{organization:slug}/dashboard', function (Organization $organization) {
         return Inertia::render('orgmgmt/Dashboard', [
             'organization' => $organization,
         ]);
     })->name('organization.dashboard');
+
     Route::resource(
         '{organization:slug}/users',
         UserController::class

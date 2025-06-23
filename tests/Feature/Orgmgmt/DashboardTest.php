@@ -24,7 +24,7 @@ beforeEach(function () {
     }
 
     // Create the necessary roles
-    $userRole = Role::create(['name' => 'OrganizationAdministrator']);
+    $userRole = Role::create(['name' => 'OrganizationAdmin']);
     $userRole->givePermissionTo('orgmgmt.users.*');
 });
 
