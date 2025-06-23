@@ -27,7 +27,7 @@ class GlobalPermissionService
         $isSuperAdmin = Cache::remember($superAdminCacheKey, self::CACHE_DURATION, function () use ($user): bool {
             $oldPermissionsOrgId = getPermissionsOrgId();
             setPermissionsOrgId(GLOBAL_ORG_ID);
-            $result = $user->hasRole('SuperAdmin');
+            $result = $user->roles()->where('name', 'SuperAdmin')->exists();
             setPermissionsOrgId($oldPermissionsOrgId);
 
             return $result;

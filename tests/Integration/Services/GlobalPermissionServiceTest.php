@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\GlobalPermissionService;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Mockery\MockInterface;
@@ -58,12 +59,24 @@ function createMockUserWithoutId(): MockInterface
     return $user;
 }
 
-function mockUserRole(MockInterface $user, string $role, bool $hasRole): void
+function mockUserSuperAdminRole(MockInterface $user, bool $exists): void
 {
-    $user->shouldReceive('hasRole')
-        ->with($role)
+
+    $rolesRelation = Mockery::mock(BelongsToMany::class);
+    $whereQuery = Mockery::mock(BelongsToMany::class);
+
+    $user->shouldReceive('roles')
         ->once()
-        ->andReturn($hasRole);
+        ->andReturn($rolesRelation);
+
+    $rolesRelation->shouldReceive('where')
+        ->with('name', 'SuperAdmin')
+        ->once()
+        ->andReturn($whereQuery);
+
+    $whereQuery->shouldReceive('exists')
+        ->once()
+        ->andReturn($exists);
 }
 
 function mockCacheRemember(string $cacheKey, array $returnValue): void
@@ -234,11 +247,10 @@ describe('canGlobally', function () {
 
     it('checks the super admin role if cache is missed', function () {
         $user = createMockUser();
-        $cacheKey = getSuperAdminCacheKey(TEST_USER_ID);
-        $user->shouldReceive('hasRole')
-            ->with('SuperAdmin')
-            ->once()
-            ->andReturn(true);
+        $cacheKey = sprintf('global_permission:%d:super_admin', TEST_USER_ID);
+
+        mockUserSuperAdminRole($user, true);
+
         Cache::shouldReceive('remember')
             ->with($cacheKey, CACHE_DURATION, Mockery::type('Closure'))
             ->once()
@@ -260,7 +272,7 @@ describe('canGlobally', function () {
             ->once()
             ->andReturnUsing(fn ($k, $t, $c) => $c());
 
-        mockUserRole($user, 'SuperAdmin', true);
+        mockUserSuperAdminRole($user, true);
 
         expect(GlobalPermissionService::canGlobally($user, 'anything'))->toBeTrue();
     });
