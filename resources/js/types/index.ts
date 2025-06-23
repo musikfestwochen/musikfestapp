@@ -50,3 +50,14 @@ export interface Organization {
     updated_at: string;
     deleted_at?: string;
 }
+
+export interface PeoplecountSensor {
+    id: number;
+    vendor: string;
+    model: string;
+    serial: string;
+    organization_id: number;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string;
+}

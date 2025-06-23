@@ -8,6 +8,7 @@ use App\Listeners\Permissions\RoleAttachedListener;
 use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
+use App\Services\Peoplecount\SensorService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(GlobalPermissionService::class);
+        $this->app->singleton(SensorService::class);
     }
 
     /**

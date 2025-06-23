@@ -28,6 +28,9 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Organization Management Module
             Permission::create(['name' => 'orgmgmt.users.'.$action]);
+
+            // People counting module
+            Permission::create(['name' => 'peoplecount.sensors.'.$action]);
         }
 
         // update cache to know about the newly created permissions (required if using WithoutModelEvents in seeders)
@@ -38,9 +41,11 @@ class RolesAndPermissionsSeeder extends Seeder
         Role::create(['name' => 'Admin'])
             ->givePermissionTo('admin.users.*')
             ->givePermissionTo('admin.organizations.*')
-            ->givePermissionTo('orgmgmt.users.*');
+            ->givePermissionTo('orgmgmt.users.*')
+            ->givePermissionTo('peoplecount.sensors.*');
 
         Role::create(['name' => 'OrganizationAdministrator'])
-            ->givePermissionTo('orgmgmt.users.*');
+            ->givePermissionTo('orgmgmt.users.*')
+            ->givePermissionTo('peoplecount.sensors.*');
     }
 }

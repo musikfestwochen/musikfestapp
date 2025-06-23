@@ -19,7 +19,8 @@
             "tooltip",
             "composables",
             "tsconfig",
-            "debugbar"
+            "debugbar",
+            "peoplecount"
         ],
         "paths": []
     }
