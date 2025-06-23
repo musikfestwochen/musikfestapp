@@ -36,7 +36,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your users" title="Users" />
+            <Heading description="See all your sensors" title="Users" />
 
             <div class="mt-4">
                 <SensorsTable :organization="props.organization" :sensors="sensors" />

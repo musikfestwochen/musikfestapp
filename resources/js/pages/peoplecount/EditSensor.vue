@@ -20,7 +20,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         href: route('peoplecount.sensors.index', { organization: props.organization.slug }),
     },
     {
-        title: 'Create',
+        title: 'Edit',
         href: route('peoplecount.sensors.edit', { organization: props.organization.slug, sensor: props.sensor.id }),
     },
 ];

@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Requests\Peoplecount\SensorUpdateRequest;
-use App\Models\Peoplecount\Sensor;
+use App\Models\User;
 
 covers(SensorUpdateRequest::class);
 
@@ -10,7 +10,7 @@ beforeEach(function () {
 });
 
 it('authorizes when user can update sensors', function () {
-    $user = Mockery::mock(Sensor::class);
+    $user = Mockery::mock(User::class);
     // Updated to match the actual permission string used in the request
     $user->shouldReceive('can')->with('peoplecount.sensors.update')->andReturn(true);
 

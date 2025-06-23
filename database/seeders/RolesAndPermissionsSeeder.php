@@ -44,7 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ->givePermissionTo('orgmgmt.users.*')
             ->givePermissionTo('peoplecount.sensors.*');
 
-        Role::create(['name' => 'OrganizationAdministrator'])
+        Role::create(['name' => 'OrganizationAdmin'])
             ->givePermissionTo('orgmgmt.users.*')
             ->givePermissionTo('peoplecount.sensors.*');
     }

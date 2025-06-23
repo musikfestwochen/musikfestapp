@@ -15,7 +15,7 @@ const columns = sensorsColumns(props.organization);
 </script>
 
 <template>
-    <DataTable :columns="columns" :data="sensors" filter-column="name" search-placeholder="Search users...">
+    <DataTable :columns="columns" :data="sensors" filter-column="sensors" search-placeholder="Search sensors...">
         <template #actions>
             <Button as-child size="sm" variant="default">
                 <Link :href="route('peoplecount.sensors.create', { organization: props.organization.slug })">

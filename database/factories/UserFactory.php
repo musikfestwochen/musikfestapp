@@ -115,7 +115,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Creates a user with OrganizationAdministrator role
+     * Creates a user with OrganizationAdmin role
      *
      * @param  Organization|null  $organization  A specific organization to attach to the user
      * @param  array|null  $organizations  Array of organization IDs to attach to the user
@@ -124,7 +124,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) use ($organization, $organizations) {
             // Handle organization attachment
-            if ($organization instanceof \App\Models\Organization) {
+            if ($organization instanceof Organization) {
                 $user->organizations()->attach($organization->id);
                 setPermissionsOrgId($organization->id);
             } elseif ($organizations !== null) {
@@ -137,7 +137,7 @@ class UserFactory extends Factory
                 setPermissionsOrgId($newOrg->id);
             }
 
-            $user->assignRole('OrganizationAdministrator');
+            $user->assignRole('OrganizationAdmin');
         });
     }
 }

@@ -94,7 +94,7 @@ class SensorController extends Controller
      */
     public function update(SensorUpdateRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
     {
-        $sensor->update(request()->all());
+        $sensor->update($request->all());
 
         return redirect()->route('peoplecount.sensors.index', [
             'organization' => $organization,

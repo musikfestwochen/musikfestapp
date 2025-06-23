@@ -32,29 +32,20 @@ const submit = () => {
     <form class="flex flex-col gap-6" @submit.prevent="submit">
         <div class="grid max-w-80 gap-6">
             <div class="grid gap-2">
-                <Label for="name">Vendor</Label>
-                <Input id="name" v-model="form.vendor" :tabindex="1" autocomplete="on" autofocus placeholder="Vendor Name" required type="text" />
+                <Label for="vendor">Vendor</Label>
+                <Input id="vendor" v-model="form.vendor" :tabindex="1" autocomplete="on" autofocus placeholder="Vendor Name" required type="text" />
                 <InputError :message="form.errors.vendor" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="name">Model</Label>
-                <Input id="name" v-model="form.model" :tabindex="1" autocomplete="on" autofocus placeholder="Sensor Model" required type="text" />
+                <Label for="model">Model</Label>
+                <Input id="model" v-model="form.model" :tabindex="2" autocomplete="on" placeholder="Sensor Model" required type="text" />
                 <InputError :message="form.errors.model" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="name">Serial Number</Label>
-                <Input
-                    id="name"
-                    v-model="form.serial"
-                    :tabindex="1"
-                    autocomplete="off"
-                    autofocus
-                    placeholder="Sensor Serial Number"
-                    required
-                    type="text"
-                />
+                <Label for="serial">Serial Number</Label>
+                <Input id="serial" v-model="form.serial" :tabindex="3" autocomplete="off" placeholder="Sensor Serial Number" required type="text" />
                 <InputError :message="form.errors.serial" />
             </div>
 

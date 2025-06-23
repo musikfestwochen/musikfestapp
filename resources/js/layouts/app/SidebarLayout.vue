@@ -18,7 +18,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
     <AppShell variant="sidebar">
-        <AppSidebar :footerNavItems="footerNavItems" :mainNavItems="mainNavItems" />
+        <AppSidebar :footer-nav-items="footerNavItems" :main-nav-items="mainNavItems" />
         <AppContent variant="sidebar">
             <AppSidebarHeader :breadcrumbs="breadcrumbs" />
             <slot />

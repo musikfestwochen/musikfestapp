@@ -13,7 +13,7 @@ it('has correct rules', function () {
     expect($this->request->rules())->toBe([]);
 });
 
-it('authorizes when user can show users', function () {
+it('authorizes when user can show sensors', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.sensors.show')->andReturn(true);
 

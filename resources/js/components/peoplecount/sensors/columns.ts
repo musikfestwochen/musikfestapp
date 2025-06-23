@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
-import { Organization, User } from '@/types';
+import { Organization, PeoplecountSensor } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
 
-export function sensorsColumns(organization: Organization): ColumnDef<User>[] {
+export function sensorsColumns(organization: Organization): ColumnDef<PeoplecountSensor>[] {
     return [
         {
             accessorKey: 'vendor',
