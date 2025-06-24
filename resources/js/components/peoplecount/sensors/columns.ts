@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountSensor } from '@/types';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
-import { Pencil, Trash2 } from 'lucide-vue-next';
+import { Pencil, RotateCcw, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
+import TokenCell from './TokenCell.vue';
 
 export function sensorsColumns(organization: Organization): ColumnDef<PeoplecountSensor>[] {
     return [
@@ -43,6 +44,21 @@ export function sensorsColumns(organization: Organization): ColumnDef<Peoplecoun
             enableHiding: true,
         },
         {
+            accessorKey: 'api_token',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Token',
+                }),
+            cell: ({ row }) => {
+                return h(TokenCell, {
+                    token: row.getValue('api_token') as string,
+                });
+            },
+            enableSorting: false,
+            enableHiding: true,
+        },
+        {
             id: 'actions',
             header: 'Actions',
             enableHiding: false,
@@ -52,6 +68,7 @@ export function sensorsColumns(organization: Organization): ColumnDef<Peoplecoun
                 const { can } = usePermissions();
                 const canEdit = can('peoplecount.sensors.edit');
                 const canDelete = can('peoplecount.sensors.destroy');
+                const canRegenerate = can('peoplecount.sensors.edit');
 
                 return h(
                     'div',
@@ -96,6 +113,43 @@ export function sensorsColumns(organization: Organization): ColumnDef<Peoplecoun
                                             size: 'sm',
                                         },
                                         () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
+                                    ),
+                            ),
+                        canRegenerate &&
+                            h(
+                                Link,
+                                {
+                                    href: route('peoplecount.sensors.regenerate-token', {
+                                        organization: organization.slug,
+                                        sensor: sensor.id,
+                                    }),
+                                    method: 'post',
+                                    as: 'button',
+                                    only: ['sensors'], // Only reload the sensors prop from the server
+                                    preserveScroll: true,
+                                },
+                                () =>
+                                    h(
+                                        Button,
+                                        {
+                                            variant: 'secondary',
+                                            size: 'sm',
+                                            onClick: () => {
+                                                router.post(
+                                                    route('peoplecount.sensors.regenerate-token', {
+                                                        organization: organization.slug,
+                                                        sensor: sensor.id,
+                                                    }),
+                                                    {},
+                                                    {
+                                                        preserveState: true,
+                                                        only: ['sensors'], // Only reload the sensors prop from the server
+                                                        preserveScroll: true,
+                                                    },
+                                                );
+                                            },
+                                        },
+                                        () => [h(RotateCcw, { class: 'w-4 h-4 mr-1' }), 'New Token'],
                                     ),
                             ),
                     ].filter(Boolean),

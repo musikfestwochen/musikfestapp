@@ -19,6 +19,18 @@ export interface NavItem {
     permission?: string; // Permission required to view this item
 }
 
+export interface Token {
+    abilities: string[];
+    created_at: string;
+    expires_at: string | null;
+    id: number;
+    last_used_at: string | null;
+    name: string;
+    tokenable_id: number;
+    tokenable_type: string;
+    updated_at: string;
+}
+
 export interface SharedData extends PageProps {
     name: string;
     quote: { message: string; author: string };
@@ -57,6 +69,7 @@ export interface PeoplecountSensor {
     model: string;
     serial: string;
     organization_id: number;
+    api_token?: string | null; // Plaintext API token, nullable
     created_at: string;
     updated_at: string;
     deleted_at?: string;

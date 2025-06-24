@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('vendor');
             $table->string('model');
             $table->string('serial');
+            $table->string('api_token')->nullable();
             $table->foreignIdFor(Organization::class)->constrained()->cascadeOnDelete();
             $table->softDeletes();
             $table->timestamps();

@@ -1,5 +1,6 @@
 import '../css/app.css';
 
+import Toaster from '@/components/ui/toast/Toaster.vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
@@ -28,7 +29,9 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
-        const app = createApp({ render: () => h(App, props) });
+        const app = createApp({
+            render: () => h('div', [h(App, props), h(Toaster)]),
+        });
 
         // Add global properties for permissions and roles
         app.config.globalProperties.$can = (permission: string) => {

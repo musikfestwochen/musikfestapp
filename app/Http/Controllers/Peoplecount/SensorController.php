@@ -38,7 +38,7 @@ class SensorController extends Controller
      */
     public function store(SensorStoreRequest $request, Organization $organization): RedirectResponse
     {
-        $sensor = Sensor::query()->create([
+        $sensor = $this->sensorService->createWithToken([
             'vendor' => $request->input('vendor'),
             'model' => $request->input('model'),
             'serial' => $request->input('serial'),

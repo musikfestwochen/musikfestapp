@@ -33,6 +33,7 @@ class Sensor extends Model
         'model',
         'serial',
         'organization_id',
+        'api_token', // TODO: Storing token in plaintext, revisit if API becomes sensitive
     ];
 
     /**
