@@ -90,7 +90,7 @@ describe('createWithToken', function () {
         expect($dbToken)->not->toBeNull();
 
         // Ensure api_token is persisted in the database
-        $sensorFromDb = Sensor::find($sensor->id);
+        $sensorFromDb = Sensor::query()->find($sensor->id);
         expect($sensorFromDb->api_token)->toBe($sensor->api_token);
     });
 });
