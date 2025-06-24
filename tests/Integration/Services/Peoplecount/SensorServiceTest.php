@@ -88,6 +88,10 @@ describe('createWithToken', function () {
         // Token should exist in the database
         $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
         expect($dbToken)->not->toBeNull();
+
+        // Ensure api_token is persisted in the database
+        $sensorFromDb = Sensor::find($sensor->id);
+        expect($sensorFromDb->api_token)->toBe($sensor->api_token);
     });
 });
 
