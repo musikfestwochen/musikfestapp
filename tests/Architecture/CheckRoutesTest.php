@@ -64,6 +64,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors/{sensor}/edit'],
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/regenerate-token'],
 
         // Laravel Sanctum routes
         ['method' => 'GET|HEAD', 'uri' => 'sanctum/csrf-cookie'],

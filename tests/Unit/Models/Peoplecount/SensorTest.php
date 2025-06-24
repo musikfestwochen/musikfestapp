@@ -11,6 +11,7 @@ it('has correct fillable attributes', function () {
         'vendor',
         'model',
         'serial',
+        'api_token',
         'organization_id',
     ]);
 });
