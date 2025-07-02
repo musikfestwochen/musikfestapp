@@ -66,6 +66,9 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/regenerate-token'],
 
+        // API Routes
+        ['method' => 'POST', 'uri' => 'api/peoplecount/interval-count'],
+
         // Laravel Sanctum routes
         ['method' => 'GET|HEAD', 'uri' => 'sanctum/csrf-cookie'],
 

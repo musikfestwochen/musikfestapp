@@ -13,6 +13,7 @@ use App\Http\Requests\Peoplecount\SensorUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\SensorService;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -80,6 +81,11 @@ class SensorController extends Controller
      */
     public function edit(SensorEditRequest $request, Organization $organization, Sensor $sensor): Response
     {
+        // get the last 10 interval counts for the sensor
+        $sensor->load(['intervalCounts' => function (HasMany $query) {
+            $query->orderBy('ts_from', 'desc')->take(10);
+        }]);
+
         return Inertia::render('peoplecount/EditSensor', [
             'organization' => $organization,
             'sensor' => $sensor,

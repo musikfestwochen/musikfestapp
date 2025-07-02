@@ -73,4 +73,14 @@ export interface PeoplecountSensor {
     created_at: string;
     updated_at: string;
     deleted_at?: string;
+    interval_counts?: PeopleCountIntervalCount[]; // Optional, for related interval counts
+}
+
+export interface PeopleCountIntervalCount {
+    id: number;
+    sensor_id: number;
+    ts_from: string; // ISO 8601 date-time string
+    ts_to: string; // ISO 8601 date-time string
+    count_in: number;
+    count_out: number;
 }

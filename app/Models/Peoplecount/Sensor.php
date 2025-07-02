@@ -7,6 +7,7 @@ use Database\Factories\Peoplecount\SensorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -44,5 +45,15 @@ class Sensor extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * The IntervalCounts associated with the sensor.
+     *
+     * @return HasMany<IntervalCount, $this>
+     */
+    public function intervalCounts(): HasMany
+    {
+        return $this->hasMany(IntervalCount::class);
     }
 }

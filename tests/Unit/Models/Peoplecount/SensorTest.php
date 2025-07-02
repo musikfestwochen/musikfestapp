@@ -37,6 +37,13 @@ it('BelongsTo an organization', function () {
     expect($relation)->toBeInstanceOf(BelongsTo::class);
 });
 
+it('has many interval counts', function () {
+    $sensor = new Sensor;
+    $relation = $sensor->intervalCounts();
+
+    expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
+});
+
 it('has correct table name', function () {
     $sensor = new Sensor;
     expect($sensor->getTable())->toBe('peoplecount_sensors');

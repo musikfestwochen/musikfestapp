@@ -22,6 +22,7 @@ class SensorFactory extends Factory
             'vendor' => fake()->company(),
             'model' => fake()->word(),
             'serial' => fake()->unique()->numerify('SN-########'),
+            'organization_id' => Organization::query()->inRandomOrder()->first()->id ?? Organization::factory()->create()->id,
         ];
     }
 
