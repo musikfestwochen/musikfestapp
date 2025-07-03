@@ -53,6 +53,9 @@ class SensorService
         $token = $sensor->createToken(self::SENSOR_TOKEN_NAME);
 
         // TODO: Storing token in plaintext, revisit if API becomes sensitive
-        return $token->plainTextToken;
+        // The token is formatted as <id>|<token>, so we only want the token part
+        $parts = explode('|', $token->plainTextToken, 2);
+
+        return $parts[1] ?? $token->plainTextToken;
     }
 }

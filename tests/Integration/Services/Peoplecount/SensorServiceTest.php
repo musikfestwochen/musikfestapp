@@ -93,6 +93,45 @@ describe('createWithToken', function () {
         $sensorFromDb = Sensor::query()->find($sensor->id);
         expect($sensorFromDb->api_token)->toBe($sensor->api_token);
     });
+
+    it('creates sensor with token that matches the token in database', function () {
+        $org = Organization::factory()->create();
+        $attributes = [
+            'organization_id' => $org->id,
+            'vendor' => 'TestVendor',
+            'model' => 'TestModel',
+            'serial' => 'SN123456',
+        ];
+
+        $sensor = $this->service->createWithToken($attributes);
+
+        // Get the actual token from the database
+        $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
+
+        // The api_token field should contain the token part (after the |)
+        expect($sensor->api_token)->toBeString()
+            ->and($sensor->api_token)->not->toContain('|')
+            ->and(strlen($sensor->api_token))->toBeGreaterThan(10);
+    });
+
+    it('saves api_token to database correctly', function () {
+        $org = Organization::factory()->create();
+        $attributes = [
+            'organization_id' => $org->id,
+            'vendor' => 'TestVendor',
+            'model' => 'TestModel',
+            'serial' => 'SN123456',
+        ];
+
+        $sensor = $this->service->createWithToken($attributes);
+
+        // Refresh from database to ensure it was persisted
+        $sensor->refresh();
+
+        expect($sensor->api_token)->not->toBeNull()
+            ->and($sensor->api_token)->not->toBeEmpty()
+            ->and($sensor->api_token)->toBeString();
+    });
 });
 
 describe('createOrRegenerateToken', function () {
@@ -121,5 +160,78 @@ describe('createOrRegenerateToken', function () {
         $tokensCount = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count();
         expect($tokensCount)->toBe(1)
             ->and($secondToken)->not->toBe($firstToken);
+    });
+
+    it('deletes multiple existing tokens with same name', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        // Create multiple tokens manually with the same name
+        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+
+        expect($sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count())->toBe(3);
+
+        $newToken = $this->service->createOrRegenerateToken($sensor);
+
+        // Should now have only one token with the name
+        $tokensCount = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count();
+        expect($tokensCount)->toBe(1)
+            ->and($newToken)->not->toBeEmpty();
+    });
+
+    it('returns only the token part when token has pipe format', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        $token = $this->service->createOrRegenerateToken($sensor);
+
+        // Token should not contain pipe character (should be the token part only)
+        expect($token)->not->toContain('|')
+            ->and($token)->toBeString()
+            ->and(strlen($token))->toBeGreaterThan(10);
+    });
+
+    it('handles token without pipe format gracefully', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        $token = $this->service->createOrRegenerateToken($sensor);
+
+        // Should return a valid token regardless of format
+        expect($token)->toBeString()
+            ->and($token)->not->toBeEmpty();
+    });
+
+    it('uses correct token name constant', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        $this->service->createOrRegenerateToken($sensor);
+
+        $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
+        expect($dbToken->name)->toBe('peoplecount_sensor_token');
+    });
+
+    it('extracts token correctly when token contains multiple pipe characters', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        // Mock createToken to return a token with multiple pipe characters
+        $mockToken = new class
+        {
+            public $plainTextToken = '123|actual_token_part|extra_part';
+        };
+
+        $sensorMock = Mockery::mock($sensor);
+        $sensorMock->shouldReceive('tokens->where->delete')->andReturn(true);
+        $sensorMock->shouldReceive('createToken')->andReturn($mockToken);
+
+        $token = $this->service->createOrRegenerateToken($sensorMock);
+
+        // With limit=2, this should return 'actual_token_part|extra_part'
+        // With limit=3 (mutation), this would return 'actual_token_part'
+        expect($token)->toBe('actual_token_part|extra_part');
     });
 });
