@@ -59,6 +59,341 @@ it('returns 200 when no records are processed', function () {
         ]);
 });
 
+it('returns 400 when service throws exception', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create();
+    $payload = ['invalid' => 'data'];
+
+    $mock = Mockery::mock(IntervalCountService::class);
+    $mock->shouldReceive('processIntervalCount')
+        ->once()
+        ->andThrow(new Exception('Unsupported sensor vendor: Unknown'));
+
+    $this->app->instance(IntervalCountService::class, $mock);
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(400)
+        ->assertJson([
+            'error' => 'Processing failed',
+            'message' => 'Unsupported sensor vendor: Unknown',
+        ]);
+});
+
+it('returns 400 when service throws validation exception', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create();
+    $payload = ['malformed' => 'data'];
+
+    $mock = Mockery::mock(IntervalCountService::class);
+    $mock->shouldReceive('processIntervalCount')
+        ->once()
+        ->andThrow(new Exception('Invalid Axis data structure: measurements must be an array.'));
+
+    $this->app->instance(IntervalCountService::class, $mock);
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(400)
+        ->assertJson([
+            'error' => 'Processing failed',
+            'message' => 'Invalid Axis data structure: measurements must be an array.',
+        ]);
+});
+
+it('returns 401 when no authentication token provided', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $payload = ['some' => 'data'];
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload)
+        ->assertStatus(401);
+});
+
+it('returns 401 when invalid authentication token provided', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $payload = ['some' => 'data'];
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer invalid-token',
+    ])->assertStatus(401);
+});
+
+it('returns 401 when expired token provided', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create();
+    $payload = ['some' => 'data'];
+
+    // Create a token and then delete it to simulate expiration
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+    $sensor->tokens()->delete();
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(401);
+});
+
+it('processes real axis data successfully', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'AXIS-TEST-001',
+    ]);
+
+    $payload = [
+        'apiName' => 'Axis Retail Data',
+        'apiVersion' => '0.4',
+        'sensor' => [
+            'serial' => 'AXIS-TEST-001',
+        ],
+        'data' => [
+            'utcFrom' => now()->subMinute()->toIso8601String(),
+            'utcTo' => now()->toIso8601String(),
+            'measurements' => [
+                [
+                    'kind' => 'people-counts',
+                    'utcFrom' => now()->subMinute()->toIso8601String(),
+                    'utcTo' => now()->toIso8601String(),
+                    'items' => [
+                        ['direction' => 'in', 'count' => 5],
+                        ['direction' => 'out', 'count' => 3],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(201)
+        ->assertJson([
+            'message' => 'Interval count data processed successfully.',
+            'count' => 1,
+        ]);
+
+    // Verify data was actually stored
+    $this->assertDatabaseHas('peoplecount_interval_counts', [
+        'sensor_id' => $sensor->id,
+        'count_in' => 5,
+        'count_out' => 3,
+    ]);
+});
+
+it('processes empty axis data successfully', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'AXIS-TEST-002',
+    ]);
+
+    $payload = [
+        'apiName' => 'Axis Retail Data',
+        'apiVersion' => '0.4',
+        'sensor' => [
+            'serial' => 'AXIS-TEST-002',
+        ],
+        'data' => [
+            'measurements' => [],
+        ],
+    ];
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(200)
+        ->assertJson([
+            'message' => 'No interval count data to process.',
+        ]);
+
+    // Verify no data was stored
+    $this->assertDatabaseMissing('peoplecount_interval_counts', [
+        'sensor_id' => $sensor->id,
+    ]);
+});
+
+it('handles malformed axis data gracefully', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'AXIS-TEST-003',
+    ]);
+
+    $payload = [
+        'apiName' => 'Wrong API',
+        'apiVersion' => '0.4',
+        'sensor' => [
+            'serial' => 'AXIS-TEST-003',
+        ],
+        'data' => [
+            'measurements' => [],
+        ],
+    ];
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(400)
+        ->assertJson([
+            'error' => 'Processing failed',
+            'message' => 'Unsupported Axis API version or name.',
+        ]);
+});
+
+it('handles sensor serial mismatch gracefully', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'AXIS-TEST-004',
+    ]);
+
+    $payload = [
+        'apiName' => 'Axis Retail Data',
+        'apiVersion' => '0.4',
+        'sensor' => [
+            'serial' => 'WRONG-SERIAL',
+        ],
+        'data' => [
+            'measurements' => [],
+        ],
+    ];
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(400)
+        ->assertJson([
+            'error' => 'Processing failed',
+            'message' => 'Sensor serial mismatch: expected AXIS-TEST-004, got WRONG-SERIAL',
+        ]);
+});
+
+it('handles unsupported sensor vendor gracefully', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Unknown',
+        'serial' => 'UNKNOWN-001',
+    ]);
+
+    $payload = ['some' => 'data'];
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(400)
+        ->assertJson([
+            'error' => 'Processing failed',
+            'message' => 'Unsupported sensor vendor: Unknown',
+        ]);
+});
+
+it('accepts empty request body', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create();
+
+    $mock = Mockery::mock(IntervalCountService::class);
+    $mock->shouldReceive('processIntervalCount')
+        ->once()
+        ->withArgs(function ($argSensor, $argData) use ($sensor): bool {
+            return $argSensor->id === $sensor->id && $argData === [];
+        })
+        ->andReturn(0);
+
+    $this->app->instance(IntervalCountService::class, $mock);
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), [], [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(200)
+        ->assertJson([
+            'message' => 'No interval count data to process.',
+        ]);
+});
+
+it('processes multiple measurements in single request', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'AXIS-MULTI-001',
+    ]);
+
+    $payload = [
+        'apiName' => 'Axis Retail Data',
+        'apiVersion' => '0.4',
+        'sensor' => [
+            'serial' => 'AXIS-MULTI-001',
+        ],
+        'data' => [
+            'utcFrom' => now()->subHour()->toIso8601String(),
+            'utcTo' => now()->toIso8601String(),
+            'measurements' => [
+                [
+                    'kind' => 'people-counts',
+                    'utcFrom' => now()->subHour()->toIso8601String(),
+                    'utcTo' => now()->subMinutes(30)->toIso8601String(),
+                    'items' => [
+                        ['direction' => 'in', 'count' => 10],
+                        ['direction' => 'out', 'count' => 5],
+                    ],
+                ],
+                [
+                    'kind' => 'people-counts',
+                    'utcFrom' => now()->subMinutes(30)->toIso8601String(),
+                    'utcTo' => now()->toIso8601String(),
+                    'items' => [
+                        ['direction' => 'in', 'count' => 7],
+                        ['direction' => 'out', 'count' => 12],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertStatus(201)
+        ->assertJson([
+            'message' => 'Interval count data processed successfully.',
+            'count' => 2,
+        ]);
+
+    // Verify both measurements were stored
+    $this->assertDatabaseCount('peoplecount_interval_counts', 2);
+    $this->assertDatabaseHas('peoplecount_interval_counts', [
+        'sensor_id' => $sensor->id,
+        'count_in' => 10,
+        'count_out' => 5,
+    ]);
+    $this->assertDatabaseHas('peoplecount_interval_counts', [
+        'sensor_id' => $sensor->id,
+        'count_in' => 7,
+        'count_out' => 12,
+    ]);
+});
+
 it('uses the correct form requests', function () {
     // middleware
     test()->assertRouteUsesMiddleware(
