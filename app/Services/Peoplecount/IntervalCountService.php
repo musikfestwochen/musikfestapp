@@ -13,16 +13,16 @@ class IntervalCountService
      *
      * @param  Sensor  $sensor  The sensor to process data for.
      * @param  array<mixed>  $data  The data to process, expected to be in a specific format.
+     * @return int number of persisted IntervalCount records
      *
      * @throws Exception if the data does not match expected structure or values.
      */
-    public function processIntervalCount(Sensor $sensor, array $data): void
+    public function processIntervalCount(Sensor $sensor, array $data): int
     {
         // parse the data depending on the sensor type
         switch ($sensor->vendor) {
             case 'Axis':
-                $this->processAxisIntervalCount($sensor, $data);
-                break;
+                return $this->processAxisIntervalCount($sensor, $data);
 
             default:
                 // Handle other vendors or throw an exception
@@ -35,10 +35,11 @@ class IntervalCountService
      *
      * @param  Sensor  $sensor  The Axis sensor to process data for.
      * @param  array<mixed>  $data  The data to process, expected to be in Axis format.
+     * @return int number of persisted IntervalCount
      *
      * @throws Exception if the data does not match expected structure or values.
      */
-    public function processAxisIntervalCount(Sensor $sensor, array $data): void
+    public function processAxisIntervalCount(Sensor $sensor, array $data): int
     {
         // Validate API name and version
         throw_if(($data['apiName'] ?? null) !== 'Axis Retail Data' || ($data['apiVersion'] ?? null) !== '0.4', new Exception('Unsupported Axis API version or name.'));
@@ -46,29 +47,48 @@ class IntervalCountService
         // Validate sensor serial
         throw_if(($data['sensor']['serial'] ?? null) !== $sensor->serial, new Exception('Sensor serial mismatch: expected '.$sensor->serial.', got '.$data['sensor']['serial']));
 
-        // Validate timestamp
+        // Get measurements array
+        $measurements = $data['data']['measurements'] ?? [];
+        throw_if(! is_array($measurements), new Exception('Invalid Axis data structure: measurements must be an array.'));
+
+        // If no measurements, only validate header data (API test case)
+        if ($measurements === []) {
+            return 0;
+        }
+
+        // Validate timestamp when measurements are present
         throw_if(! isset($data['data']['utcFrom']) || ! isset($data['data']['utcTo']), new Exception('Missing required UTC timestamps in Axis data.'));
 
-        // Validate measurement structure
-        $measurements = $data['data']['measurements'] ?? null;
-        throw_if(! is_array($measurements) || count($measurements) !== 1 || ($measurements[0]['kind'] ?? null) !== 'people-counts', new Exception('Invalid Axis data structure: expected exactly one people-counts measurement.'));
+        $numPersisted = 0;
 
-        $measurement = $measurements[0];
-        $items = $measurement['items'] ?? [];
+        // Process each measurement
+        foreach ($measurements as $measurement) {
+            // Only process people-counts measurements, dismiss all others
+            if (($measurement['kind'] ?? null) !== 'people-counts') {
+                continue;
+            }
 
-        // Extract counts using helper
-        $counts = $this->extractCountsFromItems($items);
-        $countIn = $counts['countIn'];
-        $countOut = $counts['countOut'];
+            $items = $measurement['items'] ?? [];
 
-        // Create new IntervalCount
-        IntervalCount::query()->create([
-            'ts_from' => $data['data']['utcFrom'],
-            'ts_to' => $data['data']['utcTo'],
-            'count_in' => $countIn,
-            'count_out' => $countOut,
-            'sensor_id' => $sensor->id,
-        ]);
+            // Extract counts using helper
+            $counts = $this->extractCountsFromItems($items);
+            $countIn = $counts['countIn'];
+            $countOut = $counts['countOut'];
+
+            // Create new IntervalCount
+            IntervalCount::query()->create([
+                'ts_from' => $data['data']['utcFrom'],
+                'ts_to' => $data['data']['utcTo'],
+                'count_in' => $countIn,
+                'count_out' => $countOut,
+                'sensor_id' => $sensor->id,
+            ]);
+
+            $numPersisted++;
+        }
+
+        // Return the number of persisted IntervalCount records
+        return $numPersisted;
     }
 
     /**
