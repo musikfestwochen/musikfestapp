@@ -4,6 +4,7 @@ import laravel from 'laravel-vite-plugin';
 import path from 'path';
 import tailwindcss from 'tailwindcss';
 import { defineConfig } from 'vite';
+import viteImagemin from 'vite-plugin-imagemin';
 
 export default defineConfig({
     plugins: [
@@ -18,6 +19,14 @@ export default defineConfig({
                     includeAbsolute: false,
                 },
             },
+        }),
+        viteImagemin({
+            gifsicle: { optimizationLevel: 7, interlaced: false },
+            optipng: { optimizationLevel: 7 },
+            mozjpeg: { quality: 80, progressive: true },
+            pngquant: { quality: [0.7, 0.9], speed: 1 },
+            svgo: {},
+            webp: { quality: 80 },
         }),
     ],
     resolve: {

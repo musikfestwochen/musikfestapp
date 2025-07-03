@@ -42,8 +42,9 @@ describe('processIntervalCount', function () {
             ],
         ];
 
-        $this->service->processIntervalCount($sensor, $payload);
+        $result = $this->service->processIntervalCount($sensor, $payload);
 
+        expect($result)->toBe(1);
         $this->assertDatabaseHas('peoplecount_interval_counts', [
             'sensor_id' => $sensor->id,
             'count_in' => 7,
@@ -103,37 +104,7 @@ describe('processIntervalCount', function () {
         $this->service->processIntervalCount($sensor, $data);
     });
 
-    it('throws when utcFrom is missing', function () {
-        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
-
-        $data = [
-            'apiName' => 'Axis Retail Data',
-            'apiVersion' => '0.4',
-            'sensor' => ['serial' => 'SN123'],
-            'data' => ['utcTo' => now()->toIso8601String(), 'measurements' => []],
-        ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
-        $this->service->processIntervalCount($sensor, $data);
-    });
-
-    it('throws when utcTo is missing', function () {
-        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
-
-        $data = [
-            'apiName' => 'Axis Retail Data',
-            'apiVersion' => '0.4',
-            'sensor' => ['serial' => 'SN123'],
-            'data' => ['utcFrom' => now()->toIso8601String(), 'measurements' => []],
-        ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
-        $this->service->processIntervalCount($sensor, $data);
-    });
-
-    it('throws when both utcFrom and utcTo are missing', function () {
+    it('returns 0 for empty measurements array', function () {
         $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
 
         $data = [
@@ -141,6 +112,64 @@ describe('processIntervalCount', function () {
             'apiVersion' => '0.4',
             'sensor' => ['serial' => 'SN123'],
             'data' => ['measurements' => []],
+        ];
+
+        $result = $this->service->processIntervalCount($sensor, $data);
+        expect($result)->toBe(0);
+    });
+
+    it('throws when utcFrom is missing and measurements present', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'utcTo' => now()->toIso8601String(),
+                'measurements' => [
+                    ['kind' => 'people-counts', 'items' => []],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when utcTo is missing and measurements present', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'utcFrom' => now()->toIso8601String(),
+                'measurements' => [
+                    ['kind' => 'people-counts', 'items' => []],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when both utcFrom and utcTo are missing and measurements present', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    ['kind' => 'people-counts', 'items' => []],
+                ],
+            ],
         ];
 
         $this->expectException(Exception::class);
@@ -163,11 +192,91 @@ describe('processIntervalCount', function () {
         ];
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid Axis data structure: expected exactly one people-counts measurement.');
+        $this->expectExceptionMessage('Invalid Axis data structure: measurements must be an array.');
         $this->service->processIntervalCount($sensor, $data);
     });
 
-    it('throws when measurements count is not 1', function () {
+    it('processes multiple people-counts measurements', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create([
+            'vendor' => 'Axis',
+            'serial' => 'SN123',
+        ]);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'utcFrom' => now()->toIso8601String(),
+                'utcTo' => now()->toIso8601String(),
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 5],
+                            ['direction' => 'out', 'count' => 2],
+                        ],
+                    ],
+                    [
+                        'kind' => 'people-counts',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 3],
+                            ['direction' => 'out', 'count' => 1],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->service->processIntervalCount($sensor, $data);
+        expect($result)->toBe(2);
+
+        $this->assertDatabaseCount('peoplecount_interval_counts', 2);
+    });
+
+    it('skips non-people-counts measurements and processes only people-counts', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create([
+            'vendor' => 'Axis',
+            'serial' => 'SN123',
+        ]);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'utcFrom' => now()->toIso8601String(),
+                'utcTo' => now()->toIso8601String(),
+                'measurements' => [
+                    ['kind' => 'temperature'],
+                    [
+                        'kind' => 'people-counts',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 5],
+                            ['direction' => 'out', 'count' => 2],
+                        ],
+                    ],
+                    ['kind' => 'humidity'],
+                    [
+                        'kind' => 'people-counts',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 3],
+                            ['direction' => 'out', 'count' => 1],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->service->processIntervalCount($sensor, $data);
+        expect($result)->toBe(2);
+
+        $this->assertDatabaseCount('peoplecount_interval_counts', 2);
+    });
+
+    it('returns 0 when no people-counts measurements found', function () {
         $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
 
         $data = [
@@ -178,36 +287,16 @@ describe('processIntervalCount', function () {
                 'utcFrom' => now()->toIso8601String(),
                 'utcTo' => now()->toIso8601String(),
                 'measurements' => [
-                    ['kind' => 'people-counts'],
-                    ['kind' => 'people-counts'],
+                    ['kind' => 'temperature'],
+                    ['kind' => 'humidity'],
                 ],
             ],
         ];
 
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid Axis data structure: expected exactly one people-counts measurement.');
-        $this->service->processIntervalCount($sensor, $data);
-    });
+        $result = $this->service->processIntervalCount($sensor, $data);
+        expect($result)->toBe(0);
 
-    it('throws when measurement kind is not people-counts', function () {
-        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
-
-        $data = [
-            'apiName' => 'Axis Retail Data',
-            'apiVersion' => '0.4',
-            'sensor' => ['serial' => 'SN123'],
-            'data' => [
-                'utcFrom' => now()->toIso8601String(),
-                'utcTo' => now()->toIso8601String(),
-                'measurements' => [
-                    ['kind' => 'wrong-kind'],
-                ],
-            ],
-        ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid Axis data structure: expected exactly one people-counts measurement.');
-        $this->service->processIntervalCount($sensor, $data);
+        $this->assertDatabaseCount('peoplecount_interval_counts', 0);
     });
 });
 

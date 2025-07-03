@@ -20,7 +20,8 @@
             "composables",
             "tsconfig",
             "debugbar",
-            "peoplecount"
+            "peoplecount",
+            "lqip"
         ],
         "paths": []
     }
