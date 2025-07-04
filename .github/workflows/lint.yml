@@ -5,6 +5,7 @@ on:
   workflow_call:
 
 permissions:
+  # Write permission is required for auto-formatting and committing linting fixes
   contents: write
 
 jobs:

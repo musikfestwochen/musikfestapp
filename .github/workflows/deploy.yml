@@ -7,7 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  # Minimum permissions required for deployment:
+  contents: read # To read repository contents
+  deployments: write # To update deployment status
+  id-token: write # Needed for authentication during deployment
 
 jobs:
   lint:
