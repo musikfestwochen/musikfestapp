@@ -51,14 +51,6 @@ class IntervalCountService
         $measurements = $data['data']['measurements'] ?? [];
         throw_if(! is_array($measurements), new Exception('Invalid Axis data structure: measurements must be an array.'));
 
-        // If no measurements, only validate header data (API test case)
-        if ($measurements === []) {
-            return 0;
-        }
-
-        // Validate timestamp when measurements are present
-        throw_if(! isset($data['data']['utcFrom']) || ! isset($data['data']['utcTo']), new Exception('Missing required UTC timestamps in Axis data.'));
-
         $numPersisted = 0;
 
         // Process each measurement
@@ -67,6 +59,9 @@ class IntervalCountService
             if (($measurement['kind'] ?? null) !== 'people-counts') {
                 continue;
             }
+
+            // Validate measurement-level timestamps
+            throw_if(! isset($measurement['utcFrom']) || ! isset($measurement['utcTo']), new Exception('Missing required UTC timestamps in measurement data.'));
 
             $items = $measurement['items'] ?? [];
 
@@ -77,8 +72,8 @@ class IntervalCountService
 
             // Create new IntervalCount
             IntervalCount::query()->create([
-                'ts_from' => $data['data']['utcFrom'],
-                'ts_to' => $data['data']['utcTo'],
+                'ts_from' => $measurement['utcFrom'],
+                'ts_to' => $measurement['utcTo'],
                 'count_in' => $countIn,
                 'count_out' => $countOut,
                 'sensor_id' => $sensor->id,

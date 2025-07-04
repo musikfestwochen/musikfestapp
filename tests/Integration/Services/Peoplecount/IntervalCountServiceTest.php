@@ -33,6 +33,8 @@ describe('processIntervalCount', function () {
                 'measurements' => [
                     [
                         'kind' => 'people-counts',
+                        'utcFrom' => now()->subMinute()->toIso8601String(),
+                        'utcTo' => now()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 7],
                             ['direction' => 'out', 'count' => 3],
@@ -118,27 +120,7 @@ describe('processIntervalCount', function () {
         expect($result)->toBe(0);
     });
 
-    it('throws when utcFrom is missing and measurements present', function () {
-        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
-
-        $data = [
-            'apiName' => 'Axis Retail Data',
-            'apiVersion' => '0.4',
-            'sensor' => ['serial' => 'SN123'],
-            'data' => [
-                'utcTo' => now()->toIso8601String(),
-                'measurements' => [
-                    ['kind' => 'people-counts', 'items' => []],
-                ],
-            ],
-        ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
-        $this->service->processIntervalCount($sensor, $data);
-    });
-
-    it('throws when utcTo is missing and measurements present', function () {
+    it('throws when utcFrom is missing at measurement level', function () {
         $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
 
         $data = [
@@ -147,18 +129,24 @@ describe('processIntervalCount', function () {
             'sensor' => ['serial' => 'SN123'],
             'data' => [
                 'utcFrom' => now()->toIso8601String(),
+                'utcTo' => now()->toIso8601String(),
                 'measurements' => [
-                    ['kind' => 'people-counts', 'items' => []],
+                    [
+                        'kind' => 'people-counts',
+                        'utcTo' => now()->toIso8601String(),
+                        'items' => [],
+                    ],
                 ],
             ],
         ];
 
+        // This should fail because measurement-level utcFrom is missing
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
+        $this->expectExceptionMessage('Missing required UTC timestamps in measurement data.');
         $this->service->processIntervalCount($sensor, $data);
     });
 
-    it('throws when both utcFrom and utcTo are missing and measurements present', function () {
+    it('throws when utcTo is missing at measurement level', function () {
         $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
 
         $data = [
@@ -166,14 +154,46 @@ describe('processIntervalCount', function () {
             'apiVersion' => '0.4',
             'sensor' => ['serial' => 'SN123'],
             'data' => [
+                'utcFrom' => now()->toIso8601String(),
+                'utcTo' => now()->toIso8601String(),
                 'measurements' => [
-                    ['kind' => 'people-counts', 'items' => []],
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => now()->toIso8601String(),
+                        'items' => [],
+                    ],
                 ],
             ],
         ];
 
+        // This should fail because measurement-level utcTo is missing
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in Axis data.');
+        $this->expectExceptionMessage('Missing required UTC timestamps in measurement data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when both utcFrom and utcTo are missing at measurement level', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'utcFrom' => now()->toIso8601String(),
+                'utcTo' => now()->toIso8601String(),
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'items' => [],
+                    ],
+                ],
+            ],
+        ];
+
+        // This should fail because measurement-level timestamps are missing
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Missing required UTC timestamps in measurement data.');
         $this->service->processIntervalCount($sensor, $data);
     });
 
@@ -213,6 +233,8 @@ describe('processIntervalCount', function () {
                 'measurements' => [
                     [
                         'kind' => 'people-counts',
+                        'utcFrom' => now()->subMinute()->toIso8601String(),
+                        'utcTo' => now()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 5],
                             ['direction' => 'out', 'count' => 2],
@@ -220,6 +242,8 @@ describe('processIntervalCount', function () {
                     ],
                     [
                         'kind' => 'people-counts',
+                        'utcFrom' => now()->subMinute()->toIso8601String(),
+                        'utcTo' => now()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 3],
                             ['direction' => 'out', 'count' => 1],
@@ -253,6 +277,8 @@ describe('processIntervalCount', function () {
                     ['kind' => 'temperature'],
                     [
                         'kind' => 'people-counts',
+                        'utcFrom' => now()->subMinute()->toIso8601String(),
+                        'utcTo' => now()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 5],
                             ['direction' => 'out', 'count' => 2],
@@ -261,6 +287,8 @@ describe('processIntervalCount', function () {
                     ['kind' => 'humidity'],
                     [
                         'kind' => 'people-counts',
+                        'utcFrom' => now()->subMinute()->toIso8601String(),
+                        'utcTo' => now()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 3],
                             ['direction' => 'out', 'count' => 1],
