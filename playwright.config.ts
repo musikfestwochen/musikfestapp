@@ -33,6 +33,11 @@ export default defineConfig({
         /* Base URL to use in actions like `await page.goto('/')`. */
         baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://musikfestapp.test',
 
+        /* Slow down actions for better video visibility */
+        launchOptions: {
+            slowMo: 50, // ms delay between actions
+        },
+
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
 
