@@ -5,6 +5,10 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  # Only read access to repository contents is needed for running tests
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
