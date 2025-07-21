@@ -58,7 +58,7 @@ it('forwards to dashboard if email is already verified', function () {
 
     $response = $this->actingAs($user)->get($verificationUrl);
 
-    $response->assertRedirect(route('admin.dashboard', absolute: false, parameters: ['verified' => 1]));
+    $response->assertRedirect(route('admin.dashboard', parameters: ['verified' => 1], absolute: false));
 });
 
 it('redirects verified users to dashboard', function () {
