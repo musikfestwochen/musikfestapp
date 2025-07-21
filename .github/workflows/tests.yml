@@ -78,7 +78,7 @@ jobs:
         run: ./vendor/bin/phpstan analyse
 
       - name: Pest Tests
-        run: ./vendor/bin/pest --ci -p
+        run: ./vendor/bin/pest --ci --parallel
 
       - name: Type Coverage Tests
         run: ./vendor/bin/pest --type-coverage
@@ -136,10 +136,10 @@ jobs:
           path: public/build
 
       - name: Run Coverage Tests
-        run: ./vendor/bin/pest --coverage --min=100 -p
+        run: ./vendor/bin/pest --coverage --min=100 --parallel
 
       - name: Run Mutation Tests
-        run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations -p
+        run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations --parallel --covered-only
 
   e2e-tests:
     runs-on: ubuntu-latest

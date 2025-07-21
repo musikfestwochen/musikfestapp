@@ -73,13 +73,14 @@
             "phpstan"
         ],
         "test:coverage": [
-            "pest --coverage -p --min=100"
+            "pest --coverage --parallel --min=100"
         ],
         "test:types": [
-            "pest --type-coverage -p --min=100"
+            "pest --type-coverage --parallel --min=100"
         ],
         "test:mutation": [
-            "pest --mutate -p"
+            "Composer\\Config::disableProcessTimeout",
+            "pest --mutate --parallel --covered-only"
         ],
         "test:e2e": [
             "npm run build",
