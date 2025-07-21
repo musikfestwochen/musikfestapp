@@ -7,7 +7,7 @@ async function globalSetup() {
     console.log('Running database migrations and seeding...');
 
     try {
-        const { stdout, stderr } = await execAsync('php artisan migrate:fresh --seed --seeder=PlaywrightTestSeeder');
+        const { stdout, stderr } = await execAsync('php artisan migrate:fresh --seed --seeder=PlaywrightTestSeeder --force');
 
         if (stdout) {
             console.log('Migration output:', stdout);

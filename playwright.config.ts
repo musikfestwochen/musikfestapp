@@ -11,7 +11,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+// Load existing environment file
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// Override specific variables for E2E testing
+process.env.APP_DEBUG = 'false';
+process.env.APP_ENV = 'production';
+process.env.DEBUGBAR_ENABLED = 'false';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
