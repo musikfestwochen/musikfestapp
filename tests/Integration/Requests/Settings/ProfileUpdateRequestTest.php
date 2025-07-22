@@ -137,3 +137,36 @@ it('prevents duplicate email for different user', function () {
     expect($ruleString)->toContain('users'); // Table name
     expect($ruleString)->toContain((string) $this->user->id); // Current user ID should be ignored
 });
+
+it('has correct phone rules', function () {
+    $rules = $this->request->rules();
+    expect($rules)->toHaveKey('phone');
+    expect($rules['phone'])->toContain('nullable');
+    expect($rules['phone'])->toContain('string');
+    expect($rules['phone'])->toContain('max:20');
+
+    $uniqueRule = null;
+    foreach ($rules['phone'] as $rule) {
+        if (is_object($rule) && method_exists($rule, '__toString')) {
+            $uniqueRule = $rule;
+            break;
+        }
+    }
+
+    expect($uniqueRule)->not->toBeNull('Should have a unique rule for phone validation');
+    $ruleString = (string) $uniqueRule;
+    expect($ruleString)->toContain('users');
+    expect($ruleString)->toContain((string) $this->user->id);
+});
+
+it('validates phone is nullable', function () {
+    $rules = $this->request->rules();
+    $phoneRules = $rules['phone'];
+    expect($phoneRules)->toContain('nullable');
+});
+
+it('validates phone max length', function () {
+    $rules = $this->request->rules();
+    $phoneRules = $rules['phone'];
+    expect($phoneRules)->toContain('max:20');
+});

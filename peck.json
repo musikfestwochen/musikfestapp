@@ -21,7 +21,8 @@
             "tsconfig",
             "debugbar",
             "peoplecount",
-            "lqip"
+            "lqip",
+            "vonage"
         ],
         "paths": []
     }

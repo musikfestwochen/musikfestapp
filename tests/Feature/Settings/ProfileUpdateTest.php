@@ -12,8 +12,10 @@ it('displays profile page', function () {
     $response->assertOk();
 });
 
-it('can update profile information', function () {
-    $user = User::factory()->create();
+it('can update profile information without phone', function () {
+    $user = User::factory()->create([
+        'phone' => null,
+    ]);
 
     $response = $this
         ->actingAs($user)
@@ -30,6 +32,30 @@ it('can update profile information', function () {
 
     expect($user->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
+    expect($user->phone)->toBeNull();
+    expect($user->email_verified_at)->toBeNull();
+});
+
+it('can update profile information with phone', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->patch('/settings/profile', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'phone' => '+41 79 123 45 67',
+        ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/settings/profile');
+
+    $user->refresh();
+
+    expect($user->name)->toBe('Test User');
+    expect($user->email)->toBe('test@example.com');
+    expect($user->phone)->toBe('+41791234567');
     expect($user->email_verified_at)->toBeNull();
 });
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use AllowDynamicProperties;
+use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -26,6 +27,7 @@ use Illuminate\Foundation\Http\FormRequest;
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.($this->route('user')->id ?? '')],
+            'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'.($this->route('user')->id ?? '')],
         ];
     }
 }

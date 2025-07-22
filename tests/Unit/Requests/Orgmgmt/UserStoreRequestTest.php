@@ -13,6 +13,7 @@ it('has correct rules', function () {
     expect($this->request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        'phone' => ['nullable', 'string', 'max:20', 'unique:users'],
     ]);
 });
 

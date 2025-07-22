@@ -12,6 +12,7 @@ const props = defineProps<{ user?: User; organization?: Organization }>();
 const form = useForm({
     name: props.user?.name || '',
     email: props.user?.email || '',
+    phone: props.user?.phone || '',
 });
 
 const submit = () => {
@@ -39,6 +40,12 @@ const submit = () => {
                 <Label for="email">Email address</Label>
                 <Input id="email" v-model="form.email" :tabindex="2" autocomplete="email" placeholder="email@example.com" required type="email" />
                 <InputError :message="form.errors.email" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="phone">Phone number</Label>
+                <Input id="phone" v-model="form.phone" :tabindex="3" autocomplete="tel" placeholder="+41 79 123 45 67" type="tel" />
+                <InputError :message="form.errors.phone" />
             </div>
 
             <Button :disabled="form.processing" class="mt-2 w-full" tabindex="5" type="submit">

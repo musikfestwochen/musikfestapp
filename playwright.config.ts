@@ -16,7 +16,6 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // Override specific variables for E2E testing
 process.env.APP_DEBUG = 'false';
-process.env.APP_ENV = 'production';
 process.env.DEBUGBAR_ENABLED = 'false';
 
 /**

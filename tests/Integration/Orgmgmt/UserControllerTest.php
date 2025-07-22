@@ -33,22 +33,40 @@ it('can list users for an organization', function () {
         );
 });
 
-it('can create a user for an organization', function () {
+it('can create a user for an organization without phone', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
-    $userData = User::factory()->make()->toArray();
+    $userData = User::factory()->make(['phone' => null])->toArray();
     unset($userData['email_verified_at']); // Remove if not fillable
 
     $response = $this->actingAs($admin)
         ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), $userData);
     $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
-    $this->assertDatabaseHas('users', ['email' => $userData['email']]);
+    $this->assertDatabaseHas('users', [
+        'email' => $userData['email'],
+        'phone' => null,
+    ]);
 });
 
-it('can update a user for an organization', function () {
+it('can create a user for an organization with phone', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
-    $user = User::factory()->create();
+    $userData = User::factory()->make(['phone' => '+41 79 123 45 67'])->toArray();
+    unset($userData['email_verified_at']); // Remove if not fillable
+
+    $response = $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), $userData);
+    $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+    $this->assertDatabaseHas('users', [
+        'email' => $userData['email'],
+        'phone' => '+41791234567',
+    ]);
+});
+
+it('can update a user for an organization without phone', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $user = User::factory()->create(['phone' => null]);
     $org->users()->attach($user->id);
     $newName = 'Updated Name';
 
@@ -58,7 +76,33 @@ it('can update a user for an organization', function () {
             'email' => $user->email,
         ]);
     $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
-    $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => $newName]);
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'name' => $newName,
+        'phone' => null,
+    ]);
+});
+
+it('can update a user for an organization with phone', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $user = User::factory()->create();
+    $org->users()->attach($user->id);
+    $newName = 'Updated Name';
+    $newPhone = '+41 79 123 45 67';
+
+    $response = $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $user->id]), [
+            'name' => $newName,
+            'email' => $user->email,
+            'phone' => $newPhone,
+        ]);
+    $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'name' => $newName,
+        'phone' => '+41791234567',
+    ]);
 });
 
 it('can delete a user for an organization', function () {
