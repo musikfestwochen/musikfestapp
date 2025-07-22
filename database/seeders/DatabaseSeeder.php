@@ -34,16 +34,19 @@ class DatabaseSeeder extends Seeder
         User::factory()->globalAdmin()->organizationAdmin(null, [$mfw, $zhaw])->create([
             'name' => 'Simon',
             'email' => 'simon@musikfestapp.ch',
+            'phone' => '+41797164443',
         ]);
 
         User::factory()->globalAdmin()->organizationAdmin($mfw)->create([
             'name' => 'Pirmin',
             'email' => 'pirmin@musikfestapp.ch',
+            'phone' => '+41765021392',
         ]);
 
         User::factory()->organizationAdmin($mfw)->create([
             'name' => 'Lotta',
             'email' => 'lotta@musikfestwochen.ch',
+            'phone' => '+41794256763',
         ]);
 
         Organization::factory(10)->create();

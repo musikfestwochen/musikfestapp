@@ -45,6 +45,7 @@ it('has correct rules with user ID', function () {
     expect($request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,123'],
+        'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,123'],
     ]);
 });
 
@@ -64,5 +65,6 @@ it('has correct rules with null user', function () {
     expect($request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'],
+        'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'],
     ]);
 });

@@ -60,6 +60,37 @@ it('creates a user with a random password', function () {
     $this->assertDatabaseHas('users', ['email' => 'jane@example.com']);
 });
 
+it('creates a user without phone', function () {
+    $admin = User::factory()->globalAdmin()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+        'name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+    ]);
+
+    $response->assertRedirect(route('admin.users.index'));
+    $this->assertDatabaseHas('users', [
+        'email' => 'jane@example.com',
+        'phone' => null,
+    ]);
+});
+
+it('creates a user with phone', function () {
+    $admin = User::factory()->globalAdmin()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+        'name' => 'Jane Doe',
+        'email' => 'jane2@example.com',
+        'phone' => '+41 79 123 45 67',
+    ]);
+
+    $response->assertRedirect(route('admin.users.index'));
+    $this->assertDatabaseHas('users', [
+        'email' => 'jane2@example.com',
+        'phone' => '+41791234567',
+    ]);
+});
+
 it('fails to create user with invalid email', function () {
     $admin = User::factory()->globalAdmin()->create();
 
@@ -130,6 +161,41 @@ it('updates a user successfully', function () {
     ]);
 });
 
+it('updates a user without phone', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $user = User::factory()->create(['phone' => null]);
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), [
+        'name' => 'Updated Name',
+        'email' => 'updated@example.com',
+    ]);
+
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'name' => 'Updated Name',
+        'email' => 'updated@example.com',
+        'phone' => null,
+    ]);
+});
+
+it('updates a user with phone', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), [
+        'name' => 'Updated Name',
+        'email' => 'updated2@example.com',
+        'phone' => '+41 79 123 45 67',
+    ]);
+
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'name' => 'Updated Name',
+        'email' => 'updated2@example.com',
+        'phone' => '+41791234567',
+    ]);
+});
+
 it('fails to update without name', function () {
     $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
@@ -156,7 +222,7 @@ it('fails to update with existing email', function () {
     $user2 = User::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('admin.users.update', $user2), ['email' => $user1->email])
+        ->put(route('admin.users.update', $user2), ['name' => $user2->email, 'email' => $user1->email])
         ->assertSessionHasErrors('email');
 });
 

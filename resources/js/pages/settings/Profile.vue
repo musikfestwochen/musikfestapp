@@ -25,6 +25,7 @@ const user = page.props.auth.user as User;
 const form = useForm({
     name: user.name,
     email: user.email,
+    phone: user.phone || '',
 });
 
 const submit = () => {
@@ -61,6 +62,19 @@ const submit = () => {
                             type="email"
                         />
                         <InputError :message="form.errors.email" class="mt-2" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="phone">Phone</Label>
+                        <Input
+                            id="phone"
+                            v-model="form.phone"
+                            autocomplete="tel"
+                            class="mt-1 block w-full"
+                            placeholder="+41 79 123 45 67"
+                            type="tel"
+                        />
+                        <InputError :message="form.errors.phone" class="mt-2" />
                     </div>
 
                     <div v-if="mustVerifyEmail && !user.email_verified_at">

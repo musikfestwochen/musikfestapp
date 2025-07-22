@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -28,6 +30,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
     ];
 
@@ -66,5 +69,32 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Set the phone attribute with automatic formatting cleanup.
+     *
+     * @return Attribute<string, array<string, string|null>>
+     */
+    protected function phone(): Attribute
+    {
+        return Attribute::make(set: function (?string $value): array {
+            $cleaned = $value !== null ? trim($value) : null;
+            if ($cleaned === null || $cleaned === '' || $cleaned === '0') {
+                return ['phone' => null];
+            }
+
+            $cleaned = preg_replace('/[\s\-()\.]+/', '', $cleaned);
+
+            return ['phone' => $cleaned];
+        });
+    }
+
+    /**
+     * Route notifications for the Vonage channel.
+     */
+    public function routeNotificationForVonage(Notification $notification): string
+    {
+        return $this->phone;
     }
 }

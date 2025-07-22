@@ -33,6 +33,19 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
             enableHiding: true,
         },
         {
+            accessorKey: 'phone',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Phone',
+                }),
+            cell: ({ row }) => {
+                return h('div', {}, row.getValue('phone') || '-');
+            },
+            enableSorting: true,
+            enableHiding: true,
+        },
+        {
             accessorKey: 'email_verified_at',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
