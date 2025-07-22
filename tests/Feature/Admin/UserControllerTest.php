@@ -222,7 +222,7 @@ it('fails to update with existing email', function () {
     $user2 = User::factory()->create();
 
     $this->actingAs($admin)
-        ->put(route('admin.users.update', $user2), ['name' => $user2->email, 'email' => $user1->email])
+        ->put(route('admin.users.update', $user2), ['name' => $user2->name, 'email' => $user1->email])
         ->assertSessionHasErrors('email');
 });
 
