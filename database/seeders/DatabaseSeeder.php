@@ -52,6 +52,6 @@ class DatabaseSeeder extends Seeder
         Organization::factory(10)->create();
         Organization::factory(3)->deleted()->create();
         User::factory(20)->randomVerified()->withOrganizations()->create();
-        Sensor::factory(100)->withRandomOrganization()->create();
+        Sensor::factory(100)->axisP88152()->withToken()->withRandomOrganization()->create();
     }
 }
