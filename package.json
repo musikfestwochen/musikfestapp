@@ -17,7 +17,9 @@
         "e2e:ui": "playwright test --ui",
         "e2e:headed": "playwright test --headed",
         "e2e:codegen": "playwright codegen musikfestapp.test",
-        "e2e:codegen:mobile": "playwright codegen --device=\"iPhone 14\" musikfestapp.test"
+        "e2e:codegen:mobile": "playwright codegen --device=\"iPhone 14\" musikfestapp.test",
+        "simulate-sensors": "node scripts/simulate-sensors.js",
+        "simulate-sensors:help": "node scripts/simulate-sensors.js --help"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
@@ -52,14 +54,17 @@
         "@vitejs/plugin-vue": "^5.2.4",
         "@vueuse/core": "^12.8.2",
         "autoprefixer": "^10.4.20",
+        "axios": "^1.6.7",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "concurrently": "^9.0.1",
+        "knex": "^3.1.0",
         "laravel-vite-plugin": "^1.0",
         "lucide": "^0.468.0",
         "lucide-vue-next": "^0.468.0",
         "radix-vue": "^1.9.11",
         "reka-ui": "^2.3.1",
+        "sqlite3": "^5.1.7",
         "tailwind-merge": "^2.6.0",
         "tailwindcss": "^3.4.1",
         "tailwindcss-animate": "^1.0.7",
