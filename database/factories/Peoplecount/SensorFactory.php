@@ -4,6 +4,7 @@ namespace Database\Factories\Peoplecount;
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
+use App\Services\Peoplecount\SensorService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -40,6 +41,32 @@ class SensorFactory extends Factory
         return $this->state(function (array $attributes): array {
             return [
                 'organization_id' => Organization::query()->inRandomOrder()->first()->id ?? Organization::factory()->create()->id,
+            ];
+        });
+    }
+
+    /**
+     * Configure the model factory to create a sensor with a valid API token.
+     */
+    public function withToken(): static
+    {
+        return $this->afterCreating(function (Sensor $sensor) {
+            $sensorService = new SensorService;
+            $token = $sensorService->createOrRegenerateToken($sensor);
+            $sensor->api_token = $token;
+            $sensor->save();
+        });
+    }
+
+    /**
+     * Configure the model factory to create an Axis P8815-2 sensor.
+     */
+    public function axisP88152(): static
+    {
+        return $this->state(function (array $attributes): array {
+            return [
+                'vendor' => 'Axis',
+                'model' => 'P8815-2',
             ];
         });
     }
