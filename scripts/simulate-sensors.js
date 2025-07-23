@@ -64,13 +64,33 @@ args.forEach(arg => {
   } else if (arg === '--verbose') {
     options.verbose = true;
   } else if (arg.startsWith('--interval=')) {
-    options.interval = parseInt(arg.split('=')[1], 10);
+    const intervalValue = parseInt(arg.split('=')[1], 10);
+    if (isNaN(intervalValue) || intervalValue <= 0) {
+      console.error("Invalid value for --interval. It must be a positive integer.");
+      process.exit(1);
+    }
+    options.interval = intervalValue;
   } else if (arg.startsWith('--min-count=')) {
-    options.minCount = parseInt(arg.split('=')[1], 10);
+    const minCountValue = parseInt(arg.split('=')[1], 10);
+    if (isNaN(minCountValue)) {
+      console.error("Invalid value for --min-count. It must be a valid number.");
+      process.exit(1);
+    }
+    options.minCount = minCountValue;
   } else if (arg.startsWith('--max-count=')) {
-    options.maxCount = parseInt(arg.split('=')[1], 10);
+    const maxCountValue = parseInt(arg.split('=')[1], 10);
+    if (isNaN(maxCountValue)) {
+      console.error("Invalid value for --max-count. It must be a valid number.");
+      process.exit(1);
+    }
+    options.maxCount = maxCountValue;
   } else if (arg.startsWith('--sensor-id=')) {
-    options.sensorId = parseInt(arg.split('=')[1], 10);
+    const sensorIdValue = parseInt(arg.split('=')[1], 10);
+    if (isNaN(sensorIdValue)) {
+      console.error("Invalid value for --sensor-id. It must be a valid number.");
+      process.exit(1);
+    }
+    options.sensorId = sensorIdValue;
   }
 });
 
@@ -267,11 +287,12 @@ if (options.verbose) {
 simulateSensors();
 
 // Then set up the interval
-setInterval(simulateSensors, options.interval * 1000);
+const simulationInterval = setInterval(simulateSensors, options.interval * 1000);
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down sensor simulation...');
+  clearInterval(simulationInterval);
   await knex.destroy();
   process.exit(0);
 });
