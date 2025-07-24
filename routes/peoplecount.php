@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Peoplecount\EventController;
 use App\Http\Controllers\Peoplecount\SensorController;
 use App\Http\Controllers\Peoplecount\SensorTokenController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,11 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             'sensors',
             SensorController::class
         )->scoped(['organization' => 'slug'])->names('sensors');
+
+        Route::resource(
+            'events',
+            EventController::class
+        )->scoped(['organization' => 'slug'])->names('events');
         // Regenerate token route
         Route::post('sensors/{sensor}/regenerate-token', [SensorTokenController::class, 'update'])
             ->name('sensors.regenerate-token');

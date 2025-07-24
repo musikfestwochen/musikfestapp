@@ -8,6 +8,7 @@ use App\Listeners\Permissions\RoleAttachedListener;
 use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
+use App\Services\Peoplecount\EventService;
 use App\Services\Peoplecount\IntervalCountService;
 use App\Services\Peoplecount\SensorService;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GlobalPermissionService::class);
         $this->app->singleton(SensorService::class);
         $this->app->singleton(IntervalCountService::class);
+        $this->app->singleton(EventService::class);
     }
 
     /**
