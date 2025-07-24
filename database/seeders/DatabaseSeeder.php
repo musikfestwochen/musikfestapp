@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Organization;
+use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -49,9 +50,23 @@ class DatabaseSeeder extends Seeder
             'phone' => '+41794256763',
         ]);
 
-        Organization::factory(10)->create();
-        Organization::factory(3)->deleted()->create();
-        User::factory(20)->randomVerified()->withOrganizations()->create();
-        Sensor::factory(100)->axisP88152()->withToken()->withRandomOrganization()->create();
+        // Create 5 random users for each organization
+        $mfwUsers = User::factory(5)->randomVerified()->create();
+        foreach ($mfwUsers as $user) {
+            $user->organizations()->attach($mfw->id);
+        }
+
+        $zhawUsers = User::factory(5)->randomVerified()->create();
+        foreach ($zhawUsers as $user) {
+            $user->organizations()->attach($zhaw->id);
+        }
+
+        // Create 10 random sensors for each organization
+        Sensor::factory(10)->axisP88152()->withToken()->withOrganization($mfw)->create();
+        Sensor::factory(10)->axisP88152()->withToken()->withOrganization($zhaw)->create();
+
+        // Create 2 random events for each organization
+        Event::factory(2)->withOrganization($mfw)->create();
+        Event::factory(2)->withOrganization($zhaw)->create();
     }
 }

@@ -66,4 +66,14 @@ class Organization extends Model
     {
         return $this->hasMany(Peoplecount\Sensor::class);
     }
+
+    /**
+     * The events that belong to the organization.
+     *
+     * @return HasMany<Peoplecount\Event, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(Peoplecount\Event::class);
+    }
 }
