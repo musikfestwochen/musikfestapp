@@ -80,4 +80,14 @@ class Event extends Model
     {
         return $this->hasMany(Area::class);
     }
+
+    /**
+     * The Assignments that belong to the event.
+     *
+     * @return HasMany<Assignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
 }

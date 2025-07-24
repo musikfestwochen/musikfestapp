@@ -3,6 +3,7 @@
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 covers(Area::class);
@@ -36,6 +37,13 @@ it('belongs to an event', function () {
 
     expect($relation)->toBeInstanceOf(BelongsTo::class);
     expect($relation->getRelated())->toBeInstanceOf(Event::class);
+});
+
+it('has many assignments', function () {
+    $model = new Area;
+    $relation = $model->assignments();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
 });
 
 it('has factory', function () {

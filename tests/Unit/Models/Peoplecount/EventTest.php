@@ -53,3 +53,10 @@ it('has many peoplecount areas', function () {
 
     expect($relation)->toBeInstanceOf(HasMany::class);
 });
+
+it('has many assignments', function () {
+    $model = new Event;
+    $relation = $model->assignments();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+});

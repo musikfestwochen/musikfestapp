@@ -44,6 +44,13 @@ it('has many interval counts', function () {
     expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
 });
 
+it('has many assignments', function () {
+    $sensor = new Sensor;
+    $relation = $sensor->assignments();
+
+    expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
+});
+
 it('has correct table name', function () {
     $sensor = new Sensor;
     expect($sensor->getTable())->toBe('peoplecount_sensors');
