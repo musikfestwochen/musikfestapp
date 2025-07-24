@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Peoplecount\AreaController;
+use App\Http\Controllers\Peoplecount\AssignmentController;
 use App\Http\Controllers\Peoplecount\EventController;
 use App\Http\Controllers\Peoplecount\SensorController;
 use App\Http\Controllers\Peoplecount\SensorTokenController;
@@ -22,6 +23,12 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             'areas',
             AreaController::class
         )->scoped(['organization' => 'slug'])->names('areas');
+
+        Route::resource(
+            'assignments',
+            AssignmentController::class
+        )->scoped(['organization' => 'slug'])->names('assignments');
+
         // Regenerate token route
         Route::post('sensors/{sensor}/regenerate-token', [SensorTokenController::class, 'update'])
             ->name('sensors.regenerate-token');

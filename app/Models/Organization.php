@@ -87,4 +87,14 @@ class Organization extends Model
     {
         return $this->hasManyThrough(Peoplecount\Area::class, Peoplecount\Event::class);
     }
+
+    /**
+     * The assignments that belong to the organization's events.
+     *
+     * @return HasManyThrough<Peoplecount\Assignment, Peoplecount\Event, $this>
+     */
+    public function assignments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Peoplecount\Assignment::class, Peoplecount\Event::class);
+    }
 }
