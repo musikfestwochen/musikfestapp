@@ -3,6 +3,7 @@
 namespace Database\Factories\Peoplecount;
 
 use App\Models\Organization;
+use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
@@ -51,6 +52,19 @@ class EventFactory extends Factory
             return [
                 'organization_id' => Organization::query()->inRandomOrder()->first()->id ?? Organization::factory()->create()->id,
             ];
+        });
+    }
+
+    /**
+     * Configure the model factory to create 1-3 areas for each event.
+     *
+     * @param  int|null  $count  The number of areas to create. If null, a random number between 1 and 3 will be used.
+     */
+    public function withAreas(?int $count = null): static
+    {
+        return $this->afterCreating(function (Event $event) use ($count) {
+            $areasCount = $count ?? fake()->numberBetween(1, 3);
+            Area::factory($areasCount)->withEvent($event)->create();
         });
     }
 }

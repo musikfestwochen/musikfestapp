@@ -65,8 +65,8 @@ class DatabaseSeeder extends Seeder
         Sensor::factory(10)->axisP88152()->withToken()->withOrganization($mfw)->create();
         Sensor::factory(10)->axisP88152()->withToken()->withOrganization($zhaw)->create();
 
-        // Create 2 random events for each organization
-        Event::factory(2)->withOrganization($mfw)->create();
-        Event::factory(2)->withOrganization($zhaw)->create();
+        // Create 2 random events for each organization with 1-3 areas each
+        Event::factory(2)->withOrganization($mfw)->withAreas()->create();
+        Event::factory(2)->withOrganization($zhaw)->withAreas()->create();
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 covers(Event::class);
@@ -44,4 +45,11 @@ it('belongs to an organization', function () {
     $relation = $model->organization();
 
     expect($relation)->toBeInstanceOf(BelongsTo::class);
+});
+
+it('has many peoplecount areas', function () {
+    $model = new Event;
+    $relation = $model->areas();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
 });

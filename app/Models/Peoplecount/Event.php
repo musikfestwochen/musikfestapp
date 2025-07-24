@@ -7,6 +7,7 @@ use Database\Factories\Peoplecount\EventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -68,5 +69,15 @@ class Event extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The Areas that belong to the event.
+     *
+     * @return HasMany<Area, $this>
+     */
+    public function areas(): HasMany
+    {
+        return $this->hasMany(Area::class);
     }
 }
