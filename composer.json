@@ -72,7 +72,7 @@
             "rector"
         ],
         "test:sca": [
-            "phpstan"
+            "phpstan --xdebug"
         ],
         "test:coverage": [
             "pest --coverage --parallel --min=100"
@@ -86,7 +86,8 @@
         ],
         "test:e2e": [
             "npm run build",
-            "npm run e2e"
+            "npm run e2e",
+            "php artisan migrate:fresh --seed"
         ],
         "test": [
             "npm run test",
