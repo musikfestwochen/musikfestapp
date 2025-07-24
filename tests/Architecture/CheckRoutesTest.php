@@ -75,6 +75,15 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/events/{event}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/events/{event}'],
 
+        // People Count Areas Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/areas/{area}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}'],
+
         // API Routes
         ['method' => 'POST', 'uri' => 'api/peoplecount/interval-count'],
 

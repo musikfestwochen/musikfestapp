@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -75,5 +76,15 @@ class Organization extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Peoplecount\Event::class);
+    }
+
+    /**
+     * The areas that belong to the organization's events.
+     *
+     * @return HasManyThrough<Peoplecount\Area, Peoplecount\Event, $this>
+     */
+    public function areas(): HasManyThrough
+    {
+        return $this->hasManyThrough(Peoplecount\Area::class, Peoplecount\Event::class);
     }
 }
