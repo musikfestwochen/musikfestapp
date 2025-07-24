@@ -57,6 +57,9 @@ class Event extends Model
     /**
      * The attributes that should be cast.
      *
+     * Note: All datetime fields are stored in UTC timezone.
+     * Frontend is responsible for displaying dates in the user's local timezone.
+     *
      * @return array<string, string>
      */
     protected function casts(): array

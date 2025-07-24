@@ -47,6 +47,9 @@ class IntervalCount extends Model
 
     /**
      * The attributes that should be cast to native types.
+     *
+     * Note: All datetime fields are stored in UTC timezone.
+     * Frontend is responsible for displaying dates in the user's local timezone.
      */
     protected function casts(): array
     {

@@ -138,6 +138,16 @@ Musikfestapp comes with several helpful Composer scripts to streamline developme
 The **People Counting** module is a display interface for the **Axis 3D People Counter IPCam**, allowing real-time
 visualization of visitor counts.
 
+## ⏰ Timezone Handling
+
+All datetime fields in the application are stored in **UTC** timezone in the database. This ensures consistent data storage regardless of server location or user timezone.
+
+- **Backend**: The application is configured to use UTC for all server-side operations
+- **Frontend**: The frontend is responsible for displaying dates and times in the user's local timezone
+- **Database**: All timestamp columns store data in UTC format
+
+This approach provides a standardized way to handle time-sensitive data while ensuring proper display for users in different timezones.
+
 ## 🤝 Contributing
 
 Before contributing to this project, please review our development standards:
