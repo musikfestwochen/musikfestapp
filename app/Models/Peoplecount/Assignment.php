@@ -2,7 +2,6 @@
 
 namespace App\Models\Peoplecount;
 
-use App\Enums\Peoplecount\Direction;
 use Database\Factories\Peoplecount\AssignmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +14,7 @@ use Illuminate\Support\Carbon;
  * @property int $event_id
  * @property int $area_id
  * @property int $sensor_id
- * @property Direction $direction
+ * @property bool $direction_flipped
  * @property Carbon $active_from
  * @property Carbon $active_to
  * @property Carbon|null $created_at
@@ -43,7 +42,7 @@ class Assignment extends Model
         'event_id',
         'area_id',
         'sensor_id',
-        'direction',
+        'direction_flipped',
         'active_from',
         'active_to',
     ];
@@ -89,7 +88,7 @@ class Assignment extends Model
     protected function casts(): array
     {
         return [
-            'direction' => Direction::class,
+            'direction_flipped' => 'boolean',
             'active_from' => 'datetime',
             'active_to' => 'datetime',
         ];

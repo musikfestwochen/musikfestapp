@@ -135,30 +135,30 @@ class DatabaseSeeder extends Seeder
         $mfwSensors = \App\Models\Peoplecount\Sensor::query()->where('organization_id', $mfw->id)->get();
 
         // Assign sensors to MFW Summer Festival areas
-        Assignment::factory()->withArea($mfwMainStage)->withSensor($mfwSensors->get(0))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
-        Assignment::factory()->withArea($mfwMainStage)->withSensor($mfwSensors->get(1))->withDirection(\App\Enums\Peoplecount\Direction::OUT)->create();
-        Assignment::factory()->withArea($mfwFoodCourt)->withSensor($mfwSensors->get(2))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
-        Assignment::factory()->withArea($mfwFoodCourt)->withSensor($mfwSensors->get(3))->withDirection(\App\Enums\Peoplecount\Direction::OUT)->create();
-        Assignment::factory()->withArea($mfwVipArea)->withSensor($mfwSensors->get(4))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
+        Assignment::factory()->withArea($mfwMainStage)->withSensor($mfwSensors->get(0))->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($mfwMainStage)->withSensor($mfwSensors->get(1))->withDirectionFlipped(true)->create();
+        Assignment::factory()->withArea($mfwFoodCourt)->withSensor($mfwSensors->get(2))->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($mfwFoodCourt)->withSensor($mfwSensors->get(3))->withDirectionFlipped(true)->create();
+        Assignment::factory()->withArea($mfwVipArea)->withSensor($mfwSensors->get(4))->withDirectionFlipped(false)->create();
 
         // Assign sensors to MFW Winter Concert areas
-        Assignment::factory()->withArea($mfwConcertHall)->withSensor($mfwSensors->get(5))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
-        Assignment::factory()->withArea($mfwConcertHall)->withSensor($mfwSensors->get(6))->withDirection(\App\Enums\Peoplecount\Direction::OUT)->create();
-        Assignment::factory()->withArea($mfwFoyer)->withSensor($mfwSensors->get(7))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
+        Assignment::factory()->withArea($mfwConcertHall)->withSensor($mfwSensors->get(5))->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($mfwConcertHall)->withSensor($mfwSensors->get(6))->withDirectionFlipped(true)->create();
+        Assignment::factory()->withArea($mfwFoyer)->withSensor($mfwSensors->get(7))->withDirectionFlipped(false)->create();
 
         // Create assignments for ZHAW events using their sensors
         $zhawSensors = \App\Models\Peoplecount\Sensor::query()->where('organization_id', $zhaw->id)->get();
 
         // Assign sensors to ZHAW Open Day areas
-        Assignment::factory()->withArea($zhawAuditorium)->withSensor($zhawSensors->get(0))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
-        Assignment::factory()->withArea($zhawAuditorium)->withSensor($zhawSensors->get(1))->withDirection(\App\Enums\Peoplecount\Direction::OUT)->create();
-        Assignment::factory()->withArea($zhawLabTour)->withSensor($zhawSensors->get(2))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
-        Assignment::factory()->withArea($zhawLabTour)->withSensor($zhawSensors->get(3))->withDirection(\App\Enums\Peoplecount\Direction::OUT)->create();
-        Assignment::factory()->withArea($zhawInfoDesk)->withSensor($zhawSensors->get(4))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
+        Assignment::factory()->withArea($zhawAuditorium)->withSensor($zhawSensors->get(0))->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($zhawAuditorium)->withSensor($zhawSensors->get(1))->withDirectionFlipped(true)->create();
+        Assignment::factory()->withArea($zhawLabTour)->withSensor($zhawSensors->get(2))->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($zhawLabTour)->withSensor($zhawSensors->get(3))->withDirectionFlipped(true)->create();
+        Assignment::factory()->withArea($zhawInfoDesk)->withSensor($zhawSensors->get(4))->withDirectionFlipped(false)->create();
 
         // Assign sensors to ZHAW Graduation areas
-        Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(5))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
-        Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(6))->withDirection(\App\Enums\Peoplecount\Direction::OUT)->create();
-        Assignment::factory()->withArea($zhawReception)->withSensor($zhawSensors->get(7))->withDirection(\App\Enums\Peoplecount\Direction::IN)->create();
+        Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(5))->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(6))->withDirectionFlipped(true)->create();
+        Assignment::factory()->withArea($zhawReception)->withSensor($zhawSensors->get(7))->withDirectionFlipped(false)->create();
     }
 }

@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Peoplecount\Direction;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
@@ -16,7 +15,7 @@ it('has correct fillable attributes', function () {
         'event_id',
         'area_id',
         'sensor_id',
-        'direction',
+        'direction_flipped',
         'active_from',
         'active_to',
     ]);
@@ -69,7 +68,7 @@ it('casts fields correctly', function () {
     $model = new Assignment;
     $casts = $model->getCasts();
 
-    expect($casts)->toHaveKey('direction', Direction::class);
+    expect($casts)->toHaveKey('direction_flipped', 'boolean');
     expect($casts)->toHaveKey('active_from', 'datetime');
     expect($casts)->toHaveKey('active_to', 'datetime');
 });
@@ -77,16 +76,13 @@ it('casts fields correctly', function () {
 it('handles direction enum correctly', function () {
     // Create an assignment instance directly without using the factory
     $assignment = new Assignment;
-    $assignment->direction = Direction::IN;
+    $assignment->direction_flipped = false;
 
     // Check that the direction is a Direction enum instance
-    expect($assignment->direction)->toBeInstanceOf(Direction::class);
-    expect($assignment->direction)->toBe(Direction::IN);
+    expect($assignment->direction_flipped)->toBeBool();
+    expect($assignment->direction_flipped)->toBe(false);
 
     // Check that we can compare with enum values
-    expect($assignment->direction === Direction::IN)->toBeTrue();
-    expect($assignment->direction === Direction::OUT)->toBeFalse();
-
-    // Check that the label method works
-    expect($assignment->direction->label())->toBe('In');
+    expect($assignment->direction_flipped === false)->toBeTrue();
+    expect($assignment->direction_flipped)->toBeFalse();
 });

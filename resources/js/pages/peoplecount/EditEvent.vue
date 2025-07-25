@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import EventForm from '@/components/peoplecount/events/EventForm.vue';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountEvent } from '@/types';
@@ -72,7 +73,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         </CardHeader>
                         <CardContent>
                             <p class="text-sm font-medium">{{ assignment.sensor?.vendor }} {{ assignment.sensor?.model }}</p>
-                            <p class="text-sm text-muted-foreground">Direction: {{ assignment.direction }}</p>
+                            <Badge v-if="assignment.direction_flipped" variant="destructive">direction flipped</Badge>
                             <p class="mt-2 text-xs text-muted-foreground">
                                 {{ new Date(assignment.active_from).toLocaleDateString() }} -
                                 {{ new Date(assignment.active_to).toLocaleDateString() }}

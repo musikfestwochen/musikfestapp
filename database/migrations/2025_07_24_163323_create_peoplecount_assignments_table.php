@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignIdFor(Event::class)->constrained('peoplecount_events')->cascadeOnDelete();
             $table->foreignIdFor(Area::class)->constrained('peoplecount_areas')->cascadeOnDelete();
             $table->foreignIdFor(Sensor::class)->constrained('peoplecount_sensors')->cascadeOnDelete();
-            $table->enum('direction', ['in', 'out']);
+            $table->boolean('direction_flipped')->default(false);
             $table->dateTime('active_from');
             $table->dateTime('active_to');
             $table->softDeletes();

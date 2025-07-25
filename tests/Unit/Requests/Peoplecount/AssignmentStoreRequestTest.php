@@ -16,7 +16,7 @@ it('has correct rules', function () {
     expect($rules)->toHaveKey('event_id')
         ->and($rules)->toHaveKey('area_id')
         ->and($rules)->toHaveKey('sensor_id')
-        ->and($rules)->toHaveKey('direction')
+        ->and($rules)->toHaveKey('direction_flipped')
         ->and($rules)->toHaveKey('active_from')
         ->and($rules)->toHaveKey('active_to');
 
@@ -25,8 +25,7 @@ it('has correct rules', function () {
     expect($rules['sensor_id'])->toBe(['required', 'integer', 'exists:peoplecount_sensors,id']);
 
     // For the Enum rule, we need to check the class type since we can't directly compare instances
-    expect($rules['direction'][0])->toBe('required');
-    expect($rules['direction'][1])->toBeInstanceOf(Enum::class);
+    expect($rules['direction_flipped'])->toBe(['required', 'boolean']);
 
     expect($rules['active_from'])->toBe(['required', 'date', 'before:active_to']);
     expect($rules['active_to'])->toBe(['required', 'date', 'after:active_from']);

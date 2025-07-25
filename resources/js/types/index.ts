@@ -123,7 +123,7 @@ export interface PeoplecountAssignment {
     event_id: number;
     area_id: number;
     sensor_id: number;
-    direction: 'in' | 'out';
+    direction_flipped: boolean;
     active_from: string; // ISO 8601 date-time string (UTC)
     active_to: string; // ISO 8601 date-time string (UTC)
     created_at: string;

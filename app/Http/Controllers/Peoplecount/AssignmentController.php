@@ -43,7 +43,7 @@ class AssignmentController extends Controller
                 'event_id' => $request->input('event_id'),
                 'area_id' => $request->input('area_id'),
                 'sensor_id' => $request->input('sensor_id'),
-                'direction' => $request->input('direction'),
+                'direction_flipped' => $request->input('direction_flipped'),
                 'active_from' => $request->input('active_from'),
                 'active_to' => $request->input('active_to'),
             ]);
@@ -108,7 +108,7 @@ class AssignmentController extends Controller
                 'event_id' => $request->input('event_id'),
                 'area_id' => $request->input('area_id'),
                 'sensor_id' => $request->input('sensor_id'),
-                'direction' => $request->input('direction'),
+                'direction_flipped' => $request->input('direction_flipped'),
                 'active_from' => $request->input('active_from'),
                 'active_to' => $request->input('active_to'),
             ]);

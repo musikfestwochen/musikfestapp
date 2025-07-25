@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Peoplecount\Direction;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
@@ -142,7 +141,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -153,7 +152,7 @@ describe('create', function () {
             ->and($assignment->event_id)->toBe($event->id)
             ->and($assignment->area_id)->toBe($area->id)
             ->and($assignment->sensor_id)->toBe($sensor->id)
-            ->and($assignment->direction->value)->toBe(Direction::IN->value)
+            ->and($assignment->direction_flipped)->toBe(false)
             ->and($assignment->active_from)->toBeInstanceOf(\Carbon\Carbon::class)
             ->and($assignment->active_to)->toBeInstanceOf(\Carbon\Carbon::class);
 
@@ -162,7 +161,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
         ]);
     });
 
@@ -183,7 +182,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -208,7 +207,7 @@ describe('create', function () {
             'event_id' => $event1->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -234,7 +233,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -258,7 +257,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(), // Before event starts
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -283,7 +282,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => $eventEndTime->toDateTimeString(), // Equals event end time
             'active_to' => $eventEndTime->copy()->addHours(1)->toDateTimeString(),
         ];
@@ -308,7 +307,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => $eventStartTime->copy()->subHours(1)->toDateTimeString(),
             'active_to' => $eventStartTime->toDateTimeString(), // Equals event start time
         ];
@@ -332,7 +331,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -363,7 +362,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => $eventStartTime->toDateTimeString(), // Equals event start time
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -389,7 +388,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->addDays(2)->toDateTimeString(),
             'active_to' => $eventEndTime->toDateTimeString(), // Equals event end time
         ];
@@ -414,7 +413,7 @@ describe('create', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(3),
                 'active_to' => now()->addDays(3),
             ]);
@@ -425,7 +424,7 @@ describe('create', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(), // Overlaps with existing
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -436,7 +435,7 @@ describe('create', function () {
         } catch (ValidationException $validationException) {
             $errors = $validationException->errors();
             expect($errors)->toHaveKey('sensor_id')
-                ->and($errors)->toHaveKey('direction')
+                ->and($errors)->toHaveKey('direction_flipped')
                 ->and($errors)->toHaveKey('active_from')
                 ->and($errors)->toHaveKey('active_to');
         }
@@ -458,7 +457,7 @@ describe('update', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(2),
                 'active_to' => now()->addDays(2),
             ]);
@@ -469,7 +468,7 @@ describe('update', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::OUT->value,
+            'direction_flipped' => true,
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
@@ -481,11 +480,11 @@ describe('update', function () {
             ->and($updatedAssignment->event_id)->toBe($event->id)
             ->and($updatedAssignment->area_id)->toBe($area->id)
             ->and($updatedAssignment->sensor_id)->toBe($sensor->id)
-            ->and($updatedAssignment->direction->value)->toBe(Direction::OUT->value);
+            ->and($updatedAssignment->direction_flipped)->toBe(true);
 
         $this->assertDatabaseHas('peoplecount_assignments', [
             'id' => $assignment->id,
-            'direction' => Direction::OUT->value,
+            'direction_flipped' => true,
         ]);
     });
 
@@ -504,7 +503,7 @@ describe('update', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(3),
                 'active_to' => now()->addDays(3),
             ]);
@@ -515,7 +514,7 @@ describe('update', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->addDays(4),
                 'active_to' => now()->addDays(5),
             ]);
@@ -526,7 +525,7 @@ describe('update', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2)->toDateTimeString(), // Overlaps with first assignment
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -557,7 +556,7 @@ describe('update', function () {
             ->for($area1)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(2),
                 'active_to' => now()->addDays(2),
             ]);
@@ -568,7 +567,7 @@ describe('update', function () {
             'event_id' => $event2->id, // Different organization
             'area_id' => $area2->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
@@ -597,7 +596,7 @@ describe('update', function () {
             ->for($area1)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(2),
                 'active_to' => now()->addDays(2),
             ]);
@@ -608,7 +607,7 @@ describe('update', function () {
             'event_id' => $event1->id,
             'area_id' => $area2->id, // Area from different event
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
@@ -634,7 +633,7 @@ describe('update', function () {
             ->for($area)
             ->for($sensor1)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(2),
                 'active_to' => now()->addDays(2),
             ]);
@@ -645,7 +644,7 @@ describe('update', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor2->id, // Sensor from different organization
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
@@ -668,7 +667,7 @@ describe('update', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->addDays(2),
                 'active_to' => now()->addDays(3),
             ]);
@@ -679,7 +678,7 @@ describe('update', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => Direction::IN->value,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(1)->toDateTimeString(), // Before event starts
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
@@ -780,7 +779,7 @@ describe('verifyNoOverlappingAssignments', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(5),
                 'active_to' => now()->subDays(3),
             ]);
@@ -791,7 +790,7 @@ describe('verifyNoOverlappingAssignments', function () {
         $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
-            Direction::IN->value,
+            false,
             now()->subDays(2)->toDateTimeString(),
             now()->addDays(2)->toDateTimeString()
         );
@@ -812,7 +811,7 @@ describe('verifyNoOverlappingAssignments', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(5),
                 'active_to' => now()->addDays(1),
             ]);
@@ -823,7 +822,7 @@ describe('verifyNoOverlappingAssignments', function () {
         $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
-            Direction::IN->value,
+            false,
             now()->subDays(1)->toDateTimeString(), // Starts during existing assignment
             now()->addDays(5)->toDateTimeString()
         );
@@ -841,7 +840,7 @@ describe('verifyNoOverlappingAssignments', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(1),
                 'active_to' => now()->addDays(5),
             ]);
@@ -852,7 +851,7 @@ describe('verifyNoOverlappingAssignments', function () {
         $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
-            Direction::IN->value,
+            false,
             now()->subDays(5)->toDateTimeString(),
             now()->addDays(1)->toDateTimeString() // Ends during existing assignment
         );
@@ -870,7 +869,7 @@ describe('verifyNoOverlappingAssignments', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(1),
                 'active_to' => now()->addDays(1),
             ]);
@@ -881,7 +880,7 @@ describe('verifyNoOverlappingAssignments', function () {
         $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
-            Direction::IN->value,
+            false,
             now()->subDays(5)->toDateTimeString(), // Starts before existing assignment
             now()->addDays(5)->toDateTimeString()  // Ends after existing assignment
         );
@@ -899,7 +898,7 @@ describe('verifyNoOverlappingAssignments', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(2),
                 'active_to' => now()->addDays(2),
             ]);
@@ -910,7 +909,7 @@ describe('verifyNoOverlappingAssignments', function () {
         $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
-            Direction::OUT->value, // Different direction
+            true, // Different direction
             now()->subDays(2)->toDateTimeString(),
             now()->addDays(2)->toDateTimeString()
         );
@@ -931,7 +930,7 @@ describe('verifyNoOverlappingAssignments', function () {
             ->for($area)
             ->for($sensor)
             ->create([
-                'direction' => Direction::IN,
+                'direction_flipped' => false,
                 'active_from' => now()->subDays(2),
                 'active_to' => now()->addDays(2),
             ]);
@@ -942,7 +941,7 @@ describe('verifyNoOverlappingAssignments', function () {
         $this->service->verifyNoOverlappingAssignments(
             $assignment->id, // Exclude this assignment
             $sensor->id,
-            Direction::IN->value,
+            false,
             now()->subDays(2)->toDateTimeString(),
             now()->addDays(2)->toDateTimeString()
         );

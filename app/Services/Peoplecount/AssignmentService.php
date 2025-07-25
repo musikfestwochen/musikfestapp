@@ -58,7 +58,7 @@ class AssignmentService
         $this->verifyNoOverlappingAssignments(
             null,
             $attributes['sensor_id'],
-            $attributes['direction'],
+            $attributes['direction_flipped'],
             $attributes['active_from'],
             $attributes['active_to']
         );
@@ -149,20 +149,20 @@ class AssignmentService
     }
 
     /**
-     * Verify that there are no overlapping assignments for the same sensor and direction.
+     * Verify that there are no overlapping assignments for the same sensor and direction_flipped value.
      *
      * @throws ValidationException
      */
     public function verifyNoOverlappingAssignments(
         ?int $assignmentId,
         int $sensorId,
-        string $direction,
+        bool $directionFlipped,
         string $activeFrom,
         string $activeTo
     ): void {
         $query = Assignment::query()
             ->where('sensor_id', $sensorId)
-            ->where('direction', $direction);
+            ->where('direction_flipped', $directionFlipped);
 
         // Exclude the current assignment when updating
         if ($assignmentId !== null) {
@@ -189,10 +189,10 @@ class AssignmentService
         $overlappingAssignments = $query->get();
 
         throw_if($overlappingAssignments->isNotEmpty(), ValidationException::withMessages([
-            'sensor_id' => 'There is already an assignment for this sensor and direction during the specified time period.',
-            'direction' => 'There is already an assignment for this sensor and direction during the specified time period.',
-            'active_from' => 'There is already an assignment for this sensor and direction during the specified time period.',
-            'active_to' => 'There is already an assignment for this sensor and direction during the specified time period.',
+            'sensor_id' => 'There is already an assignment for this sensor and direction_flipped value during the specified time period.',
+            'direction_flipped' => 'There is already an assignment for this sensor and direction_flipped value during the specified time period.',
+            'active_from' => 'There is already an assignment for this sensor and direction_flipped value during the specified time period.',
+            'active_to' => 'There is already an assignment for this sensor and direction_flipped value during the specified time period.',
         ]));
     }
 
@@ -222,7 +222,7 @@ class AssignmentService
         $this->verifyNoOverlappingAssignments(
             $assignment->id,
             $attributes['sensor_id'],
-            $attributes['direction'],
+            $attributes['direction_flipped'],
             $attributes['active_from'],
             $attributes['active_to']
         );

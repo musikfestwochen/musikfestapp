@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Peoplecount\Direction;
 use App\Http\Controllers\Peoplecount\AssignmentController;
 use App\Http\Requests\Peoplecount\AssignmentCreateRequest;
 use App\Http\Requests\Peoplecount\AssignmentDestroyRequest;
@@ -65,7 +64,7 @@ it('can create an assignment for an organization', function () {
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
-        'direction' => Direction::IN->value,
+        'direction_flipped' => false,
         'active_from' => now()->subDays(2)->toDateTimeString(),
         'active_to' => now()->addDays(2)->toDateTimeString(),
     ];
@@ -77,7 +76,7 @@ it('can create an assignment for an organization', function () {
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
-        'direction' => Direction::IN->value,
+        'direction_flipped' => false,
         'deleted_at' => null,
     ]);
 });
@@ -115,26 +114,26 @@ it('can update an assignment for an organization', function () {
         ->for($area)
         ->for($sensor)
         ->create([
-            'direction' => Direction::IN,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(2),
             'active_to' => now()->addDays(2),
         ]);
 
-    $newDirection = Direction::OUT->value;
+    $newDirection = true;
 
     $response = $this->actingAs($admin)
         ->put(route('peoplecount.assignments.update', ['organization' => $org->slug, 'assignment' => $assignment->id]), [
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'direction' => $newDirection,
+            'direction_flipped' => $newDirection,
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ]);
     $response->assertRedirect(route('peoplecount.assignments.index', ['organization' => $org->slug]));
     $this->assertDatabaseHas('peoplecount_assignments', [
         'id' => $assignment->id,
-        'direction' => $newDirection,
+        'direction_flipped' => $newDirection,
         'deleted_at' => null,
     ]);
 });
@@ -192,7 +191,7 @@ it('validates overlapping assignments on create', function () {
         ->for($area)
         ->for($sensor)
         ->create([
-            'direction' => Direction::IN,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(3),
             'active_to' => now()->addDays(3),
         ]);
@@ -202,7 +201,7 @@ it('validates overlapping assignments on create', function () {
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
-        'direction' => Direction::IN->value,
+        'direction_flipped' => false,
         'active_from' => now()->subDays(2)->toDateTimeString(),
         'active_to' => now()->addDays(2)->toDateTimeString(),
     ];
@@ -210,7 +209,7 @@ it('validates overlapping assignments on create', function () {
     $response = $this->actingAs($admin)
         ->post(route('peoplecount.assignments.store', ['organization' => $org->slug]), $assignmentData);
 
-    $response->assertSessionHasErrors(['sensor_id', 'direction', 'active_from', 'active_to']);
+    $response->assertSessionHasErrors(['sensor_id', 'direction_flipped', 'active_from', 'active_to']);
 });
 
 it('validates assignment time within event time on create', function () {
@@ -228,7 +227,7 @@ it('validates assignment time within event time on create', function () {
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
-        'direction' => Direction::IN->value,
+        'direction_flipped' => false,
         'active_from' => now()->subDays(2)->toDateTimeString(), // Before event starts
         'active_to' => now()->addDays(2)->toDateTimeString(),
     ];
@@ -255,7 +254,7 @@ it('validates overlapping assignments on update', function () {
         ->for($area)
         ->for($sensor)
         ->create([
-            'direction' => Direction::IN,
+            'direction_flipped' => false,
             'active_from' => now()->subDays(3),
             'active_to' => now()->addDays(3),
         ]);
@@ -266,7 +265,7 @@ it('validates overlapping assignments on update', function () {
         ->for($area)
         ->for($sensor)
         ->create([
-            'direction' => Direction::IN,
+            'direction_flipped' => false,
             'active_from' => now()->addDays(4),
             'active_to' => now()->addDays(5),
         ]);
@@ -276,7 +275,7 @@ it('validates overlapping assignments on update', function () {
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
-        'direction' => Direction::IN->value,
+        'direction_flipped' => false,
         'active_from' => now()->subDays(2)->toDateTimeString(), // Overlaps with first assignment
         'active_to' => now()->addDays(2)->toDateTimeString(),
     ];
@@ -284,7 +283,7 @@ it('validates overlapping assignments on update', function () {
     $response = $this->actingAs($admin)
         ->put(route('peoplecount.assignments.update', ['organization' => $org->slug, 'assignment' => $assignment2->id]), $updateData);
 
-    $response->assertSessionHasErrors(['sensor_id', 'direction', 'active_from', 'active_to']);
+    $response->assertSessionHasErrors(['sensor_id', 'direction_flipped', 'active_from', 'active_to']);
 });
 
 it('validates assignment time within event time on update', function () {
@@ -301,7 +300,7 @@ it('validates assignment time within event time on update', function () {
         ->for($area)
         ->for($sensor)
         ->create([
-            'direction' => Direction::IN,
+            'direction_flipped' => false,
             'active_from' => now()->addDays(2),
             'active_to' => now()->addDays(4),
         ]);
@@ -311,7 +310,7 @@ it('validates assignment time within event time on update', function () {
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
-        'direction' => Direction::IN->value,
+        'direction_flipped' => false,
         'active_from' => now()->subDays(2)->toDateTimeString(), // Before event starts
         'active_to' => now()->addDays(2)->toDateTimeString(),
     ];

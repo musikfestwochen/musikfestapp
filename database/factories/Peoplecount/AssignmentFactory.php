@@ -2,7 +2,6 @@
 
 namespace Database\Factories\Peoplecount;
 
-use App\Enums\Peoplecount\Direction;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
@@ -33,7 +32,7 @@ class AssignmentFactory extends Factory
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => Sensor::query()->inRandomOrder()->first()->id ?? Sensor::factory()->create()->id,
-            'direction' => fake()->randomElement([Direction::IN, Direction::OUT]),
+            'direction_flipped' => fake()->boolean(),
             'active_from' => $activeFrom,
             'active_to' => $activeTo,
         ];
@@ -96,13 +95,13 @@ class AssignmentFactory extends Factory
     }
 
     /**
-     * Configure the model factory to use a specific direction.
+     * Configure the model factory to use a specific direction_flipped value.
      */
-    public function withDirection(Direction $direction): static
+    public function withDirectionFlipped(bool $directionFlipped): static
     {
-        return $this->state(function (array $attributes) use ($direction): array {
+        return $this->state(function (array $attributes) use ($directionFlipped): array {
             return [
-                'direction' => $direction,
+                'direction_flipped' => $directionFlipped,
             ];
         });
     }
