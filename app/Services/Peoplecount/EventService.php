@@ -45,4 +45,12 @@ class EventService
 
         return $event;
     }
+
+    /**
+     * Get an event with its areas and assignments.
+     */
+    public function getEventWithRelations(Event $event): Event
+    {
+        return $event->load(['areas.assignments', 'assignments.area']);
+    }
 }

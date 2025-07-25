@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Organization;
+use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Services\Peoplecount\EventService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,5 +147,50 @@ describe('update', function () {
         expect($updatedEvent)->toBeInstanceOf(Event::class)
             ->and($updatedEvent->starts_at->toDateTimeString())->toBe($newStartsAt->toDateTimeString())
             ->and($updatedEvent->ends_at->toDateTimeString())->toBe($newEndsAt->toDateTimeString());
+    });
+});
+
+describe('getEventWithRelations', function () {
+    it('returns an event with areas and assignments loaded', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'name' => 'Test Event',
+        ]);
+
+        // Create areas and assignments for the event
+        $area1 = Area::factory()->create(['event_id' => $event->id, 'name' => 'Area 1']);
+        $area2 = Area::factory()->create(['event_id' => $event->id, 'name' => 'Area 2']);
+        $assignment1 = Assignment::factory()->create(['event_id' => $event->id]);
+        $assignment2 = Assignment::factory()->create(['event_id' => $event->id]);
+
+        $result = $this->service->getEventWithRelations($event);
+
+        expect($result)->toBeInstanceOf(Event::class)
+            ->and($result->id)->toBe($event->id)
+            ->and($result->name)->toBe('Test Event')
+            ->and($result->relationLoaded('areas'))->toBeTrue()
+            ->and($result->relationLoaded('assignments'))->toBeTrue()
+            ->and($result->areas)->toHaveCount(2)
+            ->and($result->assignments)->toHaveCount(2)
+            ->and($result->areas->first()->name)->toBe('Area 1')
+            ->and($result->areas->last()->name)->toBe('Area 2');
+    });
+
+    it('returns an event with empty relations when no areas or assignments exist', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'name' => 'Test Event',
+        ]);
+
+        $result = $this->service->getEventWithRelations($event);
+
+        expect($result)->toBeInstanceOf(Event::class)
+            ->and($result->id)->toBe($event->id)
+            ->and($result->relationLoaded('areas'))->toBeTrue()
+            ->and($result->relationLoaded('assignments'))->toBeTrue()
+            ->and($result->areas)->toHaveCount(0)
+            ->and($result->assignments)->toHaveCount(0);
     });
 });

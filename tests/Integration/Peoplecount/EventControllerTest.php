@@ -9,6 +9,8 @@ use App\Http\Requests\Peoplecount\EventShowRequest;
 use App\Http\Requests\Peoplecount\EventStoreRequest;
 use App\Http\Requests\Peoplecount\EventUpdateRequest;
 use App\Models\Organization;
+use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
 
@@ -25,9 +27,12 @@ it('can list events for an organization', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.events.index', ['organization' => $org->slug]))
-        ->assertStatus(200);
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/Events')
+            ->has('events')
+            ->has('organization')
+        );
 });
 
 it('shows the create event form for an organization', function () {
@@ -36,9 +41,11 @@ it('shows the create event form for an organization', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.events.create', ['organization' => $org->slug]))
-        ->assertStatus(200);
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/NewEvent')
+            ->has('organization')
+        );
 });
 
 it('can create an event for an organization', function () {
@@ -67,11 +74,24 @@ it('shows the edit event form for an organization event', function () {
         'organization_id' => $org->id,
     ]);
 
+    // Create areas and assignments for the event
+    $area1 = Area::factory()->create(['event_id' => $event->id, 'name' => 'Test Area 1']);
+    $area2 = Area::factory()->create(['event_id' => $event->id, 'name' => 'Test Area 2']);
+    $assignment1 = Assignment::factory()->create(['event_id' => $event->id]);
+    $assignment2 = Assignment::factory()->create(['event_id' => $event->id]);
+
     $this->actingAs($admin)
         ->get(route('peoplecount.events.edit', ['organization' => $org->slug, 'event' => $event->id]))
-        ->assertStatus(200);
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/EditEvent')
+            ->has('organization')
+            ->has('event')
+            ->has('event.areas', 2)
+            ->has('event.assignments', 2)
+            ->where('event.areas.0.name', 'Test Area 1')
+            ->where('event.areas.1.name', 'Test Area 2')
+        );
 });
 
 it('can update an event for an organization', function () {

@@ -80,9 +80,11 @@ class EventController extends Controller
      */
     public function edit(EventEditRequest $request, Organization $organization, Event $event): Response
     {
+        $eventWithRelations = $this->eventService->getEventWithRelations($event);
+
         return Inertia::render('peoplecount/EditEvent', [
             'organization' => $organization,
-            'event' => $event,
+            'event' => $eventWithRelations,
             'status' => $request->session()->get('status'),
         ]);
     }
