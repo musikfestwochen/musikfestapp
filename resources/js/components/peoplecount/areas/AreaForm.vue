@@ -3,6 +3,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Organization, PeoplecountArea, PeoplecountEvent } from '@/types';
 import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
@@ -43,18 +44,16 @@ const submit = () => {
 
             <div class="grid gap-2">
                 <Label for="event_id">Event</Label>
-                <select
-                    id="event_id"
-                    v-model="form.event_id"
-                    :tabindex="2"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                >
-                    <option disabled value="">Select an event</option>
-                    <option v-for="event in props.events" :key="event.id" :value="event.id.toString()">
-                        {{ event.name }}
-                    </option>
-                </select>
+                <Select v-model="form.event_id" required>
+                    <SelectTrigger id="event_id" :tabindex="2">
+                        <SelectValue placeholder="Select an event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem v-for="event in props.events" :key="event.id" :value="event.id.toString()">
+                            {{ event.name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="form.errors.event_id" />
                 <p class="text-sm text-muted-foreground">Select the event this area belongs to.</p>
             </div>

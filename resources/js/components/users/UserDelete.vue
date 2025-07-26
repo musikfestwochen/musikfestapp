@@ -75,9 +75,7 @@ const closeModal = () => {
                                 <Button variant="secondary" @click="closeModal"> Cancel</Button>
                             </DialogClose>
 
-                            <Button :disabled="form.processing" variant="destructive">
-                                <button type="submit">Delete account</button>
-                            </Button>
+                            <Button :disabled="form.processing" type="submit" variant="destructive"> Delete account </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

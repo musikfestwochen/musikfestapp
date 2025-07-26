@@ -3,6 +3,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
 import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/eventHelpers';
 import { useForm } from '@inertiajs/vue3';
@@ -93,54 +94,47 @@ const datePickerConfig = {
         <div class="grid max-w-xl gap-6">
             <div class="grid gap-2">
                 <Label for="event_id">Event</Label>
-                <select
-                    id="event_id"
-                    v-model="form.event_id"
-                    :tabindex="1"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                >
-                    <option disabled value="">Select an event</option>
-                    <option v-for="event in events" :key="event.id" :value="event.id.toString()">
-                        {{ event.name }}
-                    </option>
-                </select>
+                <Select v-model="form.event_id" required>
+                    <SelectTrigger id="event_id" :tabindex="1">
+                        <SelectValue placeholder="Select an event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem v-for="event in events" :key="event.id" :value="event.id.toString()">
+                            {{ event.name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="form.errors.event_id" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="area_id">Area</Label>
-                <select
-                    id="area_id"
-                    v-model="form.area_id"
-                    :disabled="!form.event_id"
-                    :tabindex="2"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                >
-                    <option disabled value="">Select an area</option>
-                    <option v-for="area in filteredAreas" :key="area.id" :value="area.id.toString()">
-                        {{ area.name }}
-                    </option>
-                </select>
+                <Select v-model="form.area_id" :disabled="!form.event_id" required>
+                    <SelectTrigger id="area_id" :tabindex="2">
+                        <SelectValue placeholder="Select an area" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem v-for="area in filteredAreas" :key="area.id" :value="area.id.toString()">
+                            {{ area.name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="form.errors.area_id" />
                 <p v-if="!form.event_id" class="text-sm text-muted-foreground">Please select an event first</p>
             </div>
 
             <div class="grid gap-2">
                 <Label for="sensor_id">Sensor</Label>
-                <select
-                    id="sensor_id"
-                    v-model="form.sensor_id"
-                    :tabindex="3"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                >
-                    <option disabled value="">Select a sensor</option>
-                    <option v-for="sensor in sensors" :key="sensor.id" :value="sensor.id.toString()">
-                        {{ sensor.vendor }} {{ sensor.model }} ({{ sensor.serial }})
-                    </option>
-                </select>
+                <Select v-model="form.sensor_id" required>
+                    <SelectTrigger id="sensor_id" :tabindex="3">
+                        <SelectValue placeholder="Select a sensor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem v-for="sensor in sensors" :key="sensor.id" :value="sensor.id.toString()">
+                            {{ sensor.vendor }} {{ sensor.model }} ({{ sensor.serial }})
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="form.errors.sensor_id" />
             </div>
 
