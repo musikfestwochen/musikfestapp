@@ -161,8 +161,8 @@ describe('getEventWithRelations', function () {
         // Create areas and assignments for the event
         $area1 = Area::factory()->create(['event_id' => $event->id, 'name' => 'Area 1']);
         $area2 = Area::factory()->create(['event_id' => $event->id, 'name' => 'Area 2']);
-        $assignment1 = Assignment::factory()->create(['event_id' => $event->id]);
-        $assignment2 = Assignment::factory()->create(['event_id' => $event->id]);
+        $assignment1 = Assignment::factory()->withEvent($event)->create();
+        $assignment2 = Assignment::factory()->withEvent($event)->create();
 
         $result = $this->service->getEventWithRelations($event);
 
@@ -174,7 +174,13 @@ describe('getEventWithRelations', function () {
             ->and($result->areas)->toHaveCount(2)
             ->and($result->assignments)->toHaveCount(2)
             ->and($result->areas->first()->name)->toBe('Area 1')
-            ->and($result->areas->last()->name)->toBe('Area 2');
+            ->and($result->areas->last()->name)->toBe('Area 2')
+            // Test nested relationships are loaded
+            ->and($result->areas->first()->relationLoaded('assignments'))->toBeTrue()
+            ->and($result->assignments->first()->relationLoaded('area'))->toBeTrue()
+            ->and($result->assignments->first()->relationLoaded('sensor'))->toBeTrue()
+            ->and($result->assignments->first()->area)->not->toBeNull()
+            ->and($result->assignments->first()->sensor)->not->toBeNull();
     });
 
     it('returns an event with empty relations when no areas or assignments exist', function () {

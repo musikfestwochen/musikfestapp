@@ -31,7 +31,7 @@ class EventService
      */
     public function create(array $attributes): Event
     {
-        return \App\Models\Peoplecount\Event::query()->create($attributes);
+        return Event::query()->create($attributes);
     }
 
     /**
@@ -51,6 +51,6 @@ class EventService
      */
     public function getEventWithRelations(Event $event): Event
     {
-        return $event->load(['areas.assignments', 'assignments.area']);
+        return $event->load(['areas.assignments', 'assignments.area', 'assignments.sensor']);
     }
 }

@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import AreaForm from '@/components/peoplecount/areas/AreaForm.vue';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AssignmentCard from '@/components/peoplecount/cards/AssignmentCard.vue';
+import EmptyStateCard from '@/components/peoplecount/cards/EmptyStateCard.vue';
+import EventDetailsCard from '@/components/peoplecount/cards/EventDetailsCard.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountArea, PeoplecountEvent } from '@/types';
-import { formatLocalDateTime } from '@/utils/eventHelpers';
 import { Head } from '@inertiajs/vue3';
-import { Calendar, Users } from 'lucide-vue-next';
 
 const props = defineProps<{
     area: PeoplecountArea;
@@ -46,20 +45,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
             <div v-if="area.event" class="mt-8">
                 <Heading title="Event Details" />
                 <div class="mt-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle class="flex items-center gap-2">
-                                <Calendar class="h-4 w-4" />
-                                {{ area.event.name }}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="space-y-2 text-sm text-muted-foreground">
-                                <p><strong>Start:</strong> {{ formatLocalDateTime(area.event.starts_at) }}</p>
-                                <p><strong>End:</strong> {{ formatLocalDateTime(area.event.ends_at) }}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <EventDetailsCard :event="area.event" />
                 </div>
             </div>
 
@@ -67,24 +53,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
             <div v-if="area.assignments && area.assignments.length > 0" class="mt-8">
                 <Heading title="Assignments" />
                 <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card v-for="assignment in area.assignments" :key="assignment.id">
-                        <CardHeader>
-                            <CardTitle class="flex items-center gap-2">
-                                <Users class="h-4 w-4" />
-                                {{ assignment.sensor?.vendor }} {{ assignment.sensor?.model }}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="space-y-2">
-                                <Badge v-if="assignment.direction_flipped" variant="destructive">direction flipped</Badge>
-
-                                <div class="text-xs text-muted-foreground">
-                                    <p><strong>Active from:</strong> {{ formatLocalDateTime(assignment.active_from) }}</p>
-                                    <p><strong>Active to:</strong> {{ formatLocalDateTime(assignment.active_to) }}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <AssignmentCard v-for="assignment in area.assignments" :key="assignment.id" :assignment="assignment" :show-sensor-name="true" />
                 </div>
             </div>
 
@@ -92,11 +61,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
             <div v-else class="mt-8">
                 <Heading title="Assignments" />
                 <div class="mt-4">
-                    <Card>
-                        <CardContent class="pt-6">
-                            <p class="text-center text-muted-foreground">No assignments found for this area.</p>
-                        </CardContent>
-                    </Card>
+                    <EmptyStateCard message="No assignments found for this area." />
                 </div>
             </div>
         </div>
