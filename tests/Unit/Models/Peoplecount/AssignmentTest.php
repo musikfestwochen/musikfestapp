@@ -78,11 +78,11 @@ it('handles direction enum correctly', function () {
     $assignment = new Assignment;
     $assignment->direction_flipped = false;
 
-    // Check that the direction is a Direction enum instance
+    // Check that direction_flipped is a boolean and validate its value
     expect($assignment->direction_flipped)->toBeBool();
     expect($assignment->direction_flipped)->toBe(false);
 
-    // Check that we can compare with enum values
+    // Check that we can compare with boolean values
     expect($assignment->direction_flipped === false)->toBeTrue();
     expect($assignment->direction_flipped)->toBeFalse();
 });

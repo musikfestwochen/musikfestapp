@@ -24,7 +24,7 @@ it('has correct rules', function () {
     expect($rules['area_id'])->toBe(['required', 'integer', 'exists:peoplecount_areas,id']);
     expect($rules['sensor_id'])->toBe(['required', 'integer', 'exists:peoplecount_sensors,id']);
 
-    // For the Enum rule, we need to check the class type since we can't directly compare instances
+    // The direction_flipped field is validated as a boolean, not an Enum
     expect($rules['direction_flipped'])->toBe(['required', 'boolean']);
 
     expect($rules['active_from'])->toBe(['required', 'date', 'before:active_to']);

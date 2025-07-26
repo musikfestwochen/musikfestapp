@@ -2,7 +2,6 @@
 
 use App\Http\Requests\Peoplecount\AssignmentUpdateRequest;
 use App\Models\User;
-use Illuminate\Validation\Rules\Enum;
 
 covers(AssignmentUpdateRequest::class);
 
@@ -24,7 +23,7 @@ it('has correct rules', function () {
     expect($rules['area_id'])->toBe(['required', 'integer', 'exists:peoplecount_areas,id']);
     expect($rules['sensor_id'])->toBe(['required', 'integer', 'exists:peoplecount_sensors,id']);
 
-    // For the Enum rule, we need to check the class type since we can't directly compare instances
+    // The direction_flipped field uses a boolean validation rule to ensure the value is true or false
     expect($rules['direction_flipped'])->toBe(['required', 'boolean']);
 
     expect($rules['active_from'])->toBe(['required', 'date', 'before:active_to']);
