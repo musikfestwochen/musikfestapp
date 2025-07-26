@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
 import { useAppearance } from '@/composables/useAppearance';
 import { Monitor, Moon, Sun } from 'lucide-vue-next';
 
@@ -19,10 +20,11 @@ const tabs = [
 
 <template>
     <div :class="['inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800', containerClass]">
-        <button
+        <Button
             v-for="{ value, Icon, label } in tabs"
             :key="value"
             @click="updateAppearance(value)"
+            variant="ghost"
             :class="[
                 'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
                 appearance === value
@@ -32,6 +34,6 @@ const tabs = [
         >
             <component :is="Icon" class="-ml-1 h-4 w-4" />
             <span class="ml-1.5 text-sm">{{ label }}</span>
-        </button>
+        </Button>
     </div>
 </template>

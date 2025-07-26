@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
+import MeasurementCard from '@/components/peoplecount/cards/MeasurementCard.vue';
 import SensorForm from '@/components/peoplecount/sensors/SensorForm.vue';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountSensor } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -29,12 +28,6 @@ const breadcrumbItems: BreadcrumbItem[] = [
         }),
     },
 ];
-
-const formatTimestamp = (iso: string) =>
-    new Date(iso).toLocaleString(undefined, {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    });
 </script>
 
 <template>
@@ -49,22 +42,7 @@ const formatTimestamp = (iso: string) =>
                 <Heading title="Last Measurements" />
 
                 <div v-if="(props.sensor.interval_counts?.length ?? 0) > 0" class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card v-for="measurement in props.sensor.interval_counts" :key="measurement.id">
-                        <CardHeader>
-                            <CardTitle>Measurement Interval</CardTitle>
-                            <CardDescription>
-                                <div class="flex flex-wrap gap-1 md:flex-nowrap">
-                                    <span class="whitespace-nowrap"> From: {{ formatTimestamp(measurement.ts_from) }} </span>
-                                    <span class="hidden md:inline">—</span>
-                                    <span class="whitespace-nowrap"> To: {{ formatTimestamp(measurement.ts_to) }} </span>
-                                </div>
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent class="flex gap-4">
-                            <Badge variant="secondary">In: {{ measurement.count_in }}</Badge>
-                            <Badge variant="secondary">Out: {{ measurement.count_out }}</Badge>
-                        </CardContent>
-                    </Card>
+                    <MeasurementCard v-for="measurement in props.sensor.interval_counts" :key="measurement.id" :measurement="measurement" />
                 </div>
 
                 <div v-else class="mt-4 text-sm text-muted-foreground">No measurements available.</div>

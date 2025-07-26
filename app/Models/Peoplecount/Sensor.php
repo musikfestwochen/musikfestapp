@@ -56,4 +56,14 @@ class Sensor extends Model
     {
         return $this->hasMany(IntervalCount::class);
     }
+
+    /**
+     * The Assignments associated with the sensor.
+     *
+     * @return HasMany<Assignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
 }

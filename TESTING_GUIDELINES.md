@@ -35,6 +35,13 @@ queues.
 
     - Pure functions, transform logic
 
+- **Enums** (`app/Enums/*.php`)
+
+    - Test: enum cases, values, and methods
+    - Test enum creation from valid values
+    - Test exception handling for invalid values
+    - Test in `tests/Unit/Enums/`
+
 - **Services (Pure)**
 
     - Business logic that does NOT query models or call framework services

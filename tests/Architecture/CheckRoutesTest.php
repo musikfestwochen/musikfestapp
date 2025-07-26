@@ -56,7 +56,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => 'start'],
         ['method' => 'POST', 'uri' => 'organization/select'],
 
-        // People Count Module Routes
+        // People Count Sensor Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors/create'],
@@ -65,6 +65,33 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/regenerate-token'],
+
+        // People Count Events Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/events'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events/{event}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events/{event}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/events/{event}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/events/{event}'],
+
+        // People Count Areas Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/areas/{area}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}'],
+
+        // People Count Assignments Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/assignments'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments/{assignment}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments/{assignment}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/assignments/{assignment}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/assignments/{assignment}'],
 
         // API Routes
         ['method' => 'POST', 'uri' => 'api/peoplecount/interval-count'],

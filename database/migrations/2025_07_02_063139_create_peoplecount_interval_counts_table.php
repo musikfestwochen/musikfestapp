@@ -15,6 +15,7 @@ return new class extends Migration
         Schema::create('peoplecount_interval_counts', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Sensor::class)->constrained();
+            // All datetime fields are stored in UTC timezone
             $table->dateTime('ts_from');
             $table->dateTime('ts_to');
             $table->unsignedSmallInteger('count_in');
