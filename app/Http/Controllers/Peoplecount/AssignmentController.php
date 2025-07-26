@@ -64,6 +64,8 @@ class AssignmentController extends Controller
     {
         return Inertia::render('peoplecount/NewAssignment', [
             'organization' => $organization,
+            'events' => $organization->events()->with('areas')->get(),
+            'sensors' => $organization->sensors()->get(),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -92,6 +94,8 @@ class AssignmentController extends Controller
         return Inertia::render('peoplecount/EditAssignment', [
             'organization' => $organization,
             'assignment' => $assignment,
+            'events' => $organization->events()->with('areas')->get(),
+            'sensors' => $organization->sensors()->get(),
             'status' => $request->session()->get('status'),
         ]);
     }

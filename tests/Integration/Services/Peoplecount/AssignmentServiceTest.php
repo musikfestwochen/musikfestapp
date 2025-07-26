@@ -42,6 +42,12 @@ describe('getAssignments', function () {
 
         expect($result)->toBeInstanceOf(Collection::class)
             ->and($result->count())->toBe(5);
+
+        // Verify that relationships are loaded
+        $assignment = $result->first();
+        expect($assignment->relationLoaded('event'))->toBeTrue()
+            ->and($assignment->relationLoaded('area'))->toBeTrue()
+            ->and($assignment->relationLoaded('sensor'))->toBeTrue();
     });
 
     it('filters assignments by organization', function () {

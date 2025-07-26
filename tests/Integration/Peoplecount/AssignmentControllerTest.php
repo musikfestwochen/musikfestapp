@@ -34,9 +34,12 @@ it('can list assignments for an organization', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.assignments.index', ['organization' => $org->slug]))
-        ->assertOk();
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/Assignments')
+            ->has('assignments')
+            ->has('organization')
+        );
 });
 
 it('shows the create assignment form for an organization', function () {
@@ -45,9 +48,11 @@ it('shows the create assignment form for an organization', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.assignments.create', ['organization' => $org->slug]))
-        ->assertOk();
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/NewAssignment')
+            ->has('organization')
+        );
 });
 
 it('can create an assignment for an organization', function () {
@@ -95,9 +100,13 @@ it('shows the edit assignment form for an organization assignment', function () 
 
     $this->actingAs($admin)
         ->get(route('peoplecount.assignments.edit', ['organization' => $org->slug, 'assignment' => $assignment->id]))
-        ->assertOk();
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/EditAssignment')
+            ->has('organization')
+            ->has('assignment')
+            ->where('assignment.id', $assignment->id)
+        );
 });
 
 it('can update an assignment for an organization', function () {

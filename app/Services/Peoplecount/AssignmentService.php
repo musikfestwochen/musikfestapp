@@ -29,7 +29,9 @@ class AssignmentService
             });
         }
 
-        return $query->get();
+        return $query
+            ->with(['event', 'area', 'sensor'])
+            ->get();
     }
 
     /**
