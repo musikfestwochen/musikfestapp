@@ -82,7 +82,7 @@ class AreaController extends Controller
     {
         return Inertia::render('peoplecount/EditArea', [
             'organization' => $organization,
-            'area' => $area,
+            'area' => $this->areaService->getWithAssignments($area),
             'events' => Event::query()->where('organization_id', $organization->id)->get(),
             'status' => $request->session()->get('status'),
         ]);

@@ -21,13 +21,14 @@ class AreaService
 
         // If global organization, return all areas
         if ($currentOrgId === GLOBAL_ORG_ID) {
-            return Area::all();
+            return Area::with(['event', 'assignments'])->get();
         }
 
         // Otherwise, return areas for the current organization
         return Organization::query()
             ->findOrFail($currentOrgId)
             ->areas()
+            ->with(['event', 'assignments'])
             ->get();
     }
 
@@ -77,5 +78,11 @@ class AreaService
         $area->update($attributes);
 
         return $area;
+    }
+
+    public function getWithAssignments(Area $area): Area
+    {
+        // Eager load the event and assignments relationships
+        return $area->load(['event', 'assignments.sensor']);
     }
 }

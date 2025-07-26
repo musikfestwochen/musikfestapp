@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
@@ -29,9 +30,15 @@ it('can list areas for an organization', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.areas.index', ['organization' => $org->slug]))
-        ->assertStatus(200);
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+            ->component('peoplecount/Areas')
+            ->has('areas', 3)
+            ->has('organization')
+            ->where('organization.id', $org->id)
+            ->where('organization.slug', $org->slug)
+            ->has('status')
+        );
 });
 
 it('shows the create area form for an organization', function () {
@@ -43,9 +50,20 @@ it('shows the create area form for an organization', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.areas.create', ['organization' => $org->slug]))
-        ->assertStatus(200);
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+            ->component('peoplecount/NewArea')
+            ->has('organization')
+            ->where('organization.id', $org->id)
+            ->where('organization.slug', $org->slug)
+            ->has('events', 1)
+            ->has('events.0', fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+                ->where('id', $event->id)
+                ->where('organization_id', $org->id)
+                ->etc()
+            )
+            ->has('status')
+        );
 });
 
 it('can create an area for an organization event', function () {
@@ -81,9 +99,27 @@ it('shows the edit area form for an organization area', function () {
 
     $this->actingAs($admin)
         ->get(route('peoplecount.areas.edit', ['organization' => $org->slug, 'area' => $area->id]))
-        ->assertStatus(200);
-
-    // TODO: Add assertInertia back when the Inertia pages are implemented
+        ->assertStatus(200)
+        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+            ->component('peoplecount/EditArea')
+            ->has('organization')
+            ->where('organization.id', $org->id)
+            ->where('organization.slug', $org->slug)
+            ->has('area', fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+                ->where('id', $area->id)
+                ->where('event_id', $event->id)
+                ->has('event')
+                ->has('assignments')
+                ->etc()
+            )
+            ->has('events', 1)
+            ->has('events.0', fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+                ->where('id', $event->id)
+                ->where('organization_id', $org->id)
+                ->etc()
+            )
+            ->has('status')
+        );
 });
 
 it('can update an area for an organization', function () {

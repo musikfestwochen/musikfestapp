@@ -35,6 +35,12 @@ describe('getAreas', function () {
 
         expect($result)->toBeInstanceOf(Collection::class)
             ->and($result->count())->toBe(5);
+
+        // Verify that relationships are loaded
+        $result->each(function ($area) {
+            expect($area->relationLoaded('event'))->toBeTrue()
+                ->and($area->relationLoaded('assignments'))->toBeTrue();
+        });
     });
 
     it('filters areas by organization through events', function () {
@@ -59,6 +65,12 @@ describe('getAreas', function () {
 
         expect($result)->toBeInstanceOf(Collection::class)
             ->and($result->count())->toBe(3);
+
+        // Verify that relationships are loaded
+        $result->each(function ($area) {
+            expect($area->relationLoaded('event'))->toBeTrue()
+                ->and($area->relationLoaded('assignments'))->toBeTrue();
+        });
     });
 
     it('returns empty collection when no areas exist', function () {
@@ -94,6 +106,12 @@ describe('getAreas', function () {
 
         expect($result)->toBeInstanceOf(Collection::class)
             ->and($result->count())->toBe(7);
+
+        // Verify that relationships are loaded
+        $result->each(function ($area) {
+            expect($area->relationLoaded('event'))->toBeTrue()
+                ->and($area->relationLoaded('assignments'))->toBeTrue();
+        });
     });
 });
 
@@ -263,5 +281,46 @@ describe('update', function () {
 
         expect($updatedArea)->toBeInstanceOf(Area::class)
             ->and($updatedArea->event_id)->toBe($foreignEvent->id);
+    });
+});
+
+describe('getWithAssignments', function () {
+    it('returns area with loaded relationships', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+        setPermissionsOrgId($org->id);
+
+        $result = $this->service->getWithAssignments($area);
+
+        expect($result)->toBeInstanceOf(Area::class)
+            ->and($result->id)->toBe($area->id)
+            ->and($result->relationLoaded('event'))->toBeTrue()
+            ->and($result->relationLoaded('assignments'))->toBeTrue();
+    });
+
+    it('loads nested sensor relationships on assignments', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+        setPermissionsOrgId($org->id);
+
+        $result = $this->service->getWithAssignments($area);
+
+        expect($result)->toBeInstanceOf(Area::class)
+            ->and($result->relationLoaded('assignments'))->toBeTrue();
+
+        // If there are assignments, they should have sensor relationship loaded
+        if ($result->assignments->isNotEmpty()) {
+            expect($result->assignments->first()->relationLoaded('sensor'))->toBeTrue();
+        }
     });
 });

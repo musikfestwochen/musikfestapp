@@ -1,4 +1,4 @@
-import { CalendarIcon, FolderGit2Icon, LayoutGrid, ProjectorIcon, Users2Icon } from 'lucide-vue-next';
+import { CalendarIcon, FolderGit2Icon, LayoutGrid, MapPinIcon, ProjectorIcon, Users2Icon } from 'lucide-vue-next';
 
 // Function that returns nav items with the organization parameter already injected
 export const orgMainNavItems = (organization: string | number) => [
@@ -27,6 +27,13 @@ export const orgMainNavItems = (organization: string | number) => [
         route: 'peoplecount.events.index',
         icon: CalendarIcon,
         permission: 'peoplecount.events.index',
+        params: { organization },
+    },
+    {
+        title: 'Peoplecount Areas',
+        route: 'peoplecount.areas.index',
+        icon: MapPinIcon,
+        permission: 'peoplecount.areas.index',
         params: { organization },
     },
 ];
