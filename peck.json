@@ -22,7 +22,8 @@
             "debugbar",
             "peoplecount",
             "lqip",
-            "vonage"
+            "vonage",
+            "rrule"
         ],
         "paths": []
     }

@@ -79,4 +79,14 @@ class Area extends Model
     {
         return $this->hasMany(AreaSingleReset::class);
     }
+
+    /**
+     * The Recurring Resets that belong to the area.
+     *
+     * @return HasMany<AreaRecurringReset, $this>
+     */
+    public function areaRecurringResets(): HasMany
+    {
+        return $this->hasMany(AreaRecurringReset::class);
+    }
 }
