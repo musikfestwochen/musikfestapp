@@ -17,6 +17,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laravel/vonage-notification-channel": "^3.3",
+        "rlanvin/php-rrule": "^2.6",
         "spatie/laravel-permission": "^6.19",
         "tightenco/ziggy": "^2.4"
     },
