@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notification;
 
 covers(User::class);
@@ -41,6 +43,15 @@ it('BelongsToMany org', function () {
     $relation = $user->organizations();
 
     expect($relation)->toBeInstanceOf(BelongsToMany::class);
+});
+
+it('has many area single resets', function () {
+    $user = new User;
+    $relation = $user->areaSingleResets();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+    expect($relation->getRelated())->toBeInstanceOf(AreaSingleReset::class);
+    expect($relation->getForeignKeyName())->toBe('created_by');
 });
 
 it('phone mutator removes spaces and formatting', function () {

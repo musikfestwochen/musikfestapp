@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Peoplecount\AreaSingleReset;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
@@ -54,6 +56,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class);
+    }
+
+    /**
+     * The Area Single Resets created by the user.
+     *
+     * @return HasMany<AreaSingleReset, $this>
+     */
+    public function areaSingleResets(): HasMany
+    {
+        return $this->hasMany(AreaSingleReset::class, 'created_by');
     }
 
     /**
