@@ -69,4 +69,14 @@ class Area extends Model
     {
         return $this->hasMany(AreaSingleReset::class);
     }
+
+    /**
+     * The Single Resets that belong to the area (for route model binding).
+     *
+     * @return HasMany<AreaSingleReset, $this>
+     */
+    public function singleResets(): HasMany
+    {
+        return $this->hasMany(AreaSingleReset::class);
+    }
 }

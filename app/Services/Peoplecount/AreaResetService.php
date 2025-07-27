@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Services\Peoplecount;
+
+use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaSingleReset;
+use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
+
+class AreaResetService
+{
+    /**
+     * Create a single reset for an area.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function createSingleReset(Area $area, array $attributes): AreaSingleReset
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($area);
+
+        // Convert effective_at to UTC for storage
+        $effectiveAt = Carbon::parse($attributes['effective_at'])->utc();
+
+        return AreaSingleReset::query()->create([
+            'area_id' => $area->id,
+            'reset_value' => $attributes['reset_value'],
+            'effective_at' => $effectiveAt,
+            'notes' => $attributes['notes'] ?? null,
+            'created_by' => auth()->id(),
+        ]);
+    }
+
+    /**
+     * Verify that the area belongs to the current organization.
+     * This is a security measure to prevent users from accessing areas they don't have access to.
+     *
+     * @throws AuthorizationException
+     */
+    protected function verifyAreaBelongsToCurrentOrganization(Area $area): void
+    {
+        $currentOrgId = getPermissionsOrgId();
+
+        // Skip check for global organization
+        if ($currentOrgId === GLOBAL_ORG_ID) {
+            return;
+        }
+
+        // Load the event relationship if not already loaded
+        if (! $area->relationLoaded('event')) {
+            $area->load('event');
+        }
+
+        throw_if(
+            $area->event->organization_id !== $currentOrgId,
+            new AuthorizationException('You are not authorized to access this area.')
+        );
+    }
+
+    /**
+     * Get all resets for an area.
+     *
+     * @return Collection<int, AreaSingleReset>
+     */
+    public function getAreaResets(Area $area): Collection
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($area);
+
+        return $area->areaSingleResets()
+            ->with('createdBy')
+            ->orderBy('effective_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Delete a single reset.
+     */
+    public function deleteSingleReset(AreaSingleReset $reset): void
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($reset->area);
+
+        $reset->delete();
+    }
+}

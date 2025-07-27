@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Peoplecount\AreaController;
+use App\Http\Controllers\Peoplecount\AreaSingleResetController;
 use App\Http\Controllers\Peoplecount\AssignmentController;
 use App\Http\Controllers\Peoplecount\EventController;
 use App\Http\Controllers\Peoplecount\SensorController;
@@ -23,6 +24,12 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             'areas',
             AreaController::class
         )->scoped(['organization' => 'slug'])->names('areas');
+
+        // Area Single Reset routes (nested under areas)
+        Route::resource(
+            'areas.single-resets',
+            AreaSingleResetController::class
+        )->scoped(['organization' => 'slug'])->names('areas.single-resets')->only(['index', 'store', 'show', 'destroy']);
 
         Route::resource(
             'assignments',
