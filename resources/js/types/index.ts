@@ -46,6 +46,7 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    area_single_resets?: AreaSingleReset[]; // Optional, for related area single resets created by this user
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
@@ -105,6 +106,7 @@ export interface PeoplecountEvent {
     organization?: Organization; // Optional, for related organization
     areas?: PeoplecountArea[]; // Optional, for related areas
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
+    area_recurring_resets?: AreaRecurringReset[]; // Optional, for related recurring resets
 }
 
 export interface PeoplecountArea {
@@ -116,6 +118,8 @@ export interface PeoplecountArea {
     deleted_at?: string;
     event?: PeoplecountEvent; // Optional, for related event
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
+    area_single_resets?: AreaSingleReset[]; // Optional, for related single resets
+    area_recurring_resets?: AreaRecurringReset[]; // Optional, for related recurring resets
 }
 
 export interface PeoplecountAssignment {
@@ -132,4 +136,31 @@ export interface PeoplecountAssignment {
     event?: PeoplecountEvent; // Optional, for related event
     area?: PeoplecountArea; // Optional, for related area
     sensor?: PeoplecountSensor; // Optional, for related sensor
+}
+
+export interface AreaSingleReset {
+    id: number;
+    area_id: number;
+    reset_value: number;
+    effective_at: string; // ISO 8601 date-time string (UTC)
+    created_by: number;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+    area?: PeoplecountArea; // Optional, for related area
+    created_by_user?: User; // Optional, for related user who created the reset
+}
+
+export interface AreaRecurringReset {
+    id: number;
+    area_id: number;
+    event_id: number;
+    reset_value: number;
+    rrule: string;
+    timezone: string;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+    area?: PeoplecountArea; // Optional, for related area
+    event?: PeoplecountEvent; // Optional, for related event
 }
