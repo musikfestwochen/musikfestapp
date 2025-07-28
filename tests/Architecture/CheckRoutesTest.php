@@ -90,6 +90,15 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/single-resets/{single_reset}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}/single-resets/{single_reset}'],
 
+        // People Count Area Recurring Reset Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}'],
+
         // People Count Assignments Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/assignments'],

@@ -77,7 +77,7 @@ class Area extends Model
      */
     public function singleResets(): HasMany
     {
-        return $this->hasMany(AreaSingleReset::class);
+        return $this->areaSingleResets();
     }
 
     /**
@@ -88,5 +88,15 @@ class Area extends Model
     public function areaRecurringResets(): HasMany
     {
         return $this->hasMany(AreaRecurringReset::class);
+    }
+
+    /**
+     * The Recurring Resets that belong to the area (for route model binding).
+     *
+     * @return HasMany<AreaRecurringReset, $this>
+     */
+    public function recurringResets(): HasMany
+    {
+        return $this->areaRecurringResets();
     }
 }

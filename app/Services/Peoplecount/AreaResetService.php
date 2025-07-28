@@ -3,10 +3,12 @@
 namespace App\Services\Peoplecount;
 
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\AreaSingleReset;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
+use RRule\RRule;
 
 class AreaResetService
 {
@@ -83,5 +85,124 @@ class AreaResetService
         $this->verifyAreaBelongsToCurrentOrganization($reset->area);
 
         $reset->delete();
+    }
+
+    /**
+     * Get all recurring resets for an area.
+     *
+     * @return Collection<int, AreaRecurringReset>
+     */
+    public function getAreaRecurringResets(Area $area): Collection
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($area);
+
+        return $area->areaRecurringResets()
+            ->with(['area', 'event'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Create a recurring reset for an area.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function createRecurringReset(Area $area, array $attributes): AreaRecurringReset
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($area);
+
+        // Validate RRULE format
+        $this->validateRRule($attributes['rrule']);
+
+        return AreaRecurringReset::query()->create([
+            'area_id' => $area->id,
+            'event_id' => $attributes['event_id'],
+            'reset_value' => $attributes['reset_value'],
+            'rrule' => $attributes['rrule'],
+            'timezone' => $attributes['timezone'],
+            'notes' => $attributes['notes'] ?? null,
+        ]);
+    }
+
+    /**
+     * Update a recurring reset.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateRecurringReset(AreaRecurringReset $reset, array $attributes): AreaRecurringReset
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($reset->area);
+
+        // Validate RRULE format
+        $this->validateRRule($attributes['rrule']);
+
+        $reset->update([
+            'event_id' => $attributes['event_id'],
+            'reset_value' => $attributes['reset_value'],
+            'rrule' => $attributes['rrule'],
+            'timezone' => $attributes['timezone'],
+            'notes' => $attributes['notes'] ?? null,
+        ]);
+
+        return $reset->fresh();
+    }
+
+    /**
+     * Delete a recurring reset.
+     */
+    public function deleteRecurringReset(AreaRecurringReset $reset): void
+    {
+        // Verify that the area belongs to the current organization
+        $this->verifyAreaBelongsToCurrentOrganization($reset->area);
+
+        $reset->delete();
+    }
+
+    /**
+     * Parse an RRULE string and return an RRule instance.
+     *
+     * @return RRule<\DateTime>
+     */
+    public function parseRRule(string $rrule): RRule
+    {
+        return new RRule($rrule);
+    }
+
+    /**
+     * Get the next occurrences for an RRULE.
+     *
+     * @return array<int, \DateTime>
+     */
+    public function getNextResetOccurrences(string $rrule, int $limit = 5): array
+    {
+        $ruleInstance = $this->parseRRule($rrule);
+        $occurrences = [];
+
+        foreach ($ruleInstance as $occurrence) {
+            if (count($occurrences) >= $limit) {
+                break;
+            }
+
+            $occurrences[] = $occurrence;
+        }
+
+        return $occurrences;
+    }
+
+    /**
+     * Validate RRULE format.
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function validateRRule(string $rrule): void
+    {
+        try {
+            new RRule($rrule);
+        } catch (\Exception $exception) {
+            throw new \InvalidArgumentException('Invalid RRULE format: '.$exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 }
