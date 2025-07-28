@@ -30,7 +30,7 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         Route::resource(
             'areas.single-resets',
             AreaSingleResetController::class
-        )->scoped(['organization' => 'slug'])->names('areas.single-resets')->only(['index', 'store', 'show', 'destroy']);
+        )->scoped(['organization' => 'slug'])->names('areas.single-resets')->only(['index', 'store', 'destroy']);
 
         // Area Recurring Reset routes (nested under areas)
         Route::resource(

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Peoplecount;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Peoplecount\DestroyAreaSingleResetRequest;
 use App\Http\Requests\Peoplecount\IndexAreaSingleResetRequest;
-use App\Http\Requests\Peoplecount\ShowAreaSingleResetRequest;
 use App\Http\Requests\Peoplecount\StoreAreaSingleResetRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
@@ -48,19 +47,6 @@ class AreaSingleResetController extends Controller
             'area' => $area,
         ])
             ->with('status', 'Manual reset created successfully.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(ShowAreaSingleResetRequest $request, Organization $organization, Area $area, AreaSingleReset $singleReset): Response
-    {
-        return Inertia::render('peoplecount/ShowAreaSingleReset', [
-            'area' => $area,
-            'reset' => $singleReset->load('createdBy'),
-            'organization' => $organization,
-            'status' => $request->session()->get('status'),
-        ]);
     }
 
     /**

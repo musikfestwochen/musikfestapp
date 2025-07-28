@@ -3,7 +3,6 @@
 use App\Http\Controllers\Peoplecount\AreaSingleResetController;
 use App\Http\Requests\Peoplecount\DestroyAreaSingleResetRequest;
 use App\Http\Requests\Peoplecount\IndexAreaSingleResetRequest;
-use App\Http\Requests\Peoplecount\ShowAreaSingleResetRequest;
 use App\Http\Requests\Peoplecount\StoreAreaSingleResetRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
@@ -108,46 +107,6 @@ it('validates reset data when creating', function () {
         ->assertSessionHasErrors(['reset_value', 'effective_at', 'notes']);
 });
 
-it('can show an area single reset', function () {
-    $admin = User::factory()->globalAdmin()->create();
-    $org = Organization::factory()->create();
-    $event = Event::factory()->create([
-        'organization_id' => $org->id,
-    ]);
-    $area = Area::factory()->create([
-        'event_id' => $event->id,
-    ]);
-    $reset = AreaSingleReset::factory()->create([
-        'area_id' => $area->id,
-        'created_by' => $admin->id,
-        'reset_value' => 75,
-        'notes' => 'Test reset',
-    ]);
-
-    $this->actingAs($admin)
-        ->get(route('peoplecount.areas.single-resets.show', [
-            'organization' => $org->slug,
-            'area' => $area->id,
-            'single_reset' => $reset->id,
-        ]))
-        ->assertStatus(200);
-    // TODO: Add Inertia assertions once frontend components exist
-    // ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
-    //     ->component('peoplecount/ShowAreaSingleReset')
-    //     ->has('area')
-    //     ->where('area.id', $area->id)
-    //     ->has('reset')
-    //     ->where('reset.id', $reset->id)
-    //     ->where('reset.reset_value', 75)
-    //     ->where('reset.notes', 'Test reset')
-    //     ->has('reset.createdBy')
-    //     ->where('reset.createdBy.id', $admin->id)
-    //     ->has('organization')
-    //     ->where('organization.id', $org->id)
-    //     ->has('status')
-    // );
-});
-
 it('can delete an area single reset', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -215,30 +174,6 @@ it('requires proper permissions for store action', function () {
             'reset_value' => 50,
             'effective_at' => '2025-07-27T15:00:00',
         ])
-        ->assertStatus(403);
-});
-
-it('requires proper permissions for show action', function () {
-    $user = User::factory()->create(); // Regular user without permissions
-    $admin = User::factory()->globalAdmin()->create();
-    $org = Organization::factory()->create();
-    $event = Event::factory()->create([
-        'organization_id' => $org->id,
-    ]);
-    $area = Area::factory()->create([
-        'event_id' => $event->id,
-    ]);
-    $reset = AreaSingleReset::factory()->create([
-        'area_id' => $area->id,
-        'created_by' => $admin->id,
-    ]);
-
-    $this->actingAs($user)
-        ->get(route('peoplecount.areas.single-resets.show', [
-            'organization' => $org->slug,
-            'area' => $area->id,
-            'single_reset' => $reset->id,
-        ]))
         ->assertStatus(403);
 });
 
@@ -310,15 +245,6 @@ it('uses the correct form requests', function () {
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.single-resets.store',
         StoreAreaSingleResetRequest::class);
-
-    // show
-    test()->assertActionUsesFormRequest(
-        AreaSingleResetController::class,
-        'show',
-        ShowAreaSingleResetRequest::class);
-    test()->assertRouteUsesFormRequest(
-        'peoplecount.areas.single-resets.show',
-        ShowAreaSingleResetRequest::class);
 
     // destroy
     test()->assertActionUsesFormRequest(
