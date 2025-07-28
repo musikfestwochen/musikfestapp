@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaRecurringReset;
+use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
@@ -160,5 +162,79 @@ class DatabaseSeeder extends Seeder
         Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(5))->withDirectionFlipped(false)->create();
         Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(6))->withDirectionFlipped(true)->create();
         Assignment::factory()->withArea($zhawReception)->withSensor($zhawSensors->get(7))->withDirectionFlipped(false)->create();
+
+        // Create sample manual resets (AreaSingleReset) with different timestamps
+        // Historical resets for MFW Summer Festival areas
+        AreaSingleReset::factory()->withArea($mfwMainStage)->withCreatedBy($mfwUsers->first())->withResetValue(0)->withEffectiveAt(new \DateTime('2024-08-15 09:00:00'))->create([
+            'notes' => 'Event start - reset to zero for opening',
+        ]);
+        AreaSingleReset::factory()->withArea($mfwFoodCourt)->withCreatedBy($mfwUsers->get(1))->withResetValue(50)->withEffectiveAt(new \DateTime('2024-08-16 12:00:00'))->create([
+            'notes' => 'Lunch rush adjustment - technical issue resolved',
+        ]);
+        AreaSingleReset::factory()->withArea($mfwVipArea)->withCreatedBy($mfwUsers->get(2))->withResetValue(25)->withEffectiveAt(new \DateTime('2024-08-17 18:00:00'))->create([
+            'notes' => 'VIP reception start - manual count verification',
+        ]);
+
+        // Recent resets for MFW Winter Concert areas
+        AreaSingleReset::factory()->withArea($mfwConcertHall)->withCreatedBy($mfwUsers->get(3))->withResetValue(0)->withEffectiveAt(new \DateTime('2024-12-20 17:30:00'))->create([
+            'notes' => 'Pre-concert reset - venue preparation complete',
+        ]);
+        AreaSingleReset::factory()->withArea($mfwFoyer)->withCreatedBy($mfwUsers->get(4))->withResetValue(15)->withEffectiveAt(new \DateTime('2024-12-21 19:45:00'))->create([
+            'notes' => 'Intermission adjustment - sensor calibration',
+        ]);
+
+        // Sample resets for ZHAW events
+        AreaSingleReset::factory()->withArea($zhawAuditorium)->withCreatedBy($zhawUsers->first())->withResetValue(0)->withEffectiveAt(new \DateTime('2024-09-14 08:30:00'))->create([
+            'notes' => 'Open Day preparation - venue cleared',
+        ]);
+        AreaSingleReset::factory()->withArea($zhawLabTour)->withCreatedBy($zhawUsers->get(1))->withResetValue(10)->withEffectiveAt(new \DateTime('2024-09-14 14:00:00'))->create([
+            'notes' => 'Afternoon tour group - manual count correction',
+        ]);
+        AreaSingleReset::factory()->withArea($zhawGradHall)->withCreatedBy($zhawUsers->get(2))->withResetValue(0)->withEffectiveAt(new \DateTime('2024-10-25 13:30:00'))->create([
+            'notes' => 'Graduation ceremony setup - final preparation',
+        ]);
+
+        // Create sample recurring resets (AreaRecurringReset) with various RRULE patterns
+        // Daily resets for main stage during festival
+        AreaRecurringReset::factory()->withArea($mfwMainStage)->withEvent($mfwSummerFest)->daily()->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Daily morning reset at 6 AM during festival',
+            'rrule' => 'FREQ=DAILY;INTERVAL=1;BYHOUR=6;BYMINUTE=0',
+        ]);
+
+        // Weekly resets for food court (every Monday)
+        AreaRecurringReset::factory()->withArea($mfwFoodCourt)->withEvent($mfwSummerFest)->weekly()->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Weekly deep cleaning reset - every Monday at 5 AM',
+            'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=MO;BYHOUR=5;BYMINUTE=0',
+        ]);
+
+        // Bi-daily resets for VIP area
+        AreaRecurringReset::factory()->withArea($mfwVipArea)->withEvent($mfwSummerFest)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Bi-daily VIP area reset - morning and evening',
+            'rrule' => 'FREQ=DAILY;INTERVAL=1;BYHOUR=6,18;BYMINUTE=0',
+        ]);
+
+        // Monthly resets for concert hall
+        AreaRecurringReset::factory()->withArea($mfwConcertHall)->withEvent($mfwWinterConcert)->monthly()->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Monthly maintenance reset - first day of month',
+            'rrule' => 'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=1;BYHOUR=7;BYMINUTE=0',
+        ]);
+
+        // Custom pattern for ZHAW auditorium (Tuesday and Thursday)
+        AreaRecurringReset::factory()->withArea($zhawAuditorium)->withEvent($zhawOpenDay)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Lecture hall reset - Tuesday and Thursday mornings',
+            'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=TU,TH;BYHOUR=7;BYMINUTE=30',
+        ]);
+
+        // Weekend resets for lab tour area
+        AreaRecurringReset::factory()->withArea($zhawLabTour)->withEvent($zhawOpenDay)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Weekend preparation reset - Saturday mornings',
+            'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=SA;BYHOUR=8;BYMINUTE=0',
+        ]);
+
+        // Event-specific reset for graduation hall
+        AreaRecurringReset::factory()->withArea($zhawGradHall)->withEvent($zhawGraduation)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Pre-ceremony reset - 2 hours before each graduation event',
+            'rrule' => 'FREQ=YEARLY;INTERVAL=1;BYMONTH=10;BYMONTHDAY=25;BYHOUR=12;BYMINUTE=0',
+        ]);
     }
 }
