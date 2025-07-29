@@ -36,55 +36,6 @@ export class EventHelper {
     }
 
     /**
-     * Format a date/time in the user's local timezone
-     */
-    static formatLocalDateTime(utcString: string, options?: Intl.DateTimeFormatOptions): string {
-        const date = new Date(utcString);
-        const defaultOptions: Intl.DateTimeFormatOptions = {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZoneName: 'short',
-        };
-
-        // Use 'en-US' locale to ensure consistent formatting regardless of system locale
-        return date.toLocaleString('en-US', { ...defaultOptions, ...options });
-    }
-
-    /**
-     * Format a date/time in a long format (e.g., "Monday, January 1, 2024 at 6:00 PM PST")
-     */
-    static formatLocalDateTimeLong(utcString: string): string {
-        return EventHelper.formatLocalDateTime(utcString, {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZoneName: 'short',
-        });
-    }
-
-    /**
-     * Convert local Date objects to UTC ISO strings for backend
-     */
-    static getUTCStringFromLocal(localDate: Date | null): string {
-        if (!localDate) return '';
-        return localDate.toISOString();
-    }
-
-    /**
-     * Convert UTC ISO strings to local Date objects
-     */
-    static getLocalDateFromUTC(utcString?: string): Date | null {
-        if (!utcString) return null;
-        return new Date(utcString);
-    }
-
-    /**
      * Get event status for a given event (static helper)
      */
     static getEventStatus(event: PeoplecountEvent, currentTime?: Date): EventStatusInfo {
@@ -245,32 +196,4 @@ export function getEventStatus(event: PeoplecountEvent, currentTime?: Date): Eve
  */
 export function getEventDuration(event: PeoplecountEvent): DurationInfo {
     return EventHelper.getEventDuration(event);
-}
-
-/**
- * Format a date/time in the user's local timezone
- */
-export function formatLocalDateTime(utcString: string, options?: Intl.DateTimeFormatOptions): string {
-    return EventHelper.formatLocalDateTime(utcString, options);
-}
-
-/**
- * Format a date/time in a long format
- */
-export function formatLocalDateTimeLong(utcString: string): string {
-    return EventHelper.formatLocalDateTimeLong(utcString);
-}
-
-/**
- * Convert local Date objects to UTC ISO strings for backend
- */
-export function getUTCStringFromLocal(localDate: Date | null): string {
-    return EventHelper.getUTCStringFromLocal(localDate);
-}
-
-/**
- * Convert UTC ISO strings to local Date objects
- */
-export function getLocalDateFromUTC(utcString?: string): Date | null {
-    return EventHelper.getLocalDateFromUTC(utcString);
 }

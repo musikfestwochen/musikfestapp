@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Organization, PeoplecountArea, PeoplecountAreaSingleReset } from '@/types';
-import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/eventHelpers';
+import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';

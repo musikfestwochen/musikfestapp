@@ -1,27 +1,42 @@
 import { describe, expect, it } from 'vitest';
 import {
+    combineDateAndTime,
+    convertTimezone,
+    createRRule,
     DateTimeHelper,
+    formatDateForInput,
+    formatDateInTimezone,
     formatLocalDateTime,
     formatLocalDateTimeLong,
+    formatTimeForInput,
     formatTimestamp,
     getLocalDateFromUTC,
+    getNextRRuleOccurrences,
+    getRelativeTime,
+    getUserTimezone,
     getUTCStringFromLocal,
+    isFuture,
+    isPast,
+    isToday,
+    rruleToText,
+    validateRRule,
 } from '../dateTimeHelpers';
 
 describe('DateTimeHelper Class', () => {
     describe('Static Helper Functions', () => {
         describe('formatLocalDateTime', () => {
-            it('should format UTC string to local datetime with default options', () => {
+            it('should format UTC string to local datetime with new default format', () => {
                 const utcString = '2024-07-25T12:00:00.000Z';
                 const formatted = DateTimeHelper.formatLocalDateTime(utcString);
 
-                // The exact format depends on the system locale, but should contain date and time
-                expect(formatted).toMatch(/2024/);
-                expect(formatted).toMatch(/25/);
-                expect(formatted).toMatch(/07/);
+                // Should match dd.mm.yy, hh:mm format
+                expect(formatted).toMatch(/\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}/);
+                expect(formatted).toContain('25.07.24');
+                // Time will be converted to local timezone, so we just check the format
+                expect(formatted).toMatch(/\d{2}:\d{2}/);
             });
 
-            it('should format UTC string with custom options', () => {
+            it('should format UTC string with custom options using old behavior', () => {
                 const utcString = '2024-07-25T12:00:00.000Z';
                 const formatted = DateTimeHelper.formatLocalDateTime(utcString, {
                     year: 'numeric',
@@ -98,15 +113,18 @@ describe('DateTimeHelper Class', () => {
 
 describe('Standalone Utility Functions', () => {
     describe('formatLocalDateTime', () => {
-        it('should format datetime correctly', () => {
+        it('should format datetime with new default format', () => {
             const utcString = '2024-07-25T12:00:00.000Z';
             const formatted = formatLocalDateTime(utcString);
 
-            expect(formatted).toMatch(/2024/);
-            expect(formatted).toMatch(/25/);
+            // Should match dd.mm.yy, hh:mm format
+            expect(formatted).toMatch(/\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}/);
+            expect(formatted).toContain('25.07.24');
+            // Time will be converted to local timezone, so we just check the format
+            expect(formatted).toMatch(/\d{2}:\d{2}/);
         });
 
-        it('should accept custom options', () => {
+        it('should accept custom options using old behavior', () => {
             const utcString = '2024-07-25T12:00:00.000Z';
             const formatted = formatLocalDateTime(utcString, { year: 'numeric' });
 
@@ -163,6 +181,229 @@ describe('Standalone Utility Functions', () => {
         it('should handle undefined input', () => {
             const localDate = getLocalDateFromUTC(undefined);
             expect(localDate).toBeNull();
+        });
+    });
+});
+
+describe('RRULE Functions', () => {
+    describe('validateRRule', () => {
+        it('should validate correct RRULE strings', () => {
+            const result = validateRRule('FREQ=DAILY;INTERVAL=1');
+            expect(result.isValid).toBe(true);
+            expect(result.error).toBeUndefined();
+        });
+
+        it('should invalidate incorrect RRULE strings', () => {
+            const result = validateRRule('INVALID_RRULE');
+            expect(result.isValid).toBe(false);
+            expect(result.error).toBeDefined();
+        });
+
+        it('should handle empty strings', () => {
+            const result = validateRRule('');
+            expect(result.isValid).toBe(false);
+            expect(result.error).toBeDefined();
+        });
+    });
+
+    describe('createRRule', () => {
+        it('should create daily RRULE', () => {
+            const rrule = createRRule('DAILY', { interval: 2, byhour: 9, byminute: 30 });
+            expect(rrule).toContain('FREQ=DAILY');
+            expect(rrule).toContain('INTERVAL=2');
+            expect(rrule).toContain('BYHOUR=9');
+            expect(rrule).toContain('BYMINUTE=30');
+        });
+
+        it('should create weekly RRULE with weekdays', () => {
+            const rrule = createRRule('WEEKLY', { byweekday: [1, 3, 5] });
+            expect(rrule).toContain('FREQ=WEEKLY');
+            expect(rrule).toContain('BYDAY=');
+        });
+
+        it('should create monthly RRULE', () => {
+            const rrule = createRRule('MONTHLY');
+            expect(rrule).toContain('FREQ=MONTHLY');
+            expect(rrule).toContain('INTERVAL=1');
+        });
+
+        it('should handle until date', () => {
+            const until = new Date('2024-12-31');
+            const rrule = createRRule('DAILY', { until });
+            expect(rrule).toContain('UNTIL=');
+        });
+
+        it('should handle count', () => {
+            const rrule = createRRule('DAILY', { count: 10 });
+            expect(rrule).toContain('COUNT=10');
+        });
+    });
+
+    describe('rruleToText', () => {
+        it('should convert valid RRULE to text', () => {
+            const text = rruleToText('FREQ=DAILY;INTERVAL=1');
+            expect(text).toBe('every day');
+        });
+
+        it('should handle invalid RRULE', () => {
+            const text = rruleToText('INVALID');
+            expect(text).toBe('Invalid RRULE');
+        });
+    });
+
+    describe('getNextRRuleOccurrences', () => {
+        it('should return next occurrences for daily RRULE', () => {
+            const startDate = new Date('2024-01-01T09:00:00Z');
+            const occurrences = getNextRRuleOccurrences('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1', startDate, 3);
+            expect(occurrences).toHaveLength(3);
+            expect(occurrences[0]).toBeInstanceOf(Date);
+        });
+
+        it('should handle invalid RRULE', () => {
+            const startDate = new Date('2024-01-01T09:00:00Z');
+            const occurrences = getNextRRuleOccurrences('INVALID', startDate, 3);
+            expect(occurrences).toHaveLength(0);
+        });
+
+        it('should limit occurrences to requested count', () => {
+            const startDate = new Date('2024-01-01T09:00:00Z');
+            const occurrences = getNextRRuleOccurrences('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1', startDate, 2);
+            expect(occurrences).toHaveLength(2);
+        });
+    });
+});
+
+describe('Timezone Functions', () => {
+    describe('getUserTimezone', () => {
+        it('should return a valid timezone string', () => {
+            const timezone = getUserTimezone();
+            expect(typeof timezone).toBe('string');
+            expect(timezone.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('formatDateInTimezone', () => {
+        it('should format date in specified timezone', () => {
+            const date = new Date('2024-07-25T12:00:00Z');
+            const formatted = formatDateInTimezone(date, 'UTC');
+            expect(formatted).toContain('2024');
+            expect(formatted).toContain('25');
+        });
+
+        it('should accept custom options', () => {
+            const date = new Date('2024-07-25T12:00:00Z');
+            const formatted = formatDateInTimezone(date, 'UTC', { year: 'numeric' });
+            expect(formatted).toContain('2024');
+        });
+    });
+
+    describe('convertTimezone', () => {
+        it('should convert date between timezones', () => {
+            const date = new Date('2024-07-25T12:00:00Z');
+            const converted = convertTimezone(date, 'UTC', 'America/New_York');
+            expect(converted).toBeInstanceOf(Date);
+        });
+    });
+});
+
+describe('Date Utility Functions', () => {
+    describe('formatDateForInput', () => {
+        it('should format date for HTML input', () => {
+            const date = new Date('2024-07-25T12:00:00Z');
+            const formatted = formatDateForInput(date);
+            expect(formatted).toBe('2024-07-25');
+        });
+    });
+
+    describe('formatTimeForInput', () => {
+        it('should format time for HTML input', () => {
+            const date = new Date('2024-07-25T12:30:00Z');
+            const formatted = formatTimeForInput(date);
+            expect(formatted).toMatch(/\d{2}:\d{2}/);
+        });
+    });
+
+    describe('combineDateAndTime', () => {
+        it('should combine date and time strings', () => {
+            const combined = combineDateAndTime('2024-07-25', '12:30');
+            expect(combined).toBeInstanceOf(Date);
+            expect(combined.getFullYear()).toBe(2024);
+            expect(combined.getMonth()).toBe(6); // July is month 6
+            expect(combined.getDate()).toBe(25);
+        });
+    });
+
+    describe('isToday', () => {
+        it('should return true for today', () => {
+            const today = new Date();
+            expect(isToday(today)).toBe(true);
+        });
+
+        it('should return false for yesterday', () => {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            expect(isToday(yesterday)).toBe(false);
+        });
+    });
+
+    describe('isPast', () => {
+        it('should return true for past dates', () => {
+            const pastDate = new Date('2020-01-01');
+            expect(isPast(pastDate)).toBe(true);
+        });
+
+        it('should return false for future dates', () => {
+            const futureDate = new Date('2030-01-01');
+            expect(isPast(futureDate)).toBe(false);
+        });
+    });
+
+    describe('isFuture', () => {
+        it('should return true for future dates', () => {
+            const futureDate = new Date('2030-01-01');
+            expect(isFuture(futureDate)).toBe(true);
+        });
+
+        it('should return false for past dates', () => {
+            const pastDate = new Date('2020-01-01');
+            expect(isFuture(pastDate)).toBe(false);
+        });
+    });
+
+    describe('getRelativeTime', () => {
+        it('should return "now" for current time', () => {
+            const now = new Date();
+            const relative = getRelativeTime(now);
+            expect(relative).toBe('now');
+        });
+
+        it('should return minutes ago for recent past', () => {
+            const fiveMinutesAgo = new Date();
+            fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+            const relative = getRelativeTime(fiveMinutesAgo);
+            expect(relative).toContain('minutes ago');
+        });
+
+        it('should return "in X minutes" for near future', () => {
+            const fiveMinutesLater = new Date();
+            fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
+            const relative = getRelativeTime(fiveMinutesLater);
+            expect(relative).toContain('in');
+            expect(relative).toContain('minutes');
+        });
+
+        it('should return hours for longer periods', () => {
+            const twoHoursAgo = new Date();
+            twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+            const relative = getRelativeTime(twoHoursAgo);
+            expect(relative).toContain('hours ago');
+        });
+
+        it('should return days for very long periods', () => {
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            const relative = getRelativeTime(threeDaysAgo);
+            expect(relative).toContain('days ago');
         });
     });
 });
