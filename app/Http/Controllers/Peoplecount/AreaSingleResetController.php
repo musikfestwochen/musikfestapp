@@ -23,7 +23,7 @@ class AreaSingleResetController extends Controller
      */
     public function create(AreaSingleResetCreateRequest $request, Organization $organization, Area $area): Response
     {
-        return Inertia::render('peoplecount/NewManualReset', [
+        return Inertia::render('peoplecount/NewSingleReset', [
             'area' => $area,
             'organization' => $organization,
             'status' => $request->session()->get('status'),

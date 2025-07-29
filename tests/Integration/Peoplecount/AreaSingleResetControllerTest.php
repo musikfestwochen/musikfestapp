@@ -31,7 +31,7 @@ it('shows the create form for a new area single reset', function () {
         ]))
         ->assertStatus(200)
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('peoplecount/NewManualReset')
+            ->component('peoplecount/NewSingleReset')
             ->has('area')
             ->where('area.id', $area->id)
             ->has('organization')
