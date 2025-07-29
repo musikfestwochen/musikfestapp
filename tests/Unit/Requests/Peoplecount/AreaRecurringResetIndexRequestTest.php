@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Requests\Peoplecount\IndexAreaRecurringResetRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetIndexRequest;
 use App\Models\User;
 
-covers(IndexAreaRecurringResetRequest::class);
+covers(AreaRecurringResetIndexRequest::class);
 
 beforeEach(function () {
-    $this->request = new IndexAreaRecurringResetRequest;
+    $this->request = new AreaRecurringResetIndexRequest;
 });
 
 it('has correct rules', function () {

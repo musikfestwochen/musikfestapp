@@ -1,13 +1,12 @@
 <?php
 
-use App\Http\Requests\Peoplecount\IndexAreaSingleResetRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetIndexRequest;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 
-covers(IndexAreaSingleResetRequest::class);
+covers(AreaSingleResetIndexRequest::class);
 
 beforeEach(function () {
-    $this->request = new IndexAreaSingleResetRequest;
+    $this->request = new AreaSingleResetIndexRequest;
 });
 
 it('has correct rules', function () {

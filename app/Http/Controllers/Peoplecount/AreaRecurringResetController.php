@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Peoplecount;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Peoplecount\DestroyAreaRecurringResetRequest;
-use App\Http\Requests\Peoplecount\IndexAreaRecurringResetRequest;
-use App\Http\Requests\Peoplecount\ShowAreaRecurringResetRequest;
-use App\Http\Requests\Peoplecount\StoreAreaRecurringResetRequest;
-use App\Http\Requests\Peoplecount\UpdateAreaRecurringResetRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetDestroyRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetIndexRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetShowRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetStoreRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
@@ -23,7 +23,7 @@ class AreaRecurringResetController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(IndexAreaRecurringResetRequest $request, Organization $organization, Area $area): Response
+    public function index(AreaRecurringResetIndexRequest $request, Organization $organization, Area $area): Response
     {
         return Inertia::render('peoplecount/AreaRecurringResets', [
             'area' => $area,
@@ -36,7 +36,7 @@ class AreaRecurringResetController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAreaRecurringResetRequest $request, Organization $organization, Area $area): RedirectResponse
+    public function store(AreaRecurringResetStoreRequest $request, Organization $organization, Area $area): RedirectResponse
     {
         $this->areaResetService->createRecurringReset($area, [
             'event_id' => $request->input('event_id'),
@@ -56,7 +56,7 @@ class AreaRecurringResetController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ShowAreaRecurringResetRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
+    public function show(AreaRecurringResetShowRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
     {
         // forward to the edit page
         return redirect()->route('peoplecount.areas.recurring-resets.edit', [
@@ -69,7 +69,7 @@ class AreaRecurringResetController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateAreaRecurringResetRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
+    public function update(AreaRecurringResetUpdateRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
     {
         $this->areaResetService->updateRecurringReset($recurringReset, [
             'event_id' => $request->input('event_id'),
@@ -90,7 +90,7 @@ class AreaRecurringResetController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DestroyAreaRecurringResetRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
+    public function destroy(AreaRecurringResetDestroyRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
     {
         $this->areaResetService->deleteRecurringReset($recurringReset);
 

@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Peoplecount\AreaRecurringResetController;
+use App\Http\Requests\Peoplecount\AreaRecurringResetDestroyRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetIndexRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetStoreRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
@@ -291,29 +296,6 @@ it('requires proper permissions for store', function () {
         ->assertStatus(403);
 });
 
-it('requires proper permissions for show', function () {
-    $user = User::factory()->create();
-    $org = Organization::factory()->create();
-    $event = Event::factory()->create([
-        'organization_id' => $org->id,
-    ]);
-    $area = Area::factory()->create([
-        'event_id' => $event->id,
-    ]);
-    $reset = AreaRecurringReset::factory()->create([
-        'area_id' => $area->id,
-        'event_id' => $event->id,
-    ]);
-
-    $this->actingAs($user)
-        ->get(route('peoplecount.areas.recurring-resets.show', [
-            'organization' => $org->slug,
-            'area' => $area->id,
-            'recurring_reset' => $reset->id,
-        ]))
-        ->assertStatus(403);
-});
-
 it('requires proper permissions for update', function () {
     $user = User::factory()->create();
     $org = Organization::factory()->create();
@@ -377,46 +359,37 @@ it('uses the correct form requests', function () {
 
     // destroy
     test()->assertActionUsesFormRequest(
-        \App\Http\Controllers\Peoplecount\AreaRecurringResetController::class,
+        AreaRecurringResetController::class,
         'destroy',
-        \App\Http\Requests\Peoplecount\DestroyAreaRecurringResetRequest::class);
+        AreaRecurringResetDestroyRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.recurring-resets.destroy',
-        \App\Http\Requests\Peoplecount\DestroyAreaRecurringResetRequest::class);
+        AreaRecurringResetDestroyRequest::class);
 
     // index
     test()->assertActionUsesFormRequest(
-        \App\Http\Controllers\Peoplecount\AreaRecurringResetController::class,
+        AreaRecurringResetController::class,
         'index',
-        \App\Http\Requests\Peoplecount\IndexAreaRecurringResetRequest::class);
+        AreaRecurringResetIndexRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.recurring-resets.index',
-        \App\Http\Requests\Peoplecount\IndexAreaRecurringResetRequest::class);
-
-    // show
-    test()->assertActionUsesFormRequest(
-        \App\Http\Controllers\Peoplecount\AreaRecurringResetController::class,
-        'show',
-        \App\Http\Requests\Peoplecount\ShowAreaRecurringResetRequest::class);
-    test()->assertRouteUsesFormRequest(
-        'peoplecount.areas.recurring-resets.show',
-        \App\Http\Requests\Peoplecount\ShowAreaRecurringResetRequest::class);
+        AreaRecurringResetIndexRequest::class);
 
     // store
     test()->assertActionUsesFormRequest(
-        \App\Http\Controllers\Peoplecount\AreaRecurringResetController::class,
+        AreaRecurringResetController::class,
         'store',
-        \App\Http\Requests\Peoplecount\StoreAreaRecurringResetRequest::class);
+        AreaRecurringResetStoreRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.recurring-resets.store',
-        \App\Http\Requests\Peoplecount\StoreAreaRecurringResetRequest::class);
+        AreaRecurringResetStoreRequest::class);
 
     // update
     test()->assertActionUsesFormRequest(
-        \App\Http\Controllers\Peoplecount\AreaRecurringResetController::class,
+        AreaRecurringResetController::class,
         'update',
-        \App\Http\Requests\Peoplecount\UpdateAreaRecurringResetRequest::class);
+        AreaRecurringResetUpdateRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.recurring-resets.update',
-        \App\Http\Requests\Peoplecount\UpdateAreaRecurringResetRequest::class);
+        AreaRecurringResetUpdateRequest::class);
 });

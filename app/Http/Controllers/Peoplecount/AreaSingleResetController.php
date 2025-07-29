@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Peoplecount;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Peoplecount\DestroyAreaSingleResetRequest;
-use App\Http\Requests\Peoplecount\IndexAreaSingleResetRequest;
-use App\Http\Requests\Peoplecount\StoreAreaSingleResetRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetDestroyRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetIndexRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetStoreRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaSingleReset;
@@ -21,7 +21,7 @@ class AreaSingleResetController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(IndexAreaSingleResetRequest $request, Organization $organization, Area $area): Response
+    public function index(AreaSingleResetIndexRequest $request, Organization $organization, Area $area): Response
     {
         return Inertia::render('peoplecount/AreaSingleResets', [
             'area' => $area,
@@ -34,7 +34,7 @@ class AreaSingleResetController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAreaSingleResetRequest $request, Organization $organization, Area $area): RedirectResponse
+    public function store(AreaSingleResetStoreRequest $request, Organization $organization, Area $area): RedirectResponse
     {
         $this->areaResetService->createSingleReset($area, [
             'reset_value' => $request->input('reset_value'),
@@ -52,7 +52,7 @@ class AreaSingleResetController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DestroyAreaSingleResetRequest $request, Organization $organization, Area $area, AreaSingleReset $singleReset): RedirectResponse
+    public function destroy(AreaSingleResetDestroyRequest $request, Organization $organization, Area $area, AreaSingleReset $singleReset): RedirectResponse
     {
         $this->areaResetService->deleteSingleReset($singleReset);
 

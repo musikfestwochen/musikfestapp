@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Requests\Peoplecount\DestroyAreaRecurringResetRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetDestroyRequest;
 use App\Models\User;
 
-covers(DestroyAreaRecurringResetRequest::class);
+covers(AreaRecurringResetDestroyRequest::class);
 
 beforeEach(function () {
-    $this->request = new DestroyAreaRecurringResetRequest;
+    $this->request = new AreaRecurringResetDestroyRequest;
 });
 
 it('has correct rules', function () {

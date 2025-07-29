@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Requests\Peoplecount\StoreAreaRecurringResetRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetUpdateRequest;
 use App\Models\User;
 
-covers(StoreAreaRecurringResetRequest::class);
+covers(AreaRecurringResetUpdateRequest::class);
 
 beforeEach(function () {
-    $this->request = new StoreAreaRecurringResetRequest;
+    $this->request = new AreaRecurringResetUpdateRequest;
 });
 
 it('has correct rules', function () {
@@ -84,18 +84,18 @@ it('validates invalid RRULE formats', function () {
     }
 });
 
-it('authorizes when user can store area resets', function () {
+it('authorizes when user can update area resets', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('peoplecount.area_resets.store')->andReturn(true);
+    $user->shouldReceive('can')->with('peoplecount.area_resets.update')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 
     expect($this->request->authorize())->toBeTrue();
 });
 
-it('does not authorize when user cannot store area resets', function () {
+it('does not authorize when user cannot update area resets', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('peoplecount.area_resets.store')->andReturn(false);
+    $user->shouldReceive('can')->with('peoplecount.area_resets.update')->andReturn(false);
 
     Auth::shouldReceive('user')->andReturn($user);
 

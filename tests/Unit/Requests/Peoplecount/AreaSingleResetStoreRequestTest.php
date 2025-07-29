@@ -1,13 +1,12 @@
 <?php
 
-use App\Http\Requests\Peoplecount\StoreAreaSingleResetRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetStoreRequest;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 
-covers(StoreAreaSingleResetRequest::class);
+covers(AreaSingleResetStoreRequest::class);
 
 beforeEach(function () {
-    $this->request = new StoreAreaSingleResetRequest;
+    $this->request = new AreaSingleResetStoreRequest;
 });
 
 it('has correct rules', function () {

@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Peoplecount\AreaSingleResetController;
-use App\Http\Requests\Peoplecount\DestroyAreaSingleResetRequest;
-use App\Http\Requests\Peoplecount\IndexAreaSingleResetRequest;
-use App\Http\Requests\Peoplecount\StoreAreaSingleResetRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetDestroyRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetIndexRequest;
+use App\Http\Requests\Peoplecount\AreaSingleResetStoreRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaSingleReset;
@@ -232,26 +232,26 @@ it('uses the correct form requests', function () {
     test()->assertActionUsesFormRequest(
         AreaSingleResetController::class,
         'index',
-        IndexAreaSingleResetRequest::class);
+        AreaSingleResetIndexRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.single-resets.index',
-        IndexAreaSingleResetRequest::class);
+        AreaSingleResetIndexRequest::class);
 
     // store
     test()->assertActionUsesFormRequest(
         AreaSingleResetController::class,
         'store',
-        StoreAreaSingleResetRequest::class);
+        AreaSingleResetStoreRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.single-resets.store',
-        StoreAreaSingleResetRequest::class);
+        AreaSingleResetStoreRequest::class);
 
     // destroy
     test()->assertActionUsesFormRequest(
         AreaSingleResetController::class,
         'destroy',
-        DestroyAreaSingleResetRequest::class);
+        AreaSingleResetDestroyRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.areas.single-resets.destroy',
-        DestroyAreaSingleResetRequest::class);
+        AreaSingleResetDestroyRequest::class);
 });

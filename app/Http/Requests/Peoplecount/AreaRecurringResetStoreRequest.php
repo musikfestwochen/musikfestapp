@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests\Peoplecount;
 
+use Closure;
+use Exception;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use RRule\RRule;
 
-class StoreAreaRecurringResetRequest extends FormRequest
+class AreaRecurringResetStoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -18,17 +21,17 @@ class StoreAreaRecurringResetRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
             'reset_value' => ['required', 'integer', 'min:0'],
-            'rrule' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail) {
+            'rrule' => ['required', 'string', function (string $attribute, mixed $value, Closure $fail) {
                 try {
                     new RRule($value);
-                } catch (\Exception $exception) {
+                } catch (Exception $exception) {
                     $fail('The '.$attribute.' must be a valid RRULE format.');
                 }
             }],
