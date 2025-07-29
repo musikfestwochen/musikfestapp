@@ -2,7 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PeoplecountAssignment } from '@/types';
-import { formatLocalDateTime } from '@/utils/eventHelpers';
+import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Users } from 'lucide-vue-next';
 
 const props = defineProps<{

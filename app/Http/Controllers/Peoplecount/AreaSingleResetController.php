@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Peoplecount;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Peoplecount\AreaSingleResetCreateRequest;
 use App\Http\Requests\Peoplecount\AreaSingleResetDestroyRequest;
-use App\Http\Requests\Peoplecount\AreaSingleResetIndexRequest;
 use App\Http\Requests\Peoplecount\AreaSingleResetStoreRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
@@ -19,13 +19,12 @@ class AreaSingleResetController extends Controller
     public function __construct(private readonly AreaResetService $areaResetService) {}
 
     /**
-     * Display a listing of the resource.
+     * Show the form for creating a new resource.
      */
-    public function index(AreaSingleResetIndexRequest $request, Organization $organization, Area $area): Response
+    public function create(AreaSingleResetCreateRequest $request, Organization $organization, Area $area): Response
     {
-        return Inertia::render('peoplecount/AreaSingleResets', [
+        return Inertia::render('peoplecount/NewManualReset', [
             'area' => $area,
-            'resets' => $this->areaResetService->getAreaResets($area),
             'organization' => $organization,
             'status' => $request->session()->get('status'),
         ]);
@@ -42,7 +41,7 @@ class AreaSingleResetController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
-        return redirect()->route('peoplecount.areas.single-resets.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])
@@ -56,7 +55,7 @@ class AreaSingleResetController extends Controller
     {
         $this->areaResetService->deleteSingleReset($singleReset);
 
-        return redirect()->route('peoplecount.areas.single-resets.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])

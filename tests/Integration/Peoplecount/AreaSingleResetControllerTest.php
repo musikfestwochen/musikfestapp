@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Peoplecount\AreaSingleResetController;
 use App\Http\Requests\Peoplecount\AreaSingleResetDestroyRequest;
-use App\Http\Requests\Peoplecount\AreaSingleResetIndexRequest;
 use App\Http\Requests\Peoplecount\AreaSingleResetStoreRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
@@ -15,7 +14,7 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
-it('can list area single resets for an organization', function () {
+it('shows the create form for a new area single reset', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
     $event = Event::factory()->create([
@@ -24,28 +23,22 @@ it('can list area single resets for an organization', function () {
     $area = Area::factory()->create([
         'event_id' => $event->id,
     ]);
-    $resets = AreaSingleReset::factory()->count(3)->create([
-        'area_id' => $area->id,
-        'created_by' => $admin->id,
-    ]);
 
     $this->actingAs($admin)
-        ->get(route('peoplecount.areas.single-resets.index', [
+        ->get(route('peoplecount.areas.single-resets.create', [
             'organization' => $org->slug,
             'area' => $area->id,
         ]))
-        ->assertStatus(200);
-    // TODO: Add Inertia assertions once frontend components exist
-    // ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
-    //     ->component('peoplecount/AreaSingleResets')
-    //     ->has('area')
-    //     ->where('area.id', $area->id)
-    //     ->has('resets', 3)
-    //     ->has('organization')
-    //     ->where('organization.id', $org->id)
-    //     ->where('organization.slug', $org->slug)
-    //     ->has('status')
-    // );
+        ->assertStatus(200)
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('peoplecount/NewManualReset')
+            ->has('area')
+            ->where('area.id', $area->id)
+            ->has('organization')
+            ->where('organization.id', $org->id)
+            ->where('organization.slug', $org->slug)
+            ->has('status')
+        );
 });
 
 it('can create an area single reset', function () {
@@ -69,7 +62,7 @@ it('can create an area single reset', function () {
             'area' => $area->id,
         ]), $resetData);
 
-    $response->assertRedirect(route('peoplecount.areas.single-resets.index', [
+    $response->assertRedirect(route('peoplecount.areas.edit', [
         'organization' => $org->slug,
         'area' => $area->id,
     ]));
@@ -128,7 +121,7 @@ it('can delete an area single reset', function () {
             'single_reset' => $reset->id,
         ]));
 
-    $response->assertRedirect(route('peoplecount.areas.single-resets.index', [
+    $response->assertRedirect(route('peoplecount.areas.edit', [
         'organization' => $org->slug,
         'area' => $area->id,
     ]));
@@ -136,24 +129,6 @@ it('can delete an area single reset', function () {
     $this->assertDatabaseMissing('peoplecount_area_single_resets', [
         'id' => $reset->id,
     ]);
-});
-
-it('requires proper permissions for index action', function () {
-    $user = User::factory()->create(); // Regular user without permissions
-    $org = Organization::factory()->create();
-    $event = Event::factory()->create([
-        'organization_id' => $org->id,
-    ]);
-    $area = Area::factory()->create([
-        'event_id' => $event->id,
-    ]);
-
-    $this->actingAs($user)
-        ->get(route('peoplecount.areas.single-resets.index', [
-            'organization' => $org->slug,
-            'area' => $area->id,
-        ]))
-        ->assertStatus(403);
 });
 
 it('requires proper permissions for store action', function () {
@@ -201,41 +176,12 @@ it('requires proper permissions for destroy action', function () {
         ->assertStatus(403);
 });
 
-it('handles organization admin permissions correctly', function () {
-    $org = Organization::factory()->create();
-    $orgAdmin = User::factory()->organizationAdmin($org)->create();
-
-    $event = Event::factory()->create([
-        'organization_id' => $org->id,
-    ]);
-    $area = Area::factory()->create([
-        'event_id' => $event->id,
-    ]);
-
-    // Organization admin should be able to access their organization's areas
-    $this->actingAs($orgAdmin)
-        ->get(route('peoplecount.areas.single-resets.index', [
-            'organization' => $org->slug,
-            'area' => $area->id,
-        ]))
-        ->assertStatus(200);
-});
-
 it('uses the correct form requests', function () {
     // middleware
     test()->assertRouteUsesMiddleware(
-        'peoplecount.areas.single-resets.index',
+        'peoplecount.areas.single-resets.create',
         ['permissions.organization_slug', 'auth', 'verified'],
     );
-
-    // index
-    test()->assertActionUsesFormRequest(
-        AreaSingleResetController::class,
-        'index',
-        AreaSingleResetIndexRequest::class);
-    test()->assertRouteUsesFormRequest(
-        'peoplecount.areas.single-resets.index',
-        AreaSingleResetIndexRequest::class);
 
     // store
     test()->assertActionUsesFormRequest(

@@ -80,9 +80,9 @@ class AreaService
         return $area;
     }
 
-    public function getWithAssignments(Area $area): Area
+    public function getWithRelations(Area $area): Area
     {
-        // Eager load the event and assignments relationships
-        return $area->load(['event', 'assignments.sensor']);
+        // Eager load the event, assignments, and areaSingleResets relationships
+        return $area->load(['event', 'assignments.sensor', 'areaSingleResets.createdBy']);
     }
 }

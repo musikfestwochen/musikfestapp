@@ -10,6 +10,7 @@ use App\Http\Requests\Peoplecount\AreaStoreRequest;
 use App\Http\Requests\Peoplecount\AreaUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -31,7 +32,7 @@ it('can list areas for an organization', function () {
     $this->actingAs($admin)
         ->get(route('peoplecount.areas.index', ['organization' => $org->slug]))
         ->assertStatus(200)
-        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('peoplecount/Areas')
             ->has('areas', 3)
             ->has('organization')
@@ -51,13 +52,13 @@ it('shows the create area form for an organization', function () {
     $this->actingAs($admin)
         ->get(route('peoplecount.areas.create', ['organization' => $org->slug]))
         ->assertStatus(200)
-        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('peoplecount/NewArea')
             ->has('organization')
             ->where('organization.id', $org->id)
             ->where('organization.slug', $org->slug)
             ->has('events', 1)
-            ->has('events.0', fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+            ->has('events.0', fn (Assert $page): Assert => $page
                 ->where('id', $event->id)
                 ->where('organization_id', $org->id)
                 ->etc()
@@ -97,15 +98,21 @@ it('shows the edit area form for an organization area', function () {
         'event_id' => $event->id,
     ]);
 
+    // Create some single resets for the area
+    $resets = AreaSingleReset::factory()->count(2)->create([
+        'area_id' => $area->id,
+        'created_by' => $admin->id,
+    ]);
+
     $this->actingAs($admin)
         ->get(route('peoplecount.areas.edit', ['organization' => $org->slug, 'area' => $area->id]))
         ->assertStatus(200)
-        ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('peoplecount/EditArea')
             ->has('organization')
             ->where('organization.id', $org->id)
             ->where('organization.slug', $org->slug)
-            ->has('area', fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+            ->has('area', fn (Assert $page): Assert => $page
                 ->where('id', $area->id)
                 ->where('event_id', $event->id)
                 ->has('event')
@@ -113,7 +120,7 @@ it('shows the edit area form for an organization area', function () {
                 ->etc()
             )
             ->has('events', 1)
-            ->has('events.0', fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
+            ->has('events.0', fn (Assert $page): Assert => $page
                 ->where('id', $event->id)
                 ->where('organization_id', $org->id)
                 ->etc()
