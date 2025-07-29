@@ -49,7 +49,8 @@ export class EventHelper {
             timeZoneName: 'short',
         };
 
-        return date.toLocaleString(undefined, { ...defaultOptions, ...options });
+        // Use 'en-US' locale to ensure consistent formatting regardless of system locale
+        return date.toLocaleString('en-US', { ...defaultOptions, ...options });
     }
 
     /**
