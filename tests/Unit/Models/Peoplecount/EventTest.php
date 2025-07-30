@@ -60,10 +60,3 @@ it('has many assignments', function () {
 
     expect($relation)->toBeInstanceOf(HasMany::class);
 });
-
-it('has many recurring resets', function () {
-    $model = new Event;
-    $relation = $model->areaRecurringResets();
-
-    expect($relation)->toBeInstanceOf(HasMany::class);
-});

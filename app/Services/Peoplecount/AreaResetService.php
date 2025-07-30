@@ -98,7 +98,7 @@ class AreaResetService
         $this->verifyAreaBelongsToCurrentOrganization($area);
 
         return $area->areaRecurringResets()
-            ->with(['area', 'event'])
+            ->with(['area'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -118,7 +118,6 @@ class AreaResetService
 
         return AreaRecurringReset::query()->create([
             'area_id' => $area->id,
-            'event_id' => $attributes['event_id'],
             'reset_value' => $attributes['reset_value'],
             'rrule' => $attributes['rrule'],
             'timezone' => $attributes['timezone'],
@@ -140,7 +139,6 @@ class AreaResetService
         $this->validateRRule($attributes['rrule']);
 
         $reset->update([
-            'event_id' => $attributes['event_id'],
             'reset_value' => $attributes['reset_value'],
             'rrule' => $attributes['rrule'],
             'timezone' => $attributes['timezone'],

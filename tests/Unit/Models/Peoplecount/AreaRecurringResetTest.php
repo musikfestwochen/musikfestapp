@@ -2,7 +2,6 @@
 
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
-use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,7 +11,6 @@ it('has correct fillable attributes', function () {
     $model = new AreaRecurringReset;
     expect($model->getFillable())->toEqualCanonicalizing([
         'area_id',
-        'event_id',
         'reset_value',
         'rrule',
         'timezone',
@@ -49,14 +47,6 @@ it('belongs to an area', function () {
 
     expect($relation)->toBeInstanceOf(BelongsTo::class);
     expect($relation->getRelated())->toBeInstanceOf(Area::class);
-});
-
-it('belongs to an event', function () {
-    $model = new AreaRecurringReset;
-    $relation = $model->event();
-
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Event::class);
 });
 
 it('validates valid RRULE', function () {

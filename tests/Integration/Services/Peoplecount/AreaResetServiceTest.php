@@ -327,12 +327,10 @@ describe('getAreaRecurringResets', function () {
         // Create recurring resets with different timestamps
         $reset1 = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
             'created_at' => now()->subHours(2),
         ]);
         $reset2 = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
             'created_at' => now()->subHour(),
         ]);
 
@@ -352,15 +350,12 @@ describe('getAreaRecurringResets', function () {
 
         AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
         ]);
 
         $resets = $this->service->getAreaRecurringResets($area);
 
         expect($resets->first()->relationLoaded('area'))->toBeTrue();
-        expect($resets->first()->relationLoaded('event'))->toBeTrue();
         expect($resets->first()->area->id)->toBe($area->id);
-        expect($resets->first()->event->id)->toBe($event->id);
     });
 
     it('throws authorization exception for area from different organization', function () {
@@ -385,7 +380,6 @@ describe('createRecurringReset', function () {
         setPermissionsOrgId($organization->id);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 50,
             'rrule' => 'FREQ=DAILY;INTERVAL=1',
             'timezone' => 'Europe/Zurich',
@@ -396,7 +390,6 @@ describe('createRecurringReset', function () {
 
         expect($reset)->toBeInstanceOf(AreaRecurringReset::class);
         expect($reset->area_id)->toBe($area->id);
-        expect($reset->event_id)->toBe($event->id);
         expect($reset->reset_value)->toBe(50);
         expect($reset->rrule)->toBe('FREQ=DAILY;INTERVAL=1');
         expect($reset->timezone)->toBe('Europe/Zurich');
@@ -411,7 +404,6 @@ describe('createRecurringReset', function () {
         setPermissionsOrgId($organization->id);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 50,
             'rrule' => 'INVALID_RRULE',
             'timezone' => 'Europe/Zurich',
@@ -436,7 +428,6 @@ describe('createRecurringReset', function () {
         setPermissionsOrgId($userOrganization->id);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 50,
             'rrule' => 'FREQ=DAILY;INTERVAL=1',
             'timezone' => 'Europe/Zurich',
@@ -455,7 +446,6 @@ describe('createRecurringReset', function () {
         setPermissionsOrgId(GLOBAL_ORG_ID);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 100,
             'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
             'timezone' => 'Europe/Zurich',
@@ -479,7 +469,6 @@ describe('updateRecurringReset', function () {
 
         $reset = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
             'reset_value' => 25,
             'rrule' => 'FREQ=DAILY;INTERVAL=1',
             'timezone' => 'Europe/Zurich',
@@ -487,7 +476,6 @@ describe('updateRecurringReset', function () {
         ]);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 75,
             'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
             'timezone' => 'America/New_York',
@@ -511,11 +499,9 @@ describe('updateRecurringReset', function () {
 
         $reset = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
         ]);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 50,
             'rrule' => 'INVALID_RRULE',
             'timezone' => 'Europe/Zurich',
@@ -531,40 +517,6 @@ describe('updateRecurringReset', function () {
         }
     });
 
-    it('updates event_id when provided in attributes', function () {
-        $organization = Organization::factory()->create();
-        $originalEvent = Event::factory()->withOrganization($organization)->create();
-        $newEvent = Event::factory()->withOrganization($organization)->create();
-        $area = Area::factory()->withEvent($originalEvent)->create();
-
-        setPermissionsOrgId($organization->id);
-
-        $reset = AreaRecurringReset::factory()->create([
-            'area_id' => $area->id,
-            'event_id' => $originalEvent->id,
-            'reset_value' => 25,
-            'rrule' => 'FREQ=DAILY;INTERVAL=1',
-            'timezone' => 'Europe/Zurich',
-            'notes' => 'Original notes',
-        ]);
-
-        $attributes = [
-            'event_id' => $newEvent->id,
-            'reset_value' => 75,
-            'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
-            'timezone' => 'America/New_York',
-            'notes' => 'Updated notes',
-        ];
-
-        $updatedReset = $this->service->updateRecurringReset($reset, $attributes);
-
-        expect($updatedReset->event_id)->toBe($newEvent->id);
-        expect($updatedReset->reset_value)->toBe(75);
-        expect($updatedReset->rrule)->toBe('FREQ=WEEKLY;BYDAY=MO');
-        expect($updatedReset->timezone)->toBe('America/New_York');
-        expect($updatedReset->notes)->toBe('Updated notes');
-    });
-
     it('throws authorization exception for reset from different organization', function () {
         $userOrganization = Organization::factory()->create();
         $otherOrganization = Organization::factory()->create();
@@ -575,11 +527,9 @@ describe('updateRecurringReset', function () {
 
         $reset = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
         ]);
 
         $attributes = [
-            'event_id' => $event->id,
             'reset_value' => 50,
             'rrule' => 'FREQ=DAILY;INTERVAL=1',
             'timezone' => 'Europe/Zurich',
@@ -601,7 +551,6 @@ describe('deleteRecurringReset', function () {
 
         $reset = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
         ]);
 
         $this->service->deleteRecurringReset($reset);
@@ -621,7 +570,6 @@ describe('deleteRecurringReset', function () {
 
         $reset = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
-            'event_id' => $event->id,
         ]);
 
         expect(fn () => $this->service->deleteRecurringReset($reset))

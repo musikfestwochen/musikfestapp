@@ -12,7 +12,6 @@ beforeEach(function () {
 it('has correct rules', function () {
 
     $expectedRules = [
-        'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
         'reset_value' => ['required', 'integer', 'min:0'],
         'rrule' => ['required', 'string', 'some_callable_closure'],
         'timezone' => ['required', 'string', 'timezone'],
@@ -22,7 +21,6 @@ it('has correct rules', function () {
     $actualRules = $this->request->rules();
 
     // Test the basic structure without the closure
-    expect($actualRules['event_id'])->toBe($expectedRules['event_id']);
     expect($actualRules['reset_value'])->toBe($expectedRules['reset_value']);
     expect($actualRules['timezone'])->toBe($expectedRules['timezone']);
     expect($actualRules['notes'])->toBe($expectedRules['notes']);

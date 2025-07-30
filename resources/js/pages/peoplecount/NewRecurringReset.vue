@@ -3,13 +3,12 @@ import Heading from '@/components/Heading.vue';
 import RecurringResetForm from '@/components/peoplecount/resets/RecurringResetForm.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
-import { BreadcrumbItem, Event, Organization, PeoplecountArea } from '@/types';
+import { BreadcrumbItem, Organization, PeoplecountArea } from '@/types';
 import { Head } from '@inertiajs/vue3';
 
 const props = defineProps<{
     organization: Organization;
     area: PeoplecountArea;
-    events: Event[];
 }>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
@@ -48,12 +47,11 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     <CardHeader>
                         <CardTitle>Recurring Reset Schedule</CardTitle>
                         <CardDescription>
-                            Set up a recurring reset schedule that will automatically reset the area's occupancy count at specified intervals. The
-                            schedule will be based on the selected event's timeframe or run indefinitely if no event is selected.
+                            Set up a recurring reset schedule that will automatically reset the area's occupancy count at specified intervals.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <RecurringResetForm :area="props.area" :events="props.events" :organization="props.organization" />
+                        <RecurringResetForm :area="props.area" :organization="props.organization" />
                     </CardContent>
                 </Card>
             </div>

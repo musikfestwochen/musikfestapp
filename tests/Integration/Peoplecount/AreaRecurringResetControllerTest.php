@@ -36,7 +36,6 @@ it('can show create form for area recurring reset', function () {
             ->component('peoplecount/NewRecurringReset')
             ->has('organization')
             ->has('area')
-            ->has('events')
         );
 });
 
@@ -50,7 +49,6 @@ it('can create an area recurring reset', function () {
         'event_id' => $event->id,
     ]);
     $resetData = [
-        'event_id' => $event->id,
         'reset_value' => 50,
         'rrule' => 'FREQ=DAILY;INTERVAL=1',
         'timezone' => 'Europe/Zurich',
@@ -70,7 +68,6 @@ it('can create an area recurring reset', function () {
 
     $this->assertDatabaseHas('peoplecount_area_recurring_resets', [
         'area_id' => $area->id,
-        'event_id' => $event->id,
         'reset_value' => 50,
         'rrule' => 'FREQ=DAILY;INTERVAL=1',
         'timezone' => 'Europe/Zurich',
@@ -90,7 +87,6 @@ it('validates reset data when creating', function () {
 
     // Test with invalid data
     $invalidData = [
-        'event_id' => 999999, // non-existent event
         'reset_value' => -10, // negative value
         'rrule' => 'INVALID_RRULE', // invalid RRULE format
         'timezone' => 'Invalid/Timezone', // invalid timezone
@@ -102,7 +98,7 @@ it('validates reset data when creating', function () {
             'organization' => $org->slug,
             'area' => $area->id,
         ]), $invalidData)
-        ->assertSessionHasErrors(['event_id', 'reset_value', 'rrule', 'timezone', 'notes']);
+        ->assertSessionHasErrors(['reset_value', 'rrule', 'timezone', 'notes']);
 });
 
 it('can show an area recurring reset', function () {
@@ -116,7 +112,6 @@ it('can show an area recurring reset', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
     ]);
 
     $this->actingAs($admin)
@@ -143,7 +138,6 @@ it('can show edit form for area recurring reset', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
     ]);
 
     $this->actingAs($admin)
@@ -158,7 +152,6 @@ it('can show edit form for area recurring reset', function () {
             ->has('organization')
             ->has('area')
             ->has('recurringReset')
-            ->has('events')
         );
 });
 
@@ -173,7 +166,6 @@ it('can update an area recurring reset', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
         'reset_value' => 25,
         'rrule' => 'FREQ=DAILY;INTERVAL=1',
         'timezone' => 'Europe/Zurich',
@@ -181,7 +173,6 @@ it('can update an area recurring reset', function () {
     ]);
 
     $updateData = [
-        'event_id' => $event->id,
         'reset_value' => 75,
         'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
         'timezone' => 'America/New_York',
@@ -221,12 +212,10 @@ it('validates reset data when updating', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
     ]);
 
     // Test with invalid data
     $invalidData = [
-        'event_id' => 999999, // non-existent event
         'reset_value' => -10, // negative value
         'rrule' => 'INVALID_RRULE', // invalid RRULE format
         'timezone' => 'Invalid/Timezone', // invalid timezone
@@ -239,7 +228,7 @@ it('validates reset data when updating', function () {
             'area' => $area->id,
             'recurring_reset' => $reset->id,
         ]), $invalidData)
-        ->assertSessionHasErrors(['event_id', 'reset_value', 'rrule', 'timezone', 'notes']);
+        ->assertSessionHasErrors(['reset_value', 'rrule', 'timezone', 'notes']);
 });
 
 it('can delete an area recurring reset', function () {
@@ -253,7 +242,6 @@ it('can delete an area recurring reset', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
     ]);
 
     $response = $this->actingAs($admin)
@@ -284,7 +272,6 @@ it('requires proper permissions for store', function () {
     ]);
 
     $resetData = [
-        'event_id' => $event->id,
         'reset_value' => 50,
         'rrule' => 'FREQ=DAILY;INTERVAL=1',
         'timezone' => 'Europe/Zurich',
@@ -310,11 +297,9 @@ it('requires proper permissions for update', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
     ]);
 
     $updateData = [
-        'event_id' => $event->id,
         'reset_value' => 75,
         'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
         'timezone' => 'America/New_York',
@@ -341,7 +326,6 @@ it('requires proper permissions for destroy', function () {
     ]);
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
-        'event_id' => $event->id,
     ]);
 
     $this->actingAs($user)

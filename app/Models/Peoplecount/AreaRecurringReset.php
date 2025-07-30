@@ -12,7 +12,6 @@ use RRule\RRule;
 /**
  * @property int $id
  * @property int $area_id
- * @property int $event_id
  * @property int $reset_value
  * @property string $rrule
  * @property string $timezone
@@ -37,7 +36,6 @@ class AreaRecurringReset extends Model
      */
     protected $fillable = [
         'area_id',
-        'event_id',
         'reset_value',
         'rrule',
         'timezone',
@@ -52,16 +50,6 @@ class AreaRecurringReset extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
-    }
-
-    /**
-     * The Event that owns the recurring reset.
-     *
-     * @return BelongsTo<Event, $this>
-     */
-    public function event(): BelongsTo
-    {
-        return $this->belongsTo(Event::class);
     }
 
     /**

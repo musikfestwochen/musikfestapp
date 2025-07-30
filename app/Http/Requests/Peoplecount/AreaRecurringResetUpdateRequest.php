@@ -26,7 +26,6 @@ class AreaRecurringResetUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
             'reset_value' => ['required', 'integer', 'min:0'],
             'rrule' => ['required', 'string', function (string $attribute, mixed $value, Closure $fail) {
                 try {

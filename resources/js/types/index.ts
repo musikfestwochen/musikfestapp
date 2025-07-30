@@ -106,7 +106,6 @@ export interface PeoplecountEvent {
     organization?: Organization; // Optional, for related organization
     areas?: PeoplecountArea[]; // Optional, for related areas
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
-    area_recurring_resets?: AreaRecurringReset[]; // Optional, for related recurring resets
 }
 
 export interface PeoplecountArea {
@@ -119,7 +118,7 @@ export interface PeoplecountArea {
     event?: PeoplecountEvent; // Optional, for related event
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
     area_single_resets?: PeoplecountAreaSingleReset[]; // Optional, for related single resets
-    area_recurring_resets?: AreaRecurringReset[]; // Optional, for related recurring resets
+    area_recurring_resets?: PeoplecountAreaRecurringReset[]; // Optional, for related recurring resets
 }
 
 export interface PeoplecountAssignment {
@@ -154,7 +153,6 @@ export interface PeoplecountAreaSingleReset {
 export interface PeoplecountAreaRecurringReset {
     id: number;
     area_id: number;
-    event_id: number;
     reset_value: number;
     rrule: string;
     timezone: string;
@@ -162,5 +160,4 @@ export interface PeoplecountAreaRecurringReset {
     created_at: string;
     updated_at: string;
     area?: PeoplecountArea; // Optional, for related area
-    event?: PeoplecountEvent; // Optional, for related event
 }

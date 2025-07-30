@@ -90,14 +90,4 @@ class Event extends Model
     {
         return $this->hasMany(Assignment::class);
     }
-
-    /**
-     * The Recurring Resets that belong to the event.
-     *
-     * @return HasMany<AreaRecurringReset, $this>
-     */
-    public function areaRecurringResets(): HasMany
-    {
-        return $this->hasMany(AreaRecurringReset::class);
-    }
 }

@@ -4,7 +4,6 @@ namespace Database\Factories\Peoplecount;
 
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
-use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -38,7 +37,6 @@ class AreaRecurringResetFactory extends Factory
 
         return [
             'area_id' => Area::query()->inRandomOrder()->first()->id ?? Area::factory()->create()->id,
-            'event_id' => Event::query()->inRandomOrder()->first()->id ?? Event::factory()->create()->id,
             'reset_value' => fake()->numberBetween(0, 1000),
             'rrule' => fake()->randomElement($rrulePatterns),
             'timezone' => fake()->randomElement($timezones),
@@ -54,18 +52,6 @@ class AreaRecurringResetFactory extends Factory
         return $this->state(function (array $attributes) use ($area): array {
             return [
                 'area_id' => $area->id,
-            ];
-        });
-    }
-
-    /**
-     * Configure the model factory to use a specific event.
-     */
-    public function withEvent(Event $event): static
-    {
-        return $this->state(function (array $attributes) use ($event): array {
-            return [
-                'event_id' => $event->id,
             ];
         });
     }

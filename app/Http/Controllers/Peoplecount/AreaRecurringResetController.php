@@ -29,7 +29,6 @@ class AreaRecurringResetController extends Controller
         return Inertia::render('peoplecount/NewRecurringReset', [
             'organization' => $organization,
             'area' => $area,
-            'events' => $organization->events()->get(),
         ]);
     }
 
@@ -39,7 +38,6 @@ class AreaRecurringResetController extends Controller
     public function store(AreaRecurringResetStoreRequest $request, Organization $organization, Area $area): RedirectResponse
     {
         $this->areaResetService->createRecurringReset($area, [
-            'event_id' => $request->input('event_id'),
             'reset_value' => $request->input('reset_value'),
             'rrule' => $request->input('rrule'),
             'timezone' => $request->input('timezone'),
@@ -74,8 +72,7 @@ class AreaRecurringResetController extends Controller
         return Inertia::render('peoplecount/EditRecurringReset', [
             'organization' => $organization,
             'area' => $area,
-            'recurringReset' => $recurringReset->load('event'),
-            'events' => $organization->events()->get(),
+            'recurringReset' => $recurringReset,
         ]);
     }
 
@@ -85,7 +82,6 @@ class AreaRecurringResetController extends Controller
     public function update(AreaRecurringResetUpdateRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
     {
         $this->areaResetService->updateRecurringReset($recurringReset, [
-            'event_id' => $request->input('event_id'),
             'reset_value' => $request->input('reset_value'),
             'rrule' => $request->input('rrule'),
             'timezone' => $request->input('timezone'),
