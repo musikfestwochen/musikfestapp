@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import RRuleInput from '@/components/forms/RRuleInput.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,6 @@ import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset } from '@/
 import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
-import RRuleInput from './RRuleInput.vue';
 
 const props = defineProps<{
     recurringReset?: PeoplecountAreaRecurringReset;
@@ -71,7 +71,7 @@ const submit = () => {
             <!-- RRULE Input -->
             <div class="grid gap-2">
                 <Label>Recurrence Schedule</Label>
-                <RRuleInput v-model="form.rrule" :start-date="startDate" />
+                <RRuleInput v-model="form.rrule" v-model:timezone="form.timezone" :start-date="startDate" />
                 <InputError :message="form.errors.rrule" />
             </div>
 

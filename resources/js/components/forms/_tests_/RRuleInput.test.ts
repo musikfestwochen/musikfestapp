@@ -94,7 +94,8 @@ describe('RRuleInput', () => {
             const emittedValue = wrapper.emitted('update:modelValue')![0][0] as string;
             expect(emittedValue).toContain('FREQ=DAILY');
             expect(emittedValue).toContain('INTERVAL=1');
-            expect(emittedValue).toContain('BYHOUR=9');
+            // With timezone fix: 09:00 Europe/Zurich = 07:00 UTC, so BYHOUR=7
+            expect(emittedValue).toContain('BYHOUR=7');
             expect(emittedValue).toContain('BYMINUTE=0');
         });
 
@@ -151,7 +152,8 @@ describe('RRuleInput', () => {
             expect(wrapper.emitted('update:modelValue')).toBeTruthy();
             const emittedValues = wrapper.emitted('update:modelValue') as string[][];
             const lastEmittedValue = emittedValues[emittedValues.length - 1][0];
-            expect(lastEmittedValue).toContain('BYHOUR=14');
+            // With timezone fix: 14:30 Europe/Zurich = 12:30 UTC, so BYHOUR=12
+            expect(lastEmittedValue).toContain('BYHOUR=12');
             expect(lastEmittedValue).toContain('BYMINUTE=30');
         });
 

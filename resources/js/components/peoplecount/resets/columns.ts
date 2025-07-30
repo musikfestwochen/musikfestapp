@@ -164,7 +164,19 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
 
                     const nextOccurrences = getNextRRuleOccurrences(reset.rrule, startDate, endDate, 1);
                     if (nextOccurrences.length > 0) {
-                        return h('div', { class: 'text-sm' }, formatLocalDateTime(nextOccurrences[0].toISOString()));
+                        // Format the occurrence in the stored timezone using Intl.DateTimeFormat
+                        // This avoids the double conversion bug in formatLocalDateTime
+                        const formatter = new Intl.DateTimeFormat('en-GB', {
+                            timeZone: reset.timezone || 'UTC',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                        });
+                        const formattedTime = formatter.format(nextOccurrences[0]);
+                        return h('div', { class: 'text-sm' }, formattedTime);
                     }
                     return h('div', { class: 'text-sm text-muted-foreground' }, 'No upcoming occurrences');
                 } catch {
