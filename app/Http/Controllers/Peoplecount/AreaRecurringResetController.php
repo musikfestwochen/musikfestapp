@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Peoplecount;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Peoplecount\AreaRecurringResetCreateRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetDestroyRequest;
-use App\Http\Requests\Peoplecount\AreaRecurringResetIndexRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetEditRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetShowRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetStoreRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetUpdateRequest;
@@ -21,15 +22,14 @@ class AreaRecurringResetController extends Controller
     public function __construct(private readonly AreaResetService $areaResetService) {}
 
     /**
-     * Display a listing of the resource.
+     * Show the form for creating a new resource.
      */
-    public function index(AreaRecurringResetIndexRequest $request, Organization $organization, Area $area): Response
+    public function create(AreaRecurringResetCreateRequest $request, Organization $organization, Area $area): Response
     {
-        return Inertia::render('peoplecount/AreaRecurringResets', [
-            'area' => $area,
-            'resets' => $this->areaResetService->getAreaRecurringResets($area),
+        return Inertia::render('peoplecount/NewRecurringReset', [
             'organization' => $organization,
-            'status' => $request->session()->get('status'),
+            'area' => $area,
+            'events' => $organization->events()->get(),
         ]);
     }
 
@@ -46,7 +46,7 @@ class AreaRecurringResetController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
-        return redirect()->route('peoplecount.areas.recurring-resets.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])
@@ -63,6 +63,19 @@ class AreaRecurringResetController extends Controller
             'organization' => $organization,
             'area' => $area,
             'recurring_reset' => $recurringReset,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(AreaRecurringResetEditRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): Response
+    {
+        return Inertia::render('peoplecount/EditRecurringReset', [
+            'organization' => $organization,
+            'area' => $area,
+            'recurringReset' => $recurringReset->load('event'),
+            'events' => $organization->events()->get(),
         ]);
     }
 
@@ -94,7 +107,7 @@ class AreaRecurringResetController extends Controller
     {
         $this->areaResetService->deleteRecurringReset($recurringReset);
 
-        return redirect()->route('peoplecount.areas.recurring-resets.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])

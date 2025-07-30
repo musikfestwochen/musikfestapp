@@ -23,7 +23,8 @@
             "peoplecount",
             "lqip",
             "vonage",
-            "rrule"
+            "rrule",
+            "jquery"
         ],
         "paths": []
     }

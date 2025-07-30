@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\Peoplecount\AreaRecurringResetController;
+use App\Http\Requests\Peoplecount\AreaRecurringResetCreateRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetDestroyRequest;
-use App\Http\Requests\Peoplecount\AreaRecurringResetIndexRequest;
+use App\Http\Requests\Peoplecount\AreaRecurringResetEditRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetStoreRequest;
 use App\Http\Requests\Peoplecount\AreaRecurringResetUpdateRequest;
 use App\Models\Organization;
@@ -10,13 +11,12 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
-it('can list area recurring resets for an organization', function () {
+it('can show create form for area recurring reset', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
     $event = Event::factory()->create([
@@ -25,28 +25,19 @@ it('can list area recurring resets for an organization', function () {
     $area = Area::factory()->create([
         'event_id' => $event->id,
     ]);
-    $resets = AreaRecurringReset::factory()->count(3)->create([
-        'area_id' => $area->id,
-        'event_id' => $event->id,
-    ]);
 
     $this->actingAs($admin)
-        ->get(route('peoplecount.areas.recurring-resets.index', [
+        ->get(route('peoplecount.areas.recurring-resets.create', [
             'organization' => $org->slug,
             'area' => $area->id,
         ]))
-        ->assertStatus(200);
-    // TODO: Add Inertia assertions once frontend components exist
-    // ->assertInertia(fn (Assert $page): \Inertia\Testing\AssertableInertia => $page
-    //     ->component('peoplecount/AreaRecurringResets')
-    //     ->has('area')
-    //     ->where('area.id', $area->id)
-    //     ->has('resets', 3)
-    //     ->has('organization')
-    //     ->where('organization.id', $org->id)
-    //     ->where('organization.slug', $org->slug)
-    //     ->has('status')
-    // );
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/NewRecurringReset')
+            ->has('organization')
+            ->has('area')
+            ->has('events')
+        );
 });
 
 it('can create an area recurring reset', function () {
@@ -72,7 +63,7 @@ it('can create an area recurring reset', function () {
             'area' => $area->id,
         ]), $resetData);
 
-    $response->assertRedirect(route('peoplecount.areas.recurring-resets.index', [
+    $response->assertRedirect(route('peoplecount.areas.edit', [
         'organization' => $org->slug,
         'area' => $area->id,
     ]));
@@ -139,6 +130,36 @@ it('can show an area recurring reset', function () {
             'area' => $area->id,
             'recurring_reset' => $reset->id,
         ]));
+});
+
+it('can show edit form for area recurring reset', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+    ]);
+    $area = Area::factory()->create([
+        'event_id' => $event->id,
+    ]);
+    $reset = AreaRecurringReset::factory()->create([
+        'area_id' => $area->id,
+        'event_id' => $event->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('peoplecount.areas.recurring-resets.edit', [
+            'organization' => $org->slug,
+            'area' => $area->id,
+            'recurring_reset' => $reset->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/EditRecurringReset')
+            ->has('organization')
+            ->has('area')
+            ->has('recurringReset')
+            ->has('events')
+        );
 });
 
 it('can update an area recurring reset', function () {
@@ -242,7 +263,7 @@ it('can delete an area recurring reset', function () {
             'recurring_reset' => $reset->id,
         ]));
 
-    $response->assertRedirect(route('peoplecount.areas.recurring-resets.index', [
+    $response->assertRedirect(route('peoplecount.areas.edit', [
         'organization' => $org->slug,
         'area' => $area->id,
     ]));
@@ -250,24 +271,6 @@ it('can delete an area recurring reset', function () {
     $this->assertDatabaseMissing('peoplecount_area_recurring_resets', [
         'id' => $reset->id,
     ]);
-});
-
-it('requires proper permissions for index', function () {
-    $user = User::factory()->create();
-    $org = Organization::factory()->create();
-    $event = Event::factory()->create([
-        'organization_id' => $org->id,
-    ]);
-    $area = Area::factory()->create([
-        'event_id' => $event->id,
-    ]);
-
-    $this->actingAs($user)
-        ->get(route('peoplecount.areas.recurring-resets.index', [
-            'organization' => $org->slug,
-            'area' => $area->id,
-        ]))
-        ->assertStatus(403);
 });
 
 it('requires proper permissions for store', function () {
@@ -351,11 +354,21 @@ it('requires proper permissions for destroy', function () {
 });
 
 it('uses the correct form requests', function () {
+
     // middleware
     test()->assertRouteUsesMiddleware(
-        'peoplecount.areas.recurring-resets.index',
+        'peoplecount.areas.recurring-resets.create',
         ['permissions.organization_slug', 'auth', 'verified'],
     );
+
+    // create
+    test()->assertActionUsesFormRequest(
+        AreaRecurringResetController::class,
+        'create',
+        AreaRecurringResetCreateRequest::class);
+    test()->assertRouteUsesFormRequest(
+        'peoplecount.areas.recurring-resets.create',
+        AreaRecurringResetCreateRequest::class);
 
     // destroy
     test()->assertActionUsesFormRequest(
@@ -366,14 +379,14 @@ it('uses the correct form requests', function () {
         'peoplecount.areas.recurring-resets.destroy',
         AreaRecurringResetDestroyRequest::class);
 
-    // index
+    // edit
     test()->assertActionUsesFormRequest(
         AreaRecurringResetController::class,
-        'index',
-        AreaRecurringResetIndexRequest::class);
+        'edit',
+        AreaRecurringResetEditRequest::class);
     test()->assertRouteUsesFormRequest(
-        'peoplecount.areas.recurring-resets.index',
-        AreaRecurringResetIndexRequest::class);
+        'peoplecount.areas.recurring-resets.edit',
+        AreaRecurringResetEditRequest::class);
 
     // store
     test()->assertActionUsesFormRequest(

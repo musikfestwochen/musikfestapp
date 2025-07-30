@@ -90,7 +90,6 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}/single-resets/{single_reset}'],
 
         // People Count Area Recurring Reset Routes
-        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/create'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}'],

@@ -36,7 +36,7 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         Route::resource(
             'areas.recurring-resets',
             AreaRecurringResetController::class
-        )->scoped(['organization' => 'slug'])->names('areas.recurring-resets');
+        )->scoped(['organization' => 'slug'])->names('areas.recurring-resets')->except(['index']);
 
         Route::resource(
             'assignments',

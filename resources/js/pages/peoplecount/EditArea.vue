@@ -4,6 +4,7 @@ import AreaForm from '@/components/peoplecount/areas/AreaForm.vue';
 import AssignmentCard from '@/components/peoplecount/cards/AssignmentCard.vue';
 import EmptyStateCard from '@/components/peoplecount/cards/EmptyStateCard.vue';
 import EventDetailsCard from '@/components/peoplecount/cards/EventDetailsCard.vue';
+import RecurringResetTable from '@/components/peoplecount/resets/RecurringResetTable.vue';
 import SingleResetTable from '@/components/peoplecount/resets/SingleResetTable.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountArea, PeoplecountEvent } from '@/types';
@@ -73,6 +74,16 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 </div>
                 <div class="mt-4">
                     <SingleResetTable :area="props.area" :organization="props.organization" :resets="area.area_single_resets || []" />
+                </div>
+            </div>
+
+            <!-- Recurring Resets Section -->
+            <div class="mt-8">
+                <div class="flex items-center justify-between">
+                    <Heading title="Recurring Resets" />
+                </div>
+                <div class="mt-4">
+                    <RecurringResetTable :area="props.area" :organization="props.organization" :resets="area.area_recurring_resets || []" />
                 </div>
             </div>
         </div>

@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
-import { Organization, PeoplecountArea, PeoplecountAreaSingleReset } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
+import { formatLocalDateTime, getNextRRuleOccurrences, rruleToText } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
-import { Trash2 } from 'lucide-vue-next';
+import { Edit, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
 
@@ -85,6 +85,137 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
                                         organization: organization.slug,
                                         area: area.id,
                                         single_reset: reset.id,
+                                    }),
+                                    method: 'delete',
+                                    as: 'button',
+                                },
+                                () =>
+                                    h(
+                                        Button,
+                                        {
+                                            variant: 'destructive',
+                                            size: 'sm',
+                                        },
+                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
+                                    ),
+                            ),
+                    ].filter(Boolean),
+                );
+            },
+        },
+    ];
+}
+
+export function recurringResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<PeoplecountAreaRecurringReset>[] {
+    return [
+        {
+            accessorKey: 'reset_value',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Reset Value',
+                }),
+            cell: ({ row }) => h('div', { class: 'font-medium' }, row.getValue('reset_value')),
+            enableSorting: true,
+            enableHiding: true,
+        },
+        {
+            id: 'rrule',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Schedule',
+                }),
+            cell: ({ row }) => {
+                const reset = row.original;
+                const humanReadable = rruleToText(reset.rrule);
+                return h('div', { class: 'text-sm' }, humanReadable || 'Invalid RRULE');
+            },
+            enableSorting: false,
+            enableHiding: true,
+        },
+        {
+            id: 'notes',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Notes',
+                }),
+            cell: ({ row }) => {
+                const reset = row.original;
+                return h('div', { class: 'text-sm text-muted-foreground' }, reset.notes || 'No notes');
+            },
+            enableSorting: false,
+            enableHiding: true,
+        },
+        {
+            id: 'next_occurrence',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Next Occurrence',
+                }),
+            cell: ({ row }) => {
+                const reset = row.original;
+                try {
+                    // Get start date from event or use current date
+                    const startDate = reset.event?.start_date ? new Date(reset.event.start_date) : new Date();
+                    const endDate = reset.event?.end_date ? new Date(reset.event.end_date) : undefined;
+
+                    const nextOccurrences = getNextRRuleOccurrences(reset.rrule, startDate, endDate, 1);
+                    if (nextOccurrences.length > 0) {
+                        return h('div', { class: 'text-sm' }, formatLocalDateTime(nextOccurrences[0].toISOString()));
+                    }
+                    return h('div', { class: 'text-sm text-muted-foreground' }, 'No upcoming occurrences');
+                } catch {
+                    return h('div', { class: 'text-sm text-red-600' }, 'Invalid schedule');
+                }
+            },
+            enableSorting: false,
+            enableHiding: true,
+        },
+        {
+            id: 'actions',
+            header: 'Actions',
+            enableHiding: false,
+            cell: ({ row }) => {
+                const reset = row.original;
+                const { can } = usePermissions();
+                const canUpdate = can('peoplecount.area_resets.update');
+                const canDelete = can('peoplecount.area_resets.destroy');
+
+                return h(
+                    'div',
+                    { class: 'flex items-center gap-2' },
+                    [
+                        canUpdate &&
+                            h(
+                                Link,
+                                {
+                                    href: route('peoplecount.areas.recurring-resets.edit', {
+                                        organization: organization.slug,
+                                        area: area.id,
+                                        recurring_reset: reset.id,
+                                    }),
+                                },
+                                () =>
+                                    h(
+                                        Button,
+                                        {
+                                            variant: 'outline',
+                                            size: 'sm',
+                                        },
+                                        () => [h(Edit, { class: 'w-4 h-4 mr-1' }), 'Edit'],
+                                    ),
+                            ),
+                        canDelete &&
+                            h(
+                                Link,
+                                {
+                                    href: route('peoplecount.areas.recurring-resets.destroy', {
+                                        organization: organization.slug,
+                                        area: area.id,
+                                        recurring_reset: reset.id,
                                     }),
                                     method: 'delete',
                                     as: 'button',
