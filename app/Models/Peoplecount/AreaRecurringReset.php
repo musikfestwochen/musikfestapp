@@ -7,13 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use RRule\RRule;
 
 /**
  * @property int $id
  * @property int $area_id
  * @property int $reset_value
- * @property string $rrule
+ * @property string $reset_time
  * @property string $timezone
  * @property string|null $notes
  * @property Carbon|null $created_at
@@ -37,7 +36,7 @@ class AreaRecurringReset extends Model
     protected $fillable = [
         'area_id',
         'reset_value',
-        'rrule',
+        'reset_time',
         'timezone',
         'notes',
     ];
@@ -53,48 +52,37 @@ class AreaRecurringReset extends Model
     }
 
     /**
-     * Validate the RRULE format.
+     * Get the next daily occurrence at reset_time in specified timezone.
+     * Handles DST transitions by applying reset at defined time in current day.
      */
-    public function validateRRule(): bool
+    public function getNextDailyOccurrence(): Carbon
     {
-        try {
-            new RRule($this->rrule);
+        $now = Carbon::now($this->timezone);
+        $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
 
-            return true;
-        } catch (\Exception) {
-            return false;
+        // If today's reset time has already passed, get tomorrow's reset
+        if ($now->format('H:i') >= $this->reset_time) {
+            $resetTime->addDay();
         }
+
+        return $resetTime;
     }
 
     /**
-     * Get the next occurrences of this recurring reset.
-     *
-     * @return array<int, \DateTime>
+     * Get the previous daily occurrence at reset_time in specified timezone.
+     * Handles DST transitions by applying reset at defined time in current day.
      */
-    public function getNextOccurrences(int $limit = 5): array
+    public function getPreviousDailyOccurrence(): Carbon
     {
-        $rrule = $this->parseRRule();
-        $occurrences = [];
+        $now = Carbon::now($this->timezone);
+        $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
 
-        foreach ($rrule as $occurrence) {
-            if (count($occurrences) >= $limit) {
-                break;
-            }
-
-            $occurrences[] = $occurrence;
+        // If today's reset time has not yet occurred, get yesterday's reset
+        if ($now->format('H:i') < $this->reset_time) {
+            $resetTime->subDay();
         }
 
-        return $occurrences;
-    }
-
-    /**
-     * Parse the RRULE and return an RRule instance.
-     *
-     * @return RRule<\DateTime>
-     */
-    public function parseRRule(): RRule
-    {
-        return new RRule($this->rrule);
+        return $resetTime;
     }
 
     /**
@@ -108,6 +96,7 @@ class AreaRecurringReset extends Model
     {
         return [
             'reset_value' => 'integer',
+            'reset_time' => 'string',
         ];
     }
 }

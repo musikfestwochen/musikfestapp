@@ -194,47 +194,47 @@ class DatabaseSeeder extends Seeder
             'notes' => 'Graduation ceremony setup - final preparation',
         ]);
 
-        // Create sample recurring resets (AreaRecurringReset) with various RRULE patterns
+        // Create sample recurring resets (AreaRecurringReset) with daily reset times
         // Daily resets for main stage during festival
-        AreaRecurringReset::factory()->withArea($mfwMainStage)->daily()->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+        AreaRecurringReset::factory()->withArea($mfwMainStage)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
             'notes' => 'Daily morning reset at 6 AM during festival',
-            'rrule' => 'FREQ=DAILY;INTERVAL=1;BYHOUR=6;BYMINUTE=0',
+            'reset_time' => '06:00',
         ]);
 
-        // Weekly resets for food court (every Monday)
-        AreaRecurringReset::factory()->withArea($mfwFoodCourt)->weekly()->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Weekly deep cleaning reset - every Monday at 5 AM',
-            'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=MO;BYHOUR=5;BYMINUTE=0',
+        // Daily resets for food court
+        AreaRecurringReset::factory()->withArea($mfwFoodCourt)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Daily deep cleaning reset at 5 AM',
+            'reset_time' => '05:00',
         ]);
 
-        // Bi-daily resets for VIP area
+        // Daily morning resets for VIP area
         AreaRecurringReset::factory()->withArea($mfwVipArea)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Bi-daily VIP area reset - morning and evening',
-            'rrule' => 'FREQ=DAILY;INTERVAL=1;BYHOUR=6,18;BYMINUTE=0',
+            'notes' => 'Daily VIP area reset - morning',
+            'reset_time' => '06:00',
         ]);
 
-        // Monthly resets for concert hall
-        AreaRecurringReset::factory()->withArea($mfwConcertHall)->monthly()->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Monthly maintenance reset - first day of month',
-            'rrule' => 'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=1;BYHOUR=7;BYMINUTE=0',
+        // Daily resets for concert hall
+        AreaRecurringReset::factory()->withArea($mfwConcertHall)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
+            'notes' => 'Daily maintenance reset',
+            'reset_time' => '07:00',
         ]);
 
-        // Custom pattern for ZHAW auditorium (Tuesday and Thursday)
+        // Daily resets for ZHAW auditorium
         AreaRecurringReset::factory()->withArea($zhawAuditorium)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Lecture hall reset - Tuesday and Thursday mornings',
-            'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=TU,TH;BYHOUR=7;BYMINUTE=30',
+            'notes' => 'Daily lecture hall reset',
+            'reset_time' => '07:30',
         ]);
 
-        // Weekend resets for lab tour area
+        // Daily resets for lab tour area
         AreaRecurringReset::factory()->withArea($zhawLabTour)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Weekend preparation reset - Saturday mornings',
-            'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=SA;BYHOUR=8;BYMINUTE=0',
+            'notes' => 'Daily preparation reset',
+            'reset_time' => '08:00',
         ]);
 
-        // Event-specific reset for graduation hall
+        // Daily resets for graduation hall
         AreaRecurringReset::factory()->withArea($zhawGradHall)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Pre-ceremony reset - 2 hours before each graduation event',
-            'rrule' => 'FREQ=YEARLY;INTERVAL=1;BYMONTH=10;BYMONTHDAY=25;BYHOUR=12;BYMINUTE=0',
+            'notes' => 'Daily pre-ceremony reset',
+            'reset_time' => '12:00',
         ]);
     }
 }

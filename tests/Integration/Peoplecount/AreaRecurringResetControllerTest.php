@@ -50,7 +50,7 @@ it('can create an area recurring reset', function () {
     ]);
     $resetData = [
         'reset_value' => 50,
-        'rrule' => 'FREQ=DAILY;INTERVAL=1',
+        'reset_time' => '08:00',
         'timezone' => 'Europe/Zurich',
         'notes' => 'Daily recurring reset for testing',
     ];
@@ -69,7 +69,7 @@ it('can create an area recurring reset', function () {
     $this->assertDatabaseHas('peoplecount_area_recurring_resets', [
         'area_id' => $area->id,
         'reset_value' => 50,
-        'rrule' => 'FREQ=DAILY;INTERVAL=1',
+        'reset_time' => '08:00',
         'timezone' => 'Europe/Zurich',
         'notes' => 'Daily recurring reset for testing',
     ]);
@@ -88,7 +88,7 @@ it('validates reset data when creating', function () {
     // Test with invalid data
     $invalidData = [
         'reset_value' => -10, // negative value
-        'rrule' => 'INVALID_RRULE', // invalid RRULE format
+        'reset_time' => 'invalid', // invalid time format
         'timezone' => 'Invalid/Timezone', // invalid timezone
         'notes' => str_repeat('a', 1001), // too long
     ];
@@ -98,7 +98,7 @@ it('validates reset data when creating', function () {
             'organization' => $org->slug,
             'area' => $area->id,
         ]), $invalidData)
-        ->assertSessionHasErrors(['reset_value', 'rrule', 'timezone', 'notes']);
+        ->assertSessionHasErrors(['reset_value', 'reset_time', 'timezone', 'notes']);
 });
 
 it('can show an area recurring reset', function () {
@@ -167,14 +167,14 @@ it('can update an area recurring reset', function () {
     $reset = AreaRecurringReset::factory()->create([
         'area_id' => $area->id,
         'reset_value' => 25,
-        'rrule' => 'FREQ=DAILY;INTERVAL=1',
+        'reset_time' => '08:00',
         'timezone' => 'Europe/Zurich',
         'notes' => 'Original notes',
     ]);
 
     $updateData = [
         'reset_value' => 75,
-        'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
+        'reset_time' => '14:30',
         'timezone' => 'America/New_York',
         'notes' => 'Updated notes',
     ];
@@ -195,7 +195,7 @@ it('can update an area recurring reset', function () {
     $this->assertDatabaseHas('peoplecount_area_recurring_resets', [
         'id' => $reset->id,
         'reset_value' => 75,
-        'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
+        'reset_time' => '14:30',
         'timezone' => 'America/New_York',
         'notes' => 'Updated notes',
     ]);
@@ -217,7 +217,7 @@ it('validates reset data when updating', function () {
     // Test with invalid data
     $invalidData = [
         'reset_value' => -10, // negative value
-        'rrule' => 'INVALID_RRULE', // invalid RRULE format
+        'reset_time' => 'invalid', // invalid time format
         'timezone' => 'Invalid/Timezone', // invalid timezone
         'notes' => str_repeat('a', 1001), // too long
     ];
@@ -228,7 +228,7 @@ it('validates reset data when updating', function () {
             'area' => $area->id,
             'recurring_reset' => $reset->id,
         ]), $invalidData)
-        ->assertSessionHasErrors(['reset_value', 'rrule', 'timezone', 'notes']);
+        ->assertSessionHasErrors(['reset_value', 'reset_time', 'timezone', 'notes']);
 });
 
 it('can delete an area recurring reset', function () {
@@ -273,7 +273,7 @@ it('requires proper permissions for store', function () {
 
     $resetData = [
         'reset_value' => 50,
-        'rrule' => 'FREQ=DAILY;INTERVAL=1',
+        'reset_time' => '08:00',
         'timezone' => 'Europe/Zurich',
         'notes' => 'Should fail',
     ];
@@ -301,7 +301,7 @@ it('requires proper permissions for update', function () {
 
     $updateData = [
         'reset_value' => 75,
-        'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
+        'reset_time' => '14:30',
         'timezone' => 'America/New_York',
         'notes' => 'Should fail',
     ];

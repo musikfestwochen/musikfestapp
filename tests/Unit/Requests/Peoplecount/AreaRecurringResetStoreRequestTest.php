@@ -13,72 +13,63 @@ it('has correct rules', function () {
 
     $expectedRules = [
         'reset_value' => ['required', 'integer', 'min:0'],
-        'rrule' => ['required', 'string', 'some_callable_closure'],
+        'reset_time' => ['required', 'date_format:H:i', 'some_unique_rule'],
         'timezone' => ['required', 'string', 'timezone'],
         'notes' => ['nullable', 'string', 'max:1000'],
     ];
 
     $actualRules = $this->request->rules();
 
-    // Test the basic structure without the closure
+    // Test the basic structure without the unique rule
     expect($actualRules['reset_value'])->toBe($expectedRules['reset_value']);
     expect($actualRules['timezone'])->toBe($expectedRules['timezone']);
     expect($actualRules['notes'])->toBe($expectedRules['notes']);
 
-    // Test that rrule has the expected structure
-    expect($actualRules['rrule'])->toHaveCount(3);
-    expect($actualRules['rrule'][0])->toBe('required');
-    expect($actualRules['rrule'][1])->toBe('string');
-    expect($actualRules['rrule'][2])->toBeCallable();
+    // Test that reset_time has the expected structure
+    expect($actualRules['reset_time'])->toHaveCount(3);
+    expect($actualRules['reset_time'][0])->toBe('required');
+    expect($actualRules['reset_time'][1])->toBe('date_format:H:i');
+    expect($actualRules['reset_time'][2])->toBeInstanceOf(\Illuminate\Validation\Rules\Unique::class);
 });
 
-it('validates valid RRULE formats', function () {
-    $rules = $this->request->rules();
-    $rruleValidator = $rules['rrule'][2];
-
-    $validRrules = [
-        'FREQ=DAILY;INTERVAL=1',
-        'FREQ=WEEKLY;BYDAY=MO',
-        'FREQ=DAILY;INTERVAL=1;COUNT=3',
-        'FREQ=MONTHLY;BYMONTHDAY=15',
+it('validates valid time formats', function () {
+    $validTimes = [
+        '08:00',
+        '14:30',
+        '23:59',
+        '00:00',
+        '12:15',
     ];
 
-    foreach ($validRrules as $validRrule) {
-        $failCalled = false;
-        $fail = function ($message) use (&$failCalled) {
-            $failCalled = true;
-        };
+    foreach ($validTimes as $validTime) {
+        $request = new AreaRecurringResetStoreRequest;
+        $request->merge(['reset_time' => $validTime]);
 
-        $rruleValidator('rrule', $validRrule, $fail);
+        $validator = \Validator::make(['reset_time' => $validTime], [
+            'reset_time' => ['required', 'date_format:H:i'],
+        ]);
 
-        expect($failCalled)->toBeFalse(sprintf("Valid RRULE '%s' should not fail validation", $validRrule));
+        expect($validator->passes())->toBeTrue(sprintf("Valid time '%s' should pass validation", $validTime));
     }
 });
 
-it('validates invalid RRULE formats', function () {
-    $rules = $this->request->rules();
-    $rruleValidator = $rules['rrule'][2];
-
-    $invalidRrules = [
-        'INVALID_RRULE',
-        'FREQ=INVALID',
-        'RANDOM_STRING',
+it('validates invalid time formats', function () {
+    $invalidTimes = [
+        'invalid',
+        '25:00',
+        '12:60',
         '',
-        'FREQ=DAILY;INVALID_PARAM=1',
+        '8:00',
+        '12:5',
+        'abc:def',
     ];
 
-    foreach ($invalidRrules as $invalidRrule) {
-        $failCalled = false;
-        $failMessage = '';
-        $fail = function ($message) use (&$failCalled, &$failMessage) {
-            $failCalled = true;
-            $failMessage = $message;
-        };
+    foreach ($invalidTimes as $invalidTime) {
+        $validator = \Validator::make(['reset_time' => $invalidTime], [
+            'reset_time' => ['required', 'date_format:H:i'],
+        ]);
 
-        $rruleValidator('rrule', $invalidRrule, $fail);
-
-        expect($failCalled)->toBeTrue(sprintf("Invalid RRULE '%s' should fail validation", $invalidRrule));
-        expect($failMessage)->toBe('The rrule must be a valid RRULE format.');
+        expect($validator->fails())->toBeTrue(sprintf("Invalid time '%s' should fail validation", $invalidTime));
     }
 });
 

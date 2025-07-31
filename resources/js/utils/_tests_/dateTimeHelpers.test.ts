@@ -1,9 +1,8 @@
-import { RRule } from 'rrule';
 import { describe, expect, it } from 'vitest';
 import {
     combineDateAndTime,
     convertTimezone,
-    createRRule,
+    dailyResetToText,
     DateTimeHelper,
     formatDateForInput,
     formatDateInTimezone,
@@ -12,15 +11,14 @@ import {
     formatTimeForInput,
     formatTimestamp,
     getLocalDateFromUTC,
-    getNextRRuleOccurrences,
+    getNextDailyOccurrence,
     getRelativeTime,
     getUserTimezone,
     getUTCStringFromLocal,
     isFuture,
     isPast,
     isToday,
-    rruleToText,
-    validateRRule,
+    validateResetTime,
 } from '../dateTimeHelpers';
 
 describe('DateTimeHelper Class', () => {
@@ -109,6 +107,35 @@ describe('DateTimeHelper Class', () => {
                 expect(localDate).toBeNull();
             });
         });
+
+        describe('validateResetTime', () => {
+            it('should validate correct time formats', () => {
+                const result = DateTimeHelper.validateResetTime('08:00');
+                expect(result.isValid).toBe(true);
+                expect(result.error).toBeUndefined();
+            });
+
+            it('should invalidate incorrect time formats', () => {
+                const result = DateTimeHelper.validateResetTime('25:00');
+                expect(result.isValid).toBe(false);
+                expect(result.error).toBeDefined();
+            });
+        });
+
+        describe('dailyResetToText', () => {
+            it('should convert time and timezone to readable text', () => {
+                const text = DateTimeHelper.dailyResetToText('08:00', 'Europe/Zurich');
+                expect(text).toBe('Daily at 08:00 (Europe/Zurich)');
+            });
+        });
+
+        describe('getNextDailyOccurrence', () => {
+            it('should return next daily occurrences', () => {
+                const occurrences = DateTimeHelper.getNextDailyOccurrence('09:00', 'UTC', 3);
+                expect(occurrences).toHaveLength(3);
+                expect(occurrences[0]).toBeInstanceOf(Date);
+            });
+        });
     });
 });
 
@@ -186,134 +213,86 @@ describe('Standalone Utility Functions', () => {
     });
 });
 
-describe('RRULE Functions', () => {
-    describe('validateRRule', () => {
-        it('should validate correct RRULE strings', () => {
-            const result = validateRRule('FREQ=DAILY;INTERVAL=1');
+describe('Time Format Functions', () => {
+    describe('validateResetTime', () => {
+        it('should validate correct time formats', () => {
+            const result = validateResetTime('08:00');
             expect(result.isValid).toBe(true);
             expect(result.error).toBeUndefined();
         });
 
-        it('should invalidate incorrect RRULE strings', () => {
-            const result = validateRRule('INVALID_RRULE');
+        it('should validate edge case times', () => {
+            expect(validateResetTime('00:00').isValid).toBe(true);
+            expect(validateResetTime('23:59').isValid).toBe(true);
+            expect(validateResetTime('12:30').isValid).toBe(true);
+        });
+
+        it('should invalidate incorrect time formats', () => {
+            const result = validateResetTime('25:00');
             expect(result.isValid).toBe(false);
             expect(result.error).toBeDefined();
+        });
+
+        it('should invalidate malformed times', () => {
+            expect(validateResetTime('8:00').isValid).toBe(false); // Missing leading zero
+            expect(validateResetTime('12:5').isValid).toBe(false); // Missing leading zero
+            expect(validateResetTime('abc:def').isValid).toBe(false);
+            expect(validateResetTime('12:60').isValid).toBe(false); // Invalid minutes
         });
 
         it('should handle empty strings', () => {
-            const result = validateRRule('');
+            const result = validateResetTime('');
             expect(result.isValid).toBe(false);
             expect(result.error).toBeDefined();
         });
     });
 
-    describe('createRRule', () => {
-        it('should create daily RRULE with proper dtstart', () => {
-            const dtstart = new Date('2024-01-01T09:00:00Z');
-            const rrule = createRRule('DAILY', {
-                interval: 2,
-                byhour: 9,
-                byminute: 30,
-                dtstart,
-            });
-            expect(rrule).toContain('FREQ=DAILY');
-            expect(rrule).toContain('INTERVAL=2');
-            expect(rrule).toContain('BYHOUR=9');
-            expect(rrule).toContain('BYMINUTE=30');
-            expect(rrule).toContain('DTSTART');
+    describe('dailyResetToText', () => {
+        it('should convert time and timezone to readable text', () => {
+            const text = dailyResetToText('08:00', 'Europe/Zurich');
+            expect(text).toBe('Daily at 08:00 (Europe/Zurich)');
         });
 
-        it('should create weekly RRULE with weekdays', () => {
-            const dtstart = new Date('2024-01-01T09:00:00Z');
-            const rrule = createRRule('WEEKLY', {
-                byweekday: [1, 3, 5],
-                dtstart,
-            });
-            expect(rrule).toContain('FREQ=WEEKLY');
-            expect(rrule).toContain('BYDAY=');
-            expect(rrule).toContain('DTSTART');
+        it('should handle different timezones', () => {
+            const text = dailyResetToText('14:30', 'America/New_York');
+            expect(text).toBe('Daily at 14:30 (America/New_York)');
         });
 
-        it('should create monthly RRULE with default dtstart', () => {
-            const rrule = createRRule('MONTHLY');
-            expect(rrule).toContain('FREQ=MONTHLY');
-            expect(rrule).toContain('INTERVAL=1');
-            expect(rrule).toContain('DTSTART');
-        });
-
-        it('should handle timezone correctly', () => {
-            const dtstart = new Date('2024-01-01T09:00:00Z');
-            const rrule = createRRule('DAILY', {
-                dtstart,
-                tzid: 'Europe/Zurich',
-                byhour: 9,
-                byminute: 0,
-            });
-
-            // Parse the rule to verify timezone handling
-            const rule = RRule.fromString(rrule);
-            const occurrences = rule.all();
-            expect(occurrences[0]).toBeInstanceOf(Date);
-        });
-
-        it('should handle until date', () => {
-            const until = new Date('2024-12-31T23:59:59Z');
-            const dtstart = new Date('2024-01-01T09:00:00Z');
-            const rrule = createRRule('DAILY', { until, dtstart });
-            expect(rrule).toContain('UNTIL=');
-        });
-
-        it('should handle count', () => {
-            const dtstart = new Date('2024-01-01T09:00:00Z');
-            const rrule = createRRule('DAILY', { count: 10, dtstart });
-            expect(rrule).toContain('COUNT=10');
+        it('should handle UTC timezone', () => {
+            const text = dailyResetToText('12:00', 'UTC');
+            expect(text).toBe('Daily at 12:00 (UTC)');
         });
     });
 
-    describe('rruleToText', () => {
-        it('should convert valid RRULE to text', () => {
-            const text = rruleToText('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1');
-            expect(text).toBe('every day');
-        });
-
-        it('should handle invalid RRULE', () => {
-            const text = rruleToText('INVALID');
-            expect(text).toBe('Invalid RRULE');
-        });
-    });
-
-    describe('getNextRRuleOccurrences', () => {
-        it('should return next occurrences for daily RRULE', () => {
-            const startDate = new Date('2024-01-01T09:00:00Z');
-            const occurrences = getNextRRuleOccurrences('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1', startDate, 3);
+    describe('getNextDailyOccurrence', () => {
+        it('should return next daily occurrences', () => {
+            const occurrences = getNextDailyOccurrence('09:00', 'UTC', 3);
             expect(occurrences).toHaveLength(3);
             expect(occurrences[0]).toBeInstanceOf(Date);
-
-            // Verify the first occurrence is as expected
-            expect(occurrences[0].toISOString()).toBe('2024-01-01T09:00:00.000Z');
-            expect(occurrences[1].toISOString()).toBe('2024-01-02T09:00:00.000Z');
+            expect(occurrences[1]).toBeInstanceOf(Date);
+            expect(occurrences[2]).toBeInstanceOf(Date);
         });
 
-        it('should handle timezone-aware RRULE', () => {
-            // Test with Europe/Zurich timezone (UTC+1 in winter)
-            const startDate = new Date('2024-01-01T08:00:00Z'); // 9 AM in Zurich
-            const rruleString = 'DTSTART;TZID=Europe/Zurich:20240101T090000\nFREQ=DAILY;INTERVAL=1';
-            const occurrences = getNextRRuleOccurrences(rruleString, startDate, 2);
-
+        it('should handle different timezones', () => {
+            const occurrences = getNextDailyOccurrence('14:30', 'Europe/Zurich', 2);
             expect(occurrences).toHaveLength(2);
             expect(occurrences[0]).toBeInstanceOf(Date);
         });
 
-        it('should handle invalid RRULE', () => {
-            const startDate = new Date('2024-01-01T09:00:00Z');
-            const occurrences = getNextRRuleOccurrences('INVALID', startDate, 3);
+        it('should handle invalid time format', () => {
+            const occurrences = getNextDailyOccurrence('invalid', 'UTC', 3);
             expect(occurrences).toHaveLength(0);
         });
 
         it('should limit occurrences to requested count', () => {
-            const startDate = new Date('2024-01-01T09:00:00Z');
-            const occurrences = getNextRRuleOccurrences('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1', startDate, 2);
+            const occurrences = getNextDailyOccurrence('08:00', 'UTC', 2);
             expect(occurrences).toHaveLength(2);
+        });
+
+        it('should handle edge case times', () => {
+            const occurrences = getNextDailyOccurrence('00:00', 'UTC', 1);
+            expect(occurrences).toHaveLength(1);
+            expect(occurrences[0]).toBeInstanceOf(Date);
         });
     });
 });
@@ -380,14 +359,51 @@ describe('Date Utility Functions', () => {
 
     describe('isToday', () => {
         it('should return true for today', () => {
-            const today = new Date();
+            // Use a fixed date instead of new Date() to avoid time-dependent tests
+            const today = new Date('2024-07-25T12:00:00Z');
+            // Mock the current date to match our test date
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             expect(isToday(today)).toBe(true);
+
+            // Restore original Date
+            global.Date = originalDate;
         });
 
         it('should return false for yesterday', () => {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
+            // Use fixed dates instead of new Date() to avoid time-dependent tests
+            const yesterday = new Date('2024-07-24T12:00:00Z');
+            // Mock the current date to be one day later
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             expect(isToday(yesterday)).toBe(false);
+
+            // Restore original Date
+            global.Date = originalDate;
         });
     });
 
@@ -417,38 +433,128 @@ describe('Date Utility Functions', () => {
 
     describe('getRelativeTime', () => {
         it('should return "now" for current time', () => {
-            const now = new Date();
+            // Use fixed date instead of new Date() to avoid time-dependent tests
+            const now = new Date('2024-07-25T12:00:00Z');
+            // Mock the current date to match our test date
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             const relative = getRelativeTime(now);
             expect(relative).toBe('now');
+
+            // Restore original Date
+            global.Date = originalDate;
         });
 
         it('should return minutes ago for recent past', () => {
-            const fiveMinutesAgo = new Date();
-            fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+            // Use fixed dates instead of new Date() to avoid time-dependent tests
+            const fiveMinutesAgo = new Date('2024-07-25T11:55:00Z'); // 5 minutes before 12:00
+            // Mock the current date to be 5 minutes later
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             const relative = getRelativeTime(fiveMinutesAgo);
-            expect(relative).toContain('minutes ago');
+            expect(relative).toBe('5 minutes ago');
+
+            // Restore original Date
+            global.Date = originalDate;
         });
 
         it('should return "in X minutes" for near future', () => {
-            const fiveMinutesLater = new Date();
-            fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
+            // Use fixed dates instead of new Date() to avoid time-dependent tests
+            const fiveMinutesLater = new Date('2024-07-25T12:05:00Z'); // 5 minutes after 12:00
+            // Mock the current date to be 5 minutes earlier
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             const relative = getRelativeTime(fiveMinutesLater);
-            expect(relative).toContain('in');
-            expect(relative).toContain('minutes');
+            expect(relative).toBe('in 5 minutes');
+
+            // Restore original Date
+            global.Date = originalDate;
         });
 
         it('should return hours for longer periods', () => {
-            const twoHoursAgo = new Date();
-            twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+            // Use fixed dates instead of new Date() to avoid time-dependent tests
+            const twoHoursAgo = new Date('2024-07-25T10:00:00Z'); // 2 hours before 12:00
+            // Mock the current date to be 2 hours later
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             const relative = getRelativeTime(twoHoursAgo);
-            expect(relative).toContain('hours ago');
+            expect(relative).toBe('2 hours ago');
+
+            // Restore original Date
+            global.Date = originalDate;
         });
 
         it('should return days for very long periods', () => {
-            const threeDaysAgo = new Date();
-            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            // Use fixed dates instead of new Date() to avoid time-dependent tests
+            const threeDaysAgo = new Date('2024-07-22T12:00:00Z'); // 3 days before 2024-07-25
+            // Mock the current date to be 3 days later
+            const originalDate = Date;
+            global.Date = class extends Date {
+                constructor(...args: any[]) {
+                    if (args.length === 0) {
+                        super('2024-07-25T12:00:00Z');
+                    } else {
+                        super(...args);
+                    }
+                }
+                static now() {
+                    return new originalDate('2024-07-25T12:00:00Z').getTime();
+                }
+            } as any;
+
             const relative = getRelativeTime(threeDaysAgo);
-            expect(relative).toContain('days ago');
+            expect(relative).toBe('3 days ago');
+
+            // Restore original Date
+            global.Date = originalDate;
         });
     });
 });

@@ -1,31 +1,50 @@
 <script lang="ts" setup>
-import RRuleInput from '@/components/forms/RRuleInput.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Combobox,
+    ComboboxAnchor,
+    ComboboxEmpty,
+    ComboboxGroup,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxItemIndicator,
+    ComboboxList,
+    ComboboxTrigger,
+} from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset } from '@/types';
 import { useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { Check, ChevronsUpDown, LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
     recurringReset?: PeoplecountAreaRecurringReset;
     organization: Organization;
     area: PeoplecountArea;
+    timezones: Array<{ value: string; label: string }>;
 }>();
 
 const form = useForm({
     reset_value: props.recurringReset?.reset_value || '',
-    rrule: props.recurringReset?.rrule || '',
+    reset_time: props.recurringReset?.reset_time || '',
     timezone: props.recurringReset?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     notes: props.recurringReset?.notes || '',
 });
 
-// Default start date (current date)
-const startDate = computed(() => {
-    return new Date();
+// Find the selected timezone object for the Combobox
+const selectedTimezone = computed({
+    get: () => {
+        return props.timezones.find((tz) => tz.value === form.timezone) || null;
+    },
+    set: (timezone: { value: string; label: string } | null) => {
+        if (timezone) {
+            form.timezone = timezone.value;
+        }
+    },
 });
 
 const submit = () => {
@@ -68,11 +87,41 @@ const submit = () => {
                 <InputError :message="form.errors.reset_value" />
             </div>
 
-            <!-- RRULE Input -->
+            <!-- Reset Time -->
             <div class="grid gap-2">
-                <Label>Recurrence Schedule</Label>
-                <RRuleInput v-model="form.rrule" v-model:timezone="form.timezone" :start-date="startDate" />
-                <InputError :message="form.errors.rrule" />
+                <Label for="reset_time">Reset Time</Label>
+                <Input id="reset_time" v-model="form.reset_time" :tabindex="2" required type="time" />
+                <InputError :message="form.errors.reset_time" />
+            </div>
+
+            <!-- Timezone -->
+            <div class="grid gap-2">
+                <Label for="timezone">Timezone</Label>
+                <Combobox v-model="selectedTimezone" by="label">
+                    <ComboboxAnchor>
+                        <div class="relative w-full items-center">
+                            <ComboboxInput :display-value="(val) => val?.label ?? ''" :tabindex="3" placeholder="Select timezone..." />
+                            <ComboboxTrigger class="absolute inset-y-0 end-0 flex items-center justify-center px-3">
+                                <ChevronsUpDown class="size-4 text-muted-foreground" />
+                            </ComboboxTrigger>
+                        </div>
+                    </ComboboxAnchor>
+
+                    <ComboboxList>
+                        <ComboboxEmpty> No timezone found. </ComboboxEmpty>
+
+                        <ComboboxGroup>
+                            <ComboboxItem v-for="timezone in props.timezones" :key="timezone.value" :value="timezone">
+                                {{ timezone.label }}
+
+                                <ComboboxItemIndicator>
+                                    <Check :class="cn('ml-auto h-4 w-4')" />
+                                </ComboboxItemIndicator>
+                            </ComboboxItem>
+                        </ComboboxGroup>
+                    </ComboboxList>
+                </Combobox>
+                <InputError :message="form.errors.timezone" />
             </div>
 
             <!-- Notes -->
@@ -81,7 +130,7 @@ const submit = () => {
                 <Textarea
                     id="notes"
                     v-model="form.notes"
-                    :tabindex="3"
+                    :tabindex="4"
                     placeholder="Optional notes about this recurring reset schedule..."
                     rows="3"
                 />
@@ -89,7 +138,7 @@ const submit = () => {
             </div>
 
             <!-- Submit Button -->
-            <Button :disabled="form.processing" class="mt-2 w-full" tabindex="4" type="submit">
+            <Button :disabled="form.processing" class="mt-2 w-full" tabindex="5" type="submit">
                 <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                 <span v-else>{{ props.recurringReset ? 'Update Recurring Reset' : 'Create Recurring Reset' }}</span>
             </Button>

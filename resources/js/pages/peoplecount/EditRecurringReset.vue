@@ -10,6 +10,7 @@ const props = defineProps<{
     organization: Organization;
     area: PeoplecountArea;
     recurringReset: PeoplecountAreaRecurringReset;
+    timezones: Array<{ value: string; label: string }>;
 }>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
@@ -54,7 +55,12 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <RecurringResetForm :area="props.area" :organization="props.organization" :recurring-reset="props.recurringReset" />
+                        <RecurringResetForm
+                            :area="props.area"
+                            :organization="props.organization"
+                            :recurring-reset="props.recurringReset"
+                            :timezones="props.timezones"
+                        />
                     </CardContent>
                 </Card>
             </div>

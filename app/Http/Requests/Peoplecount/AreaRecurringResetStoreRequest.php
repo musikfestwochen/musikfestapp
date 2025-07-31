@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests\Peoplecount;
 
-use Closure;
-use Exception;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use RRule\RRule;
+use Illuminate\Validation\Rule;
 
 class AreaRecurringResetStoreRequest extends FormRequest
 {
@@ -27,13 +25,13 @@ class AreaRecurringResetStoreRequest extends FormRequest
     {
         return [
             'reset_value' => ['required', 'integer', 'min:0'],
-            'rrule' => ['required', 'string', function (string $attribute, mixed $value, Closure $fail) {
-                try {
-                    new RRule($value);
-                } catch (Exception $exception) {
-                    $fail('The '.$attribute.' must be a valid RRULE format.');
-                }
-            }],
+            'reset_time' => [
+                'required',
+                'date_format:H:i',
+                Rule::unique('peoplecount_area_recurring_resets')
+                    ->where('area_id', $this->area_id)
+                    ->where('timezone', $this->timezone),
+            ],
             'timezone' => ['required', 'string', 'timezone'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];

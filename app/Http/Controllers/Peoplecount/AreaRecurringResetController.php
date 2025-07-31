@@ -13,6 +13,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
 use App\Services\Peoplecount\AreaResetService;
+use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,6 +30,10 @@ class AreaRecurringResetController extends Controller
         return Inertia::render('peoplecount/NewRecurringReset', [
             'organization' => $organization,
             'area' => $area,
+            'timezones' => collect(DateTimeZone::listIdentifiers())->map(fn (string $timezone): array => [
+                'value' => $timezone,
+                'label' => $timezone,
+            ])->values(),
         ]);
     }
 
@@ -39,7 +44,7 @@ class AreaRecurringResetController extends Controller
     {
         $this->areaResetService->createRecurringReset($area, [
             'reset_value' => $request->input('reset_value'),
-            'rrule' => $request->input('rrule'),
+            'reset_time' => $request->input('reset_time'),
             'timezone' => $request->input('timezone'),
             'notes' => $request->input('notes'),
         ]);
@@ -73,6 +78,10 @@ class AreaRecurringResetController extends Controller
             'organization' => $organization,
             'area' => $area,
             'recurringReset' => $recurringReset,
+            'timezones' => collect(DateTimeZone::listIdentifiers())->map(fn (string $timezone): array => [
+                'value' => $timezone,
+                'label' => $timezone,
+            ])->values(),
         ]);
     }
 
@@ -83,7 +92,7 @@ class AreaRecurringResetController extends Controller
     {
         $this->areaResetService->updateRecurringReset($recurringReset, [
             'reset_value' => $request->input('reset_value'),
-            'rrule' => $request->input('rrule'),
+            'reset_time' => $request->input('reset_time'),
             'timezone' => $request->input('timezone'),
             'notes' => $request->input('notes'),
         ]);

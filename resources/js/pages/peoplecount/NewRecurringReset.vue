@@ -9,6 +9,7 @@ import { Head } from '@inertiajs/vue3';
 const props = defineProps<{
     organization: Organization;
     area: PeoplecountArea;
+    timezones: Array<{ value: string; label: string }>;
 }>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
@@ -51,7 +52,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <RecurringResetForm :area="props.area" :organization="props.organization" />
+                        <RecurringResetForm :area="props.area" :organization="props.organization" :timezones="props.timezones" />
                     </CardContent>
                 </Card>
             </div>

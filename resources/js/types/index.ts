@@ -153,7 +153,7 @@ export interface PeoplecountAreaRecurringReset {
     id: number;
     area_id: number;
     reset_value: number;
-    rrule: string;
+    reset_time: string;
     timezone: string;
     notes?: string;
     created_at: string;

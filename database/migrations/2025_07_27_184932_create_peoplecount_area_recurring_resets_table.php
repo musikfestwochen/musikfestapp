@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Area::class)->constrained('peoplecount_areas')->cascadeOnDelete();
             $table->integer('reset_value');
-            $table->text('rrule');
+            $table->time('reset_time');
             $table->string('timezone');
             $table->text('notes')->nullable();
             $table->timestamps();

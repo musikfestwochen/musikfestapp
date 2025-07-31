@@ -381,7 +381,7 @@ describe('createRecurringReset', function () {
 
         $attributes = [
             'reset_value' => 50,
-            'rrule' => 'FREQ=DAILY;INTERVAL=1',
+            'reset_time' => '08:00',
             'timezone' => 'Europe/Zurich',
             'notes' => 'Daily reset for testing',
         ];
@@ -391,32 +391,9 @@ describe('createRecurringReset', function () {
         expect($reset)->toBeInstanceOf(AreaRecurringReset::class);
         expect($reset->area_id)->toBe($area->id);
         expect($reset->reset_value)->toBe(50);
-        expect($reset->rrule)->toBe('FREQ=DAILY;INTERVAL=1');
+        expect($reset->reset_time)->toBe('08:00');
         expect($reset->timezone)->toBe('Europe/Zurich');
         expect($reset->notes)->toBe('Daily reset for testing');
-    });
-
-    it('validates RRULE format', function () {
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->withOrganization($organization)->create();
-        $area = Area::factory()->withEvent($event)->create();
-
-        setPermissionsOrgId($organization->id);
-
-        $attributes = [
-            'reset_value' => 50,
-            'rrule' => 'INVALID_RRULE',
-            'timezone' => 'Europe/Zurich',
-            'notes' => 'Should fail',
-        ];
-
-        try {
-            $this->service->createRecurringReset($area, $attributes);
-            expect(false)->toBeTrue('Expected InvalidArgumentException to be thrown');
-        } catch (\InvalidArgumentException $invalidArgumentException) {
-            expect($invalidArgumentException->getMessage())->toStartWith('Invalid RRULE format: ');
-            expect($invalidArgumentException->getMessage())->toContain('INVALID_RRULE');
-        }
     });
 
     it('throws authorization exception for area from different organization', function () {
@@ -429,7 +406,7 @@ describe('createRecurringReset', function () {
 
         $attributes = [
             'reset_value' => 50,
-            'rrule' => 'FREQ=DAILY;INTERVAL=1',
+            'reset_time' => '08:00',
             'timezone' => 'Europe/Zurich',
             'notes' => 'Should fail',
         ];
@@ -447,7 +424,7 @@ describe('createRecurringReset', function () {
 
         $attributes = [
             'reset_value' => 100,
-            'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
+            'reset_time' => '14:30',
             'timezone' => 'Europe/Zurich',
             'notes' => 'Global admin recurring reset',
         ];
@@ -470,14 +447,14 @@ describe('updateRecurringReset', function () {
         $reset = AreaRecurringReset::factory()->create([
             'area_id' => $area->id,
             'reset_value' => 25,
-            'rrule' => 'FREQ=DAILY;INTERVAL=1',
+            'reset_time' => '08:00',
             'timezone' => 'Europe/Zurich',
             'notes' => 'Original notes',
         ]);
 
         $attributes = [
             'reset_value' => 75,
-            'rrule' => 'FREQ=WEEKLY;BYDAY=MO',
+            'reset_time' => '14:30',
             'timezone' => 'America/New_York',
             'notes' => 'Updated notes',
         ];
@@ -485,36 +462,9 @@ describe('updateRecurringReset', function () {
         $updatedReset = $this->service->updateRecurringReset($reset, $attributes);
 
         expect($updatedReset->reset_value)->toBe(75);
-        expect($updatedReset->rrule)->toBe('FREQ=WEEKLY;BYDAY=MO');
+        expect($updatedReset->reset_time)->toBe('14:30');
         expect($updatedReset->timezone)->toBe('America/New_York');
         expect($updatedReset->notes)->toBe('Updated notes');
-    });
-
-    it('validates RRULE format on update', function () {
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->withOrganization($organization)->create();
-        $area = Area::factory()->withEvent($event)->create();
-
-        setPermissionsOrgId($organization->id);
-
-        $reset = AreaRecurringReset::factory()->create([
-            'area_id' => $area->id,
-        ]);
-
-        $attributes = [
-            'reset_value' => 50,
-            'rrule' => 'INVALID_RRULE',
-            'timezone' => 'Europe/Zurich',
-            'notes' => 'Should fail',
-        ];
-
-        try {
-            $this->service->updateRecurringReset($reset, $attributes);
-            expect(false)->toBeTrue('Expected InvalidArgumentException to be thrown');
-        } catch (\InvalidArgumentException $invalidArgumentException) {
-            expect($invalidArgumentException->getMessage())->toStartWith('Invalid RRULE format: ');
-            expect($invalidArgumentException->getMessage())->toContain('INVALID_RRULE');
-        }
     });
 
     it('throws authorization exception for reset from different organization', function () {
@@ -531,7 +481,7 @@ describe('updateRecurringReset', function () {
 
         $attributes = [
             'reset_value' => 50,
-            'rrule' => 'FREQ=DAILY;INTERVAL=1',
+            'reset_time' => '08:00',
             'timezone' => 'Europe/Zurich',
             'notes' => 'Should fail',
         ];
@@ -574,77 +524,5 @@ describe('deleteRecurringReset', function () {
 
         expect(fn () => $this->service->deleteRecurringReset($reset))
             ->toThrow(AuthorizationException::class, 'You are not authorized to access this area.');
-    });
-});
-
-describe('parseRRule', function () {
-    it('parses a valid RRULE string', function () {
-        $rrule = 'FREQ=DAILY;INTERVAL=1';
-        $parsed = $this->service->parseRRule($rrule);
-
-        expect($parsed)->toBeInstanceOf(\RRule\RRule::class);
-    });
-
-    it('throws exception for invalid RRULE', function () {
-        $rrule = 'INVALID_RRULE';
-
-        expect(fn () => $this->service->parseRRule($rrule))
-            ->toThrow(\Exception::class);
-    });
-});
-
-describe('getNextResetOccurrences', function () {
-    it('returns next occurrences for a valid RRULE', function () {
-        $rrule = 'FREQ=DAILY;INTERVAL=1;COUNT=3';
-        $occurrences = $this->service->getNextResetOccurrences($rrule, 3);
-
-        expect($occurrences)->toHaveCount(3);
-        expect($occurrences[0])->toBeInstanceOf(\DateTime::class);
-        expect($occurrences[1])->toBeInstanceOf(\DateTime::class);
-        expect($occurrences[2])->toBeInstanceOf(\DateTime::class);
-    });
-
-    it('limits occurrences to specified limit', function () {
-        $rrule = 'FREQ=DAILY;INTERVAL=1';
-        $occurrences = $this->service->getNextResetOccurrences($rrule, 2);
-
-        expect($occurrences)->toHaveCount(2);
-    });
-
-    it('returns occurrences efficiently using getBetween method', function () {
-        // Test with a longer-running rule to ensure we're using the efficient method
-        $rrule = 'FREQ=DAILY;INTERVAL=1';
-        $start = microtime(true);
-        $occurrences = $this->service->getNextResetOccurrences($rrule, 10);
-        $end = microtime(true);
-
-        expect($occurrences)->toHaveCount(10);
-        // Should complete quickly (less than 100ms for 10 occurrences)
-        expect($end - $start)->toBeLessThan(0.1);
-    });
-
-    it('handles timezone-aware RRULE correctly', function () {
-        // TODO: Add proper DTSTART with timezone when implementing timezone support
-        $rrule = 'FREQ=DAILY;INTERVAL=1;BYHOUR=9;BYMINUTE=0';
-        $occurrences = $this->service->getNextResetOccurrences($rrule, 3);
-
-        expect($occurrences)->toHaveCount(3);
-
-        // Verify that occurrences are spaced 24 hours apart
-        $diff1 = $occurrences[1]->getTimestamp() - $occurrences[0]->getTimestamp();
-        $diff2 = $occurrences[2]->getTimestamp() - $occurrences[1]->getTimestamp();
-
-        expect($diff1)->toBe(86400); // 24 hours in seconds
-        expect($diff2)->toBe(86400);
-    });
-
-    it('returns empty array for RRULE with no future occurrences', function () {
-        // Create an RRULE that ended in the past
-        $pastDate = (new \DateTime)->sub(new \DateInterval('P1Y'))->format('Ymd\THis\Z');
-        $rrule = 'FREQ=DAILY;UNTIL='.$pastDate;
-
-        $occurrences = $this->service->getNextResetOccurrences($rrule, 5);
-
-        expect($occurrences)->toHaveCount(0);
     });
 });

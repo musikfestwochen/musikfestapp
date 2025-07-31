@@ -23,8 +23,8 @@
             "peoplecount",
             "lqip",
             "vonage",
-            "rrule",
-            "jquery"
+            "jquery",
+            "combobox"
         ],
         "paths": []
     }

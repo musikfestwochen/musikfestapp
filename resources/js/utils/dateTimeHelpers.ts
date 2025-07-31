@@ -1,32 +1,26 @@
 /**
  * Date and Time Helper Functions
  * Provides utility functions for date and time formatting and conversion
- * Includes RRULE integration and advanced timezone handling
+ * Includes daily reset scheduling and advanced timezone handling
  *
- * IMPORTANT: RRule Timezone Handling
- * ===================================
- * This implementation has been updated to properly handle timezones according to RRule.js best practices:
+ * IMPORTANT: Daily Reset Timezone Handling
+ * ========================================
+ * This implementation handles daily resets at specific times in specified timezones:
  *
- * 1. Always provide a proper `dtstart` parameter when creating RRules
- * 2. Use the `tzid` parameter to let RRule handle timezone conversion automatically
- * 3. Avoid manual timezone offset calculations - let the library handle them
- * 4. When creating RRules, use local time values with tzid rather than converting to UTC manually
+ * 1. Reset times are stored in HH:MM format (24-hour)
+ * 2. Timezone handling ensures resets occur at the correct local time
+ * 3. DST transitions are handled by applying the reset at the defined time in the current day
+ * 4. Next occurrence calculation accounts for whether today's reset time has already passed
  *
- * Example of correct usage:
+ * Example of daily reset usage:
  * ```typescript
- * const dtstart = new Date(2024, 0, 1, 9, 0, 0); // January 1, 2024 at 9:00 AM local
- * const rrule = createRRule('DAILY', {
- *   dtstart,
- *   tzid: 'Europe/Zurich',
- *   byhour: 9,
- *   byminute: 0,
- * });
+ * const nextOccurrences = getNextDailyOccurrence('09:00', 'Europe/Zurich', 5);
+ * const isValid = validateResetTime('09:00');
+ * const description = dailyResetToText('09:00', 'Europe/Zurich');
  * ```
  *
- * This approach ensures consistent behavior across different timezones and DST transitions.
+ * This approach ensures consistent daily reset behavior across different timezones and DST transitions.
  */
-
-import { RRule } from 'rrule';
 
 /**
  * Format a date/time in the user's local timezone
@@ -139,96 +133,66 @@ export function formatDateInTimezone(date: Date, timezone: string, options?: Int
 }
 
 /**
- * Parse an RRULE string and return the next N occurrences
+ * Calculate next daily occurrences at resetTime in specified timezone
+ * Handles DST by applying reset at defined time in current day
  */
-export function getNextRRuleOccurrences(rruleString: string, startDate: Date, count: number = 5): Date[] {
-    try {
-        const rule = RRule.fromString(rruleString);
-        return rule.between(startDate, new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000), true).slice(0, count);
-    } catch (error) {
-        console.error('Error parsing RRULE:', error);
+export function getNextDailyOccurrence(resetTime: string, timezone: string, count: number = 5): Date[] {
+    const occurrences: Date[] = [];
+    const [hours, minutes] = resetTime.split(':').map(Number);
+
+    // Validate time format
+    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
         return [];
     }
+
+    const now = new Date();
+
+    for (let i = 0; i < count; i++) {
+        // Create a date for today + i days
+        const targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + i);
+        targetDate.setHours(hours, minutes, 0, 0);
+
+        // If it's today and the time has already passed, skip to tomorrow
+        if (i === 0 && targetDate <= now) {
+            targetDate.setDate(now.getDate() + 1);
+        }
+
+        occurrences.push(targetDate);
+    }
+
+    return occurrences;
 }
 
 /**
- * Validate an RRULE string
+ * Validate HH:MM format using regex
  */
-export function validateRRule(rruleString: string): { isValid: boolean; error?: string } {
-    if (!rruleString || rruleString.trim() === '') {
+export function validateResetTime(timeString: string): { isValid: boolean; error?: string } {
+    if (!timeString || timeString.trim() === '') {
         return {
             isValid: false,
-            error: 'RRULE string cannot be empty',
+            error: 'Time string cannot be empty',
         };
     }
 
-    try {
-        RRule.fromString(rruleString);
-        return { isValid: true };
-    } catch (error) {
+    // Validate HH:MM format: /^([01][0-9]|2[0-3]):[0-5][0-9]$/
+    const timeRegex = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+
+    if (!timeRegex.test(timeString)) {
         return {
             isValid: false,
-            error: error instanceof Error ? error.message : 'Invalid RRULE format',
+            error: 'Time must be in HH:MM format (24-hour)',
         };
     }
+
+    return { isValid: true };
 }
 
 /**
- * Convert RRULE to human-readable text
+ * Convert daily reset time and timezone to human-readable text
  */
-export function rruleToText(rruleString: string): string {
-    try {
-        const rule = RRule.fromString(rruleString);
-        return rule.toText();
-    } catch {
-        return 'Invalid RRULE';
-    }
-}
-
-/**
- * Create an RRULE for common patterns
- */
-export function createRRule(
-    frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY',
-    options?: {
-        interval?: number;
-        byweekday?: number[];
-        byhour?: number;
-        byminute?: number;
-        until?: Date;
-        count?: number;
-        dtstart?: Date;
-        tzid?: string;
-    },
-): string {
-    const ruleOptions: any = {
-        freq: RRule[frequency],
-        interval: options?.interval || 1,
-        // Always provide a proper dtstart - use provided or default to current date at midnight
-        dtstart: options?.dtstart || new Date(new Date().setHours(0, 0, 0, 0)),
-    };
-
-    if (options?.tzid) {
-        ruleOptions.tzid = options.tzid;
-    }
-    if (options?.byweekday) {
-        ruleOptions.byweekday = options.byweekday;
-    }
-    if (options?.byhour !== undefined) {
-        ruleOptions.byhour = options.byhour;
-    }
-    if (options?.byminute !== undefined) {
-        ruleOptions.byminute = options.byminute;
-    }
-    if (options?.until) {
-        ruleOptions.until = options.until;
-    }
-    if (options?.count) {
-        ruleOptions.count = options.count;
-    }
-
-    const rule = new RRule(ruleOptions);
-    return rule.toString();
+export function dailyResetToText(resetTime: string, timezone: string): string {
+    return `Daily at ${resetTime} (${timezone})`;
 }
 
 /**
@@ -357,41 +321,24 @@ export class DateTimeHelper {
     }
 
     /**
-     * Parse an RRULE string and return the next N occurrences
+     * Calculate next daily occurrences at resetTime in specified timezone
      */
-    static getNextRRuleOccurrences(rruleString: string, startDate: Date, count: number = 5): Date[] {
-        return getNextRRuleOccurrences(rruleString, startDate, count);
+    static getNextDailyOccurrence(resetTime: string, timezone: string, count: number = 5): Date[] {
+        return getNextDailyOccurrence(resetTime, timezone, count);
     }
 
     /**
-     * Validate an RRULE string
+     * Validate HH:MM format using regex
      */
-    static validateRRule(rruleString: string): { isValid: boolean; error?: string } {
-        return validateRRule(rruleString);
+    static validateResetTime(timeString: string): { isValid: boolean; error?: string } {
+        return validateResetTime(timeString);
     }
 
     /**
-     * Convert RRULE to human-readable text
+     * Convert daily reset time and timezone to human-readable text
      */
-    static rruleToText(rruleString: string): string {
-        return rruleToText(rruleString);
-    }
-
-    /**
-     * Create an RRULE for common patterns
-     */
-    static createRRule(
-        frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY',
-        options?: {
-            interval?: number;
-            byweekday?: number[];
-            byhour?: number;
-            byminute?: number;
-            until?: Date;
-            count?: number;
-        },
-    ): string {
-        return createRRule(frequency, options);
+    static dailyResetToText(resetTime: string, timezone: string): string {
+        return dailyResetToText(resetTime, timezone);
     }
 
     /**

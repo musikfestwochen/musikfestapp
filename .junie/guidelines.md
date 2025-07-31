@@ -107,3 +107,4 @@
 
 * Only shadcn-vue components (or those built from them) are allowed in the frontend.
 * Always run PestPHP tests with `--parallel`.
+* never commit code!

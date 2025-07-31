@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
-import { formatLocalDateTime, getNextRRuleOccurrences, rruleToText } from '@/utils/dateTimeHelpers';
+import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Edit, Trash2 } from 'lucide-vue-next';
@@ -120,7 +120,7 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
             enableHiding: true,
         },
         {
-            id: 'rrule',
+            accessorKey: 'reset_time',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
@@ -128,8 +128,8 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                 }),
             cell: ({ row }) => {
                 const reset = row.original;
-                const humanReadable = rruleToText(reset.rrule);
-                return h('div', { class: 'text-sm' }, humanReadable || 'Invalid RRULE');
+                const scheduleText = `Daily at ${reset.reset_time} (${reset.timezone})`;
+                return h('div', { class: 'text-sm' }, scheduleText);
             },
             enableSorting: false,
             enableHiding: true,
@@ -158,26 +158,32 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
             cell: ({ row }) => {
                 const reset = row.original;
                 try {
-                    // Get start date from event or use current date
-                    const startDate = new Date(); // Default to the current date
+                    // Calculate next daily occurrence
+                    const now = new Date();
+                    const [hours, minutes] = reset.reset_time.split(':').map(Number);
 
-                    const nextOccurrences = getNextRRuleOccurrences(reset.rrule, startDate);
-                    if (nextOccurrences.length > 0) {
-                        // Format the occurrence in the stored timezone using Intl.DateTimeFormat
-                        // This avoids the double conversion bug in formatLocalDateTime
-                        const formatter = new Intl.DateTimeFormat('en-GB', {
-                            timeZone: reset.timezone || 'UTC',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                        });
-                        const formattedTime = formatter.format(nextOccurrences[0]);
-                        return h('div', { class: 'text-sm' }, formattedTime);
-                    }
-                    return h('div', { class: 'text-sm text-muted-foreground' }, 'No upcoming occurrences');
+                    // Create today's reset time in the specified timezone
+                    const today = new Date();
+                    today.setHours(hours, minutes, 0, 0);
+
+                    // If today's reset time has passed, use tomorrow
+                    const nextOccurrence =
+                        now.getHours() > hours || (now.getHours() === hours && now.getMinutes() >= minutes)
+                            ? new Date(today.getTime() + 24 * 60 * 60 * 1000)
+                            : today;
+
+                    // Format the occurrence in the stored timezone
+                    const formatter = new Intl.DateTimeFormat('en-GB', {
+                        timeZone: reset.timezone || 'UTC',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                    });
+                    const formattedTime = formatter.format(nextOccurrence);
+                    return h('div', { class: 'text-sm' }, formattedTime);
                 } catch {
                     return h('div', { class: 'text-sm text-red-600' }, 'Invalid schedule');
                 }

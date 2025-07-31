@@ -18,15 +18,6 @@ class AreaRecurringResetFactory extends Factory
      */
     public function definition(): array
     {
-        $rrulePatterns = [
-            'FREQ=DAILY;INTERVAL=1',
-            'FREQ=WEEKLY;INTERVAL=1;BYDAY=MO',
-            'FREQ=WEEKLY;INTERVAL=1;BYDAY=TU,TH',
-            'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=1',
-            'FREQ=DAILY;INTERVAL=2',
-            'FREQ=WEEKLY;INTERVAL=2;BYDAY=WE',
-        ];
-
         $timezones = [
             'Europe/Zurich',
             'UTC',
@@ -38,7 +29,7 @@ class AreaRecurringResetFactory extends Factory
         return [
             'area_id' => Area::query()->inRandomOrder()->first()->id ?? Area::factory()->create()->id,
             'reset_value' => fake()->numberBetween(0, 1000),
-            'rrule' => fake()->randomElement($rrulePatterns),
+            'reset_time' => fake()->time('H:i'),
             'timezone' => fake()->randomElement($timezones),
             'notes' => fake()->optional(0.7)->sentence(),
         ];
@@ -69,13 +60,13 @@ class AreaRecurringResetFactory extends Factory
     }
 
     /**
-     * Configure the model factory to use a specific RRULE.
+     * Configure the model factory to use a specific reset time.
      */
-    public function withRRule(string $rrule): static
+    public function withResetTime(string $resetTime): static
     {
-        return $this->state(function (array $attributes) use ($rrule): array {
+        return $this->state(function (array $attributes) use ($resetTime): array {
             return [
-                'rrule' => $rrule,
+                'reset_time' => $resetTime,
             ];
         });
     }
@@ -88,42 +79,6 @@ class AreaRecurringResetFactory extends Factory
         return $this->state(function (array $attributes) use ($timezone): array {
             return [
                 'timezone' => $timezone,
-            ];
-        });
-    }
-
-    /**
-     * Configure the model factory to create a daily recurring reset.
-     */
-    public function daily(): static
-    {
-        return $this->state(function (array $attributes): array {
-            return [
-                'rrule' => 'FREQ=DAILY;INTERVAL=1',
-            ];
-        });
-    }
-
-    /**
-     * Configure the model factory to create a weekly recurring reset.
-     */
-    public function weekly(): static
-    {
-        return $this->state(function (array $attributes): array {
-            return [
-                'rrule' => 'FREQ=WEEKLY;INTERVAL=1;BYDAY=MO',
-            ];
-        });
-    }
-
-    /**
-     * Configure the model factory to create a monthly recurring reset.
-     */
-    public function monthly(): static
-    {
-        return $this->state(function (array $attributes): array {
-            return [
-                'rrule' => 'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=1',
             ];
         });
     }

@@ -8,7 +8,6 @@ use App\Models\Peoplecount\AreaSingleReset;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
-use RRule\RRule;
 
 class AreaResetService
 {
@@ -113,13 +112,10 @@ class AreaResetService
         // Verify that the area belongs to the current organization
         $this->verifyAreaBelongsToCurrentOrganization($area);
 
-        // Validate RRULE format
-        $this->validateRRule($attributes['rrule']);
-
         return AreaRecurringReset::query()->create([
             'area_id' => $area->id,
             'reset_value' => $attributes['reset_value'],
-            'rrule' => $attributes['rrule'],
+            'reset_time' => $attributes['reset_time'],
             'timezone' => $attributes['timezone'],
             'notes' => $attributes['notes'] ?? null,
         ]);
@@ -135,12 +131,9 @@ class AreaResetService
         // Verify that the area belongs to the current organization
         $this->verifyAreaBelongsToCurrentOrganization($reset->area);
 
-        // Validate RRULE format
-        $this->validateRRule($attributes['rrule']);
-
         $reset->update([
             'reset_value' => $attributes['reset_value'],
-            'rrule' => $attributes['rrule'],
+            'reset_time' => $attributes['reset_time'],
             'timezone' => $attributes['timezone'],
             'notes' => $attributes['notes'] ?? null,
         ]);
@@ -157,48 +150,5 @@ class AreaResetService
         $this->verifyAreaBelongsToCurrentOrganization($reset->area);
 
         $reset->delete();
-    }
-
-    /**
-     * Parse an RRULE string and return an RRule instance.
-     *
-     * @return RRule<\DateTime>
-     */
-    public function parseRRule(string $rrule): RRule
-    {
-        return new RRule($rrule);
-    }
-
-    /**
-     * Get the next occurrences for an RRULE.
-     *
-     * @return array<int, \DateTime>
-     */
-    public function getNextResetOccurrences(string $rrule, int $limit = 5): array
-    {
-        $ruleInstance = $this->parseRRule($rrule);
-
-        // Use more efficient getOccurrencesBetween method instead of iteration
-        $startDate = new \DateTime;
-        $endDate = (clone $startDate)->add(new \DateInterval('P1Y')); // 1 year from now
-
-        $occurrences = $ruleInstance->getOccurrencesBetween($startDate, $endDate);
-
-        // Return only the requested number of occurrences
-        return array_slice($occurrences, 0, $limit);
-    }
-
-    /**
-     * Validate RRULE format.
-     *
-     * @throws \InvalidArgumentException
-     */
-    protected function validateRRule(string $rrule): void
-    {
-        try {
-            new RRule($rrule);
-        } catch (\Exception $exception) {
-            throw new \InvalidArgumentException('Invalid RRULE format: '.$exception->getMessage(), $exception->getCode(), $exception);
-        }
     }
 }
