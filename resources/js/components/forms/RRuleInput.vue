@@ -104,6 +104,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createRRule, formatDateForInput, getNextRRuleOccurrences, rruleToText, validateRRule } from '@/utils/dateTimeHelpers';
+import { RRule } from 'rrule';
 import { computed, ref, watch } from 'vue';
 
 interface Props {
@@ -171,60 +172,16 @@ const currentRRule = computed(() => {
 
     const [hours, minutes] = resetTime.value.split(':').map(Number);
 
-    // Calculate the UTC hour that will result in the desired local time
-    // RRULE interprets BYHOUR as UTC time, so we need to convert from the selected timezone to UTC
-    let utcHour = hours;
-    try {
-        // Create a date representing the desired time in the selected timezone
-        // We'll use today's date to get the correct timezone offset (including DST)
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth() + 1; // getMonth() returns 0-11
-        const day = today.getDate();
-
-        // Create an ISO string for the desired time, but interpret it as being in the selected timezone
-        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-
-        // This is the key: we create a date that represents the time in the target timezone
-        // by using a temporary date and calculating the offset
-        const tempDate = new Date(`${dateStr}T${timeStr}`);
-
-        // Get the current timezone offset for the selected timezone
-        const formatter = new Intl.DateTimeFormat('en', {
-            timeZone: selectedTimezone.value,
-            timeZoneName: 'longOffset',
-        });
-
-        const parts = formatter.formatToParts(tempDate);
-        const offsetPart = parts.find((part) => part.type === 'timeZoneName');
-
-        if (offsetPart && offsetPart.value) {
-            // Parse offset like "GMT+02:00" or "GMT-05:00"
-            const match = offsetPart.value.match(/GMT([+-])(\d{2}):(\d{2})/);
-            if (match) {
-                const sign = match[1] === '+' ? 1 : -1;
-                const offsetHours = parseInt(match[2]);
-                const offsetMinutes = parseInt(match[3]);
-                const totalOffsetHours = sign * (offsetHours + offsetMinutes / 60);
-
-                // Convert from timezone to UTC: subtract the offset
-                utcHour = hours - totalOffsetHours;
-
-                // Handle hour wraparound
-                while (utcHour < 0) utcHour += 24;
-                while (utcHour >= 24) utcHour -= 24;
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to calculate timezone offset, using local hour:', error);
-        // Fallback to original behavior if timezone calculation fails
-        utcHour = hours;
-    }
+    // Create proper dtstart with timezone for RRule
+    // Use the start date from props as base, but with the specified time
+    const startDate = new Date(props.startDate);
+    const dtstart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), hours, minutes, 0, 0);
 
     const options: any = {
         interval: interval.value,
-        byhour: Math.round(utcHour), // Ensure it's an integer
+        dtstart: dtstart,
+        tzid: selectedTimezone.value, // Let RRule handle timezone properly
+        byhour: hours, // Use local time - RRule will handle timezone conversion
         byminute: minutes,
     };
 
@@ -233,7 +190,9 @@ const currentRRule = computed(() => {
     }
 
     if (endDateInput.value) {
-        options.until = new Date(endDateInput.value + 'T23:59:59');
+        // Create proper until date in the selected timezone
+        const untilDate = new Date(endDateInput.value + 'T23:59:59');
+        options.until = untilDate;
     }
 
     return createRRule(frequency.value, options);
@@ -283,8 +242,7 @@ function formatTimezoneLabel(timezone: string): string {
 
 function formatOccurrenceInTimezone(occurrence: Date): string {
     try {
-        // Format the occurrence date in the selected timezone
-        // Use the same format as the original formatLocalDateTime: dd.mm.yy, hh:mm
+        // Format the occurrence date in the selected timezone using proper locale formatting
         const formatter = new Intl.DateTimeFormat('en-GB', {
             timeZone: selectedTimezone.value,
             day: '2-digit',
@@ -295,9 +253,17 @@ function formatOccurrenceInTimezone(occurrence: Date): string {
             hour12: false,
         });
 
-        return formatter.format(occurrence);
-    } catch {
-        // Fallback to ISO string if timezone formatting fails
+        const parts = formatter.formatToParts(occurrence);
+        const day = parts.find((p) => p.type === 'day')?.value || '00';
+        const month = parts.find((p) => p.type === 'month')?.value || '00';
+        const year = parts.find((p) => p.type === 'year')?.value || '00';
+        const hour = parts.find((p) => p.type === 'hour')?.value || '00';
+        const minute = parts.find((p) => p.type === 'minute')?.value || '00';
+
+        return `${day}.${month}.${year}, ${hour}:${minute}`;
+    } catch (error) {
+        console.warn('Failed to format occurrence in timezone:', error);
+        // Fallback to ISO string format
         return occurrence.toISOString().slice(0, 16).replace('T', ' ');
     }
 }
@@ -338,48 +304,52 @@ function initializeFromRRule(rrule: string): void {
         return;
     }
 
-    // Try to parse common patterns
-    if (rrule.includes('FREQ=DAILY')) {
-        frequency.value = 'DAILY';
-    } else if (rrule.includes('FREQ=WEEKLY')) {
-        frequency.value = 'WEEKLY';
-    } else if (rrule.includes('FREQ=MONTHLY')) {
-        frequency.value = 'MONTHLY';
-    } else {
+    try {
+        // Use RRule's built-in parsing instead of manual regex parsing
+        const rule = RRule.fromString(rrule);
+        const options = rule.options;
+
+        // Parse frequency
+        if (options.freq === RRule.DAILY) {
+            frequency.value = 'DAILY';
+        } else if (options.freq === RRule.WEEKLY) {
+            frequency.value = 'WEEKLY';
+        } else if (options.freq === RRule.MONTHLY) {
+            frequency.value = 'MONTHLY';
+        } else {
+            frequency.value = 'CUSTOM';
+            customRRule.value = rrule;
+            return;
+        }
+
+        // Parse interval
+        interval.value = options.interval || 1;
+
+        // Parse time from dtstart if available, otherwise from byhour/byminute
+        if (options.dtstart) {
+            const dtstart = options.dtstart;
+            const hour = dtstart.getHours().toString().padStart(2, '0');
+            const minute = dtstart.getMinutes().toString().padStart(2, '0');
+            resetTime.value = `${hour}:${minute}`;
+        } else if (options.byhour !== undefined && options.byminute !== undefined) {
+            const hour = options.byhour.toString().padStart(2, '0');
+            const minute = options.byminute.toString().padStart(2, '0');
+            resetTime.value = `${hour}:${minute}`;
+        }
+
+        // Parse weekdays for weekly frequency
+        if (frequency.value === 'WEEKLY' && options.byweekday) {
+            selectedWeekDays.value = Array.isArray(options.byweekday) ? options.byweekday : [options.byweekday];
+        }
+
+        // Parse end date
+        if (options.until) {
+            endDateInput.value = formatDateForInput(options.until);
+        }
+    } catch (error) {
+        console.warn('Failed to parse RRule with library, falling back to custom:', error);
         frequency.value = 'CUSTOM';
         customRRule.value = rrule;
-        return;
-    }
-
-    // Parse interval
-    const intervalMatch = rrule.match(/INTERVAL=(\d+)/);
-    if (intervalMatch) {
-        interval.value = parseInt(intervalMatch[1]);
-    }
-
-    // Parse time
-    const hourMatch = rrule.match(/BYHOUR=(\d+)/);
-    const minuteMatch = rrule.match(/BYMINUTE=(\d+)/);
-    if (hourMatch && minuteMatch) {
-        const hour = parseInt(hourMatch[1]).toString().padStart(2, '0');
-        const minute = parseInt(minuteMatch[1]).toString().padStart(2, '0');
-        resetTime.value = `${hour}:${minute}`;
-    }
-
-    // Parse weekdays for weekly frequency
-    if (frequency.value === 'WEEKLY') {
-        const weekdayMatch = rrule.match(/BYDAY=([^;]+)/);
-        if (weekdayMatch) {
-            // This is a simplified parser - in a real implementation you'd want more robust parsing
-            selectedWeekDays.value = [1]; // Default to Monday for now
-        }
-    }
-
-    // Parse end date
-    const untilMatch = rrule.match(/UNTIL=([^;]+)/);
-    if (untilMatch) {
-        const until = new Date(untilMatch[1]);
-        endDateInput.value = formatDateForInput(until);
     }
 }
 

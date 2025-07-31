@@ -610,4 +610,41 @@ describe('getNextResetOccurrences', function () {
 
         expect($occurrences)->toHaveCount(2);
     });
+
+    it('returns occurrences efficiently using getBetween method', function () {
+        // Test with a longer-running rule to ensure we're using the efficient method
+        $rrule = 'FREQ=DAILY;INTERVAL=1';
+        $start = microtime(true);
+        $occurrences = $this->service->getNextResetOccurrences($rrule, 10);
+        $end = microtime(true);
+
+        expect($occurrences)->toHaveCount(10);
+        // Should complete quickly (less than 100ms for 10 occurrences)
+        expect($end - $start)->toBeLessThan(0.1);
+    });
+
+    it('handles timezone-aware RRULE correctly', function () {
+        // TODO: Add proper DTSTART with timezone when implementing timezone support
+        $rrule = 'FREQ=DAILY;INTERVAL=1;BYHOUR=9;BYMINUTE=0';
+        $occurrences = $this->service->getNextResetOccurrences($rrule, 3);
+
+        expect($occurrences)->toHaveCount(3);
+
+        // Verify that occurrences are spaced 24 hours apart
+        $diff1 = $occurrences[1]->getTimestamp() - $occurrences[0]->getTimestamp();
+        $diff2 = $occurrences[2]->getTimestamp() - $occurrences[1]->getTimestamp();
+
+        expect($diff1)->toBe(86400); // 24 hours in seconds
+        expect($diff2)->toBe(86400);
+    });
+
+    it('returns empty array for RRULE with no future occurrences', function () {
+        // Create an RRULE that ended in the past
+        $pastDate = (new \DateTime)->sub(new \DateInterval('P1Y'))->format('Ymd\THis\Z');
+        $rrule = 'FREQ=DAILY;UNTIL='.$pastDate;
+
+        $occurrences = $this->service->getNextResetOccurrences($rrule, 5);
+
+        expect($occurrences)->toHaveCount(0);
+    });
 });

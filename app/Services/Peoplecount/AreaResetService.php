@@ -177,17 +177,15 @@ class AreaResetService
     public function getNextResetOccurrences(string $rrule, int $limit = 5): array
     {
         $ruleInstance = $this->parseRRule($rrule);
-        $occurrences = [];
 
-        foreach ($ruleInstance as $occurrence) {
-            if (count($occurrences) >= $limit) {
-                break;
-            }
+        // Use more efficient getOccurrencesBetween method instead of iteration
+        $startDate = new \DateTime;
+        $endDate = (clone $startDate)->add(new \DateInterval('P1Y')); // 1 year from now
 
-            $occurrences[] = $occurrence;
-        }
+        $occurrences = $ruleInstance->getOccurrencesBetween($startDate, $endDate);
 
-        return $occurrences;
+        // Return only the requested number of occurrences
+        return array_slice($occurrences, 0, $limit);
     }
 
     /**

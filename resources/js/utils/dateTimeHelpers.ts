@@ -2,6 +2,28 @@
  * Date and Time Helper Functions
  * Provides utility functions for date and time formatting and conversion
  * Includes RRULE integration and advanced timezone handling
+ *
+ * IMPORTANT: RRule Timezone Handling
+ * ===================================
+ * This implementation has been updated to properly handle timezones according to RRule.js best practices:
+ *
+ * 1. Always provide a proper `dtstart` parameter when creating RRules
+ * 2. Use the `tzid` parameter to let RRule handle timezone conversion automatically
+ * 3. Avoid manual timezone offset calculations - let the library handle them
+ * 4. When creating RRules, use local time values with tzid rather than converting to UTC manually
+ *
+ * Example of correct usage:
+ * ```typescript
+ * const dtstart = new Date(2024, 0, 1, 9, 0, 0); // January 1, 2024 at 9:00 AM local
+ * const rrule = createRRule('DAILY', {
+ *   dtstart,
+ *   tzid: 'Europe/Zurich',
+ *   byhour: 9,
+ *   byminute: 0,
+ * });
+ * ```
+ *
+ * This approach ensures consistent behavior across different timezones and DST transitions.
  */
 
 import { RRule } from 'rrule';
@@ -175,13 +197,20 @@ export function createRRule(
         byminute?: number;
         until?: Date;
         count?: number;
+        dtstart?: Date;
+        tzid?: string;
     },
 ): string {
     const ruleOptions: any = {
         freq: RRule[frequency],
         interval: options?.interval || 1,
+        // Always provide a proper dtstart - use provided or default to current date at midnight
+        dtstart: options?.dtstart || new Date(new Date().setHours(0, 0, 0, 0)),
     };
 
+    if (options?.tzid) {
+        ruleOptions.tzid = options.tzid;
+    }
     if (options?.byweekday) {
         ruleOptions.byweekday = options.byweekday;
     }

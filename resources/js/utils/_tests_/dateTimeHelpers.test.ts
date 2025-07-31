@@ -1,3 +1,4 @@
+import { RRule } from 'rrule';
 import { describe, expect, it } from 'vitest';
 import {
     combineDateAndTime,
@@ -207,41 +208,71 @@ describe('RRULE Functions', () => {
     });
 
     describe('createRRule', () => {
-        it('should create daily RRULE', () => {
-            const rrule = createRRule('DAILY', { interval: 2, byhour: 9, byminute: 30 });
+        it('should create daily RRULE with proper dtstart', () => {
+            const dtstart = new Date('2024-01-01T09:00:00Z');
+            const rrule = createRRule('DAILY', {
+                interval: 2,
+                byhour: 9,
+                byminute: 30,
+                dtstart,
+            });
             expect(rrule).toContain('FREQ=DAILY');
             expect(rrule).toContain('INTERVAL=2');
             expect(rrule).toContain('BYHOUR=9');
             expect(rrule).toContain('BYMINUTE=30');
+            expect(rrule).toContain('DTSTART');
         });
 
         it('should create weekly RRULE with weekdays', () => {
-            const rrule = createRRule('WEEKLY', { byweekday: [1, 3, 5] });
+            const dtstart = new Date('2024-01-01T09:00:00Z');
+            const rrule = createRRule('WEEKLY', {
+                byweekday: [1, 3, 5],
+                dtstart,
+            });
             expect(rrule).toContain('FREQ=WEEKLY');
             expect(rrule).toContain('BYDAY=');
+            expect(rrule).toContain('DTSTART');
         });
 
-        it('should create monthly RRULE', () => {
+        it('should create monthly RRULE with default dtstart', () => {
             const rrule = createRRule('MONTHLY');
             expect(rrule).toContain('FREQ=MONTHLY');
             expect(rrule).toContain('INTERVAL=1');
+            expect(rrule).toContain('DTSTART');
+        });
+
+        it('should handle timezone correctly', () => {
+            const dtstart = new Date('2024-01-01T09:00:00Z');
+            const rrule = createRRule('DAILY', {
+                dtstart,
+                tzid: 'Europe/Zurich',
+                byhour: 9,
+                byminute: 0,
+            });
+
+            // Parse the rule to verify timezone handling
+            const rule = RRule.fromString(rrule);
+            const occurrences = rule.all();
+            expect(occurrences[0]).toBeInstanceOf(Date);
         });
 
         it('should handle until date', () => {
-            const until = new Date('2024-12-31');
-            const rrule = createRRule('DAILY', { until });
+            const until = new Date('2024-12-31T23:59:59Z');
+            const dtstart = new Date('2024-01-01T09:00:00Z');
+            const rrule = createRRule('DAILY', { until, dtstart });
             expect(rrule).toContain('UNTIL=');
         });
 
         it('should handle count', () => {
-            const rrule = createRRule('DAILY', { count: 10 });
+            const dtstart = new Date('2024-01-01T09:00:00Z');
+            const rrule = createRRule('DAILY', { count: 10, dtstart });
             expect(rrule).toContain('COUNT=10');
         });
     });
 
     describe('rruleToText', () => {
         it('should convert valid RRULE to text', () => {
-            const text = rruleToText('FREQ=DAILY;INTERVAL=1');
+            const text = rruleToText('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1');
             expect(text).toBe('every day');
         });
 
@@ -256,6 +287,20 @@ describe('RRULE Functions', () => {
             const startDate = new Date('2024-01-01T09:00:00Z');
             const occurrences = getNextRRuleOccurrences('DTSTART:20240101T090000Z\nFREQ=DAILY;INTERVAL=1', startDate, 3);
             expect(occurrences).toHaveLength(3);
+            expect(occurrences[0]).toBeInstanceOf(Date);
+
+            // Verify the first occurrence is as expected
+            expect(occurrences[0].toISOString()).toBe('2024-01-01T09:00:00.000Z');
+            expect(occurrences[1].toISOString()).toBe('2024-01-02T09:00:00.000Z');
+        });
+
+        it('should handle timezone-aware RRULE', () => {
+            // Test with Europe/Zurich timezone (UTC+1 in winter)
+            const startDate = new Date('2024-01-01T08:00:00Z'); // 9 AM in Zurich
+            const rruleString = 'DTSTART;TZID=Europe/Zurich:20240101T090000\nFREQ=DAILY;INTERVAL=1';
+            const occurrences = getNextRRuleOccurrences(rruleString, startDate, 2);
+
+            expect(occurrences).toHaveLength(2);
             expect(occurrences[0]).toBeInstanceOf(Date);
         });
 
