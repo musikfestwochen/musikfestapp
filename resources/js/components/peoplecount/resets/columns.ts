@@ -44,7 +44,7 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
                 }),
             cell: ({ row }) => {
                 const reset = row.original;
-                return h('div', { class: 'text-sm' }, reset.created_by_user?.name || 'Unknown');
+                return h('div', { class: 'text-sm' }, reset.created_by?.name || 'Unknown');
             },
             enableSorting: true,
             enableHiding: true,
@@ -159,10 +159,9 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                 const reset = row.original;
                 try {
                     // Get start date from event or use current date
-                    const startDate = reset.event?.start_date ? new Date(reset.event.start_date) : new Date();
-                    const endDate = reset.event?.end_date ? new Date(reset.event.end_date) : undefined;
+                    const startDate = new Date(); // Default to the current date
 
-                    const nextOccurrences = getNextRRuleOccurrences(reset.rrule, startDate, endDate, 1);
+                    const nextOccurrences = getNextRRuleOccurrences(reset.rrule, startDate);
                     if (nextOccurrences.length > 0) {
                         // Format the occurrence in the stored timezone using Intl.DateTimeFormat
                         // This avoids the double conversion bug in formatLocalDateTime

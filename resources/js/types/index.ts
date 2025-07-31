@@ -147,7 +147,6 @@ export interface PeoplecountAreaSingleReset {
     created_at: string;
     updated_at: string;
     area?: PeoplecountArea; // Optional, for related area
-    created_by_user?: User; // Optional, for related user who created the reset
 }
 
 export interface PeoplecountAreaRecurringReset {

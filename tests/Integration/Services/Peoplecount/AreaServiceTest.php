@@ -297,8 +297,6 @@ describe('getWithRelations', function () {
 
         $result = $this->service->getWithRelations($area);
 
-        dump($result);
-
         expect($result)->toBeInstanceOf(Area::class)
             ->and($result->id)->toBe($area->id)
             ->and($result->relationLoaded('event'))->toBeTrue()

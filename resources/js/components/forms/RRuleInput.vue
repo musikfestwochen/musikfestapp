@@ -175,34 +175,45 @@ const currentRRule = computed(() => {
     // RRULE interprets BYHOUR as UTC time, so we need to convert from the selected timezone to UTC
     let utcHour = hours;
     try {
-        // Create a date in the selected timezone at the desired time
+        // Create a date representing the desired time in the selected timezone
+        // We'll use today's date to get the correct timezone offset (including DST)
         const today = new Date();
-        const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1; // getMonth() returns 0-11
+        const day = today.getDate();
 
-        // Get the timezone offset for the selected timezone
-        const tempFormatter = new Intl.DateTimeFormat('en-US', {
+        // Create an ISO string for the desired time, but interpret it as being in the selected timezone
+        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+
+        // This is the key: we create a date that represents the time in the target timezone
+        // by using a temporary date and calculating the offset
+        const tempDate = new Date(`${dateStr}T${timeStr}`);
+
+        // Get the current timezone offset for the selected timezone
+        const formatter = new Intl.DateTimeFormat('en', {
             timeZone: selectedTimezone.value,
             timeZoneName: 'longOffset',
         });
-        const parts = tempFormatter.formatToParts(localDate);
-        const offsetString = parts.find((part) => part.type === 'timeZoneName')?.value || '+00:00';
 
-        // Parse the offset (e.g., "GMT+02:00" -> +2)
-        const offsetMatch = offsetString.match(/([+-])(\d{2}):(\d{2})/);
-        if (offsetMatch) {
-            const sign = offsetMatch[1] === '+' ? 1 : -1;
-            const offsetHours = parseInt(offsetMatch[2]);
-            const offsetMinutes = parseInt(offsetMatch[3]);
-            const totalOffsetHours = sign * (offsetHours + offsetMinutes / 60);
+        const parts = formatter.formatToParts(tempDate);
+        const offsetPart = parts.find((part) => part.type === 'timeZoneName');
 
-            // Convert to UTC: subtract the timezone offset
-            utcHour = hours - totalOffsetHours;
+        if (offsetPart && offsetPart.value) {
+            // Parse offset like "GMT+02:00" or "GMT-05:00"
+            const match = offsetPart.value.match(/GMT([+-])(\d{2}):(\d{2})/);
+            if (match) {
+                const sign = match[1] === '+' ? 1 : -1;
+                const offsetHours = parseInt(match[2]);
+                const offsetMinutes = parseInt(match[3]);
+                const totalOffsetHours = sign * (offsetHours + offsetMinutes / 60);
 
-            // Handle hour overflow/underflow
-            if (utcHour < 0) {
-                utcHour += 24;
-            } else if (utcHour >= 24) {
-                utcHour -= 24;
+                // Convert from timezone to UTC: subtract the offset
+                utcHour = hours - totalOffsetHours;
+
+                // Handle hour wraparound
+                while (utcHour < 0) utcHour += 24;
+                while (utcHour >= 24) utcHour -= 24;
             }
         }
     } catch (error) {
