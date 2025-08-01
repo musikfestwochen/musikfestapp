@@ -83,6 +83,11 @@ jobs:
       - name: Type Coverage Tests
         run: ./vendor/bin/pest --type-coverage
 
+  mariadb-migration-tests:
+    needs: basic-tests
+    uses: ./.github/workflows/mariadb-migration-tests.yml
+    secrets: inherit
+
   coverage-and-mutation-tests:
     runs-on: ubuntu-latest
     needs: basic-tests

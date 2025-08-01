@@ -1,0 +1,93 @@
+name: MariaDB Migration Tests
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  mariadb-migration-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:lts
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: musikfestapp_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+          extensions: pdo_mysql
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Create MariaDB Test Environment
+        run: |
+          cp .env.local .env
+          echo "DB_CONNECTION=mariadb" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=musikfestapp_test" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=password" >> .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Wait for MariaDB to be ready
+        run: |
+          until php artisan db:show --database=mariadb; do
+            echo "Waiting for MariaDB to be ready..."
+            sleep 2
+          done
+
+      - name: Run Migration Tests
+        run: |
+          echo "Testing fresh migrations..."
+          php artisan migrate:fresh --force --database=mariadb
+
+          echo "Testing migration rollback..."
+          php artisan migrate:rollback --step=5 --database=mariadb
+
+          echo "Testing migration re-run..."
+          php artisan migrate --force --database=mariadb
+
+          echo "Testing fresh migrations with seeding..."
+          php artisan migrate:fresh --seed --force --database=mariadb
+
+      - name: Run Basic Database Tests
+        run: |
+          # Run only database-related tests against MariaDB
+          ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --stop-on-failure
+        env:
+          DB_CONNECTION: mariadb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: musikfestapp_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
