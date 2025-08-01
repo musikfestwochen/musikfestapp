@@ -10,12 +10,13 @@ it('ensures each class appears exactly once in covers() annotations', function (
         $projectRoot.'/tests/Feature',
     ];
 
-    // Define directories that require tests according to guidelines
+    // Define directories that require covered tests according to guidelines
     $sourceDirectories = [
         'Models' => $baseAppPath.'/Models',
         'Requests' => $baseAppPath.'/Http/Requests',
         'Services' => $baseAppPath.'/Services',
         'PHPStan/Rules' => $baseAppPath.'/PHPStan/Rules',
+        'Casts' => $baseAppPath.'/Casts',
     ];
 
     $violations = [];
