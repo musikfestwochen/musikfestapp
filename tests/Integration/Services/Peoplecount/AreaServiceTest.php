@@ -368,3 +368,312 @@ describe('getWithRelations', function () {
         }
     });
 });
+
+describe('checksum functionality', function () {
+    describe('getChecksumConfig', function () {
+        it('returns correct configuration array', function () {
+            $config = $this->service->getChecksumConfig();
+
+            expect($config)->toBeArray()
+                ->and($config)->toHaveKeys(['area', 'event', 'assignments', 'areaSingleResets', 'areaRecurringResets']);
+
+            // Test area config
+            expect($config['area'])->toBe(['id', 'event_id']);
+
+            // Test event config
+            expect($config['event'])->toBe(['id', 'starts_at', 'ends_at']);
+
+            // Test assignments config
+            expect($config['assignments'])->toBe(['id', 'area_id', 'sensor_id', 'direction_flipped', 'active_from', 'active_to']);
+
+            // Test areaSingleResets config
+            expect($config['areaSingleResets'])->toBe(['id', 'area_id', 'reset_value', 'effective_at']);
+
+            // Test areaRecurringResets config
+            expect($config['areaRecurringResets'])->toBe(['id', 'area_id', 'reset_value', 'reset_time', 'timezone']);
+        });
+    });
+
+    describe('extractModelAttributes', function () {
+        it('extracts specified attributes from a model', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create([
+                'organization_id' => $org->id,
+                'starts_at' => '2024-01-01 10:00:00',
+                'ends_at' => '2024-01-01 18:00:00',
+            ]);
+
+            $attributes = ['id', 'starts_at', 'ends_at'];
+            $result = $this->service->extractModelAttributes($event, $attributes);
+
+            expect($result)->toBeArray()
+                ->and($result)->toHaveKeys(['id', 'starts_at', 'ends_at'])
+                ->and($result['id'])->toBe($event->id)
+                ->and($result['starts_at'])->toEqual($event->starts_at)
+                ->and($result['ends_at'])->toEqual($event->ends_at);
+        });
+
+        it('handles empty attributes array', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create(['organization_id' => $org->id]);
+
+            $result = $this->service->extractModelAttributes($event, []);
+
+            expect($result)->toBeArray()
+                ->and($result)->toBeEmpty();
+        });
+
+        it('handles null attribute values', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create([
+                'organization_id' => $org->id,
+            ]);
+
+            // Test with a nullable field that actually exists and can be null
+            $attributes = ['id', 'description'];
+            $result = $this->service->extractModelAttributes($event, $attributes);
+
+            expect($result)->toBeArray()
+                ->and($result)->toHaveKeys(['id', 'description'])
+                ->and($result['id'])->toBe($event->id)
+                ->and($result['description'])->toBeNull();
+        });
+    });
+
+    describe('extractCollectionAttributes', function () {
+        it('extracts attributes from collection of models', function () {
+            $org = Organization::factory()->create();
+            $event1 = Event::factory()->create(['organization_id' => $org->id]);
+            $event2 = Event::factory()->create(['organization_id' => $org->id]);
+            $collection = collect([$event1, $event2]);
+
+            $attributes = ['id', 'organization_id'];
+            $result = $this->service->extractCollectionAttributes($collection, $attributes);
+
+            expect($result)->toBeArray()
+                ->and($result)->toHaveCount(2)
+                ->and($result[0])->toHaveKeys(['id', 'organization_id'])
+                ->and($result[0]['id'])->toBe($event1->id)
+                ->and($result[0]['organization_id'])->toBe($org->id)
+                ->and($result[1])->toHaveKeys(['id', 'organization_id'])
+                ->and($result[1]['id'])->toBe($event2->id)
+                ->and($result[1]['organization_id'])->toBe($org->id);
+        });
+
+        it('handles empty collection', function () {
+            $collection = collect([]);
+            $attributes = ['id', 'name'];
+
+            $result = $this->service->extractCollectionAttributes($collection, $attributes);
+
+            expect($result)->toBeArray()
+                ->and($result)->toBeEmpty();
+        });
+
+        it('handles empty attributes array', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create(['organization_id' => $org->id]);
+            $collection = collect([$event]);
+
+            $result = $this->service->extractCollectionAttributes($collection, []);
+
+            expect($result)->toBeArray()
+                ->and($result)->toHaveCount(1)
+                ->and($result[0])->toBeEmpty();
+        });
+    });
+
+    describe('sortChecksumData', function () {
+        it('sorts top-level keys', function () {
+            $data = [
+                'zebra' => 'value1',
+                'alpha' => 'value2',
+                'beta' => 'value3',
+            ];
+
+            $result = $this->service->sortChecksumData($data);
+
+            expect(array_keys($result))->toBe(['alpha', 'beta', 'zebra']);
+        });
+
+        it('sorts nested array keys', function () {
+            $data = [
+                'section1' => [
+                    'zebra' => 'value1',
+                    'alpha' => 'value2',
+                ],
+                'section2' => [
+                    'delta' => 'value3',
+                    'beta' => 'value4',
+                ],
+            ];
+
+            $result = $this->service->sortChecksumData($data);
+
+            expect(array_keys($result['section1']))->toBe(['alpha', 'zebra'])
+                ->and(array_keys($result['section2']))->toBe(['beta', 'delta']);
+        });
+
+        it('handles mixed data types', function () {
+            $data = [
+                'string' => 'value',
+                'array' => ['zebra' => 1, 'alpha' => 2],
+                'number' => 42,
+            ];
+
+            $result = $this->service->sortChecksumData($data);
+
+            expect($result['string'])->toBe('value')
+                ->and($result['number'])->toBe(42)
+                ->and(array_keys($result['array']))->toBe(['alpha', 'zebra']);
+        });
+
+        it('handles empty data', function () {
+            $result = $this->service->sortChecksumData([]);
+
+            expect($result)->toBeArray()
+                ->and($result)->toBeEmpty();
+        });
+    });
+
+    describe('collectChecksumData', function () {
+        it('collects data from area and all relationships', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create([
+                'organization_id' => $org->id,
+                'starts_at' => '2024-01-01 10:00:00',
+                'ends_at' => '2024-01-01 18:00:00',
+            ]);
+            $area = Area::factory()->create([
+                'event_id' => $event->id,
+                'name' => 'Test Area',
+            ]);
+
+            // Load the event relationship
+            $area->load('event');
+
+            $result = $this->service->collectChecksumData($area);
+
+            expect($result)->toBeArray()
+                ->and($result)->toHaveKeys(['area', 'event', 'assignments', 'areaSingleResets', 'areaRecurringResets']);
+
+            // Check area data
+            expect($result['area'])->toHaveKeys(['id', 'event_id'])
+                ->and($result['area']['id'])->toBe($area->id)
+                ->and($result['area']['event_id'])->toBe($event->id);
+
+            // Check event data
+            expect($result['event'])->toHaveKeys(['id', 'starts_at', 'ends_at'])
+                ->and($result['event']['id'])->toBe($event->id);
+
+            // Check collection data (should be empty arrays for new area)
+            expect($result['assignments'])->toBeArray()
+                ->and($result['areaSingleResets'])->toBeArray()
+                ->and($result['areaRecurringResets'])->toBeArray();
+        });
+
+        it('handles area without event relationship loaded', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create(['organization_id' => $org->id]);
+            $area = Area::factory()->create(['event_id' => $event->id]);
+
+            // Don't load the event relationship - check if it's loaded
+            $result = $this->service->collectChecksumData($area);
+
+            expect($result)->toBeArray()
+                ->and($result)->toHaveKeys(['area', 'event', 'assignments', 'areaSingleResets', 'areaRecurringResets'])
+                ->and($result['area'])->toHaveKeys(['id', 'event_id']);
+
+            // The event might be loaded automatically or be null - both are valid
+            if ($result['event'] !== null) {
+                expect($result['event'])->toHaveKeys(['id', 'starts_at', 'ends_at']);
+            }
+        });
+    });
+
+    describe('calculateChecksum', function () {
+        it('returns consistent checksum for same data', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create([
+                'organization_id' => $org->id,
+                'starts_at' => '2024-01-01 10:00:00',
+                'ends_at' => '2024-01-01 18:00:00',
+            ]);
+            $area = Area::factory()->create([
+                'event_id' => $event->id,
+                'name' => 'Test Area',
+            ]);
+
+            $checksum1 = $this->service->calculateChecksum($area);
+            $checksum2 = $this->service->calculateChecksum($area);
+
+            expect($checksum1)->toBeString()
+                ->and($checksum1)->toBe($checksum2)
+                ->and(strlen($checksum1))->toBe(64); // SHA256 produces 64 character hex string
+        });
+
+        it('returns different checksums for different areas', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create(['organization_id' => $org->id]);
+            $area1 = Area::factory()->create(['event_id' => $event->id]);
+            $area2 = Area::factory()->create(['event_id' => $event->id]);
+
+            $checksum1 = $this->service->calculateChecksum($area1);
+            $checksum2 = $this->service->calculateChecksum($area2);
+
+            expect($checksum1)->toBeString()
+                ->and($checksum2)->toBeString()
+                ->and($checksum1)->not->toBe($checksum2);
+        });
+
+        it('returns different checksums when event changes', function () {
+            $org = Organization::factory()->create();
+            $event1 = Event::factory()->create([
+                'organization_id' => $org->id,
+                'starts_at' => '2024-01-01 10:00:00',
+            ]);
+            $event2 = Event::factory()->create([
+                'organization_id' => $org->id,
+                'starts_at' => '2024-01-02 10:00:00',
+            ]);
+            $area = Area::factory()->create(['event_id' => $event1->id]);
+
+            $checksum1 = $this->service->calculateChecksum($area);
+
+            // Change the area's event
+            $area->update(['event_id' => $event2->id]);
+            $area->refresh();
+
+            $checksum2 = $this->service->calculateChecksum($area);
+
+            expect($checksum1)->not->toBe($checksum2);
+        });
+
+        it('loads relationships before calculating checksum', function () {
+            $org = Organization::factory()->create();
+            $event = Event::factory()->create([
+                'organization_id' => $org->id,
+                'starts_at' => '2024-01-01 10:00:00',
+                'ends_at' => '2024-01-01 18:00:00',
+            ]);
+            $area = Area::factory()->create(['event_id' => $event->id]);
+
+            // Ensure relationships are not loaded initially
+            expect($area->relationLoaded('event'))->toBeFalse()
+                ->and($area->relationLoaded('assignments'))->toBeFalse()
+                ->and($area->relationLoaded('areaSingleResets'))->toBeFalse()
+                ->and($area->relationLoaded('areaRecurringResets'))->toBeFalse();
+
+            // Calculate checksum - this should load the relationships
+            $checksum = $this->service->calculateChecksum($area);
+
+            // Verify relationships are now loaded
+            expect($area->relationLoaded('event'))->toBeTrue()
+                ->and($area->relationLoaded('assignments'))->toBeTrue()
+                ->and($area->relationLoaded('areaSingleResets'))->toBeTrue()
+                ->and($area->relationLoaded('areaRecurringResets'))->toBeTrue()
+                ->and($checksum)->toBeString();
+        });
+
+    });
+});
