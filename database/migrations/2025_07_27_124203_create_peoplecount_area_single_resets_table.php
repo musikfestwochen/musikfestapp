@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(Area::class)->constrained('peoplecount_areas')->cascadeOnDelete();
             $table->integer('reset_value');
             $table->datetime('effective_at');
-            $table->foreignIdFor(User::class, 'created_by')->constrained('users')->nullOnDelete();
+            $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->text('notes')->nullable();
             $table->timestamps();
         });
