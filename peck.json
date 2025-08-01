@@ -24,7 +24,9 @@
             "lqip",
             "vonage",
             "jquery",
-            "combobox"
+            "combobox",
+            "webcron",
+            "ips"
         ],
         "paths": []
     }

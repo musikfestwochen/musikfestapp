@@ -108,6 +108,7 @@ it('tests if no unwanted routes are exposed', function () {
 
         // API Routes
         ['method' => 'POST', 'uri' => 'api/peoplecount/interval-count'],
+        ['method' => 'POST', 'uri' => 'api/webcron'],
 
         // Laravel Sanctum routes
         ['method' => 'GET|HEAD', 'uri' => 'sanctum/csrf-cookie'],
