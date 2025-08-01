@@ -28,7 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 'permissions.organization_slug' => OrganizationSlugMiddleware::class,
                 'role' => RoleMiddleware::class,
                 'permission' => PermissionMiddleware::class,
-                'role_or_permission' => RoleOrPermissionMiddleware::class, ],
+                'role_or_permission' => RoleOrPermissionMiddleware::class,
+                'webcron.token' => \App\Http\Middleware\VerifyWebcronToken::class, ],
         );
         $middleware->priority(
             [
