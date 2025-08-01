@@ -22,6 +22,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.15",
+        "beyondcode/laravel-er-diagram-generator": "^5.0",
         "driftingly/rector-laravel": "^2.0",
         "jasonmccreary/laravel-test-assertions": "^2.8",
         "larastan/larastan": "^3.1",
@@ -96,6 +97,11 @@
             "@test:types",
             "@test:mutation",
             "@test:e2e"
+        ],
+        "generate": [
+            "php artisan generate:erd ./docs/diagrams/er-diagram.svg",
+            "php artisan generate:erd ./docs/diagrams/er-diagram.png",
+            "php artisan generate:erd ./docs/diagrams/er-diagram.txt"
         ],
         "precommit": [
             "@rector",
