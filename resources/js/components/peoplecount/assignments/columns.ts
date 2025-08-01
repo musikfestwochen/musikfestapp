@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountAssignment } from '@/types';
-import { formatLocalDateTime } from '@/utils/eventHelpers';
+import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';

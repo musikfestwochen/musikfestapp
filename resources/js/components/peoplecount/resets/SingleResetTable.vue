@@ -1,0 +1,36 @@
+<script lang="ts" setup>
+import { DataTable } from '@/components/data-table';
+import { Button } from '@/components/ui/button';
+import { Organization, PeoplecountArea, PeoplecountAreaSingleReset } from '@/types';
+import { Link } from '@inertiajs/vue3';
+import { Plus } from 'lucide-vue-next';
+import { singleResetColumns } from './columns';
+
+const props = defineProps<{
+    resets: PeoplecountAreaSingleReset[];
+    organization: Organization;
+    area: PeoplecountArea;
+}>();
+
+const columns = singleResetColumns(props.organization, props.area);
+</script>
+
+<template>
+    <DataTable :columns="columns" :data="resets" filter-column="notes" search-placeholder="Search resets...">
+        <template #actions>
+            <Button as-child size="sm" variant="default">
+                <Link
+                    :href="
+                        route('peoplecount.areas.single-resets.create', {
+                            organization: props.organization.slug,
+                            area: props.area.id,
+                        })
+                    "
+                >
+                    <Plus class="mr-1 h-4 w-4" />
+                    Create Reset
+                </Link>
+            </Button>
+        </template>
+    </DataTable>
+</template>

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PeoplecountEvent } from '@/types';
-import { formatLocalDateTime } from '@/utils/eventHelpers';
+import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Calendar } from 'lucide-vue-next';
 
 defineProps<{

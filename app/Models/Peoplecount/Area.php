@@ -59,4 +59,44 @@ class Area extends Model
     {
         return $this->hasMany(Assignment::class);
     }
+
+    /**
+     * The Single Resets that belong to the area.
+     *
+     * @return HasMany<AreaSingleReset, $this>
+     */
+    public function areaSingleResets(): HasMany
+    {
+        return $this->hasMany(AreaSingleReset::class);
+    }
+
+    /**
+     * The Single Resets that belong to the area (for route model binding).
+     *
+     * @return HasMany<AreaSingleReset, $this>
+     */
+    public function singleResets(): HasMany
+    {
+        return $this->areaSingleResets();
+    }
+
+    /**
+     * The Recurring Resets that belong to the area.
+     *
+     * @return HasMany<AreaRecurringReset, $this>
+     */
+    public function areaRecurringResets(): HasMany
+    {
+        return $this->hasMany(AreaRecurringReset::class);
+    }
+
+    /**
+     * The Recurring Resets that belong to the area (for route model binding).
+     *
+     * @return HasMany<AreaRecurringReset, $this>
+     */
+    public function recurringResets(): HasMany
+    {
+        return $this->areaRecurringResets();
+    }
 }

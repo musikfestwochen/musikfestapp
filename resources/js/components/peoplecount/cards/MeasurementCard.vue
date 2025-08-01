@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatTimestamp } from '@/utils/dateTimeHelpers';
 
 interface MeasurementInterval {
     id: number;
@@ -13,12 +14,6 @@ interface MeasurementInterval {
 defineProps<{
     measurement: MeasurementInterval;
 }>();
-
-const formatTimestamp = (iso: string) =>
-    new Date(iso).toLocaleString(undefined, {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    });
 </script>
 
 <template>

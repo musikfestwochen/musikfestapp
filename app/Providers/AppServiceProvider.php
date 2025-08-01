@@ -8,6 +8,7 @@ use App\Listeners\Permissions\RoleAttachedListener;
 use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
+use App\Services\Peoplecount\AreaResetService;
 use App\Services\Peoplecount\AreaService;
 use App\Services\Peoplecount\AssignmentService;
 use App\Services\Peoplecount\EventService;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(IntervalCountService::class);
         $this->app->singleton(EventService::class);
         $this->app->singleton(AreaService::class);
+        $this->app->singleton(AreaResetService::class);
         $this->app->singleton(AssignmentService::class);
     }
 

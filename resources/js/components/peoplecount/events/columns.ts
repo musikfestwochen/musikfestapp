@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountEvent } from '@/types';
-import { formatLocalDateTime, getEventDuration, getEventStatus } from '@/utils/eventHelpers';
+import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { getEventDuration, getEventStatus } from '@/utils/eventHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';

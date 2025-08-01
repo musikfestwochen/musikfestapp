@@ -82,7 +82,7 @@
         ],
         "test:mutation": [
             "Composer\\Config::disableProcessTimeout",
-            "pest --mutate --parallel --covered-only --min=100"
+            "pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations"
         ],
         "test:e2e": [
             "npm run build",

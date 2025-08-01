@@ -46,6 +46,20 @@ it('has many assignments', function () {
     expect($relation)->toBeInstanceOf(HasMany::class);
 });
 
+it('has many single resets', function () {
+    $model = new Area;
+    $relation = $model->areaSingleResets();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+});
+
+it('has many recurring resets', function () {
+    $model = new Area;
+    $relation = $model->areaRecurringResets();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+});
+
 it('has factory', function () {
     expect(Area::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
 });

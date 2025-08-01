@@ -3,7 +3,7 @@ import Heading from '@/components/Heading.vue';
 import AssignmentForm from '@/components/peoplecount/assignments/AssignmentForm.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
-import { formatLocalDateTime } from '@/utils/eventHelpers';
+import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Head } from '@inertiajs/vue3';
 
 const props = defineProps<{

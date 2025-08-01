@@ -284,7 +284,7 @@ describe('update', function () {
     });
 });
 
-describe('getWithAssignments', function () {
+describe('getWithRelations', function () {
     it('returns area with loaded relationships', function () {
         $org = Organization::factory()->create();
         $event = Event::factory()->create([
@@ -295,12 +295,14 @@ describe('getWithAssignments', function () {
         ]);
         setPermissionsOrgId($org->id);
 
-        $result = $this->service->getWithAssignments($area);
+        $result = $this->service->getWithRelations($area);
 
         expect($result)->toBeInstanceOf(Area::class)
             ->and($result->id)->toBe($area->id)
             ->and($result->relationLoaded('event'))->toBeTrue()
-            ->and($result->relationLoaded('assignments'))->toBeTrue();
+            ->and($result->relationLoaded('assignments'))->toBeTrue()
+            ->and($result->relationLoaded('areaSingleResets'))->toBeTrue()
+            ->and($result->relationLoaded('areaRecurringResets'))->toBeTrue();
     });
 
     it('loads nested sensor relationships on assignments', function () {
@@ -313,7 +315,7 @@ describe('getWithAssignments', function () {
         ]);
         setPermissionsOrgId($org->id);
 
-        $result = $this->service->getWithAssignments($area);
+        $result = $this->service->getWithRelations($area);
 
         expect($result)->toBeInstanceOf(Area::class)
             ->and($result->relationLoaded('assignments'))->toBeTrue();
@@ -321,6 +323,48 @@ describe('getWithAssignments', function () {
         // If there are assignments, they should have sensor relationship loaded
         if ($result->assignments->isNotEmpty()) {
             expect($result->assignments->first()->relationLoaded('sensor'))->toBeTrue();
+        }
+    });
+
+    it('loads nested user relationships on area single resets', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+        setPermissionsOrgId($org->id);
+
+        $result = $this->service->getWithRelations($area);
+
+        expect($result)->toBeInstanceOf(Area::class)
+            ->and($result->relationLoaded('areaSingleResets'))->toBeTrue();
+
+        // If there are area single resets, they should have user relationship loaded
+        if ($result->areaSingleResets->isNotEmpty()) {
+            expect($result->areaSingleResets->first()->relationLoaded('createdBy'))->toBeTrue();
+        }
+    });
+
+    it('loads nested event relationships on area recurring resets', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+        setPermissionsOrgId($org->id);
+
+        $result = $this->service->getWithRelations($area);
+
+        expect($result)->toBeInstanceOf(Area::class)
+            ->and($result->relationLoaded('areaRecurringResets'))->toBeTrue();
+
+        // If there are area recurring resets, they should have event relationship loaded
+        if ($result->areaRecurringResets->isNotEmpty()) {
+            expect($result->areaRecurringResets->first()->relationLoaded('event'))->toBeTrue();
         }
     });
 });

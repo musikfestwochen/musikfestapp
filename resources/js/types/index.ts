@@ -46,6 +46,7 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    area_single_resets?: PeoplecountAreaSingleReset[]; // Optional, for related area single resets created by this user
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
@@ -116,6 +117,8 @@ export interface PeoplecountArea {
     deleted_at?: string;
     event?: PeoplecountEvent; // Optional, for related event
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
+    area_single_resets?: PeoplecountAreaSingleReset[]; // Optional, for related single resets
+    area_recurring_resets?: PeoplecountAreaRecurringReset[]; // Optional, for related recurring resets
 }
 
 export interface PeoplecountAssignment {
@@ -132,4 +135,28 @@ export interface PeoplecountAssignment {
     event?: PeoplecountEvent; // Optional, for related event
     area?: PeoplecountArea; // Optional, for related area
     sensor?: PeoplecountSensor; // Optional, for related sensor
+}
+
+export interface PeoplecountAreaSingleReset {
+    id: number;
+    area_id: number;
+    reset_value: number;
+    effective_at: string; // ISO 8601 date-time string (UTC)
+    created_by: User;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+    area?: PeoplecountArea; // Optional, for related area
+}
+
+export interface PeoplecountAreaRecurringReset {
+    id: number;
+    area_id: number;
+    reset_value: number;
+    reset_time: string;
+    timezone: string;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+    area?: PeoplecountArea; // Optional, for related area
 }

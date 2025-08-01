@@ -22,7 +22,9 @@
             "debugbar",
             "peoplecount",
             "lqip",
-            "vonage"
+            "vonage",
+            "jquery",
+            "combobox"
         ],
         "paths": []
     }
