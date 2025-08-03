@@ -24,3 +24,7 @@ pest()->extend(Tests\TestCase::class)
 
 pest()->extend(Tests\TestCase::class)
     ->in('Architecture');
+
+/**
+ * setup a test environment with
+ */

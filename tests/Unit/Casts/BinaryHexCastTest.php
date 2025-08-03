@@ -1,14 +1,23 @@
 <?php
 
 use App\Casts\BinaryHexCast;
+use Illuminate\Database\Eloquent\Model;
 
 covers(BinaryHexCast::class);
+
+function createMockModel(): Model
+{
+    return new class extends Model
+    {
+        protected $table = 'test_table';
+    };
+}
 
 it('converts binary data to hex string in get method', function () {
     $cast = new BinaryHexCast;
     $binaryData = pack('H*', 'deadbeef');
 
-    $result = $cast->get(null, 'test_key', $binaryData, []);
+    $result = $cast->get(createMockModel(), 'test_key', $binaryData, []);
 
     expect($result)->toBe('deadbeef');
 });
@@ -16,7 +25,7 @@ it('converts binary data to hex string in get method', function () {
 it('returns null when value is null in get method', function () {
     $cast = new BinaryHexCast;
 
-    $result = $cast->get(null, 'test_key', null, []);
+    $result = $cast->get(createMockModel(), 'test_key', null, []);
 
     expect($result)->toBeNull();
 });
@@ -25,7 +34,7 @@ it('converts hex string to binary data in set method', function () {
     $cast = new BinaryHexCast;
     $hexString = 'deadbeef';
 
-    $result = $cast->set(null, 'test_key', $hexString, []);
+    $result = $cast->set(createMockModel(), 'test_key', $hexString, []);
 
     expect($result)->toBe(pack('H*', 'deadbeef'));
 });
@@ -33,7 +42,7 @@ it('converts hex string to binary data in set method', function () {
 it('returns null when value is null in set method', function () {
     $cast = new BinaryHexCast;
 
-    $result = $cast->set(null, 'test_key', null, []);
+    $result = $cast->set(createMockModel(), 'test_key', null, []);
 
     expect($result)->toBeNull();
 });
@@ -42,7 +51,7 @@ it('throws exception when invalid hex string is provided in set method', functio
     $cast = new BinaryHexCast;
     $invalidHex = 'invalid_hex_string';
 
-    expect(fn () => $cast->set(null, 'test_key', $invalidHex, []))
+    expect(fn (): ?string => $cast->set(createMockModel(), 'test_key', $invalidHex, []))
         ->toThrow(ErrorException::class);
 });
 
@@ -51,10 +60,10 @@ it('handles round-trip conversion correctly', function () {
     $originalHex = 'deadbeef';
 
     // Convert hex to binary (set)
-    $binary = $cast->set(null, 'test_key', $originalHex, []);
+    $binary = $cast->set(createMockModel(), 'test_key', $originalHex, []);
 
     // Convert binary back to hex (get)
-    $resultHex = $cast->get(null, 'test_key', $binary, []);
+    $resultHex = $cast->get(createMockModel(), 'test_key', $binary, []);
 
     expect($resultHex)->toBe($originalHex);
 });
@@ -62,8 +71,8 @@ it('handles round-trip conversion correctly', function () {
 it('handles various hex string formats', function (string $hexInput, string $expected) {
     $cast = new BinaryHexCast;
 
-    $binary = $cast->set(null, 'test_key', $hexInput, []);
-    $result = $cast->get(null, 'test_key', $binary, []);
+    $binary = $cast->set(createMockModel(), 'test_key', $hexInput, []);
+    $result = $cast->get(createMockModel(), 'test_key', $binary, []);
 
     expect($result)->toBe($expected);
 })->with([
@@ -77,7 +86,7 @@ it('handles various hex string formats', function (string $hexInput, string $exp
 it('throws exception for invalid hex strings', function (string $invalidHex) {
     $cast = new BinaryHexCast;
 
-    expect(fn () => $cast->set(null, 'test_key', $invalidHex, []))
+    expect(fn (): ?string => $cast->set(createMockModel(), 'test_key', $invalidHex, []))
         ->toThrow(ErrorException::class);
 })->with([
     ['xyz'],
@@ -89,7 +98,7 @@ it('throws exception for invalid hex strings', function (string $invalidHex) {
 it('handles empty string by returning empty string', function () {
     $cast = new BinaryHexCast;
 
-    $result = $cast->set(null, 'test_key', '', []);
+    $result = $cast->set(createMockModel(), 'test_key', '', []);
 
     expect($result)->toBe('');
 });
@@ -106,8 +115,8 @@ it('preserves binary data integrity', function () {
     ];
 
     foreach ($testData as $originalBinary) {
-        $hex = $cast->get(null, 'test_key', $originalBinary, []);
-        $restoredBinary = $cast->set(null, 'test_key', $hex, []);
+        $hex = $cast->get(createMockModel(), 'test_key', $originalBinary, []);
+        $restoredBinary = $cast->set(createMockModel(), 'test_key', $hex, []);
 
         expect($restoredBinary)->toBe($originalBinary);
     }

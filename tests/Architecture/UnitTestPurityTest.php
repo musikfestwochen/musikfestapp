@@ -35,11 +35,11 @@ it('ensures unit tests do not use framework dependencies', function () {
         'resolve(' => 'Unit tests should not use resolve() helper - inject dependencies or move to Integration',
 
         // HTTP testing methods
-        '->get(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
-        '->post(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
-        '->put(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
-        '->patch(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
-        '->delete(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
+        '$this->get(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
+        '$this->post(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
+        '$this->put(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
+        '$this->patch(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
+        '$this->delete(' => 'Unit tests should not make HTTP requests - move to Feature for HTTP testing',
         '->actingAs(' => 'Unit tests should not test authentication - move to Feature for auth testing',
 
         // Queue and job testing

@@ -99,4 +99,14 @@ class Area extends Model
     {
         return $this->areaRecurringResets();
     }
+
+    /**
+     * The Aggregated Counts that belong to the area.
+     *
+     * @return HasMany<AreaAggregatedCount, $this>
+     */
+    public function aggregatedCounts(): HasMany
+    {
+        return $this->hasMany(AreaAggregatedCount::class);
+    }
 }

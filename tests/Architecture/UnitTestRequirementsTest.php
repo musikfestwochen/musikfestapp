@@ -42,7 +42,7 @@ it('ensures each class appears exactly once in covers() annotations', function (
             $sourceContent = file_get_contents($sourceFile);
 
             if (preg_match('/namespace\s+([^;]+)/m', $sourceContent, $namespaceMatches) &&
-                preg_match('/(?:class|interface|trait)\s+(\w+)/m', $sourceContent, $classMatches)) {
+                preg_match('/^(?:#\[[^\]]*\]\s+)?(?:abstract\s+|final\s+)?(?:class|interface|trait)\s+(\w+)/m', $sourceContent, $classMatches)) {
                 $className = trim($namespaceMatches[1]).'\\'.$classMatches[1];
                 $allSourceClasses[$className] = $sourceFile;
             }
