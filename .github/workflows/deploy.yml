@@ -85,7 +85,7 @@ jobs:
 
             cd /home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp
 
-            if $PHP_BIN artisan down; then
+            if $PHP_BIN artisan down --refresh=15; then
               echo "Application in maintenance mode."
             else
               echo "Failed to put application in maintenance mode. Continuing deployment..."
@@ -96,16 +96,26 @@ jobs:
             git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
 
             echo "Decrypting environment file..."
-            $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY_2 }} --force || { echo "Environment decryption failed! Exiting."; exit 1; }
+            $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY_2 }} --force --filename=new-env || { echo "Environment decryption failed! Exiting."; exit 1; }
+
+            echo "Removing other environment files..."
+            rm -f .env* || { echo "Failed to remove old environment files! Exiting."; exit 1; }
+
+            echo "Renaming decrypted environment file..."
+            mv new-env .env || { echo "Failed to rename decrypted environment file! Exiting."; exit 1; }
 
             echo "Installing PHP dependencies on the server..."
             $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
 
             echo "Running database migrations..."
-            $PHP_BIN artisan migrate:fresh --seed --force || { echo "Migrations failed! Exiting."; exit 1; }
+            $PHP_BIN artisan migrate --force || { echo "Migrations failed! Exiting."; exit 1; }
+
+            echo "Seeding the Role and Permission tables..."
+            $PHP_BIN artisan db:seed --force --class=RolesAndPermissionsSeeder || { echo "Seeding failed! Exiting."; exit 1; }
 
             echo "Optimizing application..."
             $PHP_BIN artisan optimize:clear || { echo "Optimization failed! Exiting."; exit 1; }
+            $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
 
             echo "Generating Ziggy routes..."
             $PHP_BIN artisan ziggy:generate || { echo "Ziggy generation failed! Exiting."; exit 1; }
