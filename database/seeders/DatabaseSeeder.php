@@ -4,8 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
-use App\Models\Peoplecount\AreaRecurringReset;
-use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
@@ -22,21 +20,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-
         $rolePermissionsSeeder = new RolesAndPermissionsSeeder;
         $rolePermissionsSeeder->run();
 
-        // create organizations (MFW and ZHAW)
+        // Create single organization: Winterthurer Musikfestwochen
         $mfw = Organization::factory()->create([
             'name' => 'Winterthurer Musikfestwochen',
             'slug' => 'mfw',
         ]);
-        $zhaw = Organization::factory()->create([
-            'name' => 'Zürcher Hochschule für Angewandte Wissenschaften',
-            'slug' => 'zhaw',
-        ]);
 
-        User::factory()->globalAdmin()->organizationAdmin(null, [$mfw, $zhaw])->create([
+        // Create admin users for the organization
+        User::factory()->globalAdmin()->organizationAdmin($mfw)->create([
             'name' => 'Simon',
             'email' => 'simon@musikfestapp.ch',
             'phone' => '+41797164443',
@@ -54,187 +48,49 @@ class DatabaseSeeder extends Seeder
             'phone' => '+41794256763',
         ]);
 
-        // Create 5 random users for each organization
-        $mfwUsers = User::factory(5)->randomVerified()->create();
-        foreach ($mfwUsers as $user) {
-            $user->organizations()->attach($mfw->id);
+        // Create preparation event: Musikfestwochen Vorbereitung (1st August 2025 8am to 6th August 2025 6pm)
+        $preparationEvent = Event::factory()->withOrganization($mfw)->create([
+            'name' => 'Musikfestwochen Vorbereitung',
+            'starts_at' => '2025-08-01 08:00:00', // 8am UTC
+            'ends_at' => '2025-08-06 18:00:00',   // 6pm UTC
+        ]);
+
+        // Create main event: Musikfestwochen 2025 (6th August 2025 6pm to 17th August 2025 10pm)
+        $event = Event::factory()->withOrganization($mfw)->create([
+            'name' => 'Musikfestwochen 2025',
+            'starts_at' => '2025-08-06 18:00:00', // 6pm UTC
+            'ends_at' => '2025-08-17 22:00:00',   // 10pm UTC
+        ]);
+
+        // Create area for preparation event: Gesamtes Gelände
+        $preparationArea = Area::factory()->withEvent($preparationEvent)->create([
+            'name' => 'Gesamtes Gelände',
+        ]);
+
+        // Create area for main event: Gesamtes Gelände
+        $area = Area::factory()->withEvent($event)->create([
+            'name' => 'Gesamtes Gelände',
+        ]);
+
+        // Create 10 sensors for the organization
+        $sensors = Sensor::factory(10)->axisP88152()->withToken()->withOrganization($mfw)->create();
+
+        // Assign all 10 sensors to the preparation area with random direction flipping
+        foreach ($sensors as $sensor) {
+            Assignment::factory()
+                ->withArea($preparationArea)
+                ->withSensor($sensor)
+                ->withDirectionFlipped(fake()->boolean())
+                ->create();
         }
 
-        $zhawUsers = User::factory(5)->randomVerified()->create();
-        foreach ($zhawUsers as $user) {
-            $user->organizations()->attach($zhaw->id);
+        // Assign all 10 sensors to the main event area with random direction flipping
+        foreach ($sensors as $sensor) {
+            Assignment::factory()
+                ->withArea($area)
+                ->withSensor($sensor)
+                ->withDirectionFlipped(fake()->boolean())
+                ->create();
         }
-
-        // Create 10 random sensors for each organization
-        Sensor::factory(10)->axisP88152()->withToken()->withOrganization($mfw)->create();
-        Sensor::factory(10)->axisP88152()->withToken()->withOrganization($zhaw)->create();
-
-        // Create realistic events for MFW (Winterthurer Musikfestwochen)
-        $mfwSummerFest = Event::factory()->withOrganization($mfw)->create([
-            'name' => 'Winterthurer Musikfestwochen 2024 - Sommerfest',
-            'starts_at' => '2024-08-15 10:00:00',
-            'ends_at' => '2024-08-18 23:00:00',
-        ]);
-
-        $mfwWinterConcert = Event::factory()->withOrganization($mfw)->create([
-            'name' => 'Winterthurer Musikfestwochen 2024 - Winterkonzert',
-            'starts_at' => '2024-12-20 18:00:00',
-            'ends_at' => '2024-12-22 22:00:00',
-        ]);
-
-        // Create realistic events for ZHAW (Zürcher Hochschule für Angewandte Wissenschaften)
-        $zhawOpenDay = Event::factory()->withOrganization($zhaw)->create([
-            'name' => 'ZHAW Open Day 2024 - Campus Winterthur',
-            'starts_at' => '2024-09-14 09:00:00',
-            'ends_at' => '2024-09-14 17:00:00',
-        ]);
-
-        $zhawGraduation = Event::factory()->withOrganization($zhaw)->create([
-            'name' => 'ZHAW Graduation Ceremony 2024',
-            'starts_at' => '2024-10-25 14:00:00',
-            'ends_at' => '2024-10-25 18:00:00',
-        ]);
-
-        // Create realistic areas for MFW Summer Festival
-        $mfwMainStage = Area::factory()->withEvent($mfwSummerFest)->create([
-            'name' => 'Hauptbühne',
-        ]);
-        $mfwFoodCourt = Area::factory()->withEvent($mfwSummerFest)->create([
-            'name' => 'Food Court',
-        ]);
-        $mfwVipArea = Area::factory()->withEvent($mfwSummerFest)->create([
-            'name' => 'VIP Bereich',
-        ]);
-
-        // Create realistic areas for MFW Winter Concert
-        $mfwConcertHall = Area::factory()->withEvent($mfwWinterConcert)->create([
-            'name' => 'Konzertsaal',
-        ]);
-        $mfwFoyer = Area::factory()->withEvent($mfwWinterConcert)->create([
-            'name' => 'Foyer',
-        ]);
-
-        // Create realistic areas for ZHAW Open Day
-        $zhawAuditorium = Area::factory()->withEvent($zhawOpenDay)->create([
-            'name' => 'Hauptauditorium',
-        ]);
-        $zhawLabTour = Area::factory()->withEvent($zhawOpenDay)->create([
-            'name' => 'Labor-Rundgang',
-        ]);
-        $zhawInfoDesk = Area::factory()->withEvent($zhawOpenDay)->create([
-            'name' => 'Informationsstand',
-        ]);
-
-        // Create realistic areas for ZHAW Graduation
-        $zhawGradHall = Area::factory()->withEvent($zhawGraduation)->create([
-            'name' => 'Graduierungshalle',
-        ]);
-        $zhawReception = Area::factory()->withEvent($zhawGraduation)->create([
-            'name' => 'Empfangsbereich',
-        ]);
-
-        // Create assignments for MFW events using their sensors
-        $mfwSensors = \App\Models\Peoplecount\Sensor::query()->where('organization_id', $mfw->id)->get();
-
-        // Assign sensors to MFW Summer Festival areas
-        Assignment::factory()->withArea($mfwMainStage)->withSensor($mfwSensors->get(0))->withDirectionFlipped(false)->create();
-        Assignment::factory()->withArea($mfwMainStage)->withSensor($mfwSensors->get(1))->withDirectionFlipped(true)->create();
-        Assignment::factory()->withArea($mfwFoodCourt)->withSensor($mfwSensors->get(2))->withDirectionFlipped(false)->create();
-        Assignment::factory()->withArea($mfwFoodCourt)->withSensor($mfwSensors->get(3))->withDirectionFlipped(true)->create();
-        Assignment::factory()->withArea($mfwVipArea)->withSensor($mfwSensors->get(4))->withDirectionFlipped(false)->create();
-
-        // Assign sensors to MFW Winter Concert areas
-        Assignment::factory()->withArea($mfwConcertHall)->withSensor($mfwSensors->get(5))->withDirectionFlipped(false)->create();
-        Assignment::factory()->withArea($mfwConcertHall)->withSensor($mfwSensors->get(6))->withDirectionFlipped(true)->create();
-        Assignment::factory()->withArea($mfwFoyer)->withSensor($mfwSensors->get(7))->withDirectionFlipped(false)->create();
-
-        // Create assignments for ZHAW events using their sensors
-        $zhawSensors = \App\Models\Peoplecount\Sensor::query()->where('organization_id', $zhaw->id)->get();
-
-        // Assign sensors to ZHAW Open Day areas
-        Assignment::factory()->withArea($zhawAuditorium)->withSensor($zhawSensors->get(0))->withDirectionFlipped(false)->create();
-        Assignment::factory()->withArea($zhawAuditorium)->withSensor($zhawSensors->get(1))->withDirectionFlipped(true)->create();
-        Assignment::factory()->withArea($zhawLabTour)->withSensor($zhawSensors->get(2))->withDirectionFlipped(false)->create();
-        Assignment::factory()->withArea($zhawLabTour)->withSensor($zhawSensors->get(3))->withDirectionFlipped(true)->create();
-        Assignment::factory()->withArea($zhawInfoDesk)->withSensor($zhawSensors->get(4))->withDirectionFlipped(false)->create();
-
-        // Assign sensors to ZHAW Graduation areas
-        Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(5))->withDirectionFlipped(false)->create();
-        Assignment::factory()->withArea($zhawGradHall)->withSensor($zhawSensors->get(6))->withDirectionFlipped(true)->create();
-        Assignment::factory()->withArea($zhawReception)->withSensor($zhawSensors->get(7))->withDirectionFlipped(false)->create();
-
-        // Create sample manual resets (AreaSingleReset) with different timestamps
-        // Historical resets for MFW Summer Festival areas
-        AreaSingleReset::factory()->withArea($mfwMainStage)->withCreatedBy($mfwUsers->first())->withResetValue(0)->withEffectiveAt(new \DateTime('2024-08-15 09:00:00'))->create([
-            'notes' => 'Event start - reset to zero for opening',
-        ]);
-        AreaSingleReset::factory()->withArea($mfwFoodCourt)->withCreatedBy($mfwUsers->get(1))->withResetValue(50)->withEffectiveAt(new \DateTime('2024-08-16 12:00:00'))->create([
-            'notes' => 'Lunch rush adjustment - technical issue resolved',
-        ]);
-        AreaSingleReset::factory()->withArea($mfwVipArea)->withCreatedBy($mfwUsers->get(2))->withResetValue(25)->withEffectiveAt(new \DateTime('2024-08-17 18:00:00'))->create([
-            'notes' => 'VIP reception start - manual count verification',
-        ]);
-
-        // Recent resets for MFW Winter Concert areas
-        AreaSingleReset::factory()->withArea($mfwConcertHall)->withCreatedBy($mfwUsers->get(3))->withResetValue(0)->withEffectiveAt(new \DateTime('2024-12-20 17:30:00'))->create([
-            'notes' => 'Pre-concert reset - venue preparation complete',
-        ]);
-        AreaSingleReset::factory()->withArea($mfwFoyer)->withCreatedBy($mfwUsers->get(4))->withResetValue(15)->withEffectiveAt(new \DateTime('2024-12-21 19:45:00'))->create([
-            'notes' => 'Intermission adjustment - sensor calibration',
-        ]);
-
-        // Sample resets for ZHAW events
-        AreaSingleReset::factory()->withArea($zhawAuditorium)->withCreatedBy($zhawUsers->first())->withResetValue(0)->withEffectiveAt(new \DateTime('2024-09-14 08:30:00'))->create([
-            'notes' => 'Open Day preparation - venue cleared',
-        ]);
-        AreaSingleReset::factory()->withArea($zhawLabTour)->withCreatedBy($zhawUsers->get(1))->withResetValue(10)->withEffectiveAt(new \DateTime('2024-09-14 14:00:00'))->create([
-            'notes' => 'Afternoon tour group - manual count correction',
-        ]);
-        AreaSingleReset::factory()->withArea($zhawGradHall)->withCreatedBy($zhawUsers->get(2))->withResetValue(0)->withEffectiveAt(new \DateTime('2024-10-25 13:30:00'))->create([
-            'notes' => 'Graduation ceremony setup - final preparation',
-        ]);
-
-        // Create sample recurring resets (AreaRecurringReset) with daily reset times
-        // Daily resets for main stage during festival
-        AreaRecurringReset::factory()->withArea($mfwMainStage)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily morning reset at 6 AM during festival',
-            'reset_time' => '06:00',
-        ]);
-
-        // Daily resets for food court
-        AreaRecurringReset::factory()->withArea($mfwFoodCourt)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily deep cleaning reset at 5 AM',
-            'reset_time' => '05:00',
-        ]);
-
-        // Daily morning resets for VIP area
-        AreaRecurringReset::factory()->withArea($mfwVipArea)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily VIP area reset - morning',
-            'reset_time' => '06:00',
-        ]);
-
-        // Daily resets for concert hall
-        AreaRecurringReset::factory()->withArea($mfwConcertHall)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily maintenance reset',
-            'reset_time' => '07:00',
-        ]);
-
-        // Daily resets for ZHAW auditorium
-        AreaRecurringReset::factory()->withArea($zhawAuditorium)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily lecture hall reset',
-            'reset_time' => '07:30',
-        ]);
-
-        // Daily resets for lab tour area
-        AreaRecurringReset::factory()->withArea($zhawLabTour)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily preparation reset',
-            'reset_time' => '08:00',
-        ]);
-
-        // Daily resets for graduation hall
-        AreaRecurringReset::factory()->withArea($zhawGradHall)->withResetValue(0)->withTimezone('Europe/Zurich')->create([
-            'notes' => 'Daily pre-ceremony reset',
-            'reset_time' => '12:00',
-        ]);
     }
 }

@@ -55,13 +55,18 @@ class AreaRecurringReset extends Model
      * Get the next daily occurrence at reset_time in specified timezone.
      * Handles DST transitions by applying reset at defined time in current day.
      */
-    public function getNextDailyOccurrence(): Carbon
+    public function getNextDailyOccurrence(?Carbon $from = null): Carbon
     {
-        $now = Carbon::now($this->timezone);
+        $now = $from ?? Carbon::now($this->timezone);
         $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
 
         // If today's reset time has already passed, get tomorrow's reset
         if ($now->format('H:i') >= $this->reset_time) {
+            $resetTime->addDay();
+        }
+
+        // If the reset time is still before the provided datetime, add another day
+        while ($resetTime->lt($now)) {
             $resetTime->addDay();
         }
 
@@ -83,6 +88,22 @@ class AreaRecurringReset extends Model
         }
 
         return $resetTime;
+    }
+
+    /**
+     * @return array<Carbon>
+     */
+    public function getOccurencesBetween(Carbon $start, Carbon $end): array
+    {
+        $occurences = [];
+        $nextOccurence = $this->getNextDailyOccurrence($start);
+        $occurences[] = $nextOccurence;
+        while ($nextOccurence->lt($end)) {
+            $nextOccurence = $this->getNextDailyOccurrence($nextOccurence->addHours(12));
+            $occurences[] = $nextOccurence;
+        }
+
+        return $occurences;
     }
 
     /**
