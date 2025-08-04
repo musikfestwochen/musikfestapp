@@ -979,8 +979,8 @@ describe('calculateAndStoreAggregatedCount', function () {
         // Verify it was stored in database
         $this->assertDatabaseHas('peoplecount_area_aggregated_counts', [
             'area_id' => $area->id,
-            'from' => $start,
-            'to' => $end,
+            'period_start' => $start,
+            'period_end' => $end,
             'count' => 100,
         ]);
     });
@@ -1249,8 +1249,8 @@ describe('calculateAndStoreAggregatedCount', function () {
         // Create existing record
         \App\Models\Peoplecount\AreaAggregatedCount::query()->create([
             'area_id' => $area->id,
-            'from' => $start,
-            'to' => $end,
+            'period_start' => $start,
+            'period_end' => $end,
             'count' => 75,
             'checksum' => '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         ]);
@@ -1263,8 +1263,8 @@ describe('calculateAndStoreAggregatedCount', function () {
         $this->assertDatabaseCount('peoplecount_area_aggregated_counts', 1);
         $this->assertDatabaseHas('peoplecount_area_aggregated_counts', [
             'area_id' => $area->id,
-            'from' => $start,
-            'to' => $end,
+            'period_start' => $start,
+            'period_end' => $end,
             'count' => 100,
         ]);
     });

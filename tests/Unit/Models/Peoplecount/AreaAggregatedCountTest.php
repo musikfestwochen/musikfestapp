@@ -12,8 +12,8 @@ it('has correct fillable attributes', function () {
     expect($model->getFillable())->toEqualCanonicalizing([
         'area_id',
         'count',
-        'from',
-        'to',
+        'period_start',
+        'period_end',
         'checksum',
     ]);
 });
@@ -40,7 +40,7 @@ it('casts fields correctly', function () {
     $model = new AreaAggregatedCount;
     $casts = $model->getCasts();
 
-    expect($casts)->toHaveKey('from', 'datetime');
-    expect($casts)->toHaveKey('to', 'datetime');
+    expect($casts)->toHaveKey('period_start', 'datetime');
+    expect($casts)->toHaveKey('period_end', 'datetime');
     expect($casts)->toHaveKey('checksum', BinaryHexCast::class);
 });

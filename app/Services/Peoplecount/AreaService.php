@@ -430,8 +430,8 @@ class AreaService
     {
         \App\Models\Peoplecount\AreaAggregatedCount::query()->updateOrCreate([
             'area_id' => $area->id,
-            'from' => $start,
-            'to' => $end,
+            'period_start' => $start,
+            'period_end' => $end,
         ], [
             'checksum' => $areaConfigChecksum,
             'count' => $finalCount,

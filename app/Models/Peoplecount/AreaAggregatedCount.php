@@ -22,8 +22,8 @@ class AreaAggregatedCount extends Model
     protected $fillable = [
         'area_id',
         'count',
-        'from',
-        'to',
+        'period_start',
+        'period_end',
         'checksum',
     ];
 
@@ -38,8 +38,8 @@ class AreaAggregatedCount extends Model
     protected function casts(): array
     {
         return [
-            'from' => 'datetime',
-            'to' => 'datetime',
+            'period_start' => 'datetime',
+            'period_end' => 'datetime',
             'checksum' => BinaryHexCast::class,
         ];
     }

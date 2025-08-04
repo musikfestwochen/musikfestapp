@@ -16,8 +16,8 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Area::class)->constrained()->cascadeOnDelete();
             $table->integer('count')->default(0);
-            $table->timestamp('from')->comment('Aggregation period start in UTC, inclusive');
-            $table->timestamp('to')->comment('Aggregation period end in UTC, exclusive');
+            $table->timestamp('period_start')->comment('Aggregation period start in UTC, inclusive');
+            $table->timestamp('period_end')->comment('Aggregation period end in UTC, exclusive');
             $table->binary('checksum', 32, true)->comment('SHA256 checksum of the area configuration at the time of aggregation');
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('area_aggregated_counts');
+        Schema::dropIfExists('peoplecount_area_aggregated_counts');
     }
 };

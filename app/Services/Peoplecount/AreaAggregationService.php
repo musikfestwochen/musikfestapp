@@ -49,7 +49,7 @@ class AreaAggregationService
     protected function loadAreaRelationships(Area $area): void
     {
         $area->load([
-            'aggregatedCounts' => fn (HasMany $query) => $query->orderBy('to', 'desc'),
+            'aggregatedCounts' => fn (HasMany $query) => $query->orderBy('period_end', 'desc'),
             'areaRecurringResets',
             'areaSingleResets',
             'assignments.sensor',
@@ -109,9 +109,9 @@ class AreaAggregationService
         /** @var Collection<int, int> $differences */
         $differences = $counts->map(function (\App\Models\Peoplecount\AreaAggregatedCount $count) {
             /** @var \Illuminate\Support\Carbon $from */
-            $from = $count->from;
+            $from = $count->period_start;
             /** @var \Illuminate\Support\Carbon $to */
-            $to = $count->to;
+            $to = $count->period_end;
 
             return $from->diffInMinutes($to);
         })->sort()->values();
@@ -282,14 +282,14 @@ class AreaAggregationService
      */
     protected function filterAlreadyAggregatedWindows(Area $area, Collection $aggregationWindows): Collection
     {
-        $lastAggregatedCount = $area->aggregatedCounts()->latest('to')->first();
+        $lastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->first();
 
         if (! $lastAggregatedCount) {
             return $aggregationWindows;
         }
 
         return $aggregationWindows->filter(function (array $window) use ($lastAggregatedCount) {
-            return $window['start']->greaterThanOrEqualTo($lastAggregatedCount->from);
+            return $window['start']->greaterThanOrEqualTo($lastAggregatedCount->period_start);
         });
     }
 
@@ -318,7 +318,7 @@ class AreaAggregationService
      */
     protected function getInitialCountForAggregation(Area $area): int
     {
-        $secondLastAggregatedCount = $area->aggregatedCounts()->latest('to')->skip(1)->first();
+        $secondLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(1)->first();
 
         return $secondLastAggregatedCount ? $secondLastAggregatedCount->count : 0;
     }

@@ -29,7 +29,6 @@ beforeEach(function () {
     $this->callProtectedMethod = function ($methodName, ...$args) {
         $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod($methodName);
-        $method->setAccessible(true);
 
         return $method->invoke($this->service, ...$args);
     };
@@ -85,7 +84,7 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -106,8 +105,8 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock aggregatedCounts property access with some data to trigger deletion logic
         $count = Mockery::mock(AreaAggregatedCount::class);
-        $count->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
         $aggregatedCounts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($aggregatedCounts);
 
@@ -124,7 +123,7 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
 
@@ -177,7 +176,7 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -192,16 +191,16 @@ describe('updateAggregatedCounts method', function () {
 describe('calculateMedianWindowSize method', function () {
     it('calculates median for odd number of counts', function () {
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
-        $count2->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:25:00'));
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:25:00'));
 
         $count3 = Mockery::mock(AreaAggregatedCount::class);
-        $count3->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:25:00'));
-        $count3->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:45:00'));
+        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:25:00'));
+        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:45:00'));
 
         $counts = collect([$count1, $count2, $count3]);
 
@@ -212,12 +211,12 @@ describe('calculateMedianWindowSize method', function () {
 
     it('calculates median for even number of counts', function () {
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
-        $count2->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
 
         $counts = collect([$count1, $count2]);
 
@@ -230,20 +229,20 @@ describe('calculateMedianWindowSize method', function () {
         // Create 4 counts with different durations: [5, 10, 15, 20]
         // Median should be (10 + 15) / 2 = 12.5
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:05:00')); // 5 minutes
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:05:00')); // 5 minutes
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:05:00'));
-        $count2->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:15:00')); // 10 minutes
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:05:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00')); // 10 minutes
 
         $count3 = Mockery::mock(AreaAggregatedCount::class);
-        $count3->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
-        $count3->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:30:00')); // 15 minutes
+        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
+        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:30:00')); // 15 minutes
 
         $count4 = Mockery::mock(AreaAggregatedCount::class);
-        $count4->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
-        $count4->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:50:00')); // 20 minutes
+        $count4->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
+        $count4->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:50:00')); // 20 minutes
 
         $counts = collect([$count1, $count2, $count3, $count4]);
 
@@ -256,24 +255,24 @@ describe('calculateMedianWindowSize method', function () {
         // Create 5 counts with different durations: [5, 10, 15, 20, 25]
         // Median should be the middle value: 15
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:05:00')); // 5 minutes
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:05:00')); // 5 minutes
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:05:00'));
-        $count2->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:15:00')); // 10 minutes
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:05:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00')); // 10 minutes
 
         $count3 = Mockery::mock(AreaAggregatedCount::class);
-        $count3->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
-        $count3->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:30:00')); // 15 minutes
+        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
+        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:30:00')); // 15 minutes
 
         $count4 = Mockery::mock(AreaAggregatedCount::class);
-        $count4->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
-        $count4->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:50:00')); // 20 minutes
+        $count4->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
+        $count4->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:50:00')); // 20 minutes
 
         $count5 = Mockery::mock(AreaAggregatedCount::class);
-        $count5->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:50:00'));
-        $count5->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 11:15:00')); // 25 minutes
+        $count5->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:50:00'));
+        $count5->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 11:15:00')); // 25 minutes
 
         $counts = collect([$count1, $count2, $count3, $count4, $count5]);
 
@@ -492,8 +491,8 @@ describe('deleteInvalidAggregationRows method', function () {
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock1, $relationshipMock2);
 
         // Mock for deleteRowsWithInvalidWindowSize - median matches config
-        $count->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
 
         $result = ($this->callProtectedMethod)('deleteInvalidAggregationRows', $area, 'abc123');
 
@@ -523,8 +522,8 @@ describe('deleteInvalidAggregationRows method', function () {
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock1, $relationshipMock2);
 
         // Mock for deleteRowsWithInvalidWindowSize - median differs from config (15 minutes vs 10)
-        $count->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
         $count->shouldReceive('delete')->once();
 
         $result = ($this->callProtectedMethod)('deleteInvalidAggregationRows', $area, 'abc123');
@@ -565,8 +564,8 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
 
         // Create counts with different window size (15 minutes instead of 10)
         $count = Mockery::mock(AreaAggregatedCount::class);
-        $count->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
         $count->shouldReceive('delete')->once();
         $counts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($counts);
@@ -589,8 +588,8 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
 
         // Create counts with correct window size (10 minutes)
         $count = Mockery::mock(AreaAggregatedCount::class);
-        $count->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('to')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
         $counts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($counts);
 
@@ -616,7 +615,7 @@ describe('getFilteredAggregationWindows method', function () {
 
         // Mock aggregatedCounts relationship for filtering
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -653,7 +652,7 @@ describe('filterAlreadyAggregatedWindows method', function () {
         ]);
 
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -671,10 +670,10 @@ describe('filterAlreadyAggregatedWindows method', function () {
         ]);
 
         $lastCount = Mockery::mock(AreaAggregatedCount::class);
-        $lastCount->shouldReceive('getAttribute')->with('from')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $lastCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
 
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn($lastCount);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -698,7 +697,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
 
         // Mock getInitialCountForAggregation
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -727,7 +726,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
 
         // Mock getInitialCountForAggregation to return a different value
         $relationshipMock = Mockery::mock(HasMany::class);
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -759,7 +758,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
         $secondLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
 
         $relationshipMock = Mockery::mock(HasMany::class);
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn($secondLastCount);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -782,7 +781,7 @@ describe('getInitialCountForAggregation method', function () {
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
 
@@ -800,7 +799,7 @@ describe('getInitialCountForAggregation method', function () {
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('to')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn($secondLastCount);
 

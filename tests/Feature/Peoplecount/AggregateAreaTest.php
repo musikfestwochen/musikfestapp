@@ -15,7 +15,7 @@ it('correctly calculates the total event numbers', function () {
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(-79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(-79);
 });
 
 it('correctly calculates with flipped direction', function ($sensor_index, $expectedCount) {
@@ -33,7 +33,7 @@ it('correctly calculates with flipped direction', function ($sensor_index, $expe
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe($expectedCount);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe($expectedCount);
 })->with([
     [0, -23], // Flipping first sensor
     [1, 23], // Flipping second sensor
@@ -58,7 +58,7 @@ it('correctly calculates the total event numbers with two flipped directions', f
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(79);
 });
 
 it('correctly calculates the total event numbers with different aggregation granularity', function ($granularity_minutes) {
@@ -72,7 +72,7 @@ it('correctly calculates the total event numbers with different aggregation gran
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(-79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(-79);
 })->with([1, 5, 10, 15, 30, 60, 180, 24 * 60 + 10]);
 
 it('correctly aggregates with single reset at start', function ($offset, $expectedCount) {
@@ -94,7 +94,7 @@ it('correctly aggregates with single reset at start', function ($offset, $expect
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe($expectedCount);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe($expectedCount);
 
 })->with([
     [0, -79], // No reset, should be -79
@@ -125,7 +125,7 @@ it('correctly aggregates with single reset after some time', function ($offset, 
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe($expectedCount);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe($expectedCount);
 
 })->with([
     [0, -90],
@@ -164,7 +164,7 @@ it('correctly ignores previous single resets', function ($offset, $expectedCount
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe($expectedCount);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe($expectedCount);
 
 })->with([
     [0, -90],
@@ -194,7 +194,7 @@ it('correctly aggregates with reccurring reset at event start', function () {
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(-79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(-79);
 });
 
 it('correctly aggregates with reccurring reset after some time', function ($offset, $expectedCount) {
@@ -216,7 +216,7 @@ it('correctly aggregates with reccurring reset after some time', function ($offs
     $area = $setup['area']->refresh();
 
     // assert
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(-79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(-79);
 })->with([
     [0, -90],
     [10, -80],
@@ -243,7 +243,7 @@ it('correctly aggregates with many calculations', function () {
 
     // assert
     $area = $setup['area']->refresh();
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(-79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(-79);
 });
 
 it('correctly aggregates with many calculations with many calls', function () {
@@ -267,5 +267,5 @@ it('correctly aggregates with many calculations with many calls', function () {
 
     // assert
     $area = $setup['area']->refresh();
-    expect($area->aggregatedCounts()->latest('to')->first()->count)->toBe(-79);
+    expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe(-79);
 });
