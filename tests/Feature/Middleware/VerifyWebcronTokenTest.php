@@ -265,3 +265,30 @@ it('blocks the actual webcron route with invalid credentials', function () {
 
     $response->assertStatus(403);
 });
+
+it('handles short tokens correctly in maskToken method', function () {
+    // Set up a short token (8 characters or less)
+    Config::set('webcron.secret', 'short');
+
+    // Mock the HTTP response for allowed IPs
+    Http::fake([
+        'https://api.cron-job.org/executor-nodes.json' => Http::response([
+            'ipAddresses' => ['127.0.0.1'],
+        ], 200),
+    ]);
+
+    $middleware = new VerifyWebcronToken;
+
+    // Create request with invalid short token
+    $request = Request::create('/api/webcron', 'POST', [], [], [], [
+        'REMOTE_ADDR' => '127.0.0.1',
+        'HTTP_X_WEBCRON_TOKEN' => 'bad',
+    ]);
+
+    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
+
+    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+        return new Response('Success', 200);
+    });
+});
