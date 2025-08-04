@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import ActiveAreaCountsWidget from '@/components/peoplecount/ActiveAreaCountsWidget.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization } from '@/types';
@@ -29,9 +30,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
                 <h1 class="text-2xl font-bold">{{ props.organization.name }} Dashboard</h1>
             </div>
             <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-                <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
+                <ActiveAreaCountsWidget :organization="organization" />
                 <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                     <PlaceholderPattern />
                 </div>

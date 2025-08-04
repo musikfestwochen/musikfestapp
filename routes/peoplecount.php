@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Peoplecount\AreaAggregationController;
 use App\Http\Controllers\Peoplecount\AreaController;
 use App\Http\Controllers\Peoplecount\AreaRecurringResetController;
 use App\Http\Controllers\Peoplecount\AreaSingleResetController;
@@ -46,5 +47,9 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         // Regenerate token route
         Route::post('sensors/{sensor}/regenerate-token', [SensorTokenController::class, 'update'])
             ->name('sensors.regenerate-token');
+
+        // Area Aggregation route
+        Route::get('area-aggregation', [AreaAggregationController::class, 'index'])
+            ->name('area-aggregation.index');
     });
 });

@@ -17,7 +17,7 @@ const form = useForm({
 
 const submit = () => {
     if (props.user && props.organization) {
-        form.put(route('orgmgmt.users.update', { id: props.user.id, organization: props.organization.slug }));
+        form.put(route('orgmgmt.users.update', { user: props.user.id, organization: props.organization.slug }));
     } else if (props.user) {
         form.put(route('admin.users.update', { id: props.user.id }));
     } else if (props.organization) {
