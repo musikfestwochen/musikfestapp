@@ -47,6 +47,9 @@ class UserController extends Controller
         // attach user to organization
         $user->organizations()->attach($organization->id);
 
+        // Give User default role
+        $user->assignRole('PeopleCountViewer');
+
         return redirect()->route('orgmgmt.users.index', [
             'organization' => $organization,
         ])
@@ -106,6 +109,8 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  UserDestroyRequest  $request  Required for authorization, even if not explicitly used in method body
+     *
+     * @todo: Do not delete user if they belong to an organization, then only remove the organization association.
      */
     public function destroy(UserDestroyRequest $request, Organization $organization, User $user): RedirectResponse
     {
