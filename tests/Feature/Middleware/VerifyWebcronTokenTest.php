@@ -59,7 +59,7 @@ it('blocks requests with invalid token', function () {
     ]);
 
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
-    $this->expectExceptionMessage('Invalid token');
+    $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
     $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
         return new Response('Success', 200);
@@ -82,7 +82,7 @@ it('blocks requests with missing token', function () {
     ]);
 
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
-    $this->expectExceptionMessage('Invalid token');
+    $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
     $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
         return new Response('Success', 200);
