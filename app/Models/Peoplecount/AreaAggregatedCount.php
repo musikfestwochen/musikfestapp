@@ -3,11 +3,15 @@
 namespace App\Models\Peoplecount;
 
 use App\Casts\BinaryHexCast;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AreaAggregatedCount extends Model
 {
+    /** @use HasFactory<\Database\Factories\Peoplecount\AreaAggregatedCountFactory> */
+    use HasFactory;
+
     public $timestamps = false;
 
     protected $table = 'peoplecount_area_aggregated_counts';

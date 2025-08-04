@@ -2,7 +2,9 @@
 
 namespace App\Services\Peoplecount;
 
+use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -321,5 +323,44 @@ class AreaAggregationService
         $secondLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(1)->first();
 
         return $secondLastAggregatedCount ? $secondLastAggregatedCount->count : 0;
+    }
+
+    /**
+     * Get the latest aggregated counts for active areas in an organization.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getActiveAreaAggregatedCounts(Organization $organization): array
+    {
+        $now = Carbon::now();
+
+        // Get all events that are currently running
+        $activeEvents = Event::query()
+            ->where('organization_id', $organization->id)
+            ->where('starts_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->get();
+
+        $eventIds = $activeEvents->pluck('id')->toArray();
+
+        // Get all areas for these events
+        $areas = Area::query()
+            ->whereIn('event_id', $eventIds)
+            ->with(['aggregatedCounts' => function (\Illuminate\Database\Eloquent\Relations\Relation $query) {
+                $query->latest('period_end')->limit(1);
+            }, 'event'])
+            ->get();
+
+        return $areas->map(function (Area $area) use ($now): array {
+            $latestCount = $area->aggregatedCounts->first();
+
+            return [
+                'id' => $area->id,
+                'name' => $area->name,
+                'event_name' => $area->event->name,
+                'count' => $latestCount ? $latestCount->count : 0,
+                'last_updated' => $now->toIso8601String(),
+            ];
+        })->toArray();
     }
 }

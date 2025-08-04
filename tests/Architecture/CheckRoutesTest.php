@@ -97,6 +97,9 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}/recurring-resets/{recurring_reset}'],
 
+        // People Count Area Aggregation Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/area-aggregation'],
+
         // People Count Assignments Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/assignments'],
