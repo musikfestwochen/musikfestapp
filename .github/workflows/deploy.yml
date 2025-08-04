@@ -104,6 +104,9 @@ jobs:
             echo "Renaming decrypted environment file..."
             mv new-env .env || { echo "Failed to rename decrypted environment file! Exiting."; exit 1; }
 
+            echo "Creating also the .production file..."
+            cp .env .env.production || { echo "Failed to create .production file! Exiting
+
             echo "Installing PHP dependencies on the server..."
             $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
 
