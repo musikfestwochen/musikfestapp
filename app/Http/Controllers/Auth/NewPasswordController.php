@@ -52,6 +52,11 @@ class NewPasswordController extends Controller
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                // Mark email as verified if it wasn't already
+                if (! $user->hasVerifiedEmail()) {
+                    $user->markEmailAsVerified();
+                }
+
                 event(new PasswordReset($user));
             }
         );
