@@ -63,7 +63,7 @@ it('gets next daily occurrence', function () {
 
     $nextOccurrence = $model->getNextDailyOccurrence();
     expect($nextOccurrence)->toBeInstanceOf(Carbon::class)
-        ->and($nextOccurrence->format('H:i'))->toBe('08:00')
+        ->and($nextOccurrence->format('H:i'))->toBe('07:00') // Time in UTC (08:00 in Europe/Zurich)
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-15'); // Should be today since 08:00 hasn't passed yet
 
     // Reset time mocking
@@ -98,7 +98,7 @@ it('gets previous daily occurrence', function () {
     $previousOccurrence = $model->getPreviousDailyOccurrence();
 
     expect($previousOccurrence)->toBeInstanceOf(Carbon::class)
-        ->and($previousOccurrence->format('H:i'))->toBe('08:00')
+        ->and($previousOccurrence->format('H:i'))->toBe('07:00') // Time in UTC (08:00 in Europe/Zurich)
         ->and($previousOccurrence->format('Y-m-d'))->toBe('2024-01-15') // Should be today since 08:00 has already passed
         ->and($previousOccurrence->isBefore(Carbon::parse('2024-01-15 10:00:00', 'Europe/Zurich')))->toBeTrue();
 
@@ -135,8 +135,8 @@ it('handles different timezones for next daily occurrence', function () {
 
     $nextOccurrence = $model->getNextDailyOccurrence();
     expect($nextOccurrence)->toBeInstanceOf(Carbon::class)
-        ->and($nextOccurrence->format('H:i'))->toBe('14:30')
-        ->and($nextOccurrence->timezone->getName())->toBe('America/New_York')
+        ->and($nextOccurrence->format('H:i'))->toBe('19:30') // Time in UTC (14:30 in America/New_York)
+        ->and($nextOccurrence->timezone->getName())->toBe('UTC') // Timezone is now UTC
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-15'); // Should be today since 14:30 hasn't passed yet in NY timezone
 
     // Reset time mocking
@@ -242,9 +242,9 @@ it('gets occurrences between dates with single occurrence', function () {
     $occurrences = $model->getOccurencesBetween($start, $end);
 
     expect($occurrences)->toBeArray()
-        ->and(count($occurrences))->toBe(2) // Method adds one extra occurrence beyond end date
-        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-16 03:30') // Based on actual output
-        ->and($occurrences[1]->format('Y-m-d H:i'))->toBe('2024-01-16 15:30'); // Extra occurrence
+        ->and(count($occurrences))->toBe(1) // Implementation now only returns occurrences within the range
+        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-16 03:30') // Time in UTC
+        ->and($occurrences[0]->timezone->getName())->toBe('UTC'); // Timezone is UTC
 
     Carbon::setTestNow();
 });
