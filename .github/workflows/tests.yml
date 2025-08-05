@@ -2,8 +2,13 @@ name: tests
 
 on:
   pull_request:
+    paths-ignore:
+      - '.junie/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
   workflow_call:
   workflow_dispatch:
+
 
 permissions:
   # Only read access to repository contents is needed for running tests
