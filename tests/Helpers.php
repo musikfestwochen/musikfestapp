@@ -76,6 +76,8 @@ function setupPeoplecountBasic(): array
     $intervalMinutes = 5;
     $totalIntervals = 24 * 60 / $intervalMinutes; // 144 intervals
 
+    $intervalCounts = [];
+
     for ($i = 0; $i < $totalIntervals; $i++) {
         $intervalStart = $eventStart->copy()->addMinutes($i * $intervalMinutes);
         $intervalEnd = $intervalStart->copy()->addMinutes($intervalMinutes);
@@ -110,22 +112,24 @@ function setupPeoplecountBasic(): array
         $sensor2CountOut = max(0, $sensor2CountOut); // Ensure non-negative
 
         // Create interval counts for sensor 1
-        IntervalCount::factory()->create([
+        $intervalCount1 = IntervalCount::factory()->create([
             'sensor_id' => $sensor1->id,
             'ts_from' => $intervalStart,
             'ts_to' => $intervalEnd,
             'count_in' => $sensor1CountIn,
             'count_out' => $sensor1CountOut,
         ]);
+        $intervalCounts[] = $intervalCount1;
 
         // Create interval counts for sensor 2
-        IntervalCount::factory()->create([
+        $intervalCount2 = IntervalCount::factory()->create([
             'sensor_id' => $sensor2->id,
             'ts_from' => $intervalStart,
             'ts_to' => $intervalEnd,
             'count_in' => $sensor2CountIn,
             'count_out' => $sensor2CountOut,
         ]);
+        $intervalCounts[] = $intervalCount2;
     }
 
     return [
@@ -136,5 +140,6 @@ function setupPeoplecountBasic(): array
         'assignments' => [$assignment1, $assignment2],
         'event_start' => $eventStart,
         'event_end' => $eventEnd,
+        'interval_counts' => $intervalCounts,
     ];
 }

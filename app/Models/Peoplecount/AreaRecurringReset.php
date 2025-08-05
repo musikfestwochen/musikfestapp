@@ -52,42 +52,25 @@ class AreaRecurringReset extends Model
     }
 
     /**
-     * Get the next daily occurrence at reset_time in specified timezone.
-     * Handles DST transitions by applying reset at defined time in current day.
-     */
-    public function getNextDailyOccurrence(?Carbon $from = null): Carbon
-    {
-        $now = $from ?? Carbon::now($this->timezone);
-        $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
-
-        // If today's reset time has already passed, get tomorrow's reset
-        if ($now->format('H:i') >= $this->reset_time) {
-            $resetTime->addDay();
-        }
-
-        // If the reset time is still before the provided datetime, add another day
-        while ($resetTime->lt($now)) {
-            $resetTime->addDay();
-        }
-
-        return $resetTime;
-    }
-
-    /**
      * Get the previous daily occurrence at reset_time in specified timezone.
      * Handles DST transitions by applying reset at defined time in current day.
      */
-    public function getPreviousDailyOccurrence(): Carbon
+    public function getPreviousDailyOccurrence(?Carbon $from = null): Carbon
     {
-        $now = Carbon::now($this->timezone);
+        // Ensure we're working with a copy of the input date to avoid modifying the original
+        $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Carbon::now($this->timezone);
         $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
+
+        // Set the date part of resetTime to match the date part of now
+        $resetTime->setDate($now->year, $now->month, $now->day);
 
         // If today's reset time has not yet occurred, get yesterday's reset
         if ($now->format('H:i') < $this->reset_time) {
             $resetTime->subDay();
         }
 
-        return $resetTime;
+        // Convert back to UTC for consistent database storage
+        return $resetTime->setTimezone('UTC');
     }
 
     /**
@@ -97,13 +80,44 @@ class AreaRecurringReset extends Model
     {
         $occurences = [];
         $nextOccurence = $this->getNextDailyOccurrence($start);
-        $occurences[] = $nextOccurence;
-        while ($nextOccurence->lt($end)) {
-            $nextOccurence = $this->getNextDailyOccurrence($nextOccurence->addHours(12));
+
+        // Only add if within range
+        if ($nextOccurence->gte($start) && $nextOccurence->lte($end)) {
             $occurences[] = $nextOccurence;
         }
 
+        while ($nextOccurence->lt($end)) {
+            $nextOccurence = $this->getNextDailyOccurrence($nextOccurence->addHours(12));
+
+            // Only add if within range and not already past the end
+            if ($nextOccurence->lte($end)) {
+                $occurences[] = $nextOccurence;
+            }
+        }
+
         return $occurences;
+    }
+
+    /**
+     * Get the next daily occurrence at reset_time in specified timezone.
+     * Handles DST transitions by applying reset at defined time in current day.
+     */
+    public function getNextDailyOccurrence(?Carbon $from = null): Carbon
+    {
+        // Ensure we're working with a copy of the input date to avoid modifying the original
+        $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Carbon::now($this->timezone);
+        $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
+
+        // Set the date part of resetTime to match the date part of now
+        $resetTime->setDate($now->year, $now->month, $now->day);
+
+        // If today's reset time has already passed, get tomorrow's reset
+        if ($now->format('H:i') >= $this->reset_time) {
+            $resetTime->addDay();
+        }
+
+        // Convert back to UTC for consistent database storage
+        return $resetTime->setTimezone('UTC');
     }
 
     /**

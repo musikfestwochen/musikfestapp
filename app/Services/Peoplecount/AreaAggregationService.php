@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -329,6 +330,8 @@ class AreaAggregationService
      * Get the latest aggregated counts for active areas in an organization.
      *
      * @return array<int, array<string, mixed>>
+     *
+     * @todo Optimize with caching
      */
     public function getActiveAreaAggregatedCounts(Organization $organization): array
     {
@@ -346,7 +349,7 @@ class AreaAggregationService
         // Get all areas for these events
         $areas = Area::query()
             ->whereIn('event_id', $eventIds)
-            ->with(['aggregatedCounts' => function (\Illuminate\Database\Eloquent\Relations\Relation $query) {
+            ->with(['aggregatedCounts' => function (Relation $query) {
                 $query->latest('period_end')->limit(1);
             }, 'event'])
             ->get();
