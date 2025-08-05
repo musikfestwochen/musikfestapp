@@ -1,0 +1,163 @@
+name: 🐛 Bug Report
+description: Found something not working as expected? Let us know so we can fix it!
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 🎵 Hello there, Musikfestwochen Friend! 🎵
+
+        We're sorry you've encountered an issue! Your bug report will help us make the app better for everyone.
+
+        Please fill out the information below to help us resolve the problem as quickly as possible...
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 👋 Who are you?
+      description: Help us understand your perspective by letting us know which hat you're wearing today.
+      options:
+        - Regular App User (I just love using the app!)
+        - Organization Admin (I manage an organization in the app)
+        - App Admin (I have admin privileges across the entire app)
+        - App Developer (I write code for the app)
+        - Technician (I handle technical aspects of events)
+        - Volunteer (I help make the festival happen)
+        - Artist/Performer (I create the magic on stage)
+        - Venue Manager (I oversee event spaces)
+        - Other (I'll explain in my description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: bug-category
+    attributes:
+      label: 🔍 What area of the app is affected?
+      description: This helps us route your report to the right team.
+      options:
+        - General App Experience
+        - App Administration
+        - Organization Management
+        - People Counting
+        - User Interface/Design
+        - Reporting & Analytics
+        - Notifications & Alerts
+        - Mobile Experience
+        - Darkmode Support
+        - Accessibility Features
+        - Integration with Other Systems
+        - Security & Privacy
+        - Other (I'll explain in my description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🐞 What's happening?
+      description: Describe the bug you've encountered. Be as specific as you can!
+      placeholder: "When I try to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 🎯 What did you expect to happen?
+      description: Tell us what you think should have happened instead.
+      placeholder: "I expected the app to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: 🔄 How can we reproduce this issue?
+      description: Please provide step-by-step instructions to help us see the same issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See the error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 🔄 How often does this happen?
+      description: Is this a one-time issue or does it happen consistently?
+      options:
+        - Every time I try (100%)
+        - Most of the time (75%)
+        - Sometimes (50%)
+        - Occasionally (25%)
+        - Rarely (less than 10%)
+        - Just once
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: 🌐 What browsers/devices are affected?
+      description: Select all that apply
+      multiple: true
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Opera
+        - iPhone/iPad
+        - Android device
+        - Other (please specify in description)
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 📸 Visual Evidence
+
+        Screenshots or videos can be extremely helpful in understanding the issue!
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📷 Screenshots or Videos
+      description: If applicable, add screenshots or videos to help explain your problem.
+      placeholder: "You can drag and drop images or videos here"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📝 Relevant Log Output
+      description: If you have any error messages or logs, please share them here.
+      placeholder: "Error messages, console logs, etc."
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: ✨ Anything else we should know?
+      description: Add any other context about the problem here.
+      placeholder: "One more thing..."
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🎉 Thank you! 🎉
+
+        Your bug report helps make the Musikfestapp better for everyone.
+        We appreciate you taking the time to let us know about this issue!
+
+        The Musikfestapp Team will investigate and get back to you soon.

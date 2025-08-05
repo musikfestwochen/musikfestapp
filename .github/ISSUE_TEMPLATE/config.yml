@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 🐛 Found a bug?
+    url: https://github.com/musikfestwochen/musikfestapp/issues/new?template=bug_report.yml
+    about: Report a bug using our bug report template
+  - name: 🎉 Have a feature request?
+    url: https://github.com/musikfestwochen/musikfestapp/issues/new?template=feature_request.yml
+    about: Suggest a new feature using our feature request template

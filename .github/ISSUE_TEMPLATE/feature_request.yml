@@ -1,0 +1,117 @@
+name: ✨ Feature Request
+description: Have a brilliant idea for the Musikfestwochen app? We'd love to hear it!
+title: "[Feature Request]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 🎵 Hello there, Musikfestwochen Friend! 🎵
+
+        Thanks for taking the time to share your ideas with us! Your feedback helps make our app even more awesome.
+
+        Let's get to know you and your brilliant suggestion a bit better...
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 👋 Who are you?
+      description: Help us understand your perspective by letting us know which hat you're wearing today.
+      options:
+        - Regular App User (I just love using the app!)
+        - Organization Admin (I manage an organization in the app)
+        - App Admin (I have admin privileges across the entire app)
+        - App Developer (I write code for the app)
+        - Technician (I handle technical aspects of events)
+        - Volunteer (I help make the festival happen)
+        - Artist/Performer (I create the magic on stage)
+        - Venue Manager (I oversee event spaces)
+        - Other (I'll explain in my description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: 🔍 What area does your feature idea relate to?
+      description: This helps us route your request to the right team.
+      options:
+        - General App Experience
+        - App Administration
+        - Organization Management
+        - People Counting
+        - User Interface/Design
+        - Reporting & Analytics
+        - Notifications & Alerts
+        - Mobile Experience
+        - Darkmode Support
+        - Accessibility Improvements
+        - Integration with Other Systems
+        - Security & Privacy
+        - Other (I'll explain in my description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 💡 What's your brilliant idea?
+      description: Describe the feature you'd like to see in the app. Be as specific as you can!
+      placeholder: "I wish the app could..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-why
+    attributes:
+      label: 🎯 Why would this feature be valuable?
+      description: Help us understand how this would improve your experience with the app.
+      placeholder: "This would be amazing because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-alternatives
+    attributes:
+      label: 🔄 Are there any alternatives or workarounds you're using now?
+      description: Let us know if you've found any temporary solutions.
+      placeholder: "Currently, I'm getting around this by..."
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧠 For the technically inclined (completely optional)
+
+        If you have technical insights to share, the section below is for you!
+        If not, no worries at all - your feature idea is what matters most.
+
+  - type: textarea
+    id: technical-details
+    attributes:
+      label: 🔧 Technical details or implementation ideas
+      description: Have thoughts on how this could be implemented? Share your technical insights here.
+      placeholder: "From a technical perspective, this could work by..."
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: ✨ Anything else we should know?
+      description: Feel free to add any other context, screenshots, sketches, or examples here.
+      placeholder: "One more thing..."
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🎉 Thank you! 🎉
+
+        Your ideas help make the Musikfestwochen app better for everyone.
+        We appreciate you taking the time to share your thoughts with us!
+
+        The Musikfestwochen Team will review your suggestion and get back to you soon.
