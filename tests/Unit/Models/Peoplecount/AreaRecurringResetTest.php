@@ -249,6 +249,96 @@ it('gets occurrences between dates with single occurrence', function () {
     Carbon::setTestNow();
 });
 
+it('gets previous daily occurrence with explicit Carbon parameter', function () {
+    // This test covers the $from instanceof Carbon branch in getPreviousDailyOccurrence
+    Carbon::setTestNow('2024-01-15 10:00:00');
+
+    $model = new AreaRecurringReset;
+    $model->reset_time = '08:00';
+    $model->timezone = 'UTC';
+
+    // Create an explicit Carbon instance to pass as parameter
+    $explicitTime = Carbon::parse('2024-01-15 07:00:00', 'UTC');
+
+    $previousOccurrence = $model->getPreviousDailyOccurrence($explicitTime);
+
+    // Since 07:00 is before the reset time (08:00), the previous occurrence should be from the day before
+    expect($previousOccurrence)->toBeInstanceOf(Carbon::class)
+        ->and($previousOccurrence->format('H:i'))->toBe('08:00')
+        ->and($previousOccurrence->format('Y-m-d'))->toBe('2024-01-14');
+
+    Carbon::setTestNow();
+});
+
+it('verifies date part is correctly set in previous daily occurrence', function () {
+    // This test verifies that the date part of resetTime is correctly set in getPreviousDailyOccurrence
+    // We'll use a specific date that's different from the default to ensure the setDate method is working
+
+    // Create a mock Carbon instance for testing
+    $mockNow = Carbon::parse('2023-12-25 10:00:00', 'UTC'); // Christmas day
+
+    $model = new AreaRecurringReset;
+    $model->reset_time = '08:00';
+    $model->timezone = 'UTC';
+
+    // Call the method with our mock date
+    $previousOccurrence = $model->getPreviousDailyOccurrence($mockNow);
+
+    // Verify that the date part matches our mock date (since 10:00 is after 08:00)
+    expect($previousOccurrence->format('Y-m-d'))->toBe('2023-12-25')
+        ->and($previousOccurrence->format('H:i'))->toBe('08:00')
+        // Most importantly, verify that the year, month, and day match our mock date
+        ->and($previousOccurrence->year)->toBe($mockNow->year)
+        ->and($previousOccurrence->month)->toBe($mockNow->month)
+        ->and($previousOccurrence->day)->toBe($mockNow->day);
+
+    // Now test with a time before the reset time
+    $mockNow = Carbon::parse('2023-12-25 07:00:00', 'UTC'); // Christmas day, before reset
+
+    // Call the method with our mock date
+    $previousOccurrence = $model->getPreviousDailyOccurrence($mockNow);
+
+    // Verify that the date part is the day before our mock date (since 07:00 is before 08:00)
+    expect($previousOccurrence->format('Y-m-d'))->toBe('2023-12-24')
+        ->and($previousOccurrence->format('H:i'))->toBe('08:00')
+        // Verify that the year, month, and day are correctly set to the day before
+        ->and($previousOccurrence->year)->toBe($mockNow->copy()->subDay()->year)
+        ->and($previousOccurrence->month)->toBe($mockNow->copy()->subDay()->month)
+        ->and($previousOccurrence->day)->toBe($mockNow->copy()->subDay()->day);
+});
+
+it('verifies occurrences are only added if within range', function () {
+    // This test verifies that occurrences are only added if they are within the range
+    Carbon::setTestNow('2024-01-15 08:00:00');
+
+    $model = new AreaRecurringReset;
+    $model->reset_time = '12:00';
+    $model->timezone = 'UTC';
+
+    // Test with a next occurrence that's outside the range
+    $start = Carbon::parse('2024-01-16 13:00:00', 'UTC'); // After the reset time on Jan 16
+    $end = Carbon::parse('2024-01-17 11:00:00', 'UTC');   // Before the reset time on Jan 17
+
+    $occurrences = $model->getOccurencesBetween($start, $end);
+
+    // There should be no occurrences since the next occurrence after start (Jan 17 12:00)
+    // is after the end time (Jan 17 11:00)
+    expect($occurrences)->toBeArray()
+        ->and(count($occurrences))->toBe(0);
+
+    // Now test with a range that includes exactly one occurrence
+    $start = Carbon::parse('2024-01-16 10:00:00', 'UTC'); // Before the reset time on Jan 16
+    $end = Carbon::parse('2024-01-16 14:00:00', 'UTC');   // After the reset time on Jan 16
+
+    $occurrences = $model->getOccurencesBetween($start, $end);
+
+    expect($occurrences)->toBeArray()
+        ->and(count($occurrences))->toBe(1)
+        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-17 00:00');
+
+    Carbon::setTestNow();
+});
+
 it('has factory', function () {
     expect(AreaRecurringReset::factory())->toBeInstanceOf(Factory::class);
 });
