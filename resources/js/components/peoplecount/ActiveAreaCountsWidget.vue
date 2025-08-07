@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePermissions } from '@/composables/usePermissions';
 import axios from 'axios';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
@@ -9,6 +11,13 @@ interface AreaCount {
     name: string;
     event_name: string;
     count: number;
+    net_change: number | null;
+    net_change_time_ago: number;
+    debug_counts: {
+        in: number;
+        out: number;
+        net: number;
+    };
     last_updated: string | null;
 }
 
@@ -16,10 +25,15 @@ const props = defineProps<{
     organization: { id: number; slug: string; name: string };
 }>();
 
+const { can } = usePermissions();
+
 const areaCounts = ref<AreaCount[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 let refreshInterval: number | null = null;
+
+// Check if user can view debug counts
+const canViewDebugCounts = computed(() => can('peoplecount.areas.*'));
 
 const fetchAreaCounts = async () => {
     try {
@@ -145,6 +159,52 @@ const lastUpdatedTime = computed(() => {
                         <div class="text-sm text-muted-foreground">{{ area.event_name }}</div>
                     </div>
                     <div class="count-display">{{ area.count }}</div>
+
+                    <!-- Net change display -->
+                    <div
+                        v-if="area.net_change !== null"
+                        :class="{
+                            'text-green-600': area.net_change > 0,
+                            'text-red-600': area.net_change < 0,
+                            'text-gray-500': area.net_change === 0,
+                        }"
+                        class="net-change"
+                    >
+                        <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
+                        <span v-else>{{ area.net_change }}</span>
+                        <span class="ml-1 text-xs text-muted-foreground">({{ area.net_change_time_ago }})</span>
+                    </div>
+                    <div v-else class="text-xs text-gray-500">No net change data</div>
+
+                    <!-- Debug counts collapsible section -->
+                    <div v-if="canViewDebugCounts" class="mt-4 w-full">
+                        <Collapsible>
+                            <CollapsibleTrigger
+                                class="flex w-full items-center justify-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                <span>Debug Counts</span>
+                                <svg class="ml-1 h-3 w-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                </svg>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent class="mt-2">
+                                <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div class="rounded bg-green-50 p-2 text-center">
+                                        <div class="font-medium text-green-700">In</div>
+                                        <div class="text-green-600">{{ area.debug_counts.in }}</div>
+                                    </div>
+                                    <div class="rounded bg-red-50 p-2 text-center">
+                                        <div class="font-medium text-red-700">Out</div>
+                                        <div class="text-red-600">{{ area.debug_counts.out }}</div>
+                                    </div>
+                                    <div class="rounded bg-blue-50 p-2 text-center">
+                                        <div class="font-medium text-blue-700">Net</div>
+                                        <div class="text-blue-600">{{ area.debug_counts.net }}</div>
+                                    </div>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
                 </div>
 
                 <div class="mt-4 text-center text-xs text-muted-foreground">Last updated: {{ lastUpdatedTime }}</div>

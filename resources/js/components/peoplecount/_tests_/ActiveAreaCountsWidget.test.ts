@@ -6,6 +6,19 @@ import ActiveAreaCountsWidget from '../ActiveAreaCountsWidget.vue';
 // Mock axios
 vi.mock('axios');
 
+// Mock Inertia's usePage
+vi.mock('@inertiajs/vue3', () => ({
+    usePage: () => ({
+        props: {
+            auth: {
+                permissions: ['peoplecount.area.view'],
+                global_permissions: [],
+                roles: [],
+            },
+        },
+    }),
+}));
+
 describe('ActiveAreaCountsWidget', () => {
     const mockOrganization = {
         id: 1,
@@ -19,6 +32,13 @@ describe('ActiveAreaCountsWidget', () => {
             name: 'Area 1',
             event_name: 'Event 1',
             count: 42,
+            net_change: 5,
+            net_change_time_ago: 30,
+            debug_counts: {
+                in: 50,
+                out: 45,
+                net: 5,
+            },
             last_updated: '2025-08-04T22:00:00Z',
         },
         {
@@ -26,6 +46,13 @@ describe('ActiveAreaCountsWidget', () => {
             name: 'Area 2',
             event_name: 'Event 2',
             count: 123,
+            net_change: -3,
+            net_change_time_ago: 45,
+            debug_counts: {
+                in: 120,
+                out: 123,
+                net: -3,
+            },
             last_updated: '2025-08-04T22:00:00Z',
         },
     ];
@@ -128,7 +155,7 @@ describe('ActiveAreaCountsWidget', () => {
         expect(areaItems[1].find('.count-display').text()).toBe('123');
 
         // Check last updated time
-        expect(wrapper.find('.text-xs').text()).toContain('Last updated:');
+        expect(wrapper.text()).toContain('Last updated:');
     });
 
     it('displays a message when no active areas are found', async () => {
