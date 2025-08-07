@@ -87,6 +87,7 @@ describe('updateAggregatedCounts method', function () {
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $this->service->updateAggregatedCounts($area);
@@ -126,6 +127,7 @@ describe('updateAggregatedCounts method', function () {
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
 
         // Mock for deleteRowsWithInvalidChecksum - this verifies deleteInvalidAggregationRows is called
         $builderMock = Mockery::mock(Builder::class);
@@ -179,6 +181,7 @@ describe('updateAggregatedCounts method', function () {
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $this->service->updateAggregatedCounts($area);
@@ -617,6 +620,7 @@ describe('getFilteredAggregationWindows method', function () {
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
+        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $result = ($this->callProtectedMethod)('getFilteredAggregationWindows', $area, $resetTimes);
@@ -644,7 +648,7 @@ describe('splitIntoAggregationWindows method', function () {
 });
 
 describe('filterAlreadyAggregatedWindows method', function () {
-    it('returns all windows when no last aggregated count exists', function () {
+    it('returns all windows when no second-last aggregated count exists', function () {
         $area = Mockery::mock(Area::class);
         $windows = collect([
             ['start' => Carbon::parse('2024-08-15 10:00:00')],
@@ -653,6 +657,7 @@ describe('filterAlreadyAggregatedWindows method', function () {
 
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -661,7 +666,7 @@ describe('filterAlreadyAggregatedWindows method', function () {
         expect($result)->toHaveCount(2);
     });
 
-    it('filters windows based on last aggregated count', function () {
+    it('filters windows based on second-last aggregated count', function () {
         $area = Mockery::mock(Area::class);
         $windows = collect([
             ['start' => Carbon::parse('2024-08-15 09:50:00')],
@@ -669,17 +674,26 @@ describe('filterAlreadyAggregatedWindows method', function () {
             ['start' => Carbon::parse('2024-08-15 10:10:00')],
         ]);
 
-        $lastCount = Mockery::mock(AreaAggregatedCount::class);
-        $lastCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $secondLastCount = Mockery::mock(AreaAggregatedCount::class);
+        $secondLastCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
 
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn($lastCount);
+        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('first')->andReturn($secondLastCount);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $result = ($this->callProtectedMethod)('filterAlreadyAggregatedWindows', $area, $windows);
 
         expect($result)->toHaveCount(2); // Should filter out the first window
+
+        // Check which windows are included
+        $resultTimes = $result->map(fn ($window) => $window['start']->format('H:i'))->toArray();
+        expect($resultTimes)->toContain('10:00');
+        expect($resultTimes)->toContain('10:10');
+
+        // Check which windows are excluded
+        expect($resultTimes)->not->toContain('09:50');
     });
 });
 
@@ -698,7 +712,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
         // Mock getInitialCountForAggregation
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -727,7 +741,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
         // Mock getInitialCountForAggregation to return a different value
         $relationshipMock = Mockery::mock(HasMany::class);
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -754,16 +768,16 @@ describe('calculateAggregatedCountsForWindows method', function () {
         $checksum = 'abc123';
 
         // Mock getInitialCountForAggregation to return a specific value
-        $secondLastCount = Mockery::mock(AreaAggregatedCount::class);
-        $secondLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
+        $thirdLastCount = Mockery::mock(AreaAggregatedCount::class);
+        $thirdLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
 
         $relationshipMock = Mockery::mock(HasMany::class);
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn($secondLastCount);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('first')->andReturn($thirdLastCount);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
-        // Mock area service call - should use lastCount (25) since reset_value is null
+        // Mock area service call - should use lastCount (25) from third latest count since reset_value is null
         $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
             ->once()
             ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 25, $checksum)
@@ -776,13 +790,13 @@ describe('calculateAggregatedCountsForWindows method', function () {
 });
 
 describe('getInitialCountForAggregation method', function () {
-    it('returns 0 when no second last aggregated count exists', function () {
+    it('returns 0 when no third last aggregated count exists', function () {
         $area = Mockery::mock(Area::class);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('first')->andReturn(null);
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -792,16 +806,16 @@ describe('getInitialCountForAggregation method', function () {
         expect($result)->toBe(0);
     });
 
-    it('returns count from second last aggregated count', function () {
+    it('returns count from third last aggregated count', function () {
         $area = Mockery::mock(Area::class);
-        $secondLastCount = Mockery::mock(AreaAggregatedCount::class);
-        $secondLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
+        $thirdLastCount = Mockery::mock(AreaAggregatedCount::class);
+        $thirdLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn($secondLastCount);
+        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('first')->andReturn($thirdLastCount);
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 

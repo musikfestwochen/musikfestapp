@@ -285,14 +285,14 @@ class AreaAggregationService
      */
     protected function filterAlreadyAggregatedWindows(Area $area, Collection $aggregationWindows): Collection
     {
-        $lastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->first();
+        $secondLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(1)->first();
 
-        if (! $lastAggregatedCount) {
+        if (! $secondLastAggregatedCount) {
             return $aggregationWindows;
         }
 
-        return $aggregationWindows->filter(function (array $window) use ($lastAggregatedCount) {
-            return $window['start']->greaterThanOrEqualTo($lastAggregatedCount->period_start);
+        return $aggregationWindows->filter(function (array $window) use ($secondLastAggregatedCount) {
+            return $window['start']->greaterThanOrEqualTo($secondLastAggregatedCount->period_start);
         });
     }
 
@@ -321,9 +321,9 @@ class AreaAggregationService
      */
     protected function getInitialCountForAggregation(Area $area): int
     {
-        $secondLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(1)->first();
+        $thirdLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(2)->first();
 
-        return $secondLastAggregatedCount ? $secondLastAggregatedCount->count : 0;
+        return $thirdLastAggregatedCount ? $thirdLastAggregatedCount->count : 0;
     }
 
     /**
