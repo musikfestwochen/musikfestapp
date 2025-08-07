@@ -1359,3 +1359,451 @@ describe('calculateAndStoreAggregatedCount', function () {
         expect($result)->toBe(50);
     });
 });
+
+describe('getLatestSingleResetBefore', function () {
+    it('returns null when no resets exist', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $result = $this->service->getLatestSingleResetBefore($area);
+
+        expect($result)->toBeNull();
+    });
+
+    it('returns null when no resets exist before specified time', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        // Create a reset after the specified time
+        $user = \App\Models\User::factory()->create();
+        $area->areaSingleResets()->create([
+            'reset_value' => 50,
+            'effective_at' => '2024-01-01 14:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $beforeTime = Carbon::parse('2024-01-01 10:00:00');
+        $result = $this->service->getLatestSingleResetBefore($area, $beforeTime);
+
+        expect($result)->toBeNull();
+    });
+
+    it('returns the latest reset before specified time', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $user = \App\Models\User::factory()->create();
+
+        // Create multiple resets with different times
+        $earlierReset = $area->areaSingleResets()->create([
+            'reset_value' => 30,
+            'effective_at' => '2024-01-01 10:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $latestReset = $area->areaSingleResets()->create([
+            'reset_value' => 50,
+            'effective_at' => '2024-01-01 12:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $futureReset = $area->areaSingleResets()->create([
+            'reset_value' => 70,
+            'effective_at' => '2024-01-01 16:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $beforeTime = Carbon::parse('2024-01-01 14:00:00');
+        $result = $this->service->getLatestSingleResetBefore($area, $beforeTime);
+
+        expect($result)->not->toBeNull()
+            ->and($result->id)->toBe($latestReset->id)
+            ->and($result->reset_value)->toBe(50)
+            ->and($result->effective_at->toDateTimeString())->toBe('2024-01-01 12:00:00');
+    });
+
+    it('includes reset exactly at the specified time', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $user = \App\Models\User::factory()->create();
+
+        $exactTimeReset = $area->areaSingleResets()->create([
+            'reset_value' => 50,
+            'effective_at' => '2024-01-01 12:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $beforeTime = Carbon::parse('2024-01-01 12:00:00');
+        $result = $this->service->getLatestSingleResetBefore($area, $beforeTime);
+
+        expect($result)->not->toBeNull()
+            ->and($result->id)->toBe($exactTimeReset->id);
+    });
+
+    it('uses current time when no time is specified', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $user = \App\Models\User::factory()->create();
+
+        // Create a reset in the past (relative to test execution time)
+        $pastReset = $area->areaSingleResets()->create([
+            'reset_value' => 50,
+            'effective_at' => now()->subHour(),
+            'created_by' => $user->id,
+        ]);
+
+        $result = $this->service->getLatestSingleResetBefore($area);
+
+        expect($result)->not->toBeNull()
+            ->and($result->id)->toBe($pastReset->id);
+    });
+});
+
+describe('calculateAreaCounts', function () {
+    it('returns correct counts with basic interval data', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        // Create sensor and assignment
+        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create interval counts
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 11:00:00',
+            'ts_to' => '2024-01-01 11:15:00',
+            'count_in' => 10,
+            'count_out' => 5,
+        ]);
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 12:00:00',
+            'ts_to' => '2024-01-01 12:15:00',
+            'count_in' => 15,
+            'count_out' => 8,
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result)->toHaveKeys(['in', 'out', 'net'])
+            ->and($result['in'])->toBe(25)
+            ->and($result['out'])->toBe(13)
+            ->and($result['net'])->toBe(12);
+    });
+
+    it('returns zero counts when no assignments exist', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result)->toHaveKeys(['in', 'out', 'net'])
+            ->and($result['in'])->toBe(0)
+            ->and($result['out'])->toBe(0)
+            ->and($result['net'])->toBe(0);
+    });
+
+    it('returns zero counts when no interval counts exist', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        // Create sensor and assignment but no interval counts
+        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result)->toHaveKeys(['in', 'out', 'net'])
+            ->and($result['in'])->toBe(0)
+            ->and($result['out'])->toBe(0)
+            ->and($result['net'])->toBe(0);
+    });
+
+    it('uses event start time when no single reset exists', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create interval count before event start (should be excluded)
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 09:00:00',
+            'ts_to' => '2024-01-01 09:15:00',
+            'count_in' => 5,
+            'count_out' => 2,
+        ]);
+
+        // Create interval count after event start (should be included)
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 11:00:00',
+            'ts_to' => '2024-01-01 11:15:00',
+            'count_in' => 10,
+            'count_out' => 3,
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result['in'])->toBe(10)
+            ->and($result['out'])->toBe(3)
+            ->and($result['net'])->toBe(7);
+    });
+
+    it('uses latest single reset time as start when reset exists', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $user = \App\Models\User::factory()->create();
+
+        // Create single reset
+        $area->areaSingleResets()->create([
+            'reset_value' => 50,
+            'effective_at' => '2024-01-01 12:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create interval count before reset (should be excluded)
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 11:00:00',
+            'ts_to' => '2024-01-01 11:15:00',
+            'count_in' => 5,
+            'count_out' => 2,
+        ]);
+
+        // Create interval count after reset (should be included)
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 13:00:00',
+            'ts_to' => '2024-01-01 13:15:00',
+            'count_in' => 10,
+            'count_out' => 3,
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result['in'])->toBe(10)
+            ->and($result['out'])->toBe(3)
+            ->and($result['net'])->toBe(7);
+    });
+
+    it('aggregates counts from multiple assignments', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        // Create first sensor and assignment
+        $sensor1 = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor1->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create second sensor and assignment
+        $sensor2 = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor2->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create interval counts for first sensor
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor1->id,
+            'ts_from' => '2024-01-01 11:00:00',
+            'ts_to' => '2024-01-01 11:15:00',
+            'count_in' => 10,
+            'count_out' => 5,
+        ]);
+
+        // Create interval counts for second sensor
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor2->id,
+            'ts_from' => '2024-01-01 11:00:00',
+            'ts_to' => '2024-01-01 11:15:00',
+            'count_in' => 15,
+            'count_out' => 8,
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result['in'])->toBe(25)
+            ->and($result['out'])->toBe(13)
+            ->and($result['net'])->toBe(12);
+    });
+
+    it('loads required relationships', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Call the method
+        $this->service->calculateAreaCounts($area);
+
+        // Verify relationships are loaded
+        expect($area->relationLoaded('assignments'))->toBeTrue()
+            ->and($area->relationLoaded('event'))->toBeTrue()
+            ->and($area->relationLoaded('areaSingleResets'))->toBeTrue();
+
+        // Verify nested relationships
+        $area->assignments->each(function ($assignment) {
+            expect($assignment->relationLoaded('sensor'))->toBeTrue();
+            $assignment->sensor->intervalCounts->each(function ($intervalCount) {
+                expect($intervalCount)->toBeInstanceOf(\App\Models\Peoplecount\IntervalCount::class);
+            });
+        });
+    });
+
+    it('handles negative net counts correctly', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        \App\Models\Peoplecount\Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create interval count where out > in
+        \App\Models\Peoplecount\IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 11:00:00',
+            'ts_to' => '2024-01-01 11:15:00',
+            'count_in' => 5,
+            'count_out' => 15,
+        ]);
+
+        $result = $this->service->calculateAreaCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result['in'])->toBe(5)
+            ->and($result['out'])->toBe(15)
+            ->and($result['net'])->toBe(-10);
+    });
+});

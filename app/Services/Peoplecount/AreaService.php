@@ -285,6 +285,18 @@ class AreaService
     }
 
     /**
+     * Get latest single reset before now (or before the given time).
+     */
+    public function getLatestSingleResetBefore(Area $area, ?Carbon $beforeTime = null): ?AreaSingleReset
+    {
+        $query = $area->areaSingleResets()
+            ->where('effective_at', '<=', $beforeTime ?? now())
+            ->orderBy('effective_at', 'desc');
+
+        return $query->first();
+    }
+
+    /**
      * Get recurring resets that fall within the event time period.
      *
      * @return Collection<int, array<string, mixed>>
@@ -399,6 +411,43 @@ class AreaService
         }
 
         return $assignmentTotal;
+    }
+
+    /**
+     * Calculate counts for a whole area
+     *
+     * This method uses all interval counts for a given area after the last single reset and adds them together. It returns the sum of all `in` counts, the sum of all `out` counts, and the net count.
+     *
+     * @return array{in: int, out: int, net: int}
+     *
+     * @note This method is for debugging purposes and should not be used in production.
+     *
+     * @warning This method ignores **recurring resets**, **direction flips**,, and **assignment active periods**.
+     */
+    public function calculateAreaCounts(Area $area): array
+    {
+        $area->load(['assignments.sensor.intervalCounts', 'event', 'areaSingleResets']); // @pest-mutate-ignore
+
+        $start = $this->getLatestSingleResetBefore($area)->effective_at ?? $area->event->starts_at;
+        $end = now();
+
+        // get all interval counts (separate query to avoid using other methods of this service)
+        $intervalCounts = $area->assignments->flatMap(function (Assignment $assignment) use ($start, $end) {
+            return $assignment->sensor->intervalCounts()
+                ->where('ts_from', '>=', $start)
+                ->where('ts_from', '<', $end)
+                ->get();
+        });
+
+        $inCount = $intervalCounts->sum('count_in');
+        $outCount = $intervalCounts->sum('count_out');
+        $netCount = $inCount - $outCount;
+
+        return [
+            'in' => $inCount,
+            'out' => $outCount,
+            'net' => $netCount,
+        ];
     }
 
     /**
