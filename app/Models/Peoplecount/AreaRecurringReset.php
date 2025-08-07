@@ -59,13 +59,13 @@ class AreaRecurringReset extends Model
     {
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Carbon::now($this->timezone);
-        $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
+        $resetTime = Carbon::parse($this->reset_time, $this->timezone);
 
         // Set the date part of resetTime to match the date part of now
         $resetTime->setDate($now->year, $now->month, $now->day);
 
         // If today's reset time has not yet occurred, get yesterday's reset
-        if ($now->format('H:i') < $this->reset_time) {
+        if ($now->lt($resetTime)) {
             $resetTime->subDay();
         }
 
@@ -106,13 +106,13 @@ class AreaRecurringReset extends Model
     {
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Carbon::now($this->timezone);
-        $resetTime = Carbon::createFromFormat('H:i', $this->reset_time, $this->timezone);
+        $resetTime = Carbon::parse($this->reset_time, $this->timezone);
 
         // Set the date part of resetTime to match the date part of now
         $resetTime->setDate($now->year, $now->month, $now->day);
 
         // If today's reset time has already passed, get tomorrow's reset
-        if ($now->format('H:i') >= $this->reset_time) {
+        if ($now->gte($resetTime)) {
             $resetTime->addDay();
         }
 
