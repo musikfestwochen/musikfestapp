@@ -18,6 +18,7 @@ use App\Services\Peoplecount\SensorService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Events\PermissionAttached;
 use Spatie\Permission\Events\PermissionDetached;
@@ -48,6 +49,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::automaticallyEagerLoadRelationships();
+
+        URL::forceHttps(app()->isProduction());
 
         Gate::before(function (User $user, string $ability): ?bool {
             return GlobalPermissionService::canGlobally($user, $ability);
