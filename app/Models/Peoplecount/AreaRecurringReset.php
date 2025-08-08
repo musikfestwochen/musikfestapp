@@ -76,26 +76,24 @@ class AreaRecurringReset extends Model
     /**
      * @return array<Carbon>
      */
-    public function getOccurencesBetween(Carbon $start, Carbon $end): array
+    public function getOccurrencesBetween(Carbon $start, Carbon $end): array
     {
-        $occurences = [];
-        $nextOccurence = $this->getNextDailyOccurrence($start);
+        $occurrences = [];
 
-        // Only add if within range
-        if ($nextOccurence->gte($start) && $nextOccurence->lte($end)) {
-            $occurences[] = $nextOccurence;
+        // Determine the first occurrence at or after the start boundary (inclusive)
+        $current = $this->getPreviousDailyOccurrence($start);
+        if ($current->lt($start)) {
+            $current = $this->getNextDailyOccurrence($start);
         }
 
-        while ($nextOccurence->lt($end)) {
-            $nextOccurence = $this->getNextDailyOccurrence($nextOccurence->addHours(12));
-
-            // Only add if within range and not already past the end
-            if ($nextOccurence->lte($end)) {
-                $occurences[] = $nextOccurence;
-            }
+        // Collect occurrences inclusively up to the end boundary
+        while ($current->lte($end)) {
+            $occurrences[] = $current;
+            // Advance to the next daily occurrence based on the current one
+            $current = $this->getNextDailyOccurrence($current);
         }
 
-        return $occurences;
+        return $occurrences;
     }
 
     /**

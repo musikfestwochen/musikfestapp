@@ -339,7 +339,7 @@ it('correctly aggregates with reccurring reset after some time', function () {
     ]);
 
     // Get the actual occurrence of the reset within the event period
-    $occurrences = $reset->getOccurencesBetween($setup['event_start'], $setup['event_end']);
+    $occurrences = $reset->getOccurrencesBetween($setup['event_start'], $setup['event_end']);
     $actualResetTime = $occurrences[0]; // Use the actual reset time from the model
 
     // Calculate counts before and after the actual reset
@@ -417,7 +417,7 @@ it('correctly aggregates with recurring reset in Europe/Zurich timezone', functi
     ]);
 
     // Get the actual occurrence of the reset within the event period
-    $occurrences = $reset->getOccurencesBetween($setup['event_start'], $setup['event_end']);
+    $occurrences = $reset->getOccurrencesBetween($setup['event_start'], $setup['event_end']);
     $actualResetTime = $occurrences[0]; // Use the actual reset time from the model
 
     // Calculate counts before and after the actual reset
@@ -481,8 +481,8 @@ it('correctly aggregates with recurring resets in multiple timezones', function 
     ]);
 
     // Get the actual occurrences of the resets within the event period
-    $firstOccurrences = $firstReset->getOccurencesBetween($setup['event_start'], $setup['event_end']);
-    $secondOccurrences = $secondReset->getOccurencesBetween($setup['event_start'], $setup['event_end']);
+    $firstOccurrences = $firstReset->getOccurrencesBetween($setup['event_start'], $setup['event_end']);
+    $secondOccurrences = $secondReset->getOccurrencesBetween($setup['event_start'], $setup['event_end']);
 
     // Sort all occurrences by time to determine which reset happens last
     $allOccurrences = array_merge($firstOccurrences, $secondOccurrences);

@@ -2,7 +2,12 @@
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaAggregatedCount;
+use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\IntervalCount;
+use App\Models\Peoplecount\Sensor;
+use App\Models\User;
 use App\Services\Peoplecount\AreaService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +24,24 @@ beforeEach(function () {
     }
 
     $this->service = new AreaService;
+});
+
+describe('deduplicateResets', function () {
+    it('throws when no valid reset type is present in a group', function () {
+        $service = new AreaService;
+        $resets = collect([
+            [
+                'at' => Carbon::parse('2025-01-01 00:00:00'),
+                'reset_value' => 0,
+                'type' => 'unknown_type',
+            ],
+        ]);
+
+        $method = new ReflectionMethod(AreaService::class, 'deduplicateResets');
+
+        expect(fn (): mixed => $method->invoke($service, $resets))
+            ->toThrow(RuntimeException::class, 'No valid reset type found in group.');
+    });
 });
 
 describe('getAreas', function () {
@@ -753,7 +776,7 @@ describe('getAreaResets', function () {
         ]);
 
         // Create single reset within event period
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $area->areaSingleResets()->create([
             'reset_value' => 50,
             'effective_at' => '2024-01-01 14:00:00',
@@ -785,7 +808,7 @@ describe('getAreaResets', function () {
         ]);
 
         // Create single reset outside event period
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $area->areaSingleResets()->create([
             'reset_value' => 50,
             'effective_at' => '2024-01-01 20:00:00', // After event ends
@@ -842,7 +865,7 @@ describe('getAreaResets', function () {
         ]);
 
         // Create single reset at same time as event start
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $area->areaSingleResets()->create([
             'reset_value' => 75,
             'effective_at' => '2024-01-01 10:00:00', // Same as event start
@@ -869,7 +892,7 @@ describe('getAreaResets', function () {
         ]);
 
         // Create multiple single resets
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $area->areaSingleResets()->create([
             'reset_value' => 30,
             'effective_at' => '2024-01-01 16:00:00',
@@ -926,6 +949,40 @@ describe('getAreaResets', function () {
         });
     });
 
+    it('prefers event_start over recurring reset when both occur at event start', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-02 10:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        // Create recurring reset exactly at event start
+        $area->areaRecurringResets()->create([
+            'reset_value' => 999,
+            'reset_time' => '10:00',
+            'timezone' => 'UTC',
+        ]);
+
+        $resets = $this->service->getAreaResets($area);
+
+        // The entry at the event start timestamp should be the event_start (reset_value 0), not the recurring reset
+        $atStart = $resets->firstWhere('at', Carbon::parse('2024-01-01 10:00:00'));
+        expect($atStart)->not->toBeNull()
+            ->and($atStart['type'])->toBe('event_start')
+            ->and($atStart['reset_value'])->toBe(0);
+
+        // And there should also be another recurring reset on the next day at 10:00
+        $nextDay = Carbon::parse('2024-01-02 10:00:00');
+        $atNextDay = $resets->firstWhere('at', $nextDay);
+        expect($atNextDay)->not->toBeNull()
+            ->and($atNextDay['type'])->toBe('recurring_reset')
+            ->and($atNextDay['reset_value'])->toBe(999);
+    });
+
     it('handles reset time exactly at event end boundary', function () {
         $org = Organization::factory()->create();
         $event = Event::factory()->create([
@@ -938,7 +995,7 @@ describe('getAreaResets', function () {
         ]);
 
         // Create single reset exactly at event end time
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $area->areaSingleResets()->create([
             'reset_value' => 50,
             'effective_at' => '2024-01-01 18:00:00', // Exactly at event end
@@ -997,8 +1054,8 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create sensor and assignment
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1007,14 +1064,14 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create interval counts
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 10:30:00',
             'ts_to' => '2024-01-01 11:00:00',
             'count_in' => 10,
             'count_out' => 5,
         ]);
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:30:00',
@@ -1050,8 +1107,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1059,7 +1116,7 @@ describe('calculateAndStoreAggregatedCount', function () {
             'direction_flipped' => true, // Flipped direction
         ]);
 
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 10:30:00',
             'ts_to' => '2024-01-01 11:00:00',
@@ -1090,10 +1147,10 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
+        $sensor = Sensor::factory()->create();
 
         // Assignment that's not active during our calculation period
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 14:00:00', // Starts after our end time
@@ -1101,7 +1158,7 @@ describe('calculateAndStoreAggregatedCount', function () {
             'direction_flipped' => false,
         ]);
 
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 10:30:00',
             'ts_to' => '2024-01-01 11:00:00',
@@ -1131,8 +1188,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 11:00:00', // Assignment starts at 11:00
@@ -1141,7 +1198,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Interval count before assignment becomes active
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 10:30:00', // Before assignment active_from
             'ts_to' => '2024-01-01 11:00:00',
@@ -1150,7 +1207,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Interval count after assignment becomes active
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:30:00', // After assignment active_from
             'ts_to' => '2024-01-01 12:00:00',
@@ -1182,10 +1239,10 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create two sensors and assignments
-        $sensor1 = \App\Models\Peoplecount\Sensor::factory()->create();
-        $sensor2 = \App\Models\Peoplecount\Sensor::factory()->create();
+        $sensor1 = Sensor::factory()->create();
+        $sensor2 = Sensor::factory()->create();
 
-        $assignment1 = \App\Models\Peoplecount\Assignment::factory()->create([
+        $assignment1 = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor1->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1193,7 +1250,7 @@ describe('calculateAndStoreAggregatedCount', function () {
             'direction_flipped' => false,
         ]);
 
-        $assignment2 = \App\Models\Peoplecount\Assignment::factory()->create([
+        $assignment2 = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor2->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1202,7 +1259,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create interval counts for both sensors
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor1->id,
             'ts_from' => '2024-01-01 10:30:00',
             'ts_to' => '2024-01-01 11:00:00',
@@ -1210,7 +1267,7 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 5,
         ]);
 
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor2->id,
             'ts_from' => '2024-01-01 10:30:00',
             'ts_to' => '2024-01-01 11:00:00',
@@ -1247,7 +1304,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         $checksum = '1a2b3c4d5e6f789012345678901234567890123456789012345678901234567890';
 
         // Create existing record
-        \App\Models\Peoplecount\AreaAggregatedCount::query()->create([
+        AreaAggregatedCount::query()->create([
             'area_id' => $area->id,
             'period_start' => $start,
             'period_end' => $end,
@@ -1280,8 +1337,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 11:00:00', // Assignment starts at 11:00
@@ -1290,7 +1347,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create interval count exactly at assignment active_from boundary
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:00:00', // Exactly at active_from
             'ts_to' => '2024-01-01 11:30:00',
@@ -1299,7 +1356,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create interval count exactly at assignment active_to boundary
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 15:00:00', // Exactly at active_to
             'ts_to' => '2024-01-01 15:30:00',
@@ -1330,8 +1387,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 11:00:00',
@@ -1340,7 +1397,7 @@ describe('calculateAndStoreAggregatedCount', function () {
         ]);
 
         // Create interval count that starts exactly at active_to (should be excluded)
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 14:00:00', // At active_to boundary
             'ts_to' => '2024-01-01 14:30:00',
@@ -1385,7 +1442,7 @@ describe('getLatestSingleResetBefore', function () {
         ]);
 
         // Create a reset after the specified time
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $area->areaSingleResets()->create([
             'reset_value' => 50,
             'effective_at' => '2024-01-01 14:00:00',
@@ -1407,7 +1464,7 @@ describe('getLatestSingleResetBefore', function () {
             'event_id' => $event->id,
         ]);
 
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
 
         // Create multiple resets with different times
         $earlierReset = $area->areaSingleResets()->create([
@@ -1446,7 +1503,7 @@ describe('getLatestSingleResetBefore', function () {
             'event_id' => $event->id,
         ]);
 
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
 
         $exactTimeReset = $area->areaSingleResets()->create([
             'reset_value' => 50,
@@ -1470,7 +1527,7 @@ describe('getLatestSingleResetBefore', function () {
             'event_id' => $event->id,
         ]);
 
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
 
         // Create a reset in the past (relative to test execution time)
         $pastReset = $area->areaSingleResets()->create([
@@ -1499,8 +1556,8 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create sensor and assignment
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        $assignment = \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        $assignment = Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1508,14 +1565,14 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval counts
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:15:00',
             'count_in' => 10,
             'count_out' => 5,
         ]);
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 12:00:00',
             'ts_to' => '2024-01-01 12:15:00',
@@ -1564,8 +1621,8 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create sensor and assignment but no interval counts
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1592,8 +1649,8 @@ describe('calculateAreaCounts', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1601,7 +1658,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval count before event start (should be excluded)
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 09:00:00',
             'ts_to' => '2024-01-01 09:15:00',
@@ -1610,7 +1667,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval count after event start (should be included)
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:15:00',
@@ -1637,7 +1694,7 @@ describe('calculateAreaCounts', function () {
             'event_id' => $event->id,
         ]);
 
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
 
         // Create single reset
         $area->areaSingleResets()->create([
@@ -1646,8 +1703,8 @@ describe('calculateAreaCounts', function () {
             'created_by' => $user->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1655,7 +1712,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval count before reset (should be excluded)
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:15:00',
@@ -1664,7 +1721,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval count after reset (should be included)
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 13:00:00',
             'ts_to' => '2024-01-01 13:15:00',
@@ -1692,8 +1749,8 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create first sensor and assignment
-        $sensor1 = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor1 = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor1->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1701,8 +1758,8 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create second sensor and assignment
-        $sensor2 = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor2 = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor2->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1710,7 +1767,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval counts for first sensor
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor1->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:15:00',
@@ -1719,7 +1776,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval counts for second sensor
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor2->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:15:00',
@@ -1746,8 +1803,8 @@ describe('calculateAreaCounts', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1766,7 +1823,7 @@ describe('calculateAreaCounts', function () {
         $area->assignments->each(function ($assignment) {
             expect($assignment->relationLoaded('sensor'))->toBeTrue();
             $assignment->sensor->intervalCounts->each(function ($intervalCount) {
-                expect($intervalCount)->toBeInstanceOf(\App\Models\Peoplecount\IntervalCount::class);
+                expect($intervalCount)->toBeInstanceOf(IntervalCount::class);
             });
         });
     });
@@ -1782,8 +1839,8 @@ describe('calculateAreaCounts', function () {
             'event_id' => $event->id,
         ]);
 
-        $sensor = \App\Models\Peoplecount\Sensor::factory()->create();
-        \App\Models\Peoplecount\Assignment::factory()->create([
+        $sensor = Sensor::factory()->create();
+        Assignment::factory()->create([
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'active_from' => '2024-01-01 09:00:00',
@@ -1791,7 +1848,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Create interval count where out > in
-        \App\Models\Peoplecount\IntervalCount::factory()->create([
+        IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
             'ts_from' => '2024-01-01 11:00:00',
             'ts_to' => '2024-01-01 11:15:00',

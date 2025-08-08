@@ -4,13 +4,17 @@ namespace App\Services\Peoplecount;
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaAggregatedCount;
 use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\IntervalCount;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use RuntimeException;
+use Throwable;
 
 class AreaService
 {
@@ -55,7 +59,7 @@ class AreaService
      * Verify that the event belongs to the current organization.
      * This is a security measure to prevent users from assigning areas to events they don't have access to.
      *
-     * @throws AuthorizationException|\Throwable
+     * @throws AuthorizationException|Throwable
      */
     public function verifyEventBelongsToCurrentOrganization(int $eventId): void
     {
@@ -93,20 +97,31 @@ class AreaService
     }
 
     /**
-     * Get the configuration for checksum calculation.
-     * Defines which attributes to include in checksum calculation for each model type.
-     *
-     * @return array<string, list<string>>
+     * Load all Reset relationships
      */
-    public function getChecksumConfig(): array
+    public function loadAllResets(Area $area): void
     {
-        return [
-            'area' => ['id', 'event_id'],
-            'event' => ['id', 'starts_at', 'ends_at'],
-            'assignments' => ['id', 'area_id', 'sensor_id', 'direction_flipped', 'active_from', 'active_to'],
-            'areaSingleResets' => ['id', 'area_id', 'reset_value', 'effective_at'],
-            'areaRecurringResets' => ['id', 'area_id', 'reset_value', 'reset_time', 'timezone'],
-        ];
+        $area->load([
+            'areaSingleResets',
+            'areaRecurringResets',
+            'event',
+        ]);
+    }
+
+    /**
+     * Calculate a checksum for the area based on all data that affects area count calculation.
+     *
+     * This method loads all related models and calculates a checksum over fields that are
+     * relevant to area count calculation. Fields like notes are excluded as they don't
+     * affect the calculation.
+     */
+    public function calculateChecksum(Area $area): string
+    {
+        $this->loadChecksumRelationships($area); // @pest-mutate-ignore - relationships are loaded lazily when accessed in collectChecksumData
+        $checksumData = $this->collectChecksumData($area);
+        $sortedData = $this->sortChecksumData($checksumData);
+
+        return hash('sha256', (string) json_encode($sortedData)); // @pest-mutate-ignore
     }
 
     /**
@@ -121,18 +136,6 @@ class AreaService
             'assignments.sensor',
             'areaSingleResets',
             'areaRecurringResets',
-        ]);
-    }
-
-    /**
-     * Load all Reset relationships
-     */
-    public function loadAllResets(Area $area): void
-    {
-        $area->load([
-            'areaSingleResets',
-            'areaRecurringResets',
-            'event',
         ]);
     }
 
@@ -164,6 +167,23 @@ class AreaService
         $checksumData['areaRecurringResets'] = $this->extractCollectionAttributes($area->areaRecurringResets, $checksumConfig['areaRecurringResets']);
 
         return $checksumData;
+    }
+
+    /**
+     * Get the configuration for checksum calculation.
+     * Defines which attributes to include in checksum calculation for each model type.
+     *
+     * @return array<string, list<string>>
+     */
+    public function getChecksumConfig(): array
+    {
+        return [
+            'area' => ['id', 'event_id'],
+            'event' => ['id', 'starts_at', 'ends_at'],
+            'assignments' => ['id', 'area_id', 'sensor_id', 'direction_flipped', 'active_from', 'active_to'],
+            'areaSingleResets' => ['id', 'area_id', 'reset_value', 'effective_at'],
+            'areaRecurringResets' => ['id', 'area_id', 'reset_value', 'reset_time', 'timezone'],
+        ];
     }
 
     /**
@@ -220,22 +240,6 @@ class AreaService
     }
 
     /**
-     * Calculate a checksum for the area based on all data that affects area count calculation.
-     *
-     * This method loads all related models and calculates a checksum over fields that are
-     * relevant to area count calculation. Fields like notes are excluded as they don't
-     * affect the calculation.
-     */
-    public function calculateChecksum(Area $area): string
-    {
-        $this->loadChecksumRelationships($area); // @pest-mutate-ignore - relationships are loaded lazily when accessed in collectChecksumData
-        $checksumData = $this->collectChecksumData($area);
-        $sortedData = $this->sortChecksumData($checksumData);
-
-        return hash('sha256', (string) json_encode($sortedData)); // @pest-mutate-ignore
-    }
-
-    /**
      * Get all reset times for the area that need to be separately aggregated with their respective reset values.
      *
      * @return Collection<int, array<string, mixed>>
@@ -271,7 +275,7 @@ class AreaService
     /**
      * Get single resets that fall within the event time period.
      *
-     * @return Collection<int, array{at: \Illuminate\Support\Carbon, reset_value: int, type: string}>
+     * @return Collection<int, array{at: Carbon, reset_value: int, type: string}>
      */
     protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
     {
@@ -285,15 +289,11 @@ class AreaService
     }
 
     /**
-     * Get latest single reset before now (or before the given time).
+     * Check if a reset time falls within the event period.
      */
-    public function getLatestSingleResetBefore(Area $area, ?Carbon $beforeTime = null): ?AreaSingleReset
+    protected function isResetWithinEventPeriod(Carbon $resetTime, Carbon $eventStartTime, Carbon $eventEndTime): bool
     {
-        $query = $area->areaSingleResets()
-            ->where('effective_at', '<=', $beforeTime ?? now())
-            ->orderBy('effective_at', 'desc');
-
-        return $query->first();
+        return $resetTime >= $eventStartTime && $resetTime <= $eventEndTime;
     }
 
     /**
@@ -306,7 +306,7 @@ class AreaService
         $recurringResets = collect();
 
         foreach ($area->areaRecurringResets as $recurringReset) {
-            $occurrences = $recurringReset->getOccurencesBetween($eventStartTime, $eventEndTime);
+            $occurrences = $recurringReset->getOccurrencesBetween($eventStartTime, $eventEndTime);
 
             foreach ($occurrences as $resetTime) {
                 $recurringResets->push([
@@ -321,14 +321,6 @@ class AreaService
     }
 
     /**
-     * Check if a reset time falls within the event period.
-     */
-    protected function isResetWithinEventPeriod(Carbon $resetTime, Carbon $eventStartTime, Carbon $eventEndTime): bool
-    {
-        return $resetTime >= $eventStartTime && $resetTime <= $eventEndTime;
-    }
-
-    /**
      * Remove duplicate resets, prioritizing single > recurring > event start.
      *
      * @param  Collection<int, array<string, mixed>>  $resets
@@ -337,15 +329,22 @@ class AreaService
     protected function deduplicateResets(Collection $resets): Collection
     {
         return $resets->groupBy('at')->map(function (Collection $group) {
+            // Highest priority: single reset
             if ($group->contains('type', 'single_reset')) {
                 return $group->firstWhere('type', 'single_reset');
             }
 
+            // Next priority: event start (at exact event start time, prefer event start over recurring)
+            if ($group->contains('type', 'event_start')) {
+                return $group->firstWhere('type', 'event_start');
+            }
+
+            // Lowest priority: recurring reset
             if ($group->contains('type', 'recurring_reset')) {
                 return $group->firstWhere('type', 'recurring_reset');
             }
 
-            return $group->first();
+            throw new RuntimeException('No valid reset type found in group.');
         })->values();
     }
 
@@ -414,6 +413,43 @@ class AreaService
     }
 
     /**
+     * Get interval counts that are relevant for the time period.
+     *
+     * @return Collection<int, IntervalCount>
+     */
+    protected function getRelevantIntervalCounts(Assignment $assignment, Carbon $start, Carbon $end): Collection
+    {
+        return $assignment->sensor->intervalCounts()
+            ->where('ts_from', '>=', $start)
+            ->where('ts_from', '<', $end)
+            ->get();
+    }
+
+    /**
+     * Check if an interval count is valid for aggregation.
+     */
+    protected function isIntervalCountValid(IntervalCount $intervalCount, Assignment $assignment, Carbon $start, Carbon $end): bool
+    {
+        return $intervalCount->ts_from >= $assignment->active_from
+            && $intervalCount->ts_from < $assignment->active_to;
+    }
+
+    /**
+     * Store the aggregated count in the database.
+     */
+    protected function storeAggregatedCount(Area $area, Carbon $start, Carbon $end, int $finalCount, string $areaConfigChecksum): void
+    {
+        AreaAggregatedCount::query()->updateOrCreate([
+            'area_id' => $area->id,
+            'period_start' => $start,
+            'period_end' => $end,
+        ], [
+            'checksum' => $areaConfigChecksum,
+            'count' => $finalCount,
+        ]);
+    }
+
+    /**
      * Calculate counts for a whole area
      *
      * This method uses all interval counts for a given area after the last single reset and adds them together. It returns the sum of all `in` counts, the sum of all `out` counts, and the net count.
@@ -451,39 +487,14 @@ class AreaService
     }
 
     /**
-     * Get interval counts that are relevant for the time period.
-     *
-     * @return Collection<int, \App\Models\Peoplecount\IntervalCount>
+     * Get latest single reset before now (or before the given time).
      */
-    protected function getRelevantIntervalCounts(Assignment $assignment, Carbon $start, Carbon $end): Collection
+    public function getLatestSingleResetBefore(Area $area, ?Carbon $beforeTime = null): ?AreaSingleReset
     {
-        return $assignment->sensor->intervalCounts()
-            ->where('ts_from', '>=', $start)
-            ->where('ts_from', '<', $end)
-            ->get();
-    }
+        $query = $area->areaSingleResets()
+            ->where('effective_at', '<=', $beforeTime ?? now())
+            ->orderBy('effective_at', 'desc');
 
-    /**
-     * Check if an interval count is valid for aggregation.
-     */
-    protected function isIntervalCountValid(\App\Models\Peoplecount\IntervalCount $intervalCount, Assignment $assignment, Carbon $start, Carbon $end): bool
-    {
-        return $intervalCount->ts_from >= $assignment->active_from
-            && $intervalCount->ts_from < $assignment->active_to;
-    }
-
-    /**
-     * Store the aggregated count in the database.
-     */
-    protected function storeAggregatedCount(Area $area, Carbon $start, Carbon $end, int $finalCount, string $areaConfigChecksum): void
-    {
-        \App\Models\Peoplecount\AreaAggregatedCount::query()->updateOrCreate([
-            'area_id' => $area->id,
-            'period_start' => $start,
-            'period_end' => $end,
-        ], [
-            'checksum' => $areaConfigChecksum,
-            'count' => $finalCount,
-        ]);
+        return $query->first();
     }
 }
