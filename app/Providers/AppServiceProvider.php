@@ -48,12 +48,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+
         Model::automaticallyEagerLoadRelationships();
 
         URL::forceHttps(app()->isProduction());
 
         Gate::before(function (User $user, string $ability): ?bool {
             return GlobalPermissionService::canGlobally($user, $ability);
+        });
+
+        Gate::define('viewPulse', function (User $user) {
+            return $user->can('admin.pulse');
         });
 
         // Register event listeners directly using the Event facade

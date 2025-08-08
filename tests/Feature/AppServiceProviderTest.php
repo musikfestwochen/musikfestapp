@@ -16,3 +16,14 @@ it('verifies that the Gate::before callback (Super Admin)', function () {
 
     expect($result)->toBeTrue();
 });
+
+it('defines a gate for laravel pulse', function () {
+    $user = User::factory()->create();
+
+    setPermissionsOrgId(GLOBAL_ORG_ID);
+    $user->assignRole('Admin');
+
+    $result = Gate::forUser($user)->allows('viewPulse');
+
+    expect($result)->toBeTrue();
+});

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -16,7 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        \Spatie\Permission\Models\Role::query()->firstOrCreate(['name' => 'SuperAdmin']);
+        Role::query()->firstOrCreate(['name' => 'SuperAdmin']);
 
         // create permissions
         $modules = [
@@ -38,15 +39,19 @@ class RolesAndPermissionsSeeder extends Seeder
             }
         }
 
+        // add admin.pulse permission
+        Permission::findOrCreate('admin.pulse');
+
         // update cache to know about the newly created permissions (required if using WithoutModelEvents in seeders)
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Create roles and assign created permissions
 
-        $adminRole = \Spatie\Permission\Models\Role::query()->firstOrCreate(['name' => 'Admin']);
+        $adminRole = Role::query()->firstOrCreate(['name' => 'Admin']);
         $adminRole->syncPermissions([
             'admin.users.*',
             'admin.organizations.*',
+            'admin.pulse',
             'orgmgmt.users.*',
             'peoplecount.sensors.*',
             'peoplecount.events.*',
@@ -55,7 +60,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.area_resets.*',
         ]);
 
-        $orgAdminRole = \Spatie\Permission\Models\Role::query()->firstOrCreate(['name' => 'OrganizationAdmin']);
+        $orgAdminRole = Role::query()->firstOrCreate(['name' => 'OrganizationAdmin']);
         $orgAdminRole->syncPermissions([
             'orgmgmt.users.*',
             'peoplecount.sensors.*',
@@ -65,7 +70,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.area_resets.*',
         ]);
 
-        $peoplecountViewerRole = \Spatie\Permission\Models\Role::query()->firstOrCreate(['name' => 'PeopleCountViewer']);
+        $peoplecountViewerRole = Role::query()->firstOrCreate(['name' => 'PeopleCountViewer']);
         $peoplecountViewerRole->syncPermissions([
             'peoplecount.areas.index',
             'peoplecount.areas.show',

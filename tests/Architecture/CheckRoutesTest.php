@@ -123,6 +123,16 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => '_debugbar/clockwork/{id}'],
         ['method' => 'GET|HEAD', 'uri' => '_debugbar/open'],
         ['method' => 'POST', 'uri' => '_debugbar/queries/explain'],
+
+        // Laravel Pulse routes
+        ['method' => 'GET|HEAD', 'uri' => 'pulse'],
+
+        // Livewire routes
+        ['method' => 'GET|HEAD', 'uri' => 'livewire/livewire.js'],
+        ['method' => 'GET|HEAD', 'uri' => 'livewire/livewire.min.js.map'],
+        ['method' => 'GET|HEAD', 'uri' => 'livewire/preview-file/{filename}'],
+        ['method' => 'POST', 'uri' => 'livewire/update'],
+        ['method' => 'POST', 'uri' => 'livewire/upload-file'],
     ];
 
     // Sort allowedRoutes by method and uri
