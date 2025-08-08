@@ -50,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::automaticallyEagerLoadRelationships();
 
-        URL::forceHttps($this->app->isProduction());
+        URL::forceHttps(app()->isProduction());
 
         Gate::before(function (User $user, string $ability): ?bool {
             return GlobalPermissionService::canGlobally($user, $ability);
