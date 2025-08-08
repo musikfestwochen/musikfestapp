@@ -198,39 +198,49 @@ it('gets next daily occurrence with while loop when reset time is before provide
 });
 
 it('gets occurrences between two dates', function () {
-    // This test covers lines 98-106 - the getOccurencesBetween method
-    // Freeze time to ensure consistent results
-    Carbon::setTestNow('2024-01-15 08:00:00');
-
     $model = new AreaRecurringReset;
-    $model->reset_time = '12:00';
+    $model->reset_time = '12:00:00';
     $model->timezone = 'UTC';
 
     $start = Carbon::parse('2024-01-15 10:00:00', 'UTC');
     $end = Carbon::parse('2024-01-17 14:00:00', 'UTC');
 
-    $occurrences = $model->getOccurencesBetween($start, $end);
+    $occurrences = $model->getOccurrencesBetween($start, $end);
 
-    // Debug: Let's see what we actually get
+    $expectedOccurrences = [
+        Carbon::parse('2024-01-15 12:00:00', 'UTC'),
+        Carbon::parse('2024-01-16 12:00:00', 'UTC'),
+        Carbon::parse('2024-01-17 12:00:00', 'UTC'),
+    ];
+
     expect($occurrences)->toBeArray()
-        ->and(count($occurrences))->toBeGreaterThan(0); // Just ensure we get some occurrences
+        ->and(count($occurrences))->toBe(3)
+        ->and($occurrences)->toEqualCanonicalizing($expectedOccurrences);
+});
 
-    // Test the actual values we get
-    if (count($occurrences) >= 1) {
-        expect($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-16 00:00'); // Based on actual output
-    }
+it('gets occurrences between two dates in different timezones', function () {
+    $model = new AreaRecurringReset;
+    $model->reset_time = '15:30:00';
+    $model->timezone = 'Europe/Zurich';
 
-    if (count($occurrences) >= 2) {
-        expect($occurrences[1]->format('Y-m-d H:i'))->toBe('2024-01-17 00:00'); // Adjust based on pattern
-    }
+    $start = Carbon::parse('2024-01-15 10:00:00', 'UTC');
+    $end = Carbon::parse('2024-01-17 19:00:00', 'UTC');
 
-    Carbon::setTestNow();
+    $occurrences = $model->getOccurrencesBetween($start, $end);
+
+    // Convert expected occurrences to UTC for comparison
+    $expectedOccurrences = [
+        Carbon::parse('2024-01-15 14:30:00', 'UTC'),
+        Carbon::parse('2024-01-16 14:30:00', 'UTC'),
+        Carbon::parse('2024-01-17 14:30:00', 'UTC'),
+    ];
+
+    expect($occurrences)->toBeArray()
+        ->and(count($occurrences))->toBe(3)
+        ->and($occurrences)->toEqualCanonicalizing($expectedOccurrences);
 });
 
 it('gets occurrences between dates with single occurrence', function () {
-    // Additional test for getOccurencesBetween with shorter range
-    // Freeze time to ensure consistent results
-    Carbon::setTestNow('2024-01-15 08:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '15:30';
@@ -239,14 +249,13 @@ it('gets occurrences between dates with single occurrence', function () {
     $start = Carbon::parse('2024-01-15 10:00:00', 'UTC');
     $end = Carbon::parse('2024-01-15 20:00:00', 'UTC');
 
-    $occurrences = $model->getOccurencesBetween($start, $end);
+    $occurrences = $model->getOccurrencesBetween($start, $end);
 
     expect($occurrences)->toBeArray()
         ->and(count($occurrences))->toBe(1) // Implementation now only returns occurrences within the range
-        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-16 03:30') // Time in UTC
+        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-15 15:30') // Time in UTC
         ->and($occurrences[0]->timezone->getName())->toBe('UTC'); // Timezone is UTC
 
-    Carbon::setTestNow();
 });
 
 it('gets previous daily occurrence with explicit Carbon parameter', function () {
@@ -319,7 +328,7 @@ it('verifies occurrences are only added if within range', function () {
     $start = Carbon::parse('2024-01-16 13:00:00', 'UTC'); // After the reset time on Jan 16
     $end = Carbon::parse('2024-01-17 11:00:00', 'UTC');   // Before the reset time on Jan 17
 
-    $occurrences = $model->getOccurencesBetween($start, $end);
+    $occurrences = $model->getOccurrencesBetween($start, $end);
 
     // There should be no occurrences since the next occurrence after start (Jan 17 12:00)
     // is after the end time (Jan 17 11:00)
@@ -330,15 +339,85 @@ it('verifies occurrences are only added if within range', function () {
     $start = Carbon::parse('2024-01-16 10:00:00', 'UTC'); // Before the reset time on Jan 16
     $end = Carbon::parse('2024-01-16 14:00:00', 'UTC');   // After the reset time on Jan 16
 
-    $occurrences = $model->getOccurencesBetween($start, $end);
+    $occurrences = $model->getOccurrencesBetween($start, $end);
 
     expect($occurrences)->toBeArray()
         ->and(count($occurrences))->toBe(1)
-        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-17 00:00');
+        ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-16 12:00');
 
     Carbon::setTestNow();
 });
 
 it('has factory', function () {
     expect(AreaRecurringReset::factory())->toBeInstanceOf(Factory::class);
+});
+
+it('throws on invalid timezone when getting next daily occurrence', function () {
+    $model = new AreaRecurringReset;
+    $model->reset_time = '08:00';
+    $model->timezone = 'Not/AZone';
+
+    expect(fn (): Carbon => $model->getNextDailyOccurrence())->toThrow(Exception::class);
+});
+
+it('does not mutate the provided $from Carbon instance and returns UTC timezone', function () {
+    $from = Carbon::parse('2024-01-15 23:30:00', 'UTC');
+
+    $model = new AreaRecurringReset;
+    $model->reset_time = '08:00';
+    $model->timezone = 'America/New_York';
+
+    $clone = $from->copy();
+    $next = $model->getNextDailyOccurrence($from);
+
+    // The provided instance should remain unchanged
+    expect($from->toIso8601String())->toBe($clone->toIso8601String());
+    // Returned occurrence should be in UTC
+    expect($next->timezone->getName())->toBe('UTC');
+});
+
+it('includes occurrences equal to start and end boundaries', function () {
+    $model = new AreaRecurringReset;
+    $model->reset_time = '12:00';
+    $model->timezone = 'UTC';
+
+    $start = Carbon::parse('2024-01-15 12:00:00', 'UTC');
+    $end = Carbon::parse('2024-01-16 12:00:00', 'UTC');
+
+    $occ = $model->getOccurrencesBetween($start, $end);
+
+    expect($occ)->toBeArray()
+        ->and(count($occ))->toBe(2)
+        ->and($occ[0]->equalTo($start))->toBeTrue()
+        ->and($occ[1]->equalTo($end))->toBeTrue()
+        ->and($occ[0]->timezone->getName())->toBe('UTC')
+        ->and($occ[1]->timezone->getName())->toBe('UTC');
+});
+
+it('returns strictly increasing daily occurrences without duplicates across DST window', function () {
+    $model = new AreaRecurringReset;
+    $model->reset_time = '03:00';
+    $model->timezone = 'Europe/Zurich';
+
+    // Window that spans the EU spring DST transition in 2024 (2024-03-31)
+    $start = Carbon::parse('2024-03-29 00:00:00', 'UTC');
+    $end = Carbon::parse('2024-04-03 23:59:59', 'UTC');
+
+    $occ = $model->getOccurrencesBetween($start, $end);
+
+    // Expect one occurrence per day inclusive: 29,30,31,1,2,3 => 6
+    expect($occ)->toBeArray()->and(count($occ))->toBe(6);
+    $counter = count($occ);
+
+    for ($i = 0; $i < $counter; $i++) {
+        // Ensure all returned timestamps are in UTC
+        expect($occ[$i]->timezone->getName())->toBe('UTC');
+        // Ensure each occurrence is within the requested range
+        expect($occ[$i]->gte($start))->toBeTrue();
+        expect($occ[$i]->lte($end))->toBeTrue();
+        if ($i > 0) {
+            // Strictly increasing
+            expect($occ[$i]->gt($occ[$i - 1]))->toBeTrue();
+        }
+    }
 });

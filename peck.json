@@ -27,7 +27,6 @@
             "combobox",
             "webcron",
             "ips",
-            "occurences",
             "deduplicate"
         ],
         "paths": []
