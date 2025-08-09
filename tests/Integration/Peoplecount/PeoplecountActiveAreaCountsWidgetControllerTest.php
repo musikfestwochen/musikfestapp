@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Peoplecount\AreaAggregationController;
-use App\Http\Requests\Peoplecount\AreaAggregationIndexRequest;
+use App\Http\Controllers\Widgets\PeoplecountActiveAreaCountsWidgetController;
+use App\Http\Requests\Widgets\Peoplecount\ActiveAreaCountsIndexRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
@@ -112,10 +112,10 @@ it('uses the correct form request', function () {
 
     // index
     test()->assertActionUsesFormRequest(
-        AreaAggregationController::class,
+        PeoplecountActiveAreaCountsWidgetController::class,
         'index',
-        AreaAggregationIndexRequest::class);
+        ActiveAreaCountsIndexRequest::class);
     test()->assertRouteUsesFormRequest(
         'peoplecount.area-aggregation.index',
-        AreaAggregationIndexRequest::class);
+        ActiveAreaCountsIndexRequest::class);
 });
