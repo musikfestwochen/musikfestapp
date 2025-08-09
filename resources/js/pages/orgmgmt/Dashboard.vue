@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import ActiveAreaCountsWidget from '@/components/peoplecount/ActiveAreaCountsWidget.vue';
+import MostActiveSensorsWidget from '@/components/peoplecount/MostActiveSensorsWidget.vue';
 import SensorHealthStatusWidget from '@/components/peoplecount/SensorHealthStatusWidget.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -36,8 +37,8 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
             <div class="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <ActiveAreaCountsWidget v-if="can('peoplecount.widgets.active_area_counts')" :organization="organization" />
                 <SensorHealthStatusWidget v-if="can('peoplecount.widgets.sensor_health')" :organization="organization" />
-                <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
+                <div v-if="can('peoplecount.widgets.most_active_sensors')" class="md:col-span-2 lg:col-span-2">
+                    <MostActiveSensorsWidget :organization="organization" />
                 </div>
             </div>
             <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min">

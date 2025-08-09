@@ -61,6 +61,9 @@ describe('ActiveAreaCountsWidget', () => {
         // Reset mocks before each test
         vi.resetAllMocks();
 
+        // Silence error logs from components during negative-path tests
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+
         // Mock the window.setInterval function
         vi.spyOn(window, 'setInterval').mockImplementation(() => {
             return 123 as unknown as number; // Return a dummy interval ID

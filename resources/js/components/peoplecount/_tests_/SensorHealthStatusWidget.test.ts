@@ -37,6 +37,8 @@ describe('SensorHealthStatusWidget', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        // Silence error logs from components during negative-path tests
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         vi.spyOn(window, 'setInterval').mockImplementation(() => 123 as unknown as number);
         vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
 

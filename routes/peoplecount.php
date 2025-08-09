@@ -55,5 +55,9 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         // Sensor Health widget route
         Route::get('sensor-health', [\App\Http\Controllers\Widgets\PeoplecountSensorHealthStatusWidgetController::class, 'index'])
             ->name('sensor-health.index');
+
+        // Most Active Sensors widget route
+        Route::get('most-active-sensors', [\App\Http\Controllers\Widgets\PeoplecountMostActiveSensorsWidgetController::class, 'index'])
+            ->name('most-active-sensors.index');
     });
 });
