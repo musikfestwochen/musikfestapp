@@ -952,15 +952,22 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             'name' => 'Problem Area',
         ]);
 
-        // Mock Cache to throw exception
+        // Mock Cache to return computed payload closure
         Cache::shouldReceive('remember')
             ->once()
-            ->andThrow(new Exception('Cache error'));
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
+
+        // Make areaService calculation throw
+        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+            ->once()
+            ->andThrow(new Exception('Specific error'));
 
         // Mock Log facade
         Log::shouldReceive('error')
             ->once()
-            ->with(Mockery::pattern('/Failed to calculate area counts for area \d+:/'));
+            ->with(Mockery::pattern('/Failed to calculate area counts for area \d+: Specific error/'));
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
@@ -1185,10 +1192,10 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         Cache::shouldReceive('remember')
             ->once()
             ->with(
-                'area_debug_counts:'.$area->id,
+                'org_active_area_counts:'.$organization->id,
                 Mockery::on(function ($ttl): bool {
                     // Verify TTL is exactly 30 seconds from now
-                    $expectedTime = now()->addSeconds(30);
+                    $expectedTime = now()->addSeconds(5);
 
                     return abs($ttl->diffInSeconds($expectedTime)) <= 1;
                 }),
@@ -1219,9 +1226,15 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         Cache::shouldReceive('remember')
             ->once()
-            ->andThrow(new Exception('Specific error message'));
+            ->andReturnUsing(function ($key, $ttl, $callback) {
+                return $callback();
+            });
 
         // Verify exact error message format
+        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+            ->once()
+            ->andThrow(new Exception('Specific error message'));
+
         Log::shouldReceive('error')
             ->once()
             ->with(sprintf('Failed to calculate area counts for area %d: Specific error message', $area->id));
