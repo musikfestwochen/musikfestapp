@@ -8,7 +8,7 @@ export const adminMainNavItems = [
     },
     {
         title: 'Pulse',
-        route: 'pulse',
+        url: route('pulse'),
         icon: TelescopeIcon,
         permission: 'admin.pulse',
     },
