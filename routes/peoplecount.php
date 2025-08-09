@@ -51,5 +51,9 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         // Area Aggregation route
         Route::get('area-aggregation', [PeoplecountActiveAreaCountsWidgetController::class, 'index'])
             ->name('area-aggregation.index');
+
+        // Sensor Health widget route
+        Route::get('sensor-health', [\App\Http\Controllers\Widgets\PeoplecountSensorHealthStatusWidgetController::class, 'index'])
+            ->name('sensor-health.index');
     });
 });

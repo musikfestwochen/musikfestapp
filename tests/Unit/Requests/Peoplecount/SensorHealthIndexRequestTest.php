@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Requests\Widgets\Peoplecount\ActiveAreaCountsIndexRequest;
+use App\Http\Requests\Widgets\Peoplecount\SensorHealthIndexRequest;
 use App\Models\User;
 
-covers(ActiveAreaCountsIndexRequest::class);
+covers(SensorHealthIndexRequest::class);
 
 beforeEach(function () {
-    $this->request = new ActiveAreaCountsIndexRequest;
+    $this->request = new SensorHealthIndexRequest;
 });
 
 it('has correct rules', function () {
@@ -15,10 +15,10 @@ it('has correct rules', function () {
 
 it('authorizes when user can view widget', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('peoplecount.widgets.active_area_counts')->andReturn(true);
+    $user->shouldReceive('can')->with('peoplecount.widgets.sensor_health')->andReturn(true);
 
     // Create a partial mock of the request
-    $request = Mockery::mock(ActiveAreaCountsIndexRequest::class)->makePartial();
+    $request = Mockery::mock(SensorHealthIndexRequest::class)->makePartial();
     $request->shouldReceive('user')->andReturn($user);
 
     expect($request->authorize())->toBeTrue();
@@ -26,10 +26,10 @@ it('authorizes when user can view widget', function () {
 
 it('does not authorize when user cannot view widget', function () {
     $user = Mockery::mock(User::class);
-    $user->shouldReceive('can')->with('peoplecount.widgets.active_area_counts')->andReturn(false);
+    $user->shouldReceive('can')->with('peoplecount.widgets.sensor_health')->andReturn(false);
 
     // Create a partial mock of the request
-    $request = Mockery::mock(ActiveAreaCountsIndexRequest::class)->makePartial();
+    $request = Mockery::mock(SensorHealthIndexRequest::class)->makePartial();
     $request->shouldReceive('user')->andReturn($user);
 
     expect($request->authorize())->toBeFalse();
@@ -37,7 +37,7 @@ it('does not authorize when user cannot view widget', function () {
 
 it('does not authorize when user is unauthenticated', function () {
     // Create a partial mock of the request with no authenticated user
-    $request = Mockery::mock(ActiveAreaCountsIndexRequest::class)->makePartial();
+    $request = Mockery::mock(SensorHealthIndexRequest::class)->makePartial();
     $request->shouldReceive('user')->andReturn(null);
 
     expect($request->authorize())->toBeFalse();
