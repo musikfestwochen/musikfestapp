@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Peoplecount;
+namespace App\Http\Controllers\Widgets;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Peoplecount\AreaAggregationIndexRequest;
+use App\Http\Requests\Widgets\Peoplecount\ActiveAreaCountsIndexRequest;
 use App\Models\Organization;
 use App\Services\Peoplecount\AreaAggregationService;
 use Illuminate\Http\JsonResponse;
 
-class AreaAggregationController extends Controller
+class PeoplecountActiveAreaCountsWidgetController extends Controller
 {
     public function __construct(
         private readonly AreaAggregationService $areaAggregationService
@@ -17,7 +17,7 @@ class AreaAggregationController extends Controller
     /**
      * Get the latest aggregated counts for active areas.
      */
-    public function index(AreaAggregationIndexRequest $request, Organization $organization): JsonResponse
+    public function index(ActiveAreaCountsIndexRequest $request, Organization $organization): JsonResponse
     {
         $activeAreaCounts = $this->areaAggregationService->getActiveAreaAggregatedCounts($organization);
 

@@ -1,0 +1,136 @@
+import { flushPromises, mount } from '@vue/test-utils';
+import axios from 'axios';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import MostActiveSensorsWidget from '../MostActiveSensorsWidget.vue';
+
+vi.mock('axios');
+
+vi.mock('@inertiajs/vue3', () => ({
+    usePage: () => ({
+        props: {
+            auth: {
+                permissions: ['peoplecount.widgets.most_active_sensors'],
+                global_permissions: [],
+                roles: [],
+            },
+        },
+    }),
+}));
+
+describe('MostActiveSensorsWidget', () => {
+    const mockOrganization = { id: 1, slug: 'test-org', name: 'Test Org' };
+
+    const baseArea = (override?: Partial<any>) => ({
+        id: 1,
+        name: 'Area 1',
+        event_name: 'Event',
+        last_updated: '2025-08-09T18:00:00Z',
+        sensors: [],
+        ...override,
+    });
+
+    beforeEach(() => {
+        vi.resetAllMocks();
+        // Silence error logs from components during negative-path tests
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(window, 'setInterval').mockImplementation(() => 123 as unknown as number);
+        vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders loading state initially', async () => {
+        vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        expect(wrapper.findAll('.h-24')).toHaveLength(2);
+    });
+
+    it('fetches data with correct URL', async () => {
+        vi.mocked(axios.get).mockResolvedValue({ data: [baseArea()] });
+        mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+        expect(axios.get).toHaveBeenCalledWith(`/${mockOrganization.slug}/peoplecount/most-active-sensors`);
+    });
+
+    it('shows empty state when no data', async () => {
+        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+        expect(wrapper.text()).toContain('No active areas or sensors.');
+    });
+
+    it('sorts sensors by selected range total desc and toggles on click', async () => {
+        const area = baseArea({
+            sensors: [
+                {
+                    id: 1,
+                    serial: 'A',
+                    vendor: 'Axis',
+                    model: 'P8815-2',
+                    sums: {
+                        '10m': { in: 1, out: 1, total: 2 },
+                        '30m': { in: 2, out: 2, total: 4 },
+                        '1h': { in: 3, out: 3, total: 6 },
+                        '2h': { in: 4, out: 4, total: 8 },
+                    },
+                },
+                {
+                    id: 2,
+                    serial: 'B',
+                    vendor: 'Axis',
+                    model: 'P8815-2',
+                    sums: {
+                        '10m': { in: 3, out: 0, total: 3 },
+                        '30m': { in: 1, out: 1, total: 2 },
+                        '1h': { in: 10, out: 0, total: 10 },
+                        '2h': { in: 1, out: 0, total: 1 },
+                    },
+                },
+            ],
+        });
+        vi.mocked(axios.get).mockResolvedValue({ data: [area] });
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+
+        // Default selectedRange = '10m' -> B (3) should be first
+        let items = wrapper.findAll('li');
+        expect(items[0].text()).toContain('B');
+
+        // Click 30m -> A (4) should be first
+        await wrapper
+            .findAll('button')
+            .find((b) => b.text() === '30m')!
+            .trigger('click');
+        await flushPromises();
+        items = wrapper.findAll('li');
+        expect(items[0].text()).toContain('A');
+
+        // Click 1h -> B (10) should be first
+        await wrapper
+            .findAll('button')
+            .find((b) => b.text() === '1h')!
+            .trigger('click');
+        await flushPromises();
+        items = wrapper.findAll('li');
+        expect(items[0].text()).toContain('B');
+    });
+
+    it('shows error banner when API fails', async () => {
+        vi.mocked(axios.get).mockRejectedValue(new Error('boom'));
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+        expect(wrapper.find('.text-red-500').exists()).toBe(true);
+        expect(wrapper.text()).toContain('Failed to load most active sensors');
+    });
+
+    it('sets up and cleans up auto-refresh', async () => {
+        vi.mocked(axios.get).mockResolvedValue({ data: [baseArea()] });
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+        expect(window.setInterval).toHaveBeenCalledWith(expect.any(Function), 10000);
+        wrapper.unmount();
+        expect(window.clearInterval).toHaveBeenCalledWith(123);
+    });
+});

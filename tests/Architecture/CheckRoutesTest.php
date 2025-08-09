@@ -100,6 +100,12 @@ it('tests if no unwanted routes are exposed', function () {
         // People Count Area Aggregation Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/area-aggregation'],
 
+        // People Count Sensor Health Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensor-health'],
+
+        // People Count Most Active Sensors Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/most-active-sensors'],
+
         // People Count Assignments Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/assignments'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/assignments'],

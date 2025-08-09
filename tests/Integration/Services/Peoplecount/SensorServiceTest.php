@@ -1,10 +1,14 @@
 <?php
 
 use App\Models\Organization;
+use App\Models\Peoplecount\Assignment;
+use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\SensorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -233,5 +237,190 @@ describe('createOrRegenerateToken', function () {
         // With limit=2, this should return 'actual_token_part|extra_part'
         // With limit=3 (mutation), this would return 'actual_token_part'
         expect($token)->toBe('actual_token_part|extra_part');
+    });
+});
+
+describe('getAssignedSensorsHealthStatus', function () {
+    beforeEach(function () {
+        // Ensure cache does not interfere between tests
+        Cache::clear();
+        Carbon::setTestNow('2025-08-09 18:00:00');
+    });
+
+    it('returns empty payload when no active assignments', function () {
+        $org = Organization::factory()->create();
+        Sensor::factory()->count(2)->withOrganization($org)->create();
+
+        $result = $this->service->getAssignedSensorsHealthStatus($org);
+
+        expect($result['total'])->toBe(0)
+            ->and($result['healthy'])->toBe([])
+            ->and($result['suspicious'])->toBe([])
+            ->and($result['unhealthy'])->toBe([])
+            ->and($result['last_updated'])->toBeString();
+    });
+
+    it('categorizes sensors into healthy, suspicious and unhealthy', function () {
+        $org = Organization::factory()->create();
+
+        $healthy = Sensor::factory()->withOrganization($org)->create(['serial' => 'H']);
+        $suspicious = Sensor::factory()->withOrganization($org)->create(['serial' => 'S']);
+        $unhealthy = Sensor::factory()->withOrganization($org)->create(['serial' => 'U']);
+
+        // Active assignments now
+        Assignment::factory()->withSensor($healthy)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+        Assignment::factory()->withSensor($suspicious)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+        Assignment::factory()->withSensor($unhealthy)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+
+        // Healthy: recent and any non-zero
+        IntervalCount::factory()->create([
+            'sensor_id' => $healthy->id,
+            'ts_from' => Carbon::now()->subMinutes(1)->subSeconds(30),
+            'ts_to' => Carbon::now()->subMinute(),
+            'count_in' => 1,
+            'count_out' => 0,
+        ]);
+
+        // Suspicious: recent but all zeros in last window
+        foreach (range(1, 3) as $i) {
+            IntervalCount::factory()->create([
+                'sensor_id' => $suspicious->id,
+                'ts_from' => Carbon::now()->subMinutes(1)->subSeconds(55 - $i),
+                'ts_to' => Carbon::now()->subMinutes(1)->subSeconds(50 - $i),
+                'count_in' => 0,
+                'count_out' => 0,
+            ]);
+        }
+
+        // Unhealthy: latest not recent
+        IntervalCount::factory()->create([
+            'sensor_id' => $unhealthy->id,
+            'ts_from' => Carbon::now()->subMinutes(5),
+            'ts_to' => Carbon::now()->subMinutes(3),
+            'count_in' => 10,
+            'count_out' => 10,
+        ]);
+
+        $result = $this->service->getAssignedSensorsHealthStatus($org);
+
+        expect($result['total'])->toBe(3)
+            ->and(collect($result['healthy'])->pluck('serial')->toArray())->toContain('H')
+            ->and(collect($result['suspicious'])->pluck('serial')->toArray())->toContain('S')
+            ->and(collect($result['unhealthy'])->pluck('serial')->toArray())->toContain('U')
+            ->and($result['all_healthy'])->toBeFalse()
+            ->and($result['last_updated'])->toBeString();
+
+        // ensure interval_counts contain both count_in and count_out
+        $healthyItem = collect($result['healthy'])->first();
+        expect($healthyItem['interval_counts'][0])->toHaveKeys(['ts_from', 'ts_to', 'count_in', 'count_out']);
+    });
+
+    it('only includes sensors from the given organization', function () {
+        $org = Organization::factory()->create();
+        $foreignOrg = Organization::factory()->create();
+
+        $foreignSensor = Sensor::factory()->withOrganization($foreignOrg)->create(['serial' => 'X']);
+        Assignment::factory()->withSensor($foreignSensor)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+        IntervalCount::factory()->create([
+            'sensor_id' => $foreignSensor->id,
+            'ts_to' => Carbon::now(),
+        ]);
+
+        $result = $this->service->getAssignedSensorsHealthStatus($org);
+        expect($result['total'])->toBe(0)
+            ->and($result['all_healthy'])->toBeFalse()
+            ->and($result['last_updated'])->toBeString();
+    });
+
+    it('caches the result for a short time', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['serial' => 'C-1']);
+        Assignment::factory()->withSensor($sensor)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+        IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_to' => Carbon::now(),
+            'count_in' => 1,
+        ]);
+
+        $first = $this->service->getAssignedSensorsHealthStatus($org);
+
+        // Change data but within cache ttl, result should remain same
+        IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_to' => Carbon::now()->addSecond(),
+            'count_in' => 5,
+        ]);
+
+        $second = $this->service->getAssignedSensorsHealthStatus($org);
+
+        expect($second)->toEqual($first);
+
+        // Move time forward beyond TTL (5s) and expect change
+        Carbon::setTestNow(Carbon::now()->addSeconds(6));
+        $third = $this->service->getAssignedSensorsHealthStatus($org);
+        expect($third)->not->toEqual($first);
+
+        Carbon::setTestNow();
+    });
+
+    it('sets all_healthy to true when all sensors are healthy (including single sensor)', function () {
+        $org = Organization::factory()->create();
+
+        // Single healthy sensor
+        $sensor = Sensor::factory()->withOrganization($org)->create(['serial' => 'ONLY']);
+        Assignment::factory()->withSensor($sensor)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+        IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => Carbon::now()->subMinutes(1)->subSeconds(30),
+            'ts_to' => Carbon::now()->subMinute(),
+            'count_in' => 3,
+            'count_out' => 0,
+        ]);
+
+        $result = $this->service->getAssignedSensorsHealthStatus($org);
+
+        expect($result['total'])->toBe(1)
+            ->and($result['all_healthy'])->toBeTrue()
+            ->and(count($result['healthy']))->toBe(1)
+            ->and($result['suspicious'])->toBe([])
+            ->and($result['unhealthy'])->toBe([]);
+    });
+
+    it('treats exactly-2-minutes-old data as recent', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['serial' => 'BND']);
+        Assignment::factory()->withSensor($sensor)->create([
+            'active_from' => Carbon::now()->subHour(),
+            'active_to' => Carbon::now()->addHour(),
+        ]);
+        IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => Carbon::now()->subMinutes(3),
+            'ts_to' => Carbon::now()->subMinutes(2), // exactly at threshold
+            'count_in' => 1,
+            'count_out' => 0,
+        ]);
+
+        $result = $this->service->getAssignedSensorsHealthStatus($org);
+        expect($result['healthy'])->toHaveCount(1)
+            ->and(collect($result['healthy'])->pluck('serial')->toArray())->toContain('BND');
     });
 });

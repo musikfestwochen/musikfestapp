@@ -342,65 +342,64 @@ class AreaAggregationService
      */
     public function getActiveAreaAggregatedCounts(Organization $organization): array
     {
-        $now = Carbon::now()->setTimezone('UTC');
-        $oneHourAgo = $now->copy()->subHour();
+        $cache_time = 5; // @pest-mutate-ignore
+        $cacheKey = 'org_active_area_counts:'.$organization->id;
 
-        // Get all events and areas in a single query
-        $areas = Area::query()
-            ->whereHas('event', function (Builder $query) use ($organization, $now) {
-                $query->where('organization_id', $organization->id)
-                    ->where('starts_at', '<=', $now)
-                    ->where('ends_at', '>=', $now);
-            })
-            ->with([
-                'event:id,name',
-                'aggregatedCounts' => function (Relation $query) {
-                    $query->select(['id', 'area_id', 'count', 'period_end'])
-                        ->latest('period_end');
-                },
-            ])
-            ->get(['id', 'name', 'event_id']);
+        return Cache::remember($cacheKey, now()->addSeconds($cache_time), function () use ($organization): array {
+            $now = Carbon::now()->setTimezone('UTC');
+            $oneHourAgo = $now->copy()->subHour();
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, Area> $areas */
-        return $areas->map(function (Area $area) use ($now, $oneHourAgo): array {
-            // Get the latest count and find the last count that ended at least one hour ago
-            /** @var AreaAggregatedCount|null $latestCount */
-            $latestCount = $area->aggregatedCounts->first();
-            /** @var AreaAggregatedCount|null $oneHourAgoCount */
-            $oneHourAgoCount = $area->aggregatedCounts
-                ->where('period_end', '<=', $oneHourAgo)
-                ->sortByDesc('period_end')
-                ->first();
+            // Get all events and areas in a single query
+            $areas = Area::query()
+                ->whereHas('event', function (Builder $query) use ($organization, $now) {
+                    $query->where('organization_id', $organization->id)
+                        ->where('starts_at', '<=', $now)
+                        ->where('ends_at', '>=', $now);
+                })
+                ->with([
+                    'event:id,name',
+                    'aggregatedCounts' => function (Relation $query) {
+                        $query->select(['id', 'area_id', 'count', 'period_end'])
+                            ->latest('period_end');
+                    },
+                ])
+                ->get(['id', 'name', 'event_id']);
 
-            // Cache debug counts for 30 seconds to improve performance
-            $cacheKey = 'area_debug_counts:'.$area->id;
+            /** @var \Illuminate\Database\Eloquent\Collection<int, Area> $areas */
+            return $areas->map(function (Area $area) use ($now, $oneHourAgo): array {
+                // Get the latest count and find the last count that ended at least one hour ago
+                /** @var AreaAggregatedCount|null $latestCount */
+                $latestCount = $area->aggregatedCounts->first();
+                /** @var AreaAggregatedCount|null $oneHourAgoCount */
+                $oneHourAgoCount = $area->aggregatedCounts
+                    ->where('period_end', '<=', $oneHourAgo)
+                    ->sortByDesc('period_end')
+                    ->first();
 
-            $cache_time = 30; // @pest-mutate-ignore
+                // Calculate debug counts with graceful fallback
+                try {
+                    $debugCounts = $this->areaService->calculateAreaCounts($area);
+                } catch (Exception $exception) {
+                    Log::error(sprintf('Failed to calculate area counts for area %d: ', $area->id).$exception->getMessage()); // @pest-mutate-ignore
+                    $debugCounts = ['in' => 0, 'out' => 0, 'net' => 0];
+                }
 
-            try {
-                $debugCounts = Cache::remember($cacheKey, now()->addSeconds($cache_time), function () use ($area): array {
-                    return $this->areaService->calculateAreaCounts($area);
-                });
-            } catch (Exception $exception) {
-                Log::error(sprintf('Failed to calculate area counts for area %d: ', $area->id).$exception->getMessage()); // @pest-mutate-ignore
-                $debugCounts = ['in' => 0, 'out' => 0, 'net' => 0];
-            }
-
-            return [
-                'id' => $area->id,
-                'name' => $area->name,
-                'event_name' => $area->event->name,
-                'count' => $latestCount->count ?? 0,
-                'net_change' => $latestCount && $oneHourAgoCount
-                    ? $latestCount->count - $oneHourAgoCount->count
-                    : null,
-                'net_change_time_ago' => $latestCount && $oneHourAgoCount
-                    ? Carbon::parse($latestCount->period_end)->diffForHumans(Carbon::parse($oneHourAgoCount->period_end), ['syntax' => true])
-                    : null,
-                'debug_counts' => $debugCounts,
-                'last_updated' => $now->toIso8601String(),
-            ];
-        })->toArray();
+                return [
+                    'id' => $area->id,
+                    'name' => $area->name,
+                    'event_name' => $area->event->name,
+                    'count' => $latestCount->count ?? 0,
+                    'net_change' => $latestCount && $oneHourAgoCount
+                        ? $latestCount->count - $oneHourAgoCount->count
+                        : null,
+                    'net_change_time_ago' => $latestCount && $oneHourAgoCount
+                        ? Carbon::parse($latestCount->period_end)->diffForHumans(Carbon::parse($oneHourAgoCount->period_end), ['syntax' => true])
+                        : null,
+                    'debug_counts' => $debugCounts,
+                    'last_updated' => $now->toIso8601String(),
+                ];
+            })->toArray();
+        });
 
     }
 }

@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\Sensor;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -58,13 +60,25 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Create area for preparation event: Gesamtes Gelände
-        Area::factory()->withEvent($preparationEvent)->create([
+        $prepArea = Area::factory()->withEvent($preparationEvent)->create([
             'name' => 'Gesamtes Gelände (Vorbereitung)',
         ]);
 
         // Create area for main event: Gesamtes Gelände
-        Area::factory()->withEvent($event)->create([
+        $mainArea = Area::factory()->withEvent($event)->create([
             'name' => 'Gesamtes Gelände',
         ]);
+
+        // Create two sensors and assign them to both areas
+        $sensorA = Sensor::factory()->withOrganization($mfw)->axisP88152()->withToken()->create();
+        $sensorB = Sensor::factory()->withOrganization($mfw)->axisP88152()->withToken()->create();
+
+        // Assign both sensors to the preparation area (within prep event timeframe)
+        Assignment::factory()->withArea($prepArea)->withSensor($sensorA)->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($prepArea)->withSensor($sensorB)->withDirectionFlipped(false)->create();
+
+        // Assign both sensors to the main event area (within main event timeframe)
+        Assignment::factory()->withArea($mainArea)->withSensor($sensorA)->withDirectionFlipped(false)->create();
+        Assignment::factory()->withArea($mainArea)->withSensor($sensorB)->withDirectionFlipped(false)->create();
     }
 }
