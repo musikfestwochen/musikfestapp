@@ -94,27 +94,27 @@ describe('MostActiveSensorsWidget', () => {
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
 
-        // Default selectedRange = '10m' -> B (3) should be first
+        // Default selectedRange = '10m' -> sensor with Total 3 should be first
         let items = wrapper.findAll('li');
-        expect(items[0].text()).toContain('B');
+        expect(items[0].text()).toContain('Total: 3');
 
-        // Click 30m -> A (4) should be first
+        // Click 30m -> sensor with Total 4 should be first
         await wrapper
             .findAll('button')
             .find((b) => b.text() === '30m')!
             .trigger('click');
         await flushPromises();
         items = wrapper.findAll('li');
-        expect(items[0].text()).toContain('A');
+        expect(items[0].text()).toContain('Total: 4');
 
-        // Click 1h -> B (10) should be first
+        // Click 1h -> sensor with Total 10 should be first
         await wrapper
             .findAll('button')
             .find((b) => b.text() === '1h')!
             .trigger('click');
         await flushPromises();
         items = wrapper.findAll('li');
-        expect(items[0].text()).toContain('B');
+        expect(items[0].text()).toContain('Total: 10');
     });
 
     it('shows error banner when API fails', async () => {

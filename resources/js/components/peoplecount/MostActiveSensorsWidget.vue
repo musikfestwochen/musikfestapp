@@ -1,9 +1,10 @@
 <script lang="ts" setup>
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import axios from 'axios';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 interface SensorSums {
     in: number;
@@ -34,6 +35,9 @@ const error = ref<string | null>(null);
 const data = ref<AreaItem[]>([]);
 const selectedRange = ref<'10m' | '30m' | '1h' | '2h'>('10m');
 let refreshInterval: number | null = null;
+
+// holds the open accordion area id when multiple areas exist
+const openArea = ref<string | undefined>(undefined);
 
 const fetchData = async () => {
     try {
@@ -72,6 +76,23 @@ const sortedAreas = computed(() => {
         return { ...area, sensors };
     });
 });
+
+// Keep only one area open at a time (Accordion handles this), but ensure a sensible default
+watch(
+    () => sortedAreas.value.map((a) => a.id).join(','),
+    () => {
+        const areas = sortedAreas.value;
+        if (areas.length <= 1) {
+            openArea.value = undefined;
+            return;
+        }
+        // preserve currently open if still present, else open the first
+        if (!openArea.value || !areas.some((a) => String(a.id) === openArea.value)) {
+            openArea.value = String(areas[0].id);
+        }
+    },
+    { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -127,20 +148,21 @@ const sortedAreas = computed(() => {
             <div v-else-if="!data.length" class="py-8 text-center text-muted-foreground">No active areas or sensors.</div>
 
             <div v-else class="space-y-4">
-                <div v-for="area in sortedAreas" :key="area.id" class="rounded border p-3">
-                    <div class="mb-2 flex items-center justify-between">
+                <!-- Single area: show expanded content without collapsible -->
+                <div v-if="sortedAreas.length === 1" class="rounded border">
+                    <div class="mb-2 flex items-center justify-between p-3">
                         <div>
-                            <div class="text-sm font-medium">{{ area.name }}</div>
-                            <div class="text-xs text-muted-foreground">{{ area.event_name }}</div>
+                            <div class="text-sm font-medium">{{ sortedAreas[0].name }}</div>
+                            <div class="text-xs text-muted-foreground">{{ sortedAreas[0].event_name }}</div>
                         </div>
                         <div class="text-xs text-muted-foreground">Sorted by total ({{ selectedRange }})</div>
                     </div>
-                    <div v-if="!area.sensors.length" class="text-xs text-muted-foreground">No sensors assigned.</div>
-                    <ul v-else class="divide-y text-sm">
-                        <li v-for="s in area.sensors" :key="s.id" class="py-2">
-                            <div class="flex items-center justify-between">
-                                <div class="truncate">{{ s.vendor }} {{ s.model }} · {{ s.serial }}</div>
-                                <div class="flex gap-3 text-xs">
+                    <div v-if="!sortedAreas[0].sensors.length" class="px-3 pb-3 text-xs text-muted-foreground">No sensors assigned.</div>
+                    <ul v-else class="divide-y px-3 pb-3 text-sm">
+                        <li v-for="s in sortedAreas[0].sensors" :key="s.id" class="py-2">
+                            <div class="flex flex-col">
+                                <div class="truncate">{{ s.vendor }} {{ s.model }}</div>
+                                <div class="mt-1 flex gap-3 text-xs">
                                     <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
                                     <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
                                     <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
@@ -149,6 +171,36 @@ const sortedAreas = computed(() => {
                         </li>
                     </ul>
                 </div>
+
+                <!-- Multiple areas: use Accordion so only one open at a time -->
+                <Accordion v-else v-model="openArea" class="w-full" collapsible type="single">
+                    <AccordionItem v-for="area in sortedAreas" :key="area.id" :value="String(area.id)">
+                        <AccordionTrigger class="px-3 py-2">
+                            <div class="flex w-full items-center justify-between">
+                                <div class="text-left">
+                                    <div class="text-sm font-medium">{{ area.name }}</div>
+                                    <div class="text-xs text-muted-foreground">{{ area.event_name }}</div>
+                                </div>
+                                <div class="text-xs text-muted-foreground">Sorted by total ({{ selectedRange }})</div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <div v-if="!area.sensors.length" class="px-3 pb-3 text-xs text-muted-foreground">No sensors assigned.</div>
+                            <ul v-else class="divide-y px-3 pb-3 text-sm">
+                                <li v-for="s in area.sensors" :key="s.id" class="py-2">
+                                    <div class="flex flex-col">
+                                        <div class="truncate">{{ s.vendor }} {{ s.model }}</div>
+                                        <div class="mt-1 flex gap-3 text-xs">
+                                            <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
+                                            <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
+                                            <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
 
                 <div class="mt-2 text-center text-xs text-muted-foreground">Last updated: {{ lastUpdatedTime }}</div>
             </div>

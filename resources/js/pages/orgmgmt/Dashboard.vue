@@ -37,9 +37,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
             <div class="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <ActiveAreaCountsWidget v-if="can('peoplecount.widgets.active_area_counts')" :organization="organization" />
                 <SensorHealthStatusWidget v-if="can('peoplecount.widgets.sensor_health')" :organization="organization" />
-                <div v-if="can('peoplecount.widgets.most_active_sensors')" class="md:col-span-2 lg:col-span-2">
-                    <MostActiveSensorsWidget :organization="organization" />
-                </div>
+                <MostActiveSensorsWidget v-if="can('peoplecount.widgets.most_active_sensors')" :organization="organization" />
             </div>
             <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min">
                 <PlaceholderPattern />
