@@ -1580,7 +1580,7 @@ describe('calculateAreaCounts', function () {
             'count_out' => 8,
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result)->toHaveKeys(['in', 'out', 'net'])
@@ -1600,7 +1600,7 @@ describe('calculateAreaCounts', function () {
             'event_id' => $event->id,
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result)->toHaveKeys(['in', 'out', 'net'])
@@ -1629,7 +1629,7 @@ describe('calculateAreaCounts', function () {
             'active_to' => '2024-01-01 19:00:00',
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result)->toHaveKeys(['in', 'out', 'net'])
@@ -1675,7 +1675,7 @@ describe('calculateAreaCounts', function () {
             'count_out' => 3,
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result['in'])->toBe(10)
@@ -1729,7 +1729,7 @@ describe('calculateAreaCounts', function () {
             'count_out' => 3,
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result['in'])->toBe(10)
@@ -1784,7 +1784,7 @@ describe('calculateAreaCounts', function () {
             'count_out' => 8,
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result['in'])->toBe(25)
@@ -1812,7 +1812,7 @@ describe('calculateAreaCounts', function () {
         ]);
 
         // Call the method
-        $this->service->calculateAreaCounts($area);
+        $this->service->calculateAreaDebugCounts($area);
 
         // Verify relationships are loaded
         expect($area->relationLoaded('assignments'))->toBeTrue()
@@ -1856,11 +1856,45 @@ describe('calculateAreaCounts', function () {
             'count_out' => 15,
         ]);
 
-        $result = $this->service->calculateAreaCounts($area);
+        $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
             ->and($result['in'])->toBe(5)
             ->and($result['out'])->toBe(15)
             ->and($result['net'])->toBe(-10);
+    });
+});
+
+// Additional coverage for calculateAreaDebugCounts fallback
+
+describe('calculateAreaDebugCounts fallback coverage', function () {
+    it('uses event_start fallback when now is before event start', function () {
+        // Freeze time before the event start so no resets exist at or before now
+        Carbon::setTestNow('2024-01-01 09:00:00');
+
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        // No assignments/intervals are needed to trigger the fallback; counts should be zero
+        $result = $this->service->calculateAreaDebugCounts($area);
+
+        expect($result)->toBeArray()
+            ->and($result['in'])->toBe(0)
+            ->and($result['out'])->toBe(0)
+            ->and($result['net'])->toBe(0)
+            ->and($result['last_reset_type'])->toBe('event_start')
+            ->and($result['last_reset_value'])->toBe(0)
+            ->and($result['net_plus_reset'])->toBe(0)
+            ->and($result['last_reset_at']->toDateTimeString())->toBe('2024-01-01 10:00:00');
+
+        // Reset frozen time to avoid impacting other tests
+        Carbon::setTestNow();
     });
 });

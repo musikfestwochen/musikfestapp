@@ -109,15 +109,15 @@ class AreaAggregationService
      *
      * @pest-mutate-ignore
      *
-     * @param  Collection<int, \App\Models\Peoplecount\AreaAggregatedCount>  $counts
+     * @param  Collection<int, AreaAggregatedCount>  $counts
      */
     protected function calculateMedianWindowSize(Collection $counts): float
     {
         /** @var Collection<int, int> $differences */
-        $differences = $counts->map(function (\App\Models\Peoplecount\AreaAggregatedCount $count) {
-            /** @var \Illuminate\Support\Carbon $from */
+        $differences = $counts->map(function (AreaAggregatedCount $count) {
+            /** @var Carbon $from */
             $from = $count->period_start;
-            /** @var \Illuminate\Support\Carbon $to */
+            /** @var Carbon $to */
             $to = $count->period_end;
 
             return $from->diffInMinutes($to);
@@ -378,10 +378,18 @@ class AreaAggregationService
 
                 // Calculate debug counts with graceful fallback
                 try {
-                    $debugCounts = $this->areaService->calculateAreaCounts($area);
+                    $debugCounts = $this->areaService->calculateAreaDebugCounts($area);
                 } catch (Exception $exception) {
                     Log::error(sprintf('Failed to calculate area counts for area %d: ', $area->id).$exception->getMessage()); // @pest-mutate-ignore
-                    $debugCounts = ['in' => 0, 'out' => 0, 'net' => 0];
+                    $debugCounts = [
+                        'in' => 0,
+                        'out' => 0,
+                        'net' => 0,
+                        'last_reset_type' => null,
+                        'last_reset_at' => null,
+                        'last_reset_value' => 0,
+                        'net_plus_reset' => 0,
+                    ];
                 }
 
                 return [
