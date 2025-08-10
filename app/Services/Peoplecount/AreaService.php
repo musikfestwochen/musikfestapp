@@ -452,20 +452,50 @@ class AreaService
     /**
      * Calculate counts for a whole area
      *
-     * This method uses all interval counts for a given area after the last single reset and adds them together. It returns the sum of all `in` counts, the sum of all `out` counts, and the net count.
+     * This method uses all interval counts for a given area after the last reset (single OR recurring OR event start)
+     * and adds them together. It returns the sum of all `in` counts, the sum of all `out` counts, the net count,
+     * and additional debug metadata about the last reset.
      *
-     * @return array{in: int, out: int, net: int}
+     * @return array{
+     *     in: int,
+     *     out: int,
+     *     net: int,
+     *     last_reset_type: string,
+     *     last_reset_at: Carbon,
+     *     last_reset_value: int,
+     *     net_plus_reset: int
+     * }
      *
      * @note This method is for debugging purposes and should not be used in production.
      *
-     * @warning This method ignores **recurring resets**, **direction flips**,, and **assignment active periods**.
+     * @warning This method ignores **direction flips** and **assignment active periods**.
      */
-    public function calculateAreaCounts(Area $area): array
+    public function calculateAreaDebugCounts(Area $area): array
     {
-        $area->load(['assignments.sensor.intervalCounts', 'event', 'areaSingleResets']); // @pest-mutate-ignore
+        // We need recurring resets as well to derive the latest reset of any type
+        $area->load(['assignments.sensor.intervalCounts', 'event', 'areaSingleResets', 'areaRecurringResets']); // @pest-mutate-ignore
 
-        $start = $this->getLatestSingleResetBefore($area)->effective_at ?? $area->event->starts_at;
-        $end = now();
+        $now = now();
+
+        // Determine the latest reset (single/recurring/event_start) at or before now
+        $resets = $this->getAreaResets($area)
+            ->filter(fn (array $r) => $r['at']->lte($now))
+            ->sortByDesc('at')
+            ->values();
+
+        $lastReset = $resets->first();
+
+        if (! $lastReset) {
+            // Fallback to event start if no reset is found (should not usually happen because event_start is included)
+            $lastReset = [
+                'at' => $area->event->starts_at,
+                'reset_value' => 0,
+                'type' => 'event_start',
+            ];
+        }
+
+        $start = $lastReset['at'];
+        $end = $now;
 
         // get all interval counts (separate query to avoid using other methods of this service)
         $intervalCounts = $area->assignments->flatMap(function (Assignment $assignment) use ($start, $end) {
@@ -478,11 +508,16 @@ class AreaService
         $inCount = $intervalCounts->sum('count_in');
         $outCount = $intervalCounts->sum('count_out');
         $netCount = $inCount - $outCount;
+        $netPlusReset = $netCount + $lastReset['reset_value'];
 
         return [
             'in' => $inCount,
             'out' => $outCount,
             'net' => $netCount,
+            'last_reset_type' => $lastReset['type'],
+            'last_reset_at' => $start,
+            'last_reset_value' => $lastReset['reset_value'],
+            'net_plus_reset' => $netPlusReset,
         ];
     }
 

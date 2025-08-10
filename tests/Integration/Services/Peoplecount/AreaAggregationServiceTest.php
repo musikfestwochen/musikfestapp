@@ -837,7 +837,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
 
         // Mock AreaService for debug counts
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')->never();
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')->never();
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
@@ -880,7 +880,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
                 return $callback();
             });
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->with(Mockery::type(Area::class))
             ->andReturn(['in' => 10, 'out' => 5, 'net' => 5]);
@@ -899,7 +899,10 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         expect($result[0])->toHaveKey('last_updated');
         expect($result[0]['count'])->toBe(50);
         expect($result[0]['net_change'])->toBe(20); // 50 - 30
-        expect($result[0]['debug_counts'])->toBe(['in' => 10, 'out' => 5, 'net' => 5]);
+        expect($result[0]['debug_counts'])->toBeArray();
+        expect($result[0]['debug_counts']['in'])->toBe(10);
+        expect($result[0]['debug_counts']['out'])->toBe(5);
+        expect($result[0]['debug_counts']['net'])->toBe(5);
     });
 
     it('handles area with no aggregated counts', function () {
@@ -924,7 +927,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
                 return $callback();
             });
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->with(Mockery::type(Area::class))
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
@@ -960,20 +963,27 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             });
 
         // Make areaService calculation throw
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andThrow(new Exception('Specific error'));
 
         // Mock Log facade
         Log::shouldReceive('error')
             ->once()
-            ->with(Mockery::pattern('/Failed to calculate area counts for area \d+: Specific error/'));
+            ->with(Mockery::pattern('/Failed to calculate area counts for area \\d+: Specific error/'));
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
-        expect($result[0]['debug_counts'])->toBe(['in' => 0, 'out' => 0, 'net' => 0]);
+        expect($result[0]['debug_counts'])->toBeArray();
+        expect($result[0]['debug_counts']['in'])->toBe(0);
+        expect($result[0]['debug_counts']['out'])->toBe(0);
+        expect($result[0]['debug_counts']['net'])->toBe(0);
+        expect($result[0]['debug_counts']['last_reset_type'])->toBeNull();
+        expect($result[0]['debug_counts']['last_reset_at'])->toBeNull();
+        expect($result[0]['debug_counts']['last_reset_value'])->toBe(0);
+        expect($result[0]['debug_counts']['net_plus_reset'])->toBe(0);
     });
 
     it('calculates net change time ago correctly', function () {
@@ -1012,7 +1022,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
                 return $callback();
             });
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 
@@ -1044,7 +1054,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $event->delete();
 
         // Mock AreaService for debug counts (won't be called due to exception)
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')->never();
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')->never();
 
         // This should trigger line 362: RuntimeException when area.event is null
         // expect(fn() => $this->service->getActiveAreaAggregatedCounts($organization))
@@ -1102,7 +1112,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $area2 = Area::factory()->create(['event_id' => $event2->id, 'name' => 'Area 2']);
 
         // Mock AreaService
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 
@@ -1133,7 +1143,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             'name' => 'Test Area',
         ]);
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 
@@ -1164,7 +1174,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             'period_end' => Carbon::parse('2024-08-15 14:25:00'),
         ]);
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 
@@ -1205,7 +1215,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
                 return $callback();
             });
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 
@@ -1231,7 +1241,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             });
 
         // Verify exact error message format
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andThrow(new Exception('Specific error message'));
 
@@ -1242,7 +1252,15 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
         expect($result)->toHaveCount(1);
-        expect($result[0]['debug_counts'])->toBe(['in' => 0, 'out' => 0, 'net' => 0]);
+        expect($result[0]['debug_counts'])->toBe([
+            'in' => 0,
+            'out' => 0,
+            'net' => 0,
+            'last_reset_type' => null,
+            'last_reset_at' => null,
+            'last_reset_value' => 0,
+            'net_plus_reset' => 0,
+        ]);
     });
 
     it('handles case where only latestCount exists (no oneHourAgoCount)', function () {
@@ -1262,7 +1280,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             'period_end' => Carbon::parse('2024-08-15 14:25:00'),
         ]);
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 
@@ -1303,7 +1321,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
             'period_end' => Carbon::parse('2024-08-15 13:20:00'),
         ]);
 
-        $this->areaServiceMock->shouldReceive('calculateAreaCounts')
+        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
             ->once()
             ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
 

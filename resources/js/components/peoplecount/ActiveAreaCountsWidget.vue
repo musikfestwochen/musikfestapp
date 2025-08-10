@@ -17,6 +17,10 @@ interface AreaCount {
         in: number;
         out: number;
         net: number;
+        last_reset_type?: string;
+        last_reset_at?: string; // will be serialized from Carbon
+        last_reset_value?: number;
+        net_plus_reset?: number;
     };
     last_updated: string | null;
 }
@@ -200,6 +204,24 @@ const lastUpdatedTime = computed(() => {
                                     <div class="rounded bg-blue-50 p-2 text-center">
                                         <div class="font-medium text-blue-700">Net</div>
                                         <div class="text-blue-600">{{ area.debug_counts.net }}</div>
+                                    </div>
+                                </div>
+                                <div v-if="area.debug_counts.last_reset_type" class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                    <div class="rounded bg-gray-50 p-2">
+                                        <div class="font-medium text-gray-700">Last reset</div>
+                                        <div class="capitalize text-gray-600">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
+                                    </div>
+                                    <div class="rounded bg-gray-50 p-2">
+                                        <div class="font-medium text-gray-700">At</div>
+                                        <div class="text-gray-600">{{ formatDate(area.debug_counts.last_reset_at || null) }}</div>
+                                    </div>
+                                    <div class="rounded bg-gray-50 p-2">
+                                        <div class="font-medium text-gray-700">Reset value</div>
+                                        <div class="text-gray-600">{{ area.debug_counts.last_reset_value }}</div>
+                                    </div>
+                                    <div class="rounded bg-gray-50 p-2">
+                                        <div class="font-medium text-gray-700">Net + reset</div>
+                                        <div class="text-gray-600">{{ area.debug_counts.net_plus_reset }}</div>
                                     </div>
                                 </div>
                             </CollapsibleContent>

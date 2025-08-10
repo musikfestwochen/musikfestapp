@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\VerifyWebcronToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
@@ -34,7 +35,7 @@ it('allows requests with valid token and allowed IP', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
 
-    $response = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response = $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 
@@ -61,7 +62,7 @@ it('blocks requests with invalid token', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });
@@ -84,7 +85,7 @@ it('blocks requests with missing token', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });
@@ -108,7 +109,7 @@ it('blocks requests from disallowed IP addresses', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });
@@ -130,7 +131,7 @@ it('blocks all requests when API is unavailable', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });
@@ -154,7 +155,7 @@ it('blocks all requests when API returns invalid data', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });
@@ -176,7 +177,7 @@ it('uses cached IP addresses on subsequent requests', function () {
     ]);
 
     // First request - should fetch from API
-    $response1 = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response1 = $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 
@@ -189,7 +190,7 @@ it('uses cached IP addresses on subsequent requests', function () {
     Http::fake([]);
 
     // Second request - should use cache
-    $response2 = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response2 = $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 
@@ -204,7 +205,7 @@ it('handles network timeouts gracefully', function () {
     // Mock network timeout
     Http::fake([
         'https://api.cron-job.org/executor-nodes.json' => function (): never {
-            throw new \Illuminate\Http\Client\ConnectionException('Connection timeout');
+            throw new ConnectionException('Connection timeout');
         },
     ]);
 
@@ -219,7 +220,7 @@ it('handles network timeouts gracefully', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });
@@ -238,7 +239,8 @@ it('works with the actual webcron route', function () {
         'REMOTE_ADDR' => '127.0.0.1',
     ]);
 
-    $response->assertStatus(204); // No content response
+    $response->assertStatus(200)
+        ->assertJsonStructure(['schedule_output', 'queue_output']);
 });
 
 it('blocks the actual webcron route with invalid credentials', function () {
@@ -288,7 +290,7 @@ it('handles short tokens correctly in maskToken method', function () {
     $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
-    $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
     });
 });

@@ -13,7 +13,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/webcron', function () {
     Artisan::call('schedule:run');
-    Artisan::call('queue:work --stop-when-empty');
+    $scheduleOutput = Artisan::output();
 
-    return response()->noContent();
+    Artisan::call('queue:work --stop-when-empty');
+    $queueOutput = Artisan::output();
+
+    return response()->json([
+        'schedule_output' => $scheduleOutput,
+        'queue_output' => $queueOutput,
+    ]);
 })->middleware('webcron.token');

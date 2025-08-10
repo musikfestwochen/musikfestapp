@@ -10,15 +10,21 @@ html {
 
 @layer base {
     :root {
+        /* MFW brand colors */
+        --mfw-elfenbein: 41 97% 88%;
+        --mfw-elfenbein-toned: 41 30% 96%;
+        --mfw-ultramarin: 219 60% 39%;
+        --mfw-birnengelb: 40 95% 60%;
+        --mfw-clowngruen: 62 67% 65%;
         --background: 0 0% 100%;
         --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
+        --card: var(--mfw-elfenbein-toned);
         --card-foreground: 0 0% 3.9%;
         --popover: 0 0% 100%;
         --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
+        --primary: var(--mfw-ultramarin);
         --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 92.1%;
+        --secondary: var(--mfw-elfenbein-toned);
         --secondary-foreground: 0 0% 9%;
         --muted: 0 0% 96.1%;
         --muted-foreground: 0 0% 45.1%;
@@ -35,25 +41,30 @@ html {
         --chart-4: 43 74% 66%;
         --chart-5: 27 87% 67%;
         --radius: 1rem;
-        --sidebar-background: 0 0% 98%;
+        --sidebar-background: var(--mfw-elfenbein-toned);
         --sidebar-foreground: 240 5.3% 26.1%;
         --sidebar-primary: 0 0% 10%;
         --sidebar-primary-foreground: 0 0% 98%;
-        --sidebar-accent: 0 0% 94%;
-        --sidebar-accent-foreground: 0 0% 30%;
+        --sidebar-accent: var(--mfw-ultramarin);
+        --sidebar-accent-foreground: var(--mfw-elfenbein);
         --sidebar-border: 0 0% 91%;
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
 
     .dark {
+        /* MFW brand colors */
+        --mfw-elfenbein: 41 97% 88%;
+        --mfw-ultramarin: 219 60% 39%;
+        --mfw-birnengelb: 40 95% 60%;
+        --mfw-clowngruen: 62 67% 65%;
         --background: 0 0% 3.9%;
         --foreground: 0 0% 98%;
         --card: 0 0% 3.9%;
         --card-foreground: 0 0% 98%;
         --popover: 0 0% 3.9%;
         --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
+        --primary: var(--mfw-ultramarin);
+        --primary-foreground: var(--mfw-elfenbein);
         --secondary: 0 0% 14.9%;
         --secondary-foreground: 0 0% 98%;
         --muted: 0 0% 6.9%;
@@ -74,8 +85,8 @@ html {
         --sidebar-foreground: 0 0% 95.9%;
         --sidebar-primary: 360, 100%, 100%;
         --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 0 0% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-accent: var(--mfw-ultramarin);
+        --sidebar-accent-foreground: var(--mfw-elfenbein);
         --sidebar-border: 0 0% 15.9%;
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
