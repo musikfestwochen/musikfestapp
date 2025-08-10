@@ -17,6 +17,7 @@ const props = defineProps<{
 const form = useForm({
     name: props.area?.name || '',
     event_id: props.area?.event_id || '',
+    occupancy_alert_threshold: props.area?.occupancy_alert_threshold ?? null,
 });
 
 const submit = () => {
@@ -58,7 +59,21 @@ const submit = () => {
                 <p class="text-sm text-muted-foreground">Select the event this area belongs to.</p>
             </div>
 
-            <Button :disabled="form.processing || !form.name || !form.event_id" class="mt-2 w-full" tabindex="3" type="submit">
+            <div class="grid gap-2">
+                <Label for="occupancy_alert_threshold">Occupancy alert threshold (optional)</Label>
+                <Input
+                    id="occupancy_alert_threshold"
+                    v-model.number="form.occupancy_alert_threshold"
+                    :tabindex="3"
+                    min="0"
+                    placeholder="e.g. 250"
+                    type="number"
+                />
+                <InputError :message="form.errors.occupancy_alert_threshold as unknown as string" />
+                <p class="text-sm text-muted-foreground">If set, an alert can be shown when the current occupancy exceeds this value.</p>
+            </div>
+
+            <Button :disabled="form.processing || !form.name || !form.event_id" class="mt-2 w-full" tabindex="4" type="submit">
                 <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                 <span v-else>{{ props.area ? 'Update Area' : 'Create Area' }}</span>
             </Button>

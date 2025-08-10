@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -18,4 +19,6 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance');
+
+    Route::patch('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
 });

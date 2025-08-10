@@ -42,6 +42,7 @@ class AreaController extends Controller
         $area = $this->areaService->create([
             'name' => $request->input('name'),
             'event_id' => $request->input('event_id'),
+            'occupancy_alert_threshold' => $request->input('occupancy_alert_threshold'),
         ]);
 
         return redirect()->route('peoplecount.areas.index', [
@@ -98,6 +99,7 @@ class AreaController extends Controller
         $area = $this->areaService->update($area, [
             'name' => $request->input('name'),
             'event_id' => $request->input('event_id'),
+            'occupancy_alert_threshold' => $request->input('occupancy_alert_threshold'),
         ]);
 
         return redirect()->route('peoplecount.areas.index', [

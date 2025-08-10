@@ -34,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'phone',
         'password',
+        'eastereggs_activated',
     ];
 
     /**
@@ -80,6 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'eastereggs_activated' => 'boolean',
         ];
     }
 

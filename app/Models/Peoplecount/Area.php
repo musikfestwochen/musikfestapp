@@ -20,6 +20,16 @@ use Illuminate\Support\Carbon;
  */
 class Area extends Model
 {
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'occupancy_alert_threshold' => 'integer',
+        ];
+    }
+
     /** @use HasFactory<AreaFactory> */
     use HasFactory;
 
@@ -38,6 +48,7 @@ class Area extends Model
     protected $fillable = [
         'name',
         'event_id',
+        'occupancy_alert_threshold',
     ];
 
     /**
