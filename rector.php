@@ -11,20 +11,23 @@ use RectorLaravel\Set\LaravelLevelSetList;
 use RectorLaravel\Set\LaravelSetList;
 
 return static function (RectorConfig $rectorConfig): void {
-    // Paths to analyze
+    // Paths to analyze (keep lean for precommit)
     $rectorConfig->paths([
         __DIR__.'/app',
         __DIR__.'/config',
         __DIR__.'/database',
-        __DIR__.'/resources',
         __DIR__.'/routes',
-        __DIR__.'/tests',
     ]);
 
-    // Skip specific rules
+    // Explicitly skip heavy or external directories
     $rectorConfig->skip([
         RenameClassRector::class, // Skipping class renaming
         AddClosureVoidReturnTypeWhereNoReturnRector::class, // Skipping void return type addition for closures
+        __DIR__.'/vendor/*',
+        __DIR__.'/node_modules/*',
+        __DIR__.'/storage/*',
+        __DIR__.'/resources/*',
+        __DIR__.'/tests/*',
     ]);
 
     // Apply sets for Laravel and general code quality

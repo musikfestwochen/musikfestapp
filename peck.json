@@ -27,7 +27,9 @@
             "combobox",
             "webcron",
             "ips",
-            "deduplicate"
+            "deduplicate",
+            "dockerfile",
+            "makefile"
         ],
         "paths": []
     }

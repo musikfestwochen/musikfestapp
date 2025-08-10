@@ -21,6 +21,12 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Fallback for /icons/favicon.ico to root /favicon.ico if not present
+    RewriteCond %{REQUEST_URI} ^/icons/favicon\.ico$ [NC]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{DOCUMENT_ROOT}/favicon.ico -f
+    RewriteRule ^icons/favicon\.ico$ favicon.ico [L]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f

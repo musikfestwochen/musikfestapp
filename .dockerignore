@@ -1,0 +1,22 @@
+# Ignore local dependencies and artifacts
+/vendor
+/node_modules
+/storage/logs
+/storage/framework/cache
+/storage/framework/views
+/storage/framework/sessions
+/.git
+/.idea
+/.vscode
+/coverage
+/test-results
+/playwright-report
+/public/build
+# SQLite databases (keep local only)
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+# OS/Editor junk
+.DS_Store
+Thumbs.db

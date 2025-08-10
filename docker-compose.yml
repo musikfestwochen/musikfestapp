@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PHP_VERSION: "8.4"
+    image: musikfestapp/php-app:dev
+    container_name: musikfestapp_app
+    working_dir: /var/www/html
+    environment:
+      XDEBUG_MODE: "coverage,develop"
+      COMPOSER_ALLOW_SUPERUSER: "1"
+    volumes:
+      - .:/var/www/html:cached
+      - composer-cache:/tmp/composer:rw
+    tty: true
+    stdin_open: true
+
+  node:
+    image: node:22
+    container_name: musikfestapp_node
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html:cached
+    tty: true
+    stdin_open: true
+
+volumes:
+  composer-cache:
+    name: musikfestapp_composer_cache
