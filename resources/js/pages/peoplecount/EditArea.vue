@@ -6,8 +6,8 @@ import EmptyStateCard from '@/components/peoplecount/cards/EmptyStateCard.vue';
 import EventDetailsCard from '@/components/peoplecount/cards/EventDetailsCard.vue';
 import RecurringResetTable from '@/components/peoplecount/resets/RecurringResetTable.vue';
 import SingleResetTable from '@/components/peoplecount/resets/SingleResetTable.vue';
-import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountArea, PeoplecountEvent } from '@/types';
 import { Head } from '@inertiajs/vue3';
 

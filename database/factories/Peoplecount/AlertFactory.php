@@ -21,10 +21,10 @@ class AlertFactory extends Factory
         return [
             'event_id' => Event::factory(),
             'type' => AlertType::OccupancyAlert,
-            'channel' => $this->faker->randomElement([AlertChannel::Vonage, AlertChannel::Email]),
-            'cooldown_seconds' => $this->faker->numberBetween(60, 3600),
+            'channel' => fake()->randomElement([AlertChannel::Vonage, AlertChannel::Email]),
+            'cooldown_seconds' => fake()->numberBetween(60, 3600),
             'created_by' => User::factory(),
-            'occupancy_alert_threshold' => $this->faker->optional()->numberBetween(10, 10000),
+            'occupancy_alert_threshold' => fake()->optional()->numberBetween(10, 10000),
         ];
     }
 }

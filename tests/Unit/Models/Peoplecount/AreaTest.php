@@ -2,6 +2,7 @@
 
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,6 +14,7 @@ it('has correct fillable attributes', function () {
     expect($model->getFillable())->toEqualCanonicalizing([
         'name',
         'event_id',
+        'occupancy_alert_threshold',
     ]);
 });
 
@@ -61,5 +63,5 @@ it('has many recurring resets', function () {
 });
 
 it('has factory', function () {
-    expect(Area::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(Area::factory())->toBeInstanceOf(Factory::class);
 });

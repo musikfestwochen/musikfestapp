@@ -29,7 +29,8 @@
             "ips",
             "deduplicate",
             "dockerfile",
-            "makefile"
+            "makefile",
+            "eastereggs"
         ],
         "paths": []
     }

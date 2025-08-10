@@ -16,6 +16,7 @@ it('has correct fillable attributes', function () {
         'email',
         'password',
         'phone',
+        'eastereggs_activated',
     ]);
 });
 
