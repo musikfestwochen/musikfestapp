@@ -1258,7 +1258,7 @@ describe('calculateAndStoreAggregatedCount', function () {
             'direction_flipped' => false,
         ]);
 
-        // Create interval counts for both sensors
+        // Create interval counts for first sensor
         IntervalCount::factory()->create([
             'sensor_id' => $sensor1->id,
             'ts_from' => '2024-01-01 10:30:00',
@@ -1267,6 +1267,7 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 5,
         ]);
 
+        // Create interval counts for second sensor
         IntervalCount::factory()->create([
             'sensor_id' => $sensor2->id,
             'ts_from' => '2024-01-01 10:30:00',
@@ -1583,10 +1584,61 @@ describe('calculateAreaCounts', function () {
         $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
-            ->and($result)->toHaveKeys(['in', 'out', 'net'])
+            ->and($result)->toHaveKeys(['in', 'out', 'net', 'last_reset_type', 'last_reset_at', 'last_reset_value', 'net_plus_reset'])
             ->and($result['in'])->toBe(25)
             ->and($result['out'])->toBe(13)
-            ->and($result['net'])->toBe(12);
+            ->and($result['net'])->toBe(12)
+            ->and($result['net_plus_reset'])->toBe($result['net'] + $result['last_reset_value']);
+    });
+
+    it('calculates net_plus_reset correctly by adding reset value to net count', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $org->id,
+            'starts_at' => '2024-01-01 10:00:00',
+            'ends_at' => '2024-01-01 18:00:00',
+        ]);
+        $area = Area::factory()->create([
+            'event_id' => $event->id,
+        ]);
+
+        $user = User::factory()->create();
+
+        // Create single reset with a specific value
+        $area->areaSingleResets()->create([
+            'reset_value' => 75,
+            'effective_at' => '2024-01-01 12:00:00',
+            'created_by' => $user->id,
+        ]);
+
+        $sensor = Sensor::factory()->create();
+        Assignment::factory()->create([
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => '2024-01-01 09:00:00',
+            'active_to' => '2024-01-01 19:00:00',
+        ]);
+
+        // Create interval count after reset with known net value
+        IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => '2024-01-01 13:00:00',
+            'ts_to' => '2024-01-01 13:15:00',
+            'count_in' => 20,
+            'count_out' => 8,
+        ]);
+
+        $result = $this->service->calculateAreaDebugCounts($area);
+
+        // Net count: 20 - 8 = 12
+        // Reset value: 75
+        // Net plus reset should be: 12 + 75 = 87 (NOT 12 - 75 = -63)
+        expect($result)->toBeArray()
+            ->and($result['in'])->toBe(20)
+            ->and($result['out'])->toBe(8)
+            ->and($result['net'])->toBe(12)
+            ->and($result['last_reset_value'])->toBe(75)
+            ->and($result['net_plus_reset'])->toBe(87); // This specifically tests the + operation
     });
 
     it('returns zero counts when no assignments exist', function () {
@@ -1603,10 +1655,11 @@ describe('calculateAreaCounts', function () {
         $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
-            ->and($result)->toHaveKeys(['in', 'out', 'net'])
+            ->and($result)->toHaveKeys(['in', 'out', 'net', 'last_reset_type', 'last_reset_at', 'last_reset_value', 'net_plus_reset'])
             ->and($result['in'])->toBe(0)
             ->and($result['out'])->toBe(0)
-            ->and($result['net'])->toBe(0);
+            ->and($result['net'])->toBe(0)
+            ->and($result['net_plus_reset'])->toBe($result['net'] + $result['last_reset_value']);
     });
 
     it('returns zero counts when no interval counts exist', function () {
@@ -1632,10 +1685,11 @@ describe('calculateAreaCounts', function () {
         $result = $this->service->calculateAreaDebugCounts($area);
 
         expect($result)->toBeArray()
-            ->and($result)->toHaveKeys(['in', 'out', 'net'])
+            ->and($result)->toHaveKeys(['in', 'out', 'net', 'last_reset_type', 'last_reset_at', 'last_reset_value', 'net_plus_reset'])
             ->and($result['in'])->toBe(0)
             ->and($result['out'])->toBe(0)
-            ->and($result['net'])->toBe(0);
+            ->and($result['net'])->toBe(0)
+            ->and($result['net_plus_reset'])->toBe($result['net'] + $result['last_reset_value']);
     });
 
     it('uses event start time when no single reset exists', function () {

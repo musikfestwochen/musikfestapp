@@ -508,15 +508,15 @@ class AreaService
         $inCount = $intervalCounts->sum('count_in');
         $outCount = $intervalCounts->sum('count_out');
         $netCount = $inCount - $outCount;
-        $netPlusReset = $netCount + (int) $lastReset['reset_value'];
+        $netPlusReset = $netCount + $lastReset['reset_value'];
 
         return [
             'in' => $inCount,
             'out' => $outCount,
             'net' => $netCount,
-            'last_reset_type' => (string) $lastReset['type'],
+            'last_reset_type' => $lastReset['type'],
             'last_reset_at' => $start,
-            'last_reset_value' => (int) $lastReset['reset_value'],
+            'last_reset_value' => $lastReset['reset_value'],
             'net_plus_reset' => $netPlusReset,
         ];
     }
