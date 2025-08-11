@@ -40,6 +40,13 @@ it('belongs to an event', function () {
     expect($relation->getRelated())->toBeInstanceOf(Event::class);
 });
 
+it('has many alerts', function () {
+    $model = new Area;
+    $relation = $model->alerts();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+});
+
 it('has many assignments', function () {
     $model = new Area;
     $relation = $model->assignments();

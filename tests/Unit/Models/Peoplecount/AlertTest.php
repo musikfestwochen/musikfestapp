@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Peoplecount\Alert;
-use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\Area;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +11,7 @@ covers(Alert::class);
 it('has correct fillable attributes', function () {
     $model = new Alert;
     expect($model->getFillable())->toEqualCanonicalizing([
-        'event_id',
+        'area_id',
         'type',
         'channel',
         'cooldown_seconds',
@@ -30,12 +30,12 @@ it('uses timestamps', function () {
     expect($model->timestamps)->toBeTrue();
 });
 
-it('belongs to an event', function () {
+it('belongs to an area', function () {
     $model = new Alert;
-    $relation = $model->event();
+    $relation = $model->area();
 
     expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Event::class);
+    expect($relation->getRelated())->toBeInstanceOf(Area::class);
 });
 
 it('belongs to a creator (user)', function () {

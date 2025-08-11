@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $event_id
+ * @property int $area_id
  * @property AlertType $type
  * @property AlertChannel $channel
  * @property int $cooldown_seconds
@@ -35,7 +35,7 @@ class Alert extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'event_id',
+        'area_id',
         'type',
         'channel',
         'cooldown_seconds',
@@ -44,13 +44,13 @@ class Alert extends Model
     ];
 
     /**
-     * The Event that owns the alert.
+     * The Area that owns the alert.
      *
-     * @return BelongsTo<Event, $this>
+     * @return BelongsTo<Area, $this>
      */
-    public function event(): BelongsTo
+    public function area(): BelongsTo
     {
-        return $this->belongsTo(Event::class);
+        return $this->belongsTo(Area::class);
     }
 
     /**

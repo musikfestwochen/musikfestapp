@@ -51,6 +51,16 @@ class Area extends Model
     }
 
     /**
+     * Alerts that belong to the area.
+     *
+     * @return HasMany<Alert, $this>
+     */
+    public function alerts(): HasMany
+    {
+        return $this->hasMany(Alert::class);
+    }
+
+    /**
      * The Assignments that belong to the area.
      *
      * @return HasMany<Assignment, $this>

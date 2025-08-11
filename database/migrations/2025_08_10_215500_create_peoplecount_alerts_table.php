@@ -2,7 +2,7 @@
 
 use App\Enums\Peoplecount\AlertChannel;
 use App\Enums\Peoplecount\AlertType;
-use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\Area;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('peoplecount_alerts', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Event::class)->constrained('peoplecount_events')->cascadeOnDelete();
+            $table->foreignIdFor(Area::class)->constrained('peoplecount_areas')->cascadeOnDelete();
             // Backed enums as strings
             $table->string('type'); // AlertType
             $table->string('channel'); // AlertChannel

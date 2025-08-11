@@ -5,7 +5,7 @@ namespace Database\Factories\Peoplecount;
 use App\Enums\Peoplecount\AlertChannel;
 use App\Enums\Peoplecount\AlertType;
 use App\Models\Peoplecount\Alert;
-use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\Area;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,7 +19,7 @@ class AlertFactory extends Factory
     public function definition(): array
     {
         return [
-            'event_id' => Event::factory(),
+            'area_id' => Area::factory(),
             'type' => AlertType::OccupancyAlert,
             'channel' => fake()->randomElement([AlertChannel::Vonage, AlertChannel::Email]),
             'cooldown_seconds' => fake()->numberBetween(60, 3600),
