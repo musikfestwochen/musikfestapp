@@ -113,7 +113,6 @@ export interface PeoplecountArea {
     id: number;
     name: string;
     event_id: number;
-    occupancy_alert_threshold: number | null;
     created_at: string;
     updated_at: string;
     deleted_at?: string;

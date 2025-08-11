@@ -25,7 +25,6 @@ class AreaUpdateRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'event_id' => ['required', 'exists:peoplecount_events,id'],
-            'occupancy_alert_threshold' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

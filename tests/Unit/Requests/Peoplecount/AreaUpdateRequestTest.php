@@ -13,7 +13,6 @@ it('has correct rules', function () {
     expect($this->request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
         'event_id' => ['required', 'exists:peoplecount_events,id'],
-        'occupancy_alert_threshold' => ['nullable', 'integer', 'min:0'],
     ]);
 });
 

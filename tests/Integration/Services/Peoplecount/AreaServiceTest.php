@@ -1952,33 +1952,3 @@ describe('calculateAreaDebugCounts fallback coverage', function () {
         Carbon::setTestNow();
     });
 });
-
-describe('occupancy_alert_threshold', function () {
-    it('persists threshold on create and update', function () {
-        $org = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $org->id,
-        ]);
-        setPermissionsOrgId($org->id);
-
-        $service = new AreaService;
-
-        $area = $service->create([
-            'name' => 'Foo',
-            'event_id' => $event->id,
-            'occupancy_alert_threshold' => 150,
-        ]);
-
-        expect($area->occupancy_alert_threshold)->toBe(150);
-
-        $service->update($area, [
-            'name' => 'Bar',
-            'event_id' => $event->id,
-            'occupancy_alert_threshold' => null,
-        ]);
-        $area->refresh();
-
-        expect($area->name)->toBe('Bar')
-            ->and($area->occupancy_alert_threshold)->toBeNull();
-    });
-});

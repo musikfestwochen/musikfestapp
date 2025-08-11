@@ -14,7 +14,6 @@ it('has correct fillable attributes', function () {
     expect($model->getFillable())->toEqualCanonicalizing([
         'name',
         'event_id',
-        'occupancy_alert_threshold',
     ]);
 });
 

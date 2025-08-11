@@ -20,23 +20,13 @@ use Illuminate\Support\Carbon;
  */
 class Area extends Model
 {
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'occupancy_alert_threshold' => 'integer',
-        ];
-    }
+    /** The table associated with the model. */
+    protected $table = 'peoplecount_areas';
 
     /** @use HasFactory<AreaFactory> */
     use HasFactory;
 
     use SoftDeletes;
-
-    /** The table associated with the model. */
-    protected $table = 'peoplecount_areas';
 
     /**
      * The attributes that are mass assignable.
@@ -48,7 +38,6 @@ class Area extends Model
     protected $fillable = [
         'name',
         'event_id',
-        'occupancy_alert_threshold',
     ];
 
     /**
@@ -72,16 +61,6 @@ class Area extends Model
     }
 
     /**
-     * The Single Resets that belong to the area.
-     *
-     * @return HasMany<AreaSingleReset, $this>
-     */
-    public function areaSingleResets(): HasMany
-    {
-        return $this->hasMany(AreaSingleReset::class);
-    }
-
-    /**
      * The Single Resets that belong to the area (for route model binding).
      *
      * @return HasMany<AreaSingleReset, $this>
@@ -92,13 +71,13 @@ class Area extends Model
     }
 
     /**
-     * The Recurring Resets that belong to the area.
+     * The Single Resets that belong to the area.
      *
-     * @return HasMany<AreaRecurringReset, $this>
+     * @return HasMany<AreaSingleReset, $this>
      */
-    public function areaRecurringResets(): HasMany
+    public function areaSingleResets(): HasMany
     {
-        return $this->hasMany(AreaRecurringReset::class);
+        return $this->hasMany(AreaSingleReset::class);
     }
 
     /**
@@ -109,6 +88,16 @@ class Area extends Model
     public function recurringResets(): HasMany
     {
         return $this->areaRecurringResets();
+    }
+
+    /**
+     * The Recurring Resets that belong to the area.
+     *
+     * @return HasMany<AreaRecurringReset, $this>
+     */
+    public function areaRecurringResets(): HasMany
+    {
+        return $this->hasMany(AreaRecurringReset::class);
     }
 
     /**
