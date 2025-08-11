@@ -33,18 +33,19 @@ RUN set -eux; \
 RUN docker-php-ext-configure zip \
     && docker-php-ext-install -j"$(nproc)" zip pcntl pdo pdo_sqlite
 
-# Install Xdebug for coverage (preferred driver)
-RUN pecl install xdebug \
-    && docker-php-ext-enable xdebug
+# Install PCOV for coverage
+RUN pecl install pcov \
+    && docker-php-ext-enable pcov
 
 # Copy Composer from official image
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 # Working directory and environment
 WORKDIR /var/www/html
-ENV XDEBUG_MODE=coverage,develop \
-    COMPOSER_ALLOW_SUPERUSER=1 \
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_CACHE_DIR=/tmp/composer
 
+RUN printf "pcov.enabled=1\npcov.directory=/var/www/html\npcov.exclude=\"~vendor~\"\n" > /usr/local/etc/php/conf.d/zz-pcov.ini
+
 # Show quick info on build (non-fatal)
-RUN php -v && php --ri xdebug || true
+RUN php -v && php --ri pcov || true

@@ -1,31 +1,39 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        PHP_VERSION: "8.4"
-    image: musikfestapp/php-app:dev
-    container_name: musikfestapp_app
-    working_dir: /var/www/html
-    environment:
-      XDEBUG_MODE: "coverage,develop"
-      COMPOSER_ALLOW_SUPERUSER: "1"
-    volumes:
-      - .:/var/www/html:cached
-      - composer-cache:/tmp/composer:rw
-    tty: true
-    stdin_open: true
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                PHP_VERSION: "8.4"
+        image: musikfestapp/php-app:dev
+        container_name: musikfestapp_app
+        working_dir: /var/www/html
+        environment:
+            COMPOSER_ALLOW_SUPERUSER: "1"
+        volumes:
+            - .:/var/www/html:cached               # your code
+            - composer-cache:/tmp/composer:rw      # composer cache (kept)
+            - vendor:/var/www/html/vendor          # fast vendor (incl. pestphp cache)
+            - phpstan-cache:/tmp/phpstan           # persistent phpstan cache
+        tty: true
+        stdin_open: true
 
-  node:
-    image: node:22
-    container_name: musikfestapp_node
-    working_dir: /var/www/html
-    volumes:
-      - .:/var/www/html:cached
-    tty: true
-    stdin_open: true
+    node:
+        image: node:22
+        container_name: musikfestapp_node
+        working_dir: /var/www/html
+        volumes:
+            - .:/var/www/html:cached
+            - node_modules:/var/www/html/node_modules  # fast node_modules
+        tty: true
+        stdin_open: true
 
 volumes:
-  composer-cache:
-    name: musikfestapp_composer_cache
+    composer-cache:
+        name: musikfestapp_composer_cache
+    vendor:
+        name: musikfestapp_vendor
+    node_modules:
+        name: musikfestapp_node_modules
+    phpstan-cache:
+        name: musikfestapp_phpstan_cache
