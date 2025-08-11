@@ -6,8 +6,17 @@ on:
       - main
     paths-ignore:
       - '.junie/**'
+      - '.run/**'
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE/**'
+      - 'docker-compose.yml'
+      - 'Dockerfile'
+      - '**/*.md'
+      - 'tests/**'
+      - 'e2e/**'
+      - 'playwright-report/**'
+      - 'test-results/**'
   workflow_dispatch:
 
 permissions:
