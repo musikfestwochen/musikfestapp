@@ -82,8 +82,6 @@ class Alert extends Model
         return [
             'type' => AlertType::class,
             'channel' => AlertChannel::class,
-            'cooldown_seconds' => 'integer',
-            'occupancy_alert_threshold' => 'integer',
         ];
     }
 }

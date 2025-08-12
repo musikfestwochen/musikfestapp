@@ -1,8 +1,11 @@
 <?php
 
+use App\Enums\Peoplecount\AlertChannel;
+use App\Enums\Peoplecount\AlertType;
 use App\Models\Peoplecount\Alert;
 use App\Models\Peoplecount\Area;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -23,6 +26,17 @@ it('has correct fillable attributes', function () {
 it('has correct table name', function () {
     $model = new Alert;
     expect($model->getTable())->toBe('peoplecount_alerts');
+});
+
+it('has correct cast attributes', function () {
+    $model = new Alert;
+
+    $casts = $model->getCasts();
+
+    expect($casts['id'])->toBe('int')
+        ->and($casts['type'])->toBe(AlertType::class)
+        ->and($casts['channel'])->toBe(AlertChannel::class);
+
 });
 
 it('uses timestamps', function () {
@@ -54,5 +68,5 @@ it('has many recipients (users) via pivot', function () {
 });
 
 it('has factory', function () {
-    expect(Alert::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(Alert::factory())->toBeInstanceOf(Factory::class);
 });

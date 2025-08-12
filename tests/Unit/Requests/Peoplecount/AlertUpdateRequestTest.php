@@ -23,6 +23,9 @@ it('has correct rules', function () {
         'min:0',
     ]);
 
+    expect($rules['recipients'])->toBe(['sometimes', 'array']);
+    expect($rules['recipients.*'])->toBe(['integer', 'exists:users,id']);
+
     expect($rules['type'])->toHaveCount(2);
     expect($rules['type'][0])->toBe('required');
     expect($rules['type'][1])->toBeInstanceOf(\Illuminate\Validation\Rules\Enum::class);
