@@ -85,6 +85,15 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/areas/{area}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}'],
 
+        // People Count Alerts Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas/{area}/alerts'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/{alert}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/{alert}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/{alert}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/{alert}'],
+
         // People Count Area Single Reset Routes
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas/{area}/single-resets'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/single-resets/create'],
