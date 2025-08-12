@@ -16,6 +16,7 @@ it('has correct rules', function () {
 it('authorizes when user can edit alerts', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.alerts.edit')->andReturn(true);
+    $user->shouldReceive('can')->with('orgmgmt.users.index')->andReturn(true);
 
     Auth::shouldReceive('user')->andReturn($user);
 

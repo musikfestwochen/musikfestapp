@@ -37,13 +37,11 @@ class AlertService
      *
      * @throws AuthorizationException
      */
-    private function assertAreaBelongsToOrganization(Organization $organization, Area $area): void
+    protected function assertAreaBelongsToOrganization(Organization $organization, Area $area): void
     {
         // Area belongs to an Event which holds the organization_id
         $event = $area->event;
-        if ($event === null || $event->organization_id !== $organization->id) {
-            throw new AuthorizationException('Area does not belong to the current organization.');
-        }
+        throw_if($event === null || $event->organization_id !== $organization->id, new AuthorizationException('Area does not belong to the current organization.'));
     }
 
     /**
@@ -76,7 +74,7 @@ class AlertService
      *
      * @throws AuthorizationException
      */
-    private function applyRecipientsFromAttributes(Organization $organization, Alert $alert, array $attributes): void
+    protected function applyRecipientsFromAttributes(Organization $organization, Alert $alert, array $attributes): void
     {
         if (! array_key_exists('recipients', $attributes)) {
             return; // Nothing to do
@@ -91,7 +89,7 @@ class AlertService
      *
      * @return list<int>
      */
-    private function extractRecipientIds(mixed $value): array
+    protected function extractRecipientIds(mixed $value): array
     {
         if ($value instanceof Collection) {
             $value = $value->all();
@@ -100,11 +98,7 @@ class AlertService
         if (is_string($value)) {
             if (preg_match('/^\s*\[.*\]\s*$/', $value) === 1) {
                 $decoded = json_decode($value);
-                if (is_array($decoded)) {
-                    $value = $decoded;
-                } else {
-                    $value = [];
-                }
+                $value = is_array($decoded) ? $decoded : [];
             } elseif (str_contains($value, ',')) {
                 $value = preg_split('/\s*,\s*/', $value) ?: [];
             } else {
@@ -121,6 +115,7 @@ class AlertService
             if ($v instanceof BackedEnum) {
                 $v = $v->value;
             }
+
             if (is_object($v) && property_exists($v, 'id')) {
                 $v = $v->id;
             }
@@ -141,10 +136,10 @@ class AlertService
      *
      * @throws AuthorizationException
      */
-    private function syncRecipientsEnsuringOrgMembership(Organization $organization, Alert $alert, array $recipientIds): void
+    protected function syncRecipientsEnsuringOrgMembership(Organization $organization, Alert $alert, array $recipientIds): void
     {
         // Always sync (including empty) to reflect current selection
-        if (empty($recipientIds)) {
+        if ($recipientIds === []) {
             $alert->recipients()->sync([]);
 
             return;
@@ -152,9 +147,7 @@ class AlertService
 
         $allowedIds = $organization->users()->pluck('users.id')->all();
         $invalid = array_diff($recipientIds, $allowedIds);
-        if (! empty($invalid)) {
-            throw new AuthorizationException('One or more recipients do not belong to the current organization.');
-        }
+        throw_unless($invalid === [], new AuthorizationException('One or more recipients do not belong to the current organization.'));
 
         $alert->recipients()->sync($recipientIds);
     }
@@ -186,11 +179,9 @@ class AlertService
      *
      * @throws AuthorizationException
      */
-    private function assertAlertBelongsToAreaAndOrganization(Organization $organization, Area $area, Alert $alert): void
+    protected function assertAlertBelongsToAreaAndOrganization(Organization $organization, Area $area, Alert $alert): void
     {
-        if ($alert->area_id !== $area->id) {
-            throw new AuthorizationException('Alert does not belong to the specified area.');
-        }
+        throw_if($alert->area_id !== $area->id, new AuthorizationException('Alert does not belong to the specified area.'));
 
         $this->assertAreaBelongsToOrganization($organization, $area);
     }
