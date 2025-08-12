@@ -14,23 +14,21 @@ beforeEach(function () {
 it('has correct rules', function () {
     $rules = $this->request->rules();
 
-    // area_id, channel, cooldown_seconds, occupancy_alert_threshold can be compared directly
-    expect($rules['area_id'])->toBe(['required', 'exists:peoplecount_areas,id'])
-        ->and($rules['channel'])->toBe(['required', 'in:vonage,email'])
-        ->and($rules['cooldown_seconds'])->toBe(['required', 'integer', 'min:0'])
+    expect($rules['cooldown_seconds'])->toBe(['required', 'integer', 'min:0'])
         ->and($rules['occupancy_alert_threshold'])->toBe([
             'required_if:type,'.AlertType::OccupancyAlert->value,
             'prohibited_unless:type,'.AlertType::OccupancyAlert->value,
             'integer',
             'min:0',
         ])
-        ->and($rules['recipients'])->toBe(['sometimes', 'array'])
+        ->and($rules['recipients'])->toBe(['sometimes', 'nullable', 'array'])
         ->and($rules['recipients.*'])->toBe(['integer', 'exists:users,id'])
         ->and($rules['type'])->toHaveCount(2)
         ->and($rules['type'][0])->toBe('required')
-        ->and($rules['type'][1])->toBeInstanceOf(Enum::class);
-
-    // type must contain required and an Enum rule for AlertType
+        ->and($rules['type'][1])->toBeInstanceOf(Enum::class)
+        ->and($rules['channel'])->toHaveCount(2)
+        ->and($rules['channel'][0])->toBe('required')
+        ->and($rules['channel'][1])->toBeInstanceOf(Enum::class);
 });
 
 it('authorizes when user can store alerts', function () {
