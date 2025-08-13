@@ -29,6 +29,7 @@ class AlertService
 
         return $area->alerts()
             ->with(self::ALERT_RELATIONS)
+            ->withCount('recipients')
             ->get();
     }
 

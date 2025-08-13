@@ -143,4 +143,79 @@ describe('getUsers', function () {
             ->and($result->pluck('id')->toArray())->toContain($userInCorrectOrg->id)
             ->and($result->pluck('id')->toArray())->not->toContain($userInWrongOrg->id);
     });
+
+    it('filters by explicit organization when organization parameter is provided (no columns)', function () {
+        // Create two organizations and users
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        setPermissionsOrgId(GLOBAL_ORG_ID); // permissions context should not matter when explicit org is passed
+
+        $userA1 = User::factory()->create(['name' => 'A1']);
+        $userB1 = User::factory()->create(['name' => 'B1']);
+
+        $userA1->organizations()->attach($orgA);
+        $userB1->organizations()->attach($orgB);
+
+        $result = $this->service->getUsers($orgA);
+
+        expect($result->pluck('id')->toArray())->toContain($userA1->id)
+            ->and($result->pluck('id')->toArray())->not->toContain($userB1->id);
+    });
+
+    it('applies select columns when organization parameter is provided', function () {
+        $org = Organization::factory()->create();
+        setPermissionsOrgId(GLOBAL_ORG_ID);
+
+        // Ensure phone is set so we can verify it is not selected
+        $user = User::factory()->create(['phone' => '+41000000000', 'email' => 'a@example.test']);
+        $user->organizations()->attach($org);
+
+        $columns = ['users.id', 'users.name', 'users.email'];
+        $result = $this->service->getUsers($org, $columns);
+
+        expect($result->count())->toBe(1);
+        $attrs = $result->first()->getAttributes();
+        expect(array_keys($attrs))->toEqualCanonicalizing(['id', 'name', 'email']);
+    });
+
+    it('applies select columns in fallback branch (no organization argument)', function () {
+        $org = Organization::factory()->create();
+        setPermissionsOrgId($org->id); // non-global, triggers whereHas
+
+        $userInOrg = User::factory()->create(['phone' => '+41000000001']);
+        $userOut = User::factory()->create(['phone' => '+41000000002']);
+        $userInOrg->organizations()->attach($org);
+
+        $columns = ['users.id'];
+        $result = $this->service->getUsers(null, $columns);
+
+        expect($result->count())->toBe(1)
+            ->and($result->first()->id)->toBe($userInOrg->id);
+        $attrs = $result->first()->getAttributes();
+        expect(array_keys($attrs))->toEqualCanonicalizing(['id']);
+    });
+});
+
+it('ignores permissions org context when explicit organization is provided', function () {
+    // Create two organizations: A (explicit) and B (permissions context)
+    $orgA = Organization::factory()->create();
+    $orgB = Organization::factory()->create();
+
+    // Set permissions context to a non-global org different from explicit org
+    setPermissionsOrgId($orgB->id);
+
+    // Create users and attach only to orgA
+    $userInA = User::factory()->create(['name' => 'OnlyInA']);
+    $userInA->organizations()->attach($orgA);
+
+    // Sanity: also a user only in orgB to ensure no bleed-through
+    $userInB = User::factory()->create(['name' => 'OnlyInB']);
+    $userInB->organizations()->attach($orgB);
+
+    // When explicit org is provided, permissions context must be ignored
+    $result = $this->service->getUsers($orgA);
+
+    expect($result->pluck('id')->toArray())->toContain($userInA->id)
+        ->and($result->pluck('id')->toArray())->not->toContain($userInB->id)
+        ->and($result->count())->toBe(1);
 });

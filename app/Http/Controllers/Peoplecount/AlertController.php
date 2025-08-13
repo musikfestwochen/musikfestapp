@@ -14,13 +14,17 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Alert;
 use App\Models\Peoplecount\Area;
 use App\Services\Peoplecount\AlertService;
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AlertController extends Controller
 {
-    public function __construct(private readonly AlertService $alertService) {}
+    public function __construct(
+        private readonly AlertService $alertService,
+        private readonly UserService $userService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -42,7 +46,7 @@ class AlertController extends Controller
      */
     public function create(AlertCreateRequest $request, Organization $organization, Area $area): Response
     {
-        $users = $organization->users()->select(['users.id', 'users.name', 'users.email', 'users.phone'])->get();
+        $users = $this->userService->getUsers($organization, ['users.id', 'users.name', 'users.email']);
 
         return Inertia::render('peoplecount/NewAlert', [
             'organization' => $organization,
@@ -85,7 +89,7 @@ class AlertController extends Controller
     public function edit(AlertEditRequest $request, Organization $organization, Area $area, Alert $alert): Response
     {
         $alert->load('recipients');
-        $users = $organization->users()->select(['users.id', 'users.name', 'users.email', 'users.phone'])->get();
+        $users = $this->userService->getUsers($organization, ['users.id', 'users.name', 'users.email']);
 
         return Inertia::render('peoplecount/EditAlert', [
             'organization' => $organization,
