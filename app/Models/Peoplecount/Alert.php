@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property int $cooldown_minutes
  * @property int|null $occupancy_alert_threshold
  * @property int|null $created_by
+ * @property Carbon|null $last_triggered_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */

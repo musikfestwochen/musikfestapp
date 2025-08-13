@@ -19,7 +19,7 @@ export interface AlertDTO {
     created_by?: number | null;
     creator?: { id: number; name: string } | null;
     recipients?: { id: number; name: string; email?: string }[];
-    created_at?: string;
+    last_triggered_at?: string | null;
 }
 
 const props = defineProps<{
@@ -100,7 +100,7 @@ const rows = computed(() => props.alerts || []);
                     <TableHead>Threshold</TableHead>
                     <TableHead>Recipients</TableHead>
                     <TableHead>Creator</TableHead>
-                    <TableHead>Created at</TableHead>
+                    <TableHead>Last triggered at</TableHead>
                     <TableHead>Actions</TableHead>
                 </TableRow>
             </TableHeader>
@@ -116,7 +116,7 @@ const rows = computed(() => props.alerts || []);
                     <TableCell>{{ recipientsDisplay(alert.recipients) }}</TableCell>
                     <TableCell>{{ alert.creator?.name ?? '—' }}</TableCell>
                     <TableCell>
-                        <span v-if="alert.created_at">{{ formatLocalDateTime(alert.created_at) }}</span>
+                        <span v-if="alert.last_triggered_at">{{ formatLocalDateTime(alert.last_triggered_at) }}</span>
                         <span v-else>—</span>
                     </TableCell>
                     <TableCell class="whitespace-nowrap">

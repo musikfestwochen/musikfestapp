@@ -17,7 +17,7 @@ it('has correct fillable attributes', function () {
         'area_id',
         'type',
         'channel',
-        'cooldown_seconds',
+        'cooldown_minutes',
         'created_by',
         'occupancy_alert_threshold',
     ]);

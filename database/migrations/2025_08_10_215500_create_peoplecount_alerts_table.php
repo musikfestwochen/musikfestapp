@@ -24,6 +24,7 @@ return new class extends Migration
             $table->unsignedInteger('cooldown_minutes');
             $table->unsignedInteger('occupancy_alert_threshold')->nullable();
             $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('last_triggered_at')->nullable();
             $table->timestamps();
         });
     }

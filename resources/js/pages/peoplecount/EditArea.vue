@@ -28,7 +28,7 @@ export interface AlertDTO {
     created_by?: number | null;
     creator?: { id: number; name: string } | null;
     recipients?: { id: number; name: string; email?: string }[];
-    created_at?: string;
+    last_triggered_at?: string | null;
 }
 
 const props = defineProps<{
