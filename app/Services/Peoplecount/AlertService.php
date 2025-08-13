@@ -2,11 +2,16 @@
 
 namespace App\Services\Peoplecount;
 
+use App\Enums\Peoplecount\AlertChannel;
+use App\Enums\Peoplecount\AlertType;
 use App\Models\Organization;
 use App\Models\Peoplecount\Alert;
 use App\Models\Peoplecount\Area;
+use App\Notifications\Peoplecount\AreaOccupancyAlert;
 use BackedEnum;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class AlertService
@@ -16,6 +21,117 @@ class AlertService
         'creator',
         'recipients',
     ];
+
+    /**
+     * Process all alerts configured for the given area.
+     */
+    public function processAlertsForArea(Area $area): void
+    {
+        $area->loadMissing(['event', 'aggregatedCounts' => fn (HasMany $q) => $q->orderBy('period_end', 'desc'), 'alerts.recipients']); // @pest-mutate-ignore
+        foreach ($area->alerts as $alert) {
+            $this->processSingleAlert($alert, $area);
+        }
+    }
+
+    /**
+     * Evaluate and dispatch a single alert for the given area if conditions are met.
+     */
+    protected function processSingleAlert(Alert $alert, Area $area): void
+    {
+        $event = $area->event;
+
+        $now = now();
+        // 1. Event ongoing check already enforced by AreaService, but keep here for safety
+        if (! ($event->starts_at <= $now && $now < $event->ends_at)) {
+            return;
+        }
+
+        // 2. Get latest aggregated count
+        $latest = $area->aggregatedCounts()->orderBy('period_end', 'desc')->first();
+        if ($latest === null) {
+            return; // nothing to evaluate
+        }
+
+        // 3. Cooldown check
+        $lastTriggeredAt = $alert->last_triggered_at ? Carbon::parse($alert->last_triggered_at) : null;
+        if ($lastTriggeredAt instanceof Carbon) {
+            $cooldownUntil = $lastTriggeredAt->copy()->addMinutes($alert->cooldown_minutes);
+            if ($now->lt($cooldownUntil)) {
+                return; // still in cooldown
+            }
+        }
+
+        // 3.2 Switch over event types (only occupancy for now)
+        switch ($alert->type->value) {
+            case AlertType::OccupancyAlert->value:
+                $this->evaluateOccupancyAlert($alert, $area, $latest->count, $now);
+                break; // @pest-mutate-ignore
+            default:
+                // No-op for unknown types for forward compatibility
+                break; // @pest-mutate-ignore
+        }
+    }
+
+    /**
+     * Evaluate occupancy alert conditions and dispatch if all rules satisfied.
+     */
+    protected function evaluateOccupancyAlert(Alert $alert, Area $area, int $currentCount, Carbon $now): void
+    {
+        $threshold = $alert->occupancy_alert_threshold ?? null;
+        if ($threshold === null) {
+            return; // misconfigured
+        }
+
+        // 3.3 Condition: current count >= threshold
+        if ($currentCount < $threshold) {
+            return;
+        }
+
+        // 3.4 Ensure that since the last trigger, the count was below threshold at least once
+        $mustHaveDroppedBelow = true;
+        if ($alert->last_triggered_at === null) {
+            $mustHaveDroppedBelow = false; // first trigger allowed immediately when threshold met
+        }
+
+        if ($mustHaveDroppedBelow) {
+            $droppedBelow = $area->aggregatedCounts()
+                ->where('period_end', '>', $alert->last_triggered_at)
+                ->where('count', '<', $threshold)
+                ->exists();
+            if (! $droppedBelow) {
+                return; // still continuously above threshold since last trigger
+            }
+        }
+
+        // All conditions satisfied => dispatch
+        $this->dispatchOccupancyNotification($alert, $area, $currentCount, $threshold);
+
+        // Update last_triggered_at
+        $alert->last_triggered_at = $now;
+        $alert->save();
+    }
+
+    protected function dispatchOccupancyNotification(Alert $alert, Area $area, int $current, int $threshold): void
+    {
+        // Map configured channel to Laravel notification channels
+        $channels = match ($alert->channel) {
+            AlertChannel::Email => ['mail'],
+            AlertChannel::Vonage => ['vonage'],
+        };
+
+        $notification = new AreaOccupancyAlert(
+            eventName: $area->event->name,
+            areaName: $area->name,
+            currentOccupancy: $current,
+            configuredThreshold: $threshold,
+            channels: $channels,
+        );
+
+        // Send to all recipients
+        foreach ($alert->recipients as $user) {
+            $user->notify($notification);
+        }
+    }
 
     /**
      * Get all alerts for a given area, ensuring the area belongs to the organization context.

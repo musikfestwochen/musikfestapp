@@ -630,3 +630,398 @@ it('trims whitespace around CSV tokens comprehensively', function () {
 it('always returns integers, not numeric strings', function () {
     expect(_extract(['1', '2']))->toBe([1, 2]);
 });
+
+// ===================== New tests for processing alerts =====================
+
+use App\Models\Peoplecount\AreaAggregatedCount;
+use App\Notifications\Peoplecount\AreaOccupancyAlert;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
+
+beforeEach(function () {
+    // Fix time for deterministic alert processing assertions
+    if (! Carbon::hasTestNow()) {
+        Carbon::setTestNow(Carbon::parse('2025-08-13 12:00:00')->utc());
+    }
+});
+
+/**
+ * Small helper to create an event within org that is currently ongoing and an area with two org users.
+ * Returns [org, event, area, u1, u2].
+ */
+function _setupEventAreaAndUsers(): array
+{
+    $org = Organization::factory()->create();
+
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHour(),
+        'ends_at' => Carbon::now()->addHours(2),
+    ]);
+
+    $area = Area::factory()->create([
+        'event_id' => $event->id,
+    ]);
+
+    $u1 = User::factory()->create(['name' => 'Recipient 1']);
+    $u2 = User::factory()->create(['name' => 'Recipient 2']);
+    $org->users()->attach([$u1->id, $u2->id]);
+
+    return compact('org', 'event', 'area', 'u1', 'u2');
+}
+
+function _createAgg(Area $area, string $start, string $end, int $count): AreaAggregatedCount
+{
+    return AreaAggregatedCount::factory()
+        ->withArea($area)
+        ->withPeriod(Carbon::parse($start)->utc(), Carbon::parse($end)->utc())
+        ->create(['count' => $count]);
+}
+
+it('processAlertsForArea sends occupancy alert and updates last_triggered_at when threshold met', function () {
+    Notification::fake();
+
+    extract(_setupEventAreaAndUsers());
+
+    /** @var Alert $alert */
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(60),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 100,
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    // Historical below, latest above
+    _createAgg($area, '2025-08-13 11:40:00', '2025-08-13 11:50:00', 90);
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 120);
+
+    svc()->processAlertsForArea($area);
+
+    Notification::assertSentTo([$u1, $u2], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n) use ($event, $area): bool {
+        expect($n->eventName)->toBe($event->name)
+            ->and($n->areaName)->toBe($area->name)
+            ->and($n->configuredThreshold)->toBe(100)
+            ->and($n->currentOccupancy)->toBe(120)
+            ->and($n->via($n))->toContain('mail');
+
+        return true;
+    });
+
+    $alert->refresh();
+    expect($alert->last_triggered_at)->not()->toBeNull()
+        ->and($alert->last_triggered_at->equalTo(Carbon::now()))->toBeTrue();
+});
+
+it('does not send when no aggregated counts exist or latest below threshold', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(60),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 200,
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    // Case 1: no counts
+    svc()->processAlertsForArea($area);
+    Notification::assertNothingSent();
+
+    // Case 2: latest below threshold
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 150);
+    svc()->processAlertsForArea($area);
+    Notification::assertNothingSent();
+});
+
+it('respects cooldown window for subsequent triggers', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(60),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 50,
+            'last_triggered_at' => Carbon::now()->subMinutes(30),
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 300);
+
+    svc()->processAlertsForArea($area);
+    Notification::assertNothingSent();
+});
+
+it('requires a drop below threshold since last trigger before re-sending', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    $threshold = 100;
+
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(10),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => $threshold,
+            'last_triggered_at' => Carbon::now()->subHours(2),
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    // Stayed above threshold since last trigger
+    _createAgg($area, '2025-08-13 11:40:00', '2025-08-13 11:50:00', 150);
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 160);
+
+    svc()->processAlertsForArea($area);
+    Notification::assertNothingSent();
+
+    // Now a drop below happens, then rise above
+    _createAgg($area, '2025-08-13 12:00:00', '2025-08-13 12:10:00', 80);
+    _createAgg($area, '2025-08-13 12:10:00', '2025-08-13 12:20:00', 130);
+
+    svc()->processAlertsForArea($area);
+    Notification::assertSentTo([$u1, $u2], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n) use ($threshold): bool {
+        expect($n->configuredThreshold)->toBe($threshold)
+            ->and($n->currentOccupancy)->toBe(130);
+
+        return true;
+    });
+});
+
+it('does nothing when event is not ongoing', function () {
+    Notification::fake();
+
+    $org = Organization::factory()->create();
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->addHour(), // future start
+        'ends_at' => Carbon::now()->addHours(3),
+    ]);
+    $area = Area::factory()->create(['event_id' => $event->id]);
+    $u1 = User::factory()->create();
+    $org->users()->attach([$u1->id]);
+
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(60),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 10,
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id]);
+
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 999);
+
+    svc()->processAlertsForArea($area);
+    Notification::assertNothingSent();
+});
+
+it('maps alert channel to notification channels (Vonage)', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    $alert = Alert::factory()->create([
+        'area_id' => $area->id,
+        'type' => AlertType::OccupancyAlert,
+        'channel' => AlertChannel::Vonage,
+        'cooldown_minutes' => 1,
+        'occupancy_alert_threshold' => 1,
+    ]);
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 10);
+
+    svc()->processAlertsForArea($area);
+
+    Notification::assertSentTo([$u1, $u2], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n): bool {
+        expect($n->via($n))->toEqual(['vonage']);
+
+        return true;
+    });
+});
+
+it('maps alert channel to notification channels (Email)', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    $alert = Alert::factory()->create([
+        'area_id' => $area->id,
+        'type' => AlertType::OccupancyAlert,
+        'channel' => AlertChannel::Email,
+        'cooldown_minutes' => 1,
+        'occupancy_alert_threshold' => 1,
+    ]);
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 10);
+
+    svc()->processAlertsForArea($area);
+
+    Notification::assertSentTo([$u1, $u2], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n) use ($event, $area): bool {
+        // Email channel mapping
+        expect($n->via($n))->toEqual(['mail']);
+        // Sanity-check some mail content pieces
+        $mail = $n->toMail((object) []);
+        expect($mail->subject)->toContain($area->name)
+            ->and($mail->subject)->toContain($event->name);
+
+        return true;
+    });
+});
+
+it('processSingleAlert no-ops for unknown alert type (edge case)', function () {
+    Notification::fake();
+
+    extract(_setupEventAreaAndUsers());
+
+    // Ensure there is a latest aggregated count and event is ongoing
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 999);
+
+    // Create a valid alert but then override its `type` attribute with a dummy object
+    // Build a lightweight Alert instance without enum casts
+    $alert = new class extends Alert
+    {
+        protected function casts(): array
+        {
+            return [];
+        }
+    };
+
+    // Provide minimal attributes used by the method
+    $dummyType = new class
+    {
+        public string $value = 'unknown_type_value';
+    };
+    $alert->setRawAttributes([
+        'cooldown_minutes' => 0,
+        'last_triggered_at' => null,
+        'type' => $dummyType,
+    ], true);
+
+    // Call protected processSingleAlert via reflection
+    $svc = svc();
+    $ref = new ReflectionClass($svc);
+    $method = $ref->getMethod('processSingleAlert');
+    $method->setAccessible(true);
+
+    // Should not throw and should not send any notifications
+    $method->invoke($svc, $alert, $area);
+
+    Notification::assertNothingSent();
+});
+
+it('evaluateOccupancyAlert returns early when threshold is null (edge case)', function () {
+    Notification::fake();
+
+    extract(_setupEventAreaAndUsers());
+
+    // Latest count present and above any reasonable threshold
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 150);
+
+    /** @var Alert $alert */
+    $alert = Alert::factory()->create([
+        'area_id' => $area->id,
+        // Leave occupancy_alert_threshold as null to trigger early return
+        'occupancy_alert_threshold' => null,
+    ]);
+
+    // Call through the public entry to exercise evaluateOccupancyAlert path
+    svc()->processAlertsForArea($area);
+
+    // No notification should be sent and last_triggered_at remains null
+    Notification::assertNothingSent();
+    $alert->refresh();
+    expect($alert->last_triggered_at)->toBeNull();
+});
+
+it('triggers when current equals the configured threshold', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    /** @var Alert $alert */
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(60),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 100,
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id]);
+
+    // Latest equals threshold
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 100);
+
+    svc()->processAlertsForArea($area);
+
+    Notification::assertSentTo([$u1], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n): bool {
+        expect($n->currentOccupancy)->toBe(100)
+            ->and($n->configuredThreshold)->toBe(100);
+
+        return true;
+    });
+});
+
+it('does not trigger when now is exactly at the event end time (end-exclusive window)', function () {
+    Notification::fake();
+
+    $org = Organization::factory()->create();
+    $now = Carbon::now();
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => $now->copy()->subHour(),
+        'ends_at' => $now->copy(), // exactly now
+    ]);
+    $area = Area::factory()->create(['event_id' => $event->id]);
+    $u1 = User::factory()->create();
+    $org->users()->attach([$u1->id]);
+
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(0),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 10,
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id]);
+
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 999);
+
+    svc()->processAlertsForArea($area);
+
+    Notification::assertNothingSent();
+});
+
+it('does trigger when now is exactly at the event start time (start-inclusive window)', function () {
+    Notification::fake();
+
+    $org = Organization::factory()->create();
+    $now = Carbon::now();
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => $now->copy(), // exactly now
+        'ends_at' => $now->copy()->addHour(),
+    ]);
+    $area = Area::factory()->create(['event_id' => $event->id]);
+    $u1 = User::factory()->create();
+    $org->users()->attach([$u1->id]);
+
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(0),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => 10,
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id]);
+
+    _createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 50);
+
+    svc()->processAlertsForArea($area);
+
+    Notification::assertSentTo([$u1], AreaOccupancyAlert::class);
+});

@@ -33,10 +33,11 @@ it('has correct cast attributes', function () {
 
     $casts = $model->getCasts();
 
-    expect(count($casts))->toBe(3)
+    expect(count($casts))->toBe(4)
         ->and($casts['id'])->toBe('int')
         ->and($casts['type'])->toBe(AlertType::class)
-        ->and($casts['channel'])->toBe(AlertChannel::class);
+        ->and($casts['channel'])->toBe(AlertChannel::class)
+        ->and($casts['last_triggered_at'])->toBe('datetime');
 
 });
 

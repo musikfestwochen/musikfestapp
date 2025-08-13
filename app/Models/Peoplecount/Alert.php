@@ -83,6 +83,7 @@ class Alert extends Model
         return [
             'type' => AlertType::class,
             'channel' => AlertChannel::class,
+            'last_triggered_at' => 'datetime',
         ];
     }
 }

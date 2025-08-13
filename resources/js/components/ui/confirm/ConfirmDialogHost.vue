@@ -23,7 +23,7 @@ const isDestructive = computed(() => dialog.current.value?.variant === 'destruct
 </script>
 
 <template>
-  <AlertDialog :open="dialog.isOpen" @update:open="(val) => { if (!val) dialog.onCancel() }">
+  <AlertDialog :open="dialog.isOpen.value" @update:open="(val) => { if (!val) queueMicrotask(() => dialog.onCancel()) }">
     <AlertDialogContent :key="title + '|' + description">
       <AlertDialogHeader>
         <AlertDialogTitle>{{ title }}</AlertDialogTitle>
