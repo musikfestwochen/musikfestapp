@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int $area_id
  * @property AlertType $type
  * @property AlertChannel $channel
- * @property int $cooldown_seconds
+ * @property int $cooldown_minutes
  * @property int|null $occupancy_alert_threshold
  * @property int|null $created_by
  * @property Carbon|null $created_at
@@ -38,7 +38,7 @@ class Alert extends Model
         'area_id',
         'type',
         'channel',
-        'cooldown_seconds',
+        'cooldown_minutes',
         'created_by',
         'occupancy_alert_threshold',
     ];

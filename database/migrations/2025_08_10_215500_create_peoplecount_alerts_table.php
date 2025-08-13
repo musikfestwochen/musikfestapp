@@ -21,7 +21,7 @@ return new class extends Migration
             // Backed enums as strings
             $table->string('type'); // AlertType
             $table->string('channel'); // AlertChannel
-            $table->unsignedInteger('cooldown_seconds');
+            $table->unsignedInteger('cooldown_minutes');
             $table->unsignedInteger('occupancy_alert_threshold')->nullable();
             $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

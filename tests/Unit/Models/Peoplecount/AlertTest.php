@@ -33,7 +33,8 @@ it('has correct cast attributes', function () {
 
     $casts = $model->getCasts();
 
-    expect($casts['id'])->toBe('int')
+    expect(count($casts))->toBe(3)
+        ->and($casts['id'])->toBe('int')
         ->and($casts['type'])->toBe(AlertType::class)
         ->and($casts['channel'])->toBe(AlertChannel::class);
 

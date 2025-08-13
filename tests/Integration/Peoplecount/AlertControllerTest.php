@@ -68,7 +68,7 @@ it('can store a new alert with recipients and redirects back to area edit', func
     $payload = [
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Email->value,
-        'cooldown_seconds' => 300,
+        'cooldown_minutes' => 60,
         'occupancy_alert_threshold' => 123,
         'recipients' => [$u1->id, $u2->id],
     ];
@@ -88,7 +88,7 @@ it('can store a new alert with recipients and redirects back to area edit', func
         'area_id' => $area->id,
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Email->value,
-        'cooldown_seconds' => 300,
+        'cooldown_minutes' => 60,
         'occupancy_alert_threshold' => 123,
     ]);
 
@@ -104,7 +104,7 @@ it('rejects recipients outside the organization on store', function () {
     $payload = [
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Vonage->value,
-        'cooldown_seconds' => 60,
+        'cooldown_minutes' => 30,
         'occupancy_alert_threshold' => 10,
         'recipients' => [$u1->id, $uOut->id],
     ];
@@ -123,7 +123,7 @@ it('redirects show to edit for nested alert', function () {
         'area_id' => $area->id,
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => 120,
+        'cooldown_minutes' => 120,
         'created_by' => $admin->id,
         'occupancy_alert_threshold' => 55,
     ]);
@@ -147,7 +147,7 @@ it('shows the edit alert form with users and recipients loaded', function () {
         'area_id' => $area->id,
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => 120,
+        'cooldown_minutes' => 120,
         'created_by' => $admin->id,
         'occupancy_alert_threshold' => 55,
     ]);
@@ -181,7 +181,7 @@ it('can update an existing alert including recipients', function () {
         'area_id' => $area->id,
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => 120,
+        'cooldown_minutes' => 120,
         'created_by' => $admin->id,
         'occupancy_alert_threshold' => 55,
     ]);
@@ -189,7 +189,7 @@ it('can update an existing alert including recipients', function () {
     $payload = [
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Vonage->value,
-        'cooldown_seconds' => 600,
+        'cooldown_minutes' => 600,
         'occupancy_alert_threshold' => 500,
         'recipients' => [$u2->id],
     ];
@@ -207,7 +207,7 @@ it('can update an existing alert including recipients', function () {
 
     $alert->refresh();
     expect($alert->channel)->toBe(AlertChannel::Vonage);
-    expect($alert->cooldown_seconds)->toBe(600);
+    expect($alert->cooldown_minutes)->toBe(600);
     expect($alert->occupancy_alert_threshold)->toBe(500);
     expect($alert->recipients()->pluck('users.id')->all())->toBe([$u2->id]);
 });
@@ -218,7 +218,7 @@ it('rejects recipients outside the organization on update', function () {
         'area_id' => $area->id,
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => 120,
+        'cooldown_minutes' => 120,
         'created_by' => $admin->id,
         'occupancy_alert_threshold' => 55,
     ]);
@@ -226,7 +226,7 @@ it('rejects recipients outside the organization on update', function () {
     $payload = [
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Email->value,
-        'cooldown_seconds' => 100,
+        'cooldown_minutes' => 100,
         'occupancy_alert_threshold' => 20,
         'recipients' => [$uOut->id],
     ];
@@ -246,7 +246,7 @@ it('can destroy an alert and redirect back to area edit', function () {
         'area_id' => $area->id,
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => 120,
+        'cooldown_minutes' => 120,
         'created_by' => $admin->id,
         'occupancy_alert_threshold' => 55,
     ]);

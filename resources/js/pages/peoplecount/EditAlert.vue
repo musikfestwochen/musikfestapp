@@ -30,7 +30,7 @@ interface AlertDTO {
     area_id: number;
     type: AlertType;
     channel: AlertChannel;
-    cooldown_seconds: number;
+    cooldown_minutes: number;
     occupancy_alert_threshold?: number | null;
     recipients?: RecipientDTO[];
 }
@@ -89,7 +89,7 @@ const labelToId = computed<Record<string, number>>(() => {
 const form = ref({
     type: props.alert.type as AlertType,
     channel: props.alert.channel as AlertChannel,
-    cooldown_seconds: props.alert.cooldown_seconds ?? 0,
+    cooldown_minutes: props.alert.cooldown_minutes ?? 30,
     occupancy_alert_threshold: props.alert.occupancy_alert_threshold ?? (null as number | null),
 });
 
@@ -105,7 +105,7 @@ function onSubmit() {
     const data: Record<string, any> = {
         type: form.value.type,
         channel: form.value.channel,
-        cooldown_seconds: form.value.cooldown_seconds,
+        cooldown_minutes: form.value.cooldown_minutes,
         ...(isOccupancy.value ? { occupancy_alert_threshold: form.value.occupancy_alert_threshold ?? 0 } : {}),
         recipients,
     };
@@ -192,8 +192,8 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="cooldown_seconds">Cooldown (seconds)</Label>
-                    <Input id="cooldown_seconds" v-model.number="form.cooldown_seconds" min="0" required type="number" />
+                    <Label for="cooldown_minutes">Cooldown (minutes)</Label>
+                    <Input id="cooldown_minutes" v-model.number="form.cooldown_minutes" min="30" required type="number" />
                     <p class="text-sm text-muted-foreground">Minimum interval between repeated alerts.</p>
                 </div>
 

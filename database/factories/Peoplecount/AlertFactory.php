@@ -22,7 +22,7 @@ class AlertFactory extends Factory
             'area_id' => Area::factory(),
             'type' => AlertType::OccupancyAlert,
             'channel' => fake()->randomElement([AlertChannel::Vonage, AlertChannel::Email]),
-            'cooldown_seconds' => fake()->numberBetween(60, 3600),
+            'cooldown_minutes' => fake()->numberBetween(30, 360),
             'created_by' => User::factory(),
             'occupancy_alert_threshold' => fake()->optional()->numberBetween(10, 10000),
         ];

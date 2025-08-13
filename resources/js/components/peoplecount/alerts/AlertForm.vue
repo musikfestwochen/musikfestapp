@@ -77,7 +77,7 @@ const selectedChannelOption = computed(() => alertChannelOptions.value.find((o) 
 const form = useForm({
     type: 'occupancy_alert' as AlertType,
     channel: 'email' as AlertChannel,
-    cooldown_seconds: 0 as number,
+    cooldown_minutes: 30 as number,
     occupancy_alert_threshold: null as number | null,
 });
 
@@ -88,7 +88,7 @@ function resetForm() {
     // Reset back to sensible defaults
     form.type = 'occupancy_alert';
     form.channel = 'email';
-    form.cooldown_seconds = 0;
+    form.cooldown_minutes = 30;
     form.occupancy_alert_threshold = null;
     recipientsTags.value = [];
 }
@@ -101,7 +101,7 @@ function onSubmit() {
     const data: Record<string, any> = {
         type: form.type,
         channel: form.channel,
-        cooldown_seconds: form.cooldown_seconds,
+        cooldown_minutes: form.cooldown_minutes,
         ...(isOccupancy.value ? { occupancy_alert_threshold: form.occupancy_alert_threshold ?? 0 } : {}),
         recipients,
     };
@@ -155,9 +155,9 @@ function onSubmit() {
             </div>
 
             <div class="grid gap-2">
-                <Label for="cooldown_seconds">Cooldown (seconds)</Label>
-                <Input id="cooldown_seconds" v-model.number="form.cooldown_seconds" min="0" required type="number" />
-                <InputError :message="form.errors.cooldown_seconds" />
+                <Label for="cooldown_minutes">Cooldown (minutes)</Label>
+                <Input id="cooldown_minutes" v-model.number="form.cooldown_minutes" min="30" required type="number" />
+                <InputError :message="form.errors.cooldown_minutes" />
                 <p class="text-sm text-muted-foreground">Minimum interval between repeated alerts.</p>
             </div>
 

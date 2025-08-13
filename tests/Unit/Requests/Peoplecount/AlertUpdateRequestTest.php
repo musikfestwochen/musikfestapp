@@ -14,7 +14,7 @@ beforeEach(function () {
 it('has correct rules', function () {
     $rules = $this->request->rules();
 
-    expect($rules['cooldown_seconds'])->toBe(['required', 'integer', 'min:0'])
+    expect($rules['cooldown_minutes'])->toBe(['required', 'integer', 'min:30'])
         ->and($rules['occupancy_alert_threshold'])->toBe([
             'required_if:type,'.AlertType::OccupancyAlert->value,
             'prohibited_unless:type,'.AlertType::OccupancyAlert->value,

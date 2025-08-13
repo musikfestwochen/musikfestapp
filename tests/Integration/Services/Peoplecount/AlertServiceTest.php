@@ -76,12 +76,12 @@ function signIn(User $user): void
     actingAs($user);
 }
 
-function defaultAlertAttrs(?int $cooldownSeconds = 60): array
+function defaultAlertAttrs(?int $cooldownMinutes = 60): array
 {
     return [
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => $cooldownSeconds,
+        'cooldown_minutes' => $cooldownMinutes,
     ];
 }
 
@@ -252,18 +252,18 @@ it('updateAreaAlert keeps area_id stable and updates attributes', function () {
     $alert = Alert::factory()->for($graph->area)->create([
         'type' => AlertType::OccupancyAlert,
         'channel' => AlertChannel::Email,
-        'cooldown_seconds' => 120,
+        'cooldown_minutes' => 120,
     ]);
 
     $svc->updateAreaAlert($graph->org, $graph->area, $alert, [
         'area_id' => $graph->area2->id, // should be ignored/overridden
-        'cooldown_seconds' => 240,
+        'cooldown_minutes' => 240,
         'occupancy_alert_threshold' => 555,
     ]);
 
     $alert->refresh();
     expect($alert->area_id)->toBe($graph->area->id)
-        ->and($alert->cooldown_seconds)->toBe(240)
+        ->and($alert->cooldown_minutes)->toBe(240)
         ->and($alert->occupancy_alert_threshold)->toBe(555);
 });
 
@@ -328,7 +328,7 @@ it('throws if area is not in organization for all relevant methods', function ()
 
     // updateAreaAlert (alert belongs to other area)
     expect(fn () => $svc->updateAreaAlert($graph->org, $graph->otherArea, $foreignAlert, [
-        'cooldown_seconds' => 90,
+        'cooldown_minutes' => 90,
     ]))->toThrow(AuthorizationException::class);
 
     // destroyAreaAlert
@@ -346,7 +346,7 @@ it('throws if alert does not belong to the given area for update/destroy', funct
     $alertInArea2 = Alert::factory()->for($graph->area2)->create();
 
     expect(fn () => $svc->updateAreaAlert($graph->org, $graph->area, $alertInArea2, [
-        'cooldown_seconds' => 111,
+        'cooldown_minutes' => 111,
     ]))->toThrow(AuthorizationException::class);
 
     expect(fn () => $svc->destroyAreaAlert($graph->org, $graph->area, $alertInArea2))
@@ -512,7 +512,7 @@ it('updateAreaAlert without recipients key preserves existing recipients', funct
 
     // Update other attribute but omit recipients entirely
     $svc->updateAreaAlert($graph->org, $graph->area, $alert, [
-        'cooldown_seconds' => 777,
+        'cooldown_minutes' => 777,
     ]);
 
     $alert->load('recipients');

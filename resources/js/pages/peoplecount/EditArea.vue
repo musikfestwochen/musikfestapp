@@ -23,7 +23,7 @@ export interface AlertDTO {
     area_id: number;
     type: AlertType;
     channel: AlertChannel;
-    cooldown_seconds: number;
+    cooldown_minutes: number;
     occupancy_alert_threshold?: number | null;
     created_by?: number | null;
     creator?: { id: number; name: string } | null;

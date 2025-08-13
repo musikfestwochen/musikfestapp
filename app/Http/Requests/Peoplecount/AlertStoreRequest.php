@@ -23,7 +23,7 @@ class AlertStoreRequest extends FormRequest
         return [
             'type' => ['required', new Enum(AlertType::class)],
             'channel' => ['required', new Enum(AlertChannel::class)],
-            'cooldown_seconds' => ['required', 'integer', 'min:0'],
+            'cooldown_minutes' => ['required', 'integer', 'min:30'],
             'occupancy_alert_threshold' => ['required_if:type,'.AlertType::OccupancyAlert->value, 'prohibited_unless:type,'.AlertType::OccupancyAlert->value, 'integer', 'min:0'],
             'recipients' => ['sometimes', 'nullable', 'array'],
             'recipients.*' => ['integer', 'exists:users,id'],

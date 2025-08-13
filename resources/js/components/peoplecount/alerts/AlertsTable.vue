@@ -14,7 +14,7 @@ export interface AlertDTO {
     area_id: number;
     type: AlertType;
     channel: AlertChannel;
-    cooldown_seconds: number;
+    cooldown_minutes: number;
     occupancy_alert_threshold?: number | null;
     created_by?: number | null;
     creator?: { id: number; name: string } | null;
@@ -108,7 +108,7 @@ const rows = computed(() => props.alerts || []);
                 <TableRow v-for="alert in rows" :key="alert.id">
                     <TableCell>{{ typeLabel(alert.type) }}</TableCell>
                     <TableCell>{{ channelLabel(alert.channel) }}</TableCell>
-                    <TableCell>{{ alert.cooldown_seconds }}s</TableCell>
+                    <TableCell>{{ alert.cooldown_minutes }} min</TableCell>
                     <TableCell>
                         <span v-if="alert.type === 'occupancy_alert'">{{ alert.occupancy_alert_threshold ?? '—' }}</span>
                         <span v-else>—</span>
