@@ -1,6 +1,7 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
 import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -27,6 +28,8 @@ const props = defineProps<{
     areaId?: number;
     onChanged?: () => void;
 }>();
+
+const confirmDialog = useConfirmDialog();
 
 const typeLabel = (t: AlertType) => {
     switch (t) {
@@ -58,9 +61,17 @@ function recipientsDisplay(recipients?: { id: number; name: string }[]) {
     return `${first} (+${recipients.length - 3} more)`;
 }
 
-function onDelete(alertId: number) {
+async function onDelete(alertId: number) {
     if (!props.orgSlug || !props.areaId) return;
-    if (!confirm('Are you sure you want to delete this alert? This action cannot be undone.')) return;
+
+    const ok = await confirmDialog.confirm({
+        title: 'Delete alert?',
+        description: 'Are you sure you want to delete this alert? This action cannot be undone.',
+        confirmText: 'Delete Alert',
+        cancelText: 'Cancel',
+        variant: 'destructive',
+    });
+    if (!ok) return;
 
     router.delete(
         route('peoplecount.areas.alerts.destroy', {
@@ -117,9 +128,9 @@ const rows = computed(() => props.alerts || []);
                                 method="get"
                                 preserve-scroll
                             >
-                                <Button variant="secondary" size="sm">Edit</Button>
+                                <Button size="sm" variant="secondary">Edit</Button>
                             </Link>
-                            <Button v-if="props.orgSlug && props.areaId" variant="destructive" size="sm" @click="onDelete(alert.id)">Delete</Button>
+                            <Button v-if="props.orgSlug && props.areaId" size="sm" variant="destructive" @click="onDelete(alert.id)">Delete</Button>
                         </div>
                     </TableCell>
                 </TableRow>

@@ -1,5 +1,6 @@
 import '../css/app.css';
 
+import ConfirmDialogHost from '@/components/ui/confirm/ConfirmDialogHost.vue';
 import Toaster from '@/components/ui/toast/Toaster.vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -30,7 +31,7 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         const app = createApp({
-            render: () => h('div', [h(App, props), h(Toaster)]),
+            render: () => h('div', [h(App, props), h(Toaster), h(ConfirmDialogHost)]),
         });
 
         // Add global properties for permissions and roles
