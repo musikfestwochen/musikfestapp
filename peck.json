@@ -30,7 +30,9 @@
             "deduplicate",
             "dockerfile",
             "makefile",
-            "eastereggs"
+            "eastereggs",
+            "ids",
+            "ds"
         ],
         "paths": []
     }

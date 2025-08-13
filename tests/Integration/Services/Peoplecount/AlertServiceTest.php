@@ -757,6 +757,32 @@ it('respects cooldown window for subsequent triggers', function () {
     Notification::assertNothingSent();
 });
 
+it('does not trigger during cooldown even when drop-below condition is satisfied after last trigger', function () {
+    Notification::fake();
+    extract(_setupEventAreaAndUsers());
+
+    $threshold = 100;
+
+    // last trigger 30 minutes ago, cooldown 60 => still in cooldown
+    $alert = Alert::factory()->create(array_merge(
+        defaultAlertAttrs(60),
+        [
+            'area_id' => $area->id,
+            'occupancy_alert_threshold' => $threshold,
+            'last_triggered_at' => Carbon::now()->subMinutes(30),
+        ],
+    ));
+    $alert->recipients()->attach([$u1->id, $u2->id]);
+
+    // Since last trigger: first a drop below threshold, then rise above threshold
+    _createAgg($area, '2025-08-13 12:00:00', '2025-08-13 12:10:00', 80);   // below threshold
+    _createAgg($area, '2025-08-13 12:10:00', '2025-08-13 12:20:00', 150);  // above threshold (latest)
+
+    // Even though drop-below condition is satisfied, cooldown should prevent sending
+    svc()->processAlertsForArea($area);
+    Notification::assertNothingSent();
+});
+
 it('requires a drop below threshold since last trigger before re-sending', function () {
     Notification::fake();
     extract(_setupEventAreaAndUsers());

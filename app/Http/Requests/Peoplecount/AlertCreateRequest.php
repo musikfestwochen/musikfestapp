@@ -9,7 +9,7 @@ class AlertCreateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->can('peoplecount.alerts.create') && auth()->user()->can('orgmgmt.users.index');
+        return auth()->user()->can('peoplecount.alerts.create');
     }
 
     /**
