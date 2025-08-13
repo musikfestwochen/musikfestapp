@@ -43,6 +43,7 @@ export interface User {
     email: string;
     phone?: string;
     avatar?: string;
+    eastereggs_activated: boolean;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;

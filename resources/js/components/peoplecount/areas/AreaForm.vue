@@ -58,7 +58,7 @@ const submit = () => {
                 <p class="text-sm text-muted-foreground">Select the event this area belongs to.</p>
             </div>
 
-            <Button :disabled="form.processing || !form.name || !form.event_id" class="mt-2 w-full" tabindex="3" type="submit">
+            <Button :disabled="form.processing || !form.name || !form.event_id" class="mt-2 w-full" tabindex="4" type="submit">
                 <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                 <span v-else>{{ props.area ? 'Update Area' : 'Create Area' }}</span>
             </Button>

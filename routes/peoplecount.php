@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Peoplecount\AlertController;
 use App\Http\Controllers\Peoplecount\AreaController;
 use App\Http\Controllers\Peoplecount\AreaRecurringResetController;
 use App\Http\Controllers\Peoplecount\AreaSingleResetController;
@@ -8,6 +9,8 @@ use App\Http\Controllers\Peoplecount\EventController;
 use App\Http\Controllers\Peoplecount\SensorController;
 use App\Http\Controllers\Peoplecount\SensorTokenController;
 use App\Http\Controllers\Widgets\PeoplecountActiveAreaCountsWidgetController;
+use App\Http\Controllers\Widgets\PeoplecountMostActiveSensorsWidgetController;
+use App\Http\Controllers\Widgets\PeoplecountSensorHealthStatusWidgetController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(function () {
@@ -26,6 +29,11 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             'areas',
             AreaController::class
         )->scoped(['organization' => 'slug'])->names('areas');
+
+        Route::resource(
+            'areas.alerts',
+            AlertController::class
+        )->scoped(['organization' => 'slug'])->names('areas.alerts')->except(['index']);
 
         // Area Single Reset routes (nested under areas)
         Route::resource(
@@ -53,11 +61,11 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             ->name('area-aggregation.index');
 
         // Sensor Health widget route
-        Route::get('sensor-health', [\App\Http\Controllers\Widgets\PeoplecountSensorHealthStatusWidgetController::class, 'index'])
+        Route::get('sensor-health', [PeoplecountSensorHealthStatusWidgetController::class, 'index'])
             ->name('sensor-health.index');
 
         // Most Active Sensors widget route
-        Route::get('most-active-sensors', [\App\Http\Controllers\Widgets\PeoplecountMostActiveSensorsWidgetController::class, 'index'])
+        Route::get('most-active-sensors', [PeoplecountMostActiveSensorsWidgetController::class, 'index'])
             ->name('most-active-sensors.index');
     });
 });

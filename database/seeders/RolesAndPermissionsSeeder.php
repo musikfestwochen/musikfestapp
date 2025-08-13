@@ -29,6 +29,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.areas',
             'peoplecount.assignments',
             'peoplecount.area_resets',
+            'peoplecount.alerts',
         ];
 
         $actions = ['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'];
@@ -63,6 +64,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.areas.*',
             'peoplecount.assignments.*',
             'peoplecount.area_resets.*',
+            'peoplecount.alerts.*',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
@@ -76,6 +78,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.areas.*',
             'peoplecount.assignments.*',
             'peoplecount.area_resets.*',
+            'peoplecount.alerts.*',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',

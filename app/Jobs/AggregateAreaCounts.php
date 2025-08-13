@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Peoplecount\Area;
+use App\Services\Peoplecount\AlertService;
 use App\Services\Peoplecount\AreaAggregationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -29,6 +30,9 @@ class AggregateAreaCounts implements ShouldQueue
         foreach ($areas as $area) {
             // Update aggregated counts for each area
             app(AreaAggregationService::class)->updateAggregatedCounts($area);
+
+            // After aggregation, process alerts for the given area
+            app(AlertService::class)->processAlertsForArea($area);
         }
     }
 }

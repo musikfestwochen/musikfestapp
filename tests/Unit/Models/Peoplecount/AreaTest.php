@@ -2,6 +2,7 @@
 
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -39,6 +40,13 @@ it('belongs to an event', function () {
     expect($relation->getRelated())->toBeInstanceOf(Event::class);
 });
 
+it('has many alerts', function () {
+    $model = new Area;
+    $relation = $model->alerts();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+});
+
 it('has many assignments', function () {
     $model = new Area;
     $relation = $model->assignments();
@@ -61,5 +69,5 @@ it('has many recurring resets', function () {
 });
 
 it('has factory', function () {
-    expect(Area::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(Area::factory())->toBeInstanceOf(Factory::class);
 });

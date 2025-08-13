@@ -239,115 +239,6 @@ class AreaService
         return $checksumData;
     }
 
-    /**
-     * Get all reset times for the area that need to be separately aggregated with their respective reset values.
-     *
-     * @return Collection<int, array<string, mixed>>
-     */
-    public function getAreaResets(Area $area): Collection
-    {
-        $eventStartTime = $area->event->starts_at;
-        $eventEndTime = $area->event->ends_at;
-
-        $resets = collect();
-
-        $resets->push($this->createEventStartReset($eventStartTime));
-        $resets = $resets->merge($this->getSingleResets($area, $eventStartTime, $eventEndTime));
-        $resets = $resets->merge($this->getRecurringResets($area, $eventStartTime, $eventEndTime));
-
-        return $this->deduplicateResets($resets->sortBy('at')->values());
-    }
-
-    /**
-     * Create the event start reset entry.
-     *
-     * @return array<string, mixed>
-     */
-    protected function createEventStartReset(Carbon $eventStartTime): array
-    {
-        return [
-            'at' => $eventStartTime,
-            'reset_value' => 0,
-            'type' => 'event_start',
-        ];
-    }
-
-    /**
-     * Get single resets that fall within the event time period.
-     *
-     * @return Collection<int, array{at: Carbon, reset_value: int, type: string}>
-     */
-    protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
-    {
-        return $area->areaSingleResets
-            ->filter(fn (AreaSingleReset $reset): bool => $this->isResetWithinEventPeriod($reset->effective_at, $eventStartTime, $eventEndTime))
-            ->map(fn (AreaSingleReset $reset): array => [
-                'at' => $reset->effective_at,
-                'reset_value' => $reset->reset_value,
-                'type' => 'single_reset',
-            ]);
-    }
-
-    /**
-     * Check if a reset time falls within the event period.
-     */
-    protected function isResetWithinEventPeriod(Carbon $resetTime, Carbon $eventStartTime, Carbon $eventEndTime): bool
-    {
-        return $resetTime >= $eventStartTime && $resetTime <= $eventEndTime;
-    }
-
-    /**
-     * Get recurring resets that fall within the event time period.
-     *
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function getRecurringResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
-    {
-        $recurringResets = collect();
-
-        foreach ($area->areaRecurringResets as $recurringReset) {
-            $occurrences = $recurringReset->getOccurrencesBetween($eventStartTime, $eventEndTime);
-
-            foreach ($occurrences as $resetTime) {
-                $recurringResets->push([
-                    'at' => $resetTime,
-                    'reset_value' => $recurringReset->reset_value,
-                    'type' => 'recurring_reset',
-                ]);
-            }
-        }
-
-        return $recurringResets;
-    }
-
-    /**
-     * Remove duplicate resets, prioritizing single > recurring > event start.
-     *
-     * @param  Collection<int, array<string, mixed>>  $resets
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function deduplicateResets(Collection $resets): Collection
-    {
-        return $resets->groupBy('at')->map(function (Collection $group) {
-            // Highest priority: single reset
-            if ($group->contains('type', 'single_reset')) {
-                return $group->firstWhere('type', 'single_reset');
-            }
-
-            // Next priority: event start (at exact event start time, prefer event start over recurring)
-            if ($group->contains('type', 'event_start')) {
-                return $group->firstWhere('type', 'event_start');
-            }
-
-            // Lowest priority: recurring reset
-            if ($group->contains('type', 'recurring_reset')) {
-                return $group->firstWhere('type', 'recurring_reset');
-            }
-
-            throw new RuntimeException('No valid reset type found in group.');
-        })->values();
-    }
-
     public function calculateAndStoreAggregatedCount(Area $area, Carbon $start, Carbon $end, int $start_value, string $areaConfigChecksum): int
     {
         $activeAssignments = $this->getActiveAssignments($area, $start, $end);
@@ -519,6 +410,115 @@ class AreaService
             'last_reset_value' => $lastReset['reset_value'],
             'net_plus_reset' => $netPlusReset,
         ];
+    }
+
+    /**
+     * Get all reset times for the area that need to be separately aggregated with their respective reset values.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function getAreaResets(Area $area): Collection
+    {
+        $eventStartTime = $area->event->starts_at;
+        $eventEndTime = $area->event->ends_at;
+
+        $resets = collect();
+
+        $resets->push($this->createEventStartReset($eventStartTime));
+        $resets = $resets->merge($this->getSingleResets($area, $eventStartTime, $eventEndTime));
+        $resets = $resets->merge($this->getRecurringResets($area, $eventStartTime, $eventEndTime));
+
+        return $this->deduplicateResets($resets->sortBy('at')->values());
+    }
+
+    /**
+     * Create the event start reset entry.
+     *
+     * @return array<string, mixed>
+     */
+    protected function createEventStartReset(Carbon $eventStartTime): array
+    {
+        return [
+            'at' => $eventStartTime,
+            'reset_value' => 0,
+            'type' => 'event_start',
+        ];
+    }
+
+    /**
+     * Get single resets that fall within the event time period.
+     *
+     * @return Collection<int, array{at: Carbon, reset_value: int, type: string}>
+     */
+    protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
+    {
+        return $area->areaSingleResets
+            ->filter(fn (AreaSingleReset $reset): bool => $this->isResetWithinEventPeriod($reset->effective_at, $eventStartTime, $eventEndTime))
+            ->map(fn (AreaSingleReset $reset): array => [
+                'at' => $reset->effective_at,
+                'reset_value' => $reset->reset_value,
+                'type' => 'single_reset',
+            ]);
+    }
+
+    /**
+     * Check if a reset time falls within the event period.
+     */
+    protected function isResetWithinEventPeriod(Carbon $resetTime, Carbon $eventStartTime, Carbon $eventEndTime): bool
+    {
+        return $resetTime >= $eventStartTime && $resetTime <= $eventEndTime;
+    }
+
+    /**
+     * Get recurring resets that fall within the event time period.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    protected function getRecurringResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
+    {
+        $recurringResets = collect();
+
+        foreach ($area->areaRecurringResets as $recurringReset) {
+            $occurrences = $recurringReset->getOccurrencesBetween($eventStartTime, $eventEndTime);
+
+            foreach ($occurrences as $resetTime) {
+                $recurringResets->push([
+                    'at' => $resetTime,
+                    'reset_value' => $recurringReset->reset_value,
+                    'type' => 'recurring_reset',
+                ]);
+            }
+        }
+
+        return $recurringResets;
+    }
+
+    /**
+     * Remove duplicate resets, prioritizing single > recurring > event start.
+     *
+     * @param  Collection<int, array<string, mixed>>  $resets
+     * @return Collection<int, array<string, mixed>>
+     */
+    protected function deduplicateResets(Collection $resets): Collection
+    {
+        return $resets->groupBy('at')->map(function (Collection $group) {
+            // Highest priority: single reset
+            if ($group->contains('type', 'single_reset')) {
+                return $group->firstWhere('type', 'single_reset');
+            }
+
+            // Next priority: event start (at exact event start time, prefer event start over recurring)
+            if ($group->contains('type', 'event_start')) {
+                return $group->firstWhere('type', 'event_start');
+            }
+
+            // Lowest priority: recurring reset
+            if ($group->contains('type', 'recurring_reset')) {
+                return $group->firstWhere('type', 'recurring_reset');
+            }
+
+            throw new RuntimeException('No valid reset type found in group.');
+        })->values();
     }
 
     /**

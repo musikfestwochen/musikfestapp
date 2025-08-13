@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Peoplecount;
 
+use App\Enums\Peoplecount\AlertChannel;
+use App\Enums\Peoplecount\AlertType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Peoplecount\AreaCreateRequest;
 use App\Http\Requests\Peoplecount\AreaDestroyRequest;
@@ -13,14 +15,20 @@ use App\Http\Requests\Peoplecount\AreaUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
+use App\Services\Peoplecount\AlertService;
 use App\Services\Peoplecount\AreaService;
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AreaController extends Controller
 {
-    public function __construct(private readonly AreaService $areaService) {}
+    public function __construct(
+        private readonly AreaService $areaService,
+        private readonly AlertService $alertService,
+        private readonly UserService $userService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -80,10 +88,31 @@ class AreaController extends Controller
      */
     public function edit(AreaEditRequest $request, Organization $organization, Area $area): Response
     {
+        $typeOptions = array_map(fn (AlertType $t): array => [
+            'value' => $t->value,
+            'displayName' => $t->displayName(),
+            'description' => $t->description(),
+        ], AlertType::cases());
+
+        $channelOptions = array_map(fn (AlertChannel $c): array => [
+            'value' => $c->value,
+            'displayName' => $c->displayName(),
+            'description' => $c->description(),
+        ], AlertChannel::cases());
+
         return Inertia::render('peoplecount/EditArea', [
             'organization' => $organization,
             'area' => $this->areaService->getWithRelations($area),
             'events' => Event::query()->where('organization_id', $organization->id)->get(),
+            // Provide available recipients for alerts via UserService (scoped to organization)
+            'alerts_users' => $this->userService
+                ->getUsers($organization, ['users.id', 'users.name', 'users.email'])
+                ->sortBy('name')
+                ->values(),
+            // Lazy optional prop to be loaded via Inertia partial reload when the Alerts tab is opened
+            'alerts' => Inertia::optional(fn (): \Illuminate\Support\Collection => $this->alertService->getAreaAlerts($organization, $area)),
+            'alertTypeOptions' => $typeOptions,
+            'alertChannelOptions' => $channelOptions,
             'status' => $request->session()->get('status'),
         ]);
     }
