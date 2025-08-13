@@ -88,7 +88,7 @@ it('can create an area for an organization event', function () {
     ]);
 });
 
-it('shows the edit area form for an organization area', function () {
+it('shows the edit area form for an organization area with alert options and lazy alerts', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
     $event = Event::factory()->create([
@@ -98,8 +98,30 @@ it('shows the edit area form for an organization area', function () {
         'event_id' => $event->id,
     ]);
 
-    // Create some single resets for the area
-    $resets = AreaSingleReset::factory()->count(2)->create([
+    // Org users for alerts_users prop (and one outsider)
+    $uA = User::factory()->create(['name' => 'Alice']);
+    $uB = User::factory()->create(['name' => 'Bob']);
+    $uC = User::factory()->create(['name' => 'Charlie']);
+    $uOutside = User::factory()->create(['name' => 'Zed']);
+    $uA->organizations()->attach($org->id);
+    $uB->organizations()->attach($org->id);
+    $uC->organizations()->attach($org->id);
+    // Outside user belongs to another org
+    $otherOrg = Organization::factory()->create();
+    $uOutside->organizations()->attach($otherOrg->id);
+
+    // Create some single resets for the area (unrelated but existing behavior)
+    AreaSingleReset::factory()->count(2)->create([
+        'area_id' => $area->id,
+        'created_by' => $admin->id,
+    ]);
+
+    // Create a couple of alerts to be returned on partial reload
+    $alert1 = \Database\Factories\Peoplecount\AlertFactory::new()->create([
+        'area_id' => $area->id,
+        'created_by' => $admin->id,
+    ]);
+    $alert2 = \Database\Factories\Peoplecount\AlertFactory::new()->create([
         'area_id' => $area->id,
         'created_by' => $admin->id,
     ]);
@@ -125,7 +147,31 @@ it('shows the edit area form for an organization area', function () {
                 ->where('organization_id', $org->id)
                 ->etc()
             )
+            // New functionality: options and users
+            ->has('alertTypeOptions')
+            ->has('alertChannelOptions')
+            ->has('alerts_users', fn (Assert $page): Assert => $page
+                ->has(3)
+                // Sorted by name asc: Alice, Bob, Charlie
+                ->where('0.name', 'Alice')
+                ->where('1.name', 'Bob')
+                ->where('2.name', 'Charlie')
+                ->etc()
+            )
+            // Optional alerts should be missing initially
+            ->missing('alerts')
             ->has('status')
+            // On partial reload, alerts are present with two items
+            ->reloadOnly('alerts', fn (Assert $reload): Assert => $reload
+                ->has('alerts', 2)
+                ->has('alerts.0', fn (Assert $page): Assert => $page
+                    ->has('id')
+                    ->has('type')
+                    ->has('channel')
+                    ->has('recipients_count')
+                    ->etc()
+                )
+            )
         );
 });
 

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { Link, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 export type AlertType = 'occupancy_alert';
 export type AlertChannel = 'email' | 'vonage';
@@ -21,6 +23,9 @@ export interface AlertDTO {
 
 const props = defineProps<{
     alerts: AlertDTO[];
+    orgSlug?: string;
+    areaId?: number;
+    onChanged?: () => void;
 }>();
 
 const typeLabel = (t: AlertType) => {
@@ -53,6 +58,23 @@ function recipientsDisplay(recipients?: { id: number; name: string }[]) {
     return `${first} (+${recipients.length - 3} more)`;
 }
 
+function onDelete(alertId: number) {
+    if (!props.orgSlug || !props.areaId) return;
+    if (!confirm('Are you sure you want to delete this alert? This action cannot be undone.')) return;
+
+    router.delete(
+        route('peoplecount.areas.alerts.destroy', {
+            organization: props.orgSlug,
+            area: props.areaId,
+            alert: alertId,
+        }),
+        {
+            preserveScroll: true,
+            onSuccess: () => props.onChanged?.(),
+        },
+    );
+}
+
 const rows = computed(() => props.alerts || []);
 </script>
 
@@ -68,6 +90,7 @@ const rows = computed(() => props.alerts || []);
                     <TableHead>Recipients</TableHead>
                     <TableHead>Creator</TableHead>
                     <TableHead>Created at</TableHead>
+                    <TableHead>Actions</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,9 +108,23 @@ const rows = computed(() => props.alerts || []);
                         <span v-if="alert.created_at">{{ formatLocalDateTime(alert.created_at) }}</span>
                         <span v-else>—</span>
                     </TableCell>
+                    <TableCell class="whitespace-nowrap">
+                        <div class="flex gap-2">
+                            <Link
+                                v-if="props.orgSlug && props.areaId"
+                                :href="route('peoplecount.areas.alerts.edit', { organization: props.orgSlug, area: props.areaId, alert: alert.id })"
+                                as="button"
+                                method="get"
+                                preserve-scroll
+                            >
+                                <Button variant="secondary" size="sm">Edit</Button>
+                            </Link>
+                            <Button v-if="props.orgSlug && props.areaId" variant="destructive" size="sm" @click="onDelete(alert.id)">Delete</Button>
+                        </div>
+                    </TableCell>
                 </TableRow>
                 <TableRow v-if="rows.length === 0">
-                    <TableCell class="text-center text-muted-foreground" colspan="7"> No alerts yet. </TableCell>
+                    <TableCell class="text-center text-muted-foreground" colspan="8"> No alerts yet. </TableCell>
                 </TableRow>
             </TableBody>
         </Table>

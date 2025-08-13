@@ -1,21 +1,62 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
+import AlertForm from '@/components/peoplecount/alerts/AlertForm.vue';
+import AlertsTable from '@/components/peoplecount/alerts/AlertsTable.vue';
 import AreaForm from '@/components/peoplecount/areas/AreaForm.vue';
 import AssignmentCard from '@/components/peoplecount/cards/AssignmentCard.vue';
 import EmptyStateCard from '@/components/peoplecount/cards/EmptyStateCard.vue';
 import EventDetailsCard from '@/components/peoplecount/cards/EventDetailsCard.vue';
 import RecurringResetTable from '@/components/peoplecount/resets/RecurringResetTable.vue';
 import SingleResetTable from '@/components/peoplecount/resets/SingleResetTable.vue';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountArea, PeoplecountEvent } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+
+// Local type for optional alerts prop
+export type AlertType = 'occupancy_alert';
+export type AlertChannel = 'email' | 'vonage';
+export interface AlertDTO {
+    id: number;
+    area_id: number;
+    type: AlertType;
+    channel: AlertChannel;
+    cooldown_seconds: number;
+    occupancy_alert_threshold?: number | null;
+    created_by?: number | null;
+    creator?: { id: number; name: string } | null;
+    recipients?: { id: number; name: string; email?: string }[];
+    created_at?: string;
+}
 
 const props = defineProps<{
     area: PeoplecountArea;
     organization: Organization;
     events: PeoplecountEvent[];
+    alerts?: AlertDTO[];
 }>();
+
+const activeTab = ref('details');
+const hasLoadedAlerts = ref(!!props.alerts);
+
+watch(activeTab, (val) => {
+    if (val === 'alerts' && !hasLoadedAlerts.value) {
+        router.reload({
+            only: ['alerts'],
+            onFinish: () => {
+                hasLoadedAlerts.value = true;
+            },
+            preserveState: true,
+            preserveScroll: true,
+        });
+    }
+});
+
+function refreshAlerts() {
+    router.reload({ only: ['alerts'], preserveState: true, preserveScroll: true });
+}
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -43,7 +84,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         <div class="px-4 py-6">
             <Heading title="Edit Area" />
 
-            <Tabs class="mt-4 w-full" default-value="details">
+            <Tabs v-model="activeTab" class="mt-4 w-full">
                 <div class="flex items-center justify-between">
                     <TabsList class="max-w-full justify-start overflow-x-auto">
                         <TabsTrigger class="shrink-0" value="details">Details</TabsTrigger>
@@ -51,6 +92,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         <TabsTrigger class="shrink-0" value="assignments">Assignments</TabsTrigger>
                         <TabsTrigger class="shrink-0" value="resets-single">Manual Resets</TabsTrigger>
                         <TabsTrigger class="shrink-0" value="resets-recurring">Recurring Resets</TabsTrigger>
+                        <TabsTrigger class="shrink-0" value="alerts">Alerts</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -104,6 +146,28 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         <div class="mt-4">
                             <RecurringResetTable :area="props.area" :organization="props.organization" :resets="area.area_recurring_resets || []" />
                         </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent class="mt-6" value="alerts">
+                    <div class="space-y-6">
+                        <template v-if="!props.alerts">
+                            <Skeleton class="h-8 w-40" />
+                            <Skeleton class="h-24 w-full" />
+                            <Skeleton class="h-64 w-full" />
+                        </template>
+                        <template v-else>
+                            <Heading title="Alerts" />
+                            <AlertForm :area-id="props.area.id" :on-created="refreshAlerts" :org-slug="props.organization.slug" />
+                            <div class="mt-4">
+                                <AlertsTable
+                                    :alerts="props.alerts"
+                                    :area-id="props.area.id"
+                                    :on-changed="refreshAlerts"
+                                    :org-slug="props.organization.slug"
+                                />
+                            </div>
+                        </template>
                     </div>
                 </TabsContent>
             </Tabs>

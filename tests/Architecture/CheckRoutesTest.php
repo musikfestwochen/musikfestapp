@@ -86,7 +86,6 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/areas/{area}'],
 
         // People Count Alerts Routes
-        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/areas/{area}/alerts'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/create'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/areas/{area}/alerts/{alert}'],

@@ -9,7 +9,7 @@ class AlertEditRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->can('peoplecount.alerts.edit') && auth()->user()->can('orgmgmt.users.index');
+        return auth()->user()->can('peoplecount.alerts.edit');
     }
 
     /**

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Peoplecount\AlertCreateRequest;
 use App\Http\Requests\Peoplecount\AlertDestroyRequest;
 use App\Http\Requests\Peoplecount\AlertEditRequest;
-use App\Http\Requests\Peoplecount\AlertIndexRequest;
 use App\Http\Requests\Peoplecount\AlertShowRequest;
 use App\Http\Requests\Peoplecount\AlertStoreRequest;
 use App\Http\Requests\Peoplecount\AlertUpdateRequest;
@@ -25,21 +24,6 @@ class AlertController extends Controller
         private readonly AlertService $alertService,
         private readonly UserService $userService,
     ) {}
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(AlertIndexRequest $request, Organization $organization, Area $area): Response
-    {
-        $alerts = $this->alertService->getAreaAlerts($organization, $area);
-
-        return Inertia::render('peoplecount/Alerts', [
-            'organization' => $organization,
-            'area' => $area,
-            'alerts' => $alerts,
-            'status' => $request->session()->get('status'),
-        ]);
-    }
 
     /**
      * Show the form for creating a new resource.
@@ -63,7 +47,7 @@ class AlertController extends Controller
     {
         $this->alertService->storeAreaAlert($organization, $area, $request->validated());
 
-        return redirect()->route('peoplecount.areas.alerts.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])->with('status', 'Alert created successfully.');
@@ -109,7 +93,7 @@ class AlertController extends Controller
     {
         $this->alertService->updateAreaAlert($organization, $area, $alert, $request->validated());
 
-        return redirect()->route('peoplecount.areas.alerts.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])->with('status', 'Alert updated successfully.');
@@ -124,7 +108,7 @@ class AlertController extends Controller
     {
         $this->alertService->destroyAreaAlert($organization, $area, $alert);
 
-        return redirect()->route('peoplecount.areas.alerts.index', [
+        return redirect()->route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])->with('status', 'Alert deleted successfully.');

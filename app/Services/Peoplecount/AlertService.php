@@ -11,7 +11,8 @@ use Illuminate\Support\Collection;
 
 class AlertService
 {
-    private const ALERT_RELATIONS = [
+    /** @var array|string[] */
+    private const array ALERT_RELATIONS = [
         'creator',
         'recipients',
     ];

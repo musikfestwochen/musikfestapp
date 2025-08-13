@@ -1,13 +1,13 @@
-<script setup lang="ts">
-import { computed, ref } from 'vue';
-import { router, useForm, usePage } from '@inertiajs/vue3';
+<script lang="ts" setup>
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TagsCombobox, type TagsComboboxItem } from '@/components/ui/tags-combobox';
-import InputError from '@/components/InputError.vue';
 import type { User } from '@/types';
+import { router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 // Types local to Peoplecount Alerts
 export type AlertType = 'occupancy_alert';
@@ -26,6 +26,29 @@ const availableUsers = computed<User[]>(() => {
     const p: any = page.props;
     // Try a few common keys that might be used to pass users down
     return (p?.users || p?.organization_users || p?.peoplecount_users || p?.alerts_users || []) as User[];
+});
+
+// Enum options from page props or sensible fallbacks
+// Keep in sync with backend enums' display names and descriptions
+// to ensure consistent UX even if page props are missing.
+
+type AlertOption<T extends string> = { value: T; displayName: string; description: string };
+
+const alertTypeOptions = computed<AlertOption<AlertType>[]>(() => {
+    const p: any = page.props;
+    const list = (p?.alertTypeOptions || []) as AlertOption<AlertType>[];
+    if (Array.isArray(list) && list.length) return list;
+    return [{ value: 'occupancy_alert', displayName: 'Occupancy Alert', description: 'Alert when occupancy exceeds a specified threshold.' }];
+});
+
+const alertChannelOptions = computed<AlertOption<AlertChannel>[]>(() => {
+    const p: any = page.props;
+    const list = (p?.alertChannelOptions || []) as AlertOption<AlertChannel>[];
+    if (Array.isArray(list) && list.length) return list;
+    return [
+        { value: 'email', displayName: 'Email', description: 'Send alerts via email.' },
+        { value: 'vonage', displayName: 'SMS', description: 'Send alerts via SMS.' },
+    ];
 });
 
 const items = computed<TagsComboboxItem[]>(() => {
@@ -47,6 +70,9 @@ const labelToId = computed<Record<string, number>>(() => {
 });
 
 const recipientsTags = ref<string[]>([]);
+
+const selectedTypeOption = computed(() => alertTypeOptions.value.find((o) => o.value === form.type));
+const selectedChannelOption = computed(() => alertChannelOptions.value.find((o) => o.value === form.channel));
 
 const form = useForm({
     type: 'occupancy_alert' as AlertType,
@@ -107,9 +133,10 @@ function onSubmit() {
                         <SelectValue placeholder="Select a type" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="occupancy_alert">Occupancy alert</SelectItem>
+                        <SelectItem v-for="opt in alertTypeOptions" :key="opt.value" :value="opt.value">{{ opt.displayName }}</SelectItem>
                     </SelectContent>
                 </Select>
+                <p v-if="selectedTypeOption" class="text-sm text-muted-foreground">{{ selectedTypeOption.description }}</p>
                 <InputError :message="form.errors.type" />
             </div>
 
@@ -120,10 +147,10 @@ function onSubmit() {
                         <SelectValue placeholder="Select a channel" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="vonage">Vonage</SelectItem>
+                        <SelectItem v-for="opt in alertChannelOptions" :key="opt.value" :value="opt.value">{{ opt.displayName }}</SelectItem>
                     </SelectContent>
                 </Select>
+                <p v-if="selectedChannelOption" class="text-sm text-muted-foreground">{{ selectedChannelOption.description }}</p>
                 <InputError :message="form.errors.channel" />
             </div>
 
@@ -143,8 +170,7 @@ function onSubmit() {
 
             <div class="grid gap-2">
                 <Label>Recipients</Label>
-                <TagsCombobox v-model="recipientsTags" :items="items" placeholder="Search users..." :max="20" input-class="min-w-[260px]" />
-                <p class="text-sm text-muted-foreground">Select up to 20 recipients.</p>
+                <TagsCombobox v-model="recipientsTags" :items="items" :max="20" input-class="min-w-[260px]" placeholder="Search users..." />
             </div>
 
             <div>

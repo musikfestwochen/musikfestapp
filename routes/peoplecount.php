@@ -33,7 +33,7 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         Route::resource(
             'areas.alerts',
             AlertController::class
-        )->scoped(['organization' => 'slug'])->names('areas.alerts');
+        )->scoped(['organization' => 'slug'])->names('areas.alerts')->except(['index']);
 
         // Area Single Reset routes (nested under areas)
         Route::resource(
