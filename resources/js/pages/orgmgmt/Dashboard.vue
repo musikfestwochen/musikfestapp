@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import ActiveAreaCountsWidget from '@/components/peoplecount/ActiveAreaCountsWidget.vue';
+import AreaCountHistoryWidget from '@/components/peoplecount/AreaCountHistoryWidget.vue';
 import MostActiveSensorsWidget from '@/components/peoplecount/MostActiveSensorsWidget.vue';
 import SensorHealthStatusWidget from '@/components/peoplecount/SensorHealthStatusWidget.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
@@ -38,6 +39,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
                 <ActiveAreaCountsWidget v-if="can('peoplecount.widgets.active_area_counts')" :organization="organization" />
                 <SensorHealthStatusWidget v-if="can('peoplecount.widgets.sensor_health')" :organization="organization" />
                 <MostActiveSensorsWidget v-if="can('peoplecount.widgets.most_active_sensors')" :organization="organization" />
+                <AreaCountHistoryWidget v-if="can('peoplecount.widgets.area_count_history')" :organization="organization" />
             </div>
             <div class="border-sidebar-border/70 dark:border-sidebar-border relative min-h-screen flex-1 rounded-xl border md:min-h-min">
                 <PlaceholderPattern />

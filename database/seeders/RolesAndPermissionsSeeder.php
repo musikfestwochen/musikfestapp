@@ -46,6 +46,7 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::findOrCreate('peoplecount.widgets.active_area_counts');
         Permission::findOrCreate('peoplecount.widgets.sensor_health');
         Permission::findOrCreate('peoplecount.widgets.most_active_sensors');
+        Permission::findOrCreate('peoplecount.widgets.area_count_history');
 
         // add admin.pulse permission
         Permission::findOrCreate('admin.pulse');
@@ -70,6 +71,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
+            'peoplecount.widgets.area_count_history',
         ]);
 
         $orgAdminRole = Role::query()->firstOrCreate(['name' => 'OrganizationAdmin']);
@@ -84,6 +86,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
+            'peoplecount.widgets.area_count_history',
         ]);
 
         $peoplecountViewerRole = Role::query()->firstOrCreate(['name' => 'PeopleCountViewer']);
@@ -95,6 +98,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
+            'peoplecount.widgets.area_count_history',
         ]);
     }
 }
