@@ -6,6 +6,7 @@ use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\AssignmentService;
+use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -159,8 +160,8 @@ describe('create', function () {
             ->and($assignment->area_id)->toBe($area->id)
             ->and($assignment->sensor_id)->toBe($sensor->id)
             ->and($assignment->direction_flipped)->toBe(false)
-            ->and($assignment->active_from)->toBeInstanceOf(\Carbon\Carbon::class)
-            ->and($assignment->active_to)->toBeInstanceOf(\Carbon\Carbon::class);
+            ->and($assignment->active_from)->toBeInstanceOf(Carbon::class)
+            ->and($assignment->active_to)->toBeInstanceOf(Carbon::class);
 
         $this->assertDatabaseHas('peoplecount_assignments', [
             'id' => $assignment->id,

@@ -2,6 +2,7 @@
 
 use App\Http\Requests\OrganizationSelectionRequest;
 use App\Models\Organization;
+use Illuminate\Foundation\Http\FormRequest;
 
 covers(OrganizationSelectionRequest::class);
 
@@ -87,5 +88,5 @@ it('has required methods', function () {
 
 it('extends FormRequest', function () {
     // Test that the request properly extends FormRequest
-    expect($this->request)->toBeInstanceOf(\Illuminate\Foundation\Http\FormRequest::class);
+    expect($this->request)->toBeInstanceOf(FormRequest::class);
 });

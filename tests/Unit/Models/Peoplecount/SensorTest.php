@@ -2,6 +2,7 @@
 
 use App\Models\Peoplecount\Sensor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 covers(Sensor::class);
 
@@ -41,14 +42,14 @@ it('has many interval counts', function () {
     $sensor = new Sensor;
     $relation = $sensor->intervalCounts();
 
-    expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($relation)->toBeInstanceOf(HasMany::class);
 });
 
 it('has many assignments', function () {
     $sensor = new Sensor;
     $relation = $sensor->assignments();
 
-    expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($relation)->toBeInstanceOf(HasMany::class);
 });
 
 it('has correct table name', function () {

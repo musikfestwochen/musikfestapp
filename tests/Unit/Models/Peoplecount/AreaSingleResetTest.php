@@ -3,6 +3,7 @@
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -60,5 +61,5 @@ it('belongs to a user (created by)', function () {
 });
 
 it('has factory', function () {
-    expect(AreaSingleReset::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(AreaSingleReset::factory())->toBeInstanceOf(Factory::class);
 });

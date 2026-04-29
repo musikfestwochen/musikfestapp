@@ -4,12 +4,13 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\OrganizationSelectionService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Permission;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
-covers(App\Services\OrganizationSelectionService::class);
+covers(OrganizationSelectionService::class);
 
 describe('OrganizationSelectionService', function () {
     beforeEach(function () {

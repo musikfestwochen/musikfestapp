@@ -9,7 +9,9 @@ use App\Models\User;
 use App\Services\Peoplecount\AreaResetService;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 
 uses(RefreshDatabase::class);
 
@@ -32,7 +34,7 @@ describe('createSingleReset', function () {
         setPermissionsOrgId($organization->id);
 
         // Mock Auth::id() to return the user ID
-        \Illuminate\Support\Facades\Auth::shouldReceive('id')->andReturn($user->id);
+        Auth::shouldReceive('id')->andReturn($user->id);
 
         $attributes = [
             'reset_value' => 50,
@@ -60,7 +62,7 @@ describe('createSingleReset', function () {
         setPermissionsOrgId($organization->id);
 
         // Mock Auth::id() to return the user ID
-        \Illuminate\Support\Facades\Auth::shouldReceive('id')->andReturn($user->id);
+        Auth::shouldReceive('id')->andReturn($user->id);
 
         $localTime = '2025-07-27 15:00:00';
         $attributes = [
@@ -104,7 +106,7 @@ describe('createSingleReset', function () {
         setPermissionsOrgId(GLOBAL_ORG_ID);
 
         // Mock Auth::id() to return the user ID
-        \Illuminate\Support\Facades\Auth::shouldReceive('id')->andReturn($user->id);
+        Auth::shouldReceive('id')->andReturn($user->id);
 
         $attributes = [
             'reset_value' => 100,
@@ -237,7 +239,7 @@ describe('verifyAreaBelongsToCurrentOrganization', function () {
         setPermissionsOrgId($organization->id);
 
         // Create a fresh area instance without loaded relationships
-        $freshArea = \App\Models\Peoplecount\Area::query()->find($area->id);
+        $freshArea = Area::query()->find($area->id);
         expect($freshArea->relationLoaded('event'))->toBeFalse();
 
         // This should not throw and should load the relationship
@@ -273,16 +275,16 @@ describe('verifyAreaBelongsToCurrentOrganization', function () {
         setPermissionsOrgId($organization->id);
 
         // Create a spy to track if load() is called
-        $areaSpy = \Mockery::spy($area);
+        $areaSpy = Mockery::spy($area);
         $areaSpy->shouldReceive('relationLoaded')->with('event')->andReturn(true);
         $areaSpy->shouldReceive('getAttribute')->with('event')->andReturn($event);
         $areaSpy->shouldNotReceive('load');
 
         // Mock the area relationship
         $areaSpy->shouldReceive('areaSingleResets')->andReturn(
-            \Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class)
+            Mockery::mock(HasMany::class)
                 ->shouldReceive('with')->with('createdBy')->andReturnSelf()
-                ->shouldReceive('orderBy')->with('effective_at', 'desc')->andReturnSelf()
+                ->shouldReceive('latest')->with('effective_at')->andReturnSelf()
                 ->shouldReceive('get')->andReturn(collect())
                 ->getMock()
         );
@@ -298,16 +300,16 @@ describe('verifyAreaBelongsToCurrentOrganization', function () {
         setPermissionsOrgId($organization->id);
 
         // Create a spy to track if load() is called
-        $areaSpy = \Mockery::spy($area);
+        $areaSpy = Mockery::spy($area);
         $areaSpy->shouldReceive('relationLoaded')->with('event')->andReturn(false);
         $areaSpy->shouldReceive('load')->with('event')->once()->andReturnSelf();
         $areaSpy->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         // Mock the area relationship
         $areaSpy->shouldReceive('areaSingleResets')->andReturn(
-            \Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class)
+            Mockery::mock(HasMany::class)
                 ->shouldReceive('with')->with('createdBy')->andReturnSelf()
-                ->shouldReceive('orderBy')->with('effective_at', 'desc')->andReturnSelf()
+                ->shouldReceive('latest')->with('effective_at')->andReturnSelf()
                 ->shouldReceive('get')->andReturn(collect())
                 ->getMock()
         );

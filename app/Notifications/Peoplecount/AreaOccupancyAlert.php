@@ -8,7 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\VonageMessage;
 use Illuminate\Notifications\Notification;
 
-class AreaOccupancyAlert extends Notification implements shouldQueue
+class AreaOccupancyAlert extends Notification implements ShouldQueue
 {
     use Queueable;
 

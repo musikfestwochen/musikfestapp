@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -20,7 +21,7 @@ class VerifyWebcronToken
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -120,7 +121,7 @@ class VerifyWebcronToken
                 'status' => $response->status(),
                 'response' => $response->body(),
             ]);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             Log::error('Exception while fetching webcron allowed IPs', [
                 'error' => $exception->getMessage(),
             ]);

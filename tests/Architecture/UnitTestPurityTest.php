@@ -1,5 +1,11 @@
 <?php
 
+use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Foundation\Testing\WithoutMiddleware;
+
 // Architecture test to ensure Unit tests remain pure and framework-free
 it('ensures unit tests do not use framework dependencies', function () {
     $projectRoot = dirname(__DIR__, 2);
@@ -96,11 +102,11 @@ it('ensures unit tests do not use framework dependencies', function () {
         if (preg_match_all('/^use\s+([^;]+);/m', $fileContent, $matches)) {
             foreach ($matches[1] as $useStatement) {
                 $forbiddenUsePatterns = [
-                    \Illuminate\Foundation\Testing\RefreshDatabase::class,
-                    \Illuminate\Foundation\Testing\DatabaseTransactions::class,
-                    \Illuminate\Foundation\Testing\DatabaseMigrations::class,
-                    \Illuminate\Foundation\Testing\WithFaker::class,
-                    \Illuminate\Foundation\Testing\WithoutMiddleware::class,
+                    RefreshDatabase::class,
+                    DatabaseTransactions::class,
+                    DatabaseMigrations::class,
+                    WithFaker::class,
+                    WithoutMiddleware::class,
                 ];
 
                 foreach ($forbiddenUsePatterns as $forbiddenUse) {

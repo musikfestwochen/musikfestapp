@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Spatie\Permission\Models\Permission;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -20,23 +23,23 @@ beforeEach(function () {
 
 it('handles non object organization parameter', function () {
     // Create a middleware instance
-    $middleware = new \App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
+    $middleware = new OrganizationSlugMiddleware;
 
     // Set a different organization context to verify it changes
     $differentOrgId = 999;
     setPermissionsOrgId($differentOrgId);
 
     // Create a request with a non-object organization parameter
-    $request = \Illuminate\Http\Request::create('/some-slug/dashboard', 'GET');
+    $request = Request::create('/some-slug/dashboard', 'GET');
     $request->setRouteResolver(function () {
-        return new \Illuminate\Routing\Route('GET', '/{organization}/dashboard', function (): \Symfony\Component\HttpFoundation\Response {
+        return new Route('GET', '/{organization}/dashboard', function (): Response {
             return new Response;
         })->bind(request());
     });
     $request->route()->setParameter('organization', 'some-slug'); // String instead of object
 
     // Run the middleware
-    $response = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response = $middleware->handle($request, function ($req): Response {
         return new Response('Test Response');
     });
 
@@ -114,22 +117,22 @@ it('allows admin users to access any organization', function () {
 
 it('sets global org id when no organization parameter is present', function () {
     // Create a middleware instance
-    $middleware = new \App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
+    $middleware = new OrganizationSlugMiddleware;
 
     // Set a different organization context to verify it changes
     $differentOrgId = 999;
     setPermissionsOrgId($differentOrgId);
 
     // Create a request with no organization parameter
-    $request = \Illuminate\Http\Request::create('/some-route', 'GET');
+    $request = Request::create('/some-route', 'GET');
     $request->setRouteResolver(function () {
-        return new \Illuminate\Routing\Route('GET', '/some-route', function (): \Symfony\Component\HttpFoundation\Response {
+        return new Route('GET', '/some-route', function (): Response {
             return new Response;
         })->bind(request());
     });
 
     // Run the middleware
-    $response = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response = $middleware->handle($request, function ($req): Response {
         return new Response('Test Response');
     });
 
@@ -142,26 +145,26 @@ it('sets global org id when no organization parameter is present', function () {
 
 it('sets global org id when organization is object without id property', function () {
     // Create a middleware instance
-    $middleware = new \App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
+    $middleware = new OrganizationSlugMiddleware;
 
     // Set a different organization context to verify it changes
     $differentOrgId = 999;
     setPermissionsOrgId($differentOrgId);
 
     // Create a request with an organization parameter that is an object without id property
-    $request = \Illuminate\Http\Request::create('/some-object/dashboard', 'GET');
+    $request = Request::create('/some-object/dashboard', 'GET');
     $request->setRouteResolver(function () {
-        return new \Illuminate\Routing\Route('GET', '/{organization}/dashboard', function (): \Symfony\Component\HttpFoundation\Response {
+        return new Route('GET', '/{organization}/dashboard', function (): Response {
             return new Response;
         })->bind(request());
     });
 
     // Create a stdClass object without id property
-    $objectWithoutId = new \stdClass;
+    $objectWithoutId = new stdClass;
     $request->route()->setParameter('organization', $objectWithoutId);
 
     // Run the middleware
-    $response = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response = $middleware->handle($request, function ($req): Response {
         return new Response('Test Response');
     });
 
@@ -174,19 +177,19 @@ it('sets global org id when organization is object without id property', functio
 
 it('sets organization id when organization is object with id property', function () {
     // Create a middleware instance
-    $middleware = new \App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
+    $middleware = new OrganizationSlugMiddleware;
 
     // Set a different organization context to verify it changes
     $differentOrgId = 999;
     setPermissionsOrgId($differentOrgId);
 
     // Create an organization with a specific ID
-    $organization = \App\Models\Organization::factory()->create(['id' => 123]);
+    $organization = Organization::factory()->create(['id' => 123]);
 
     // Create a request
-    $request = \Illuminate\Http\Request::create('/test-org/dashboard', 'GET');
-    $request->setRouteResolver(function () use ($organization): \Illuminate\Routing\Route {
-        $route = new \Illuminate\Routing\Route('GET', '/{organization}/dashboard', function (): \Symfony\Component\HttpFoundation\Response {
+    $request = Request::create('/test-org/dashboard', 'GET');
+    $request->setRouteResolver(function () use ($organization): Route {
+        $route = new Route('GET', '/{organization}/dashboard', function (): Response {
             return new Response;
         });
         $route->bind(request());
@@ -196,7 +199,7 @@ it('sets organization id when organization is object with id property', function
     });
 
     // Run the middleware
-    $response = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response = $middleware->handle($request, function ($req): Response {
         return new Response('Test Response');
     });
 
@@ -209,16 +212,16 @@ it('sets organization id when organization is object with id property', function
 
 it('sets global org id when organization parameter is null', function () {
     // Create a middleware instance
-    $middleware = new \App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
+    $middleware = new OrganizationSlugMiddleware;
 
     // Set a different organization context to verify it changes
     $differentOrgId = 999;
     setPermissionsOrgId($differentOrgId);
 
     // Create a request with a null organization parameter
-    $request = \Illuminate\Http\Request::create('/null-org/dashboard', 'GET');
+    $request = Request::create('/null-org/dashboard', 'GET');
     $request->setRouteResolver(function () {
-        return new \Illuminate\Routing\Route('GET', '/{organization}/dashboard', function (): \Symfony\Component\HttpFoundation\Response {
+        return new Route('GET', '/{organization}/dashboard', function (): Response {
             return new Response;
         })->bind(request());
     });
@@ -227,7 +230,7 @@ it('sets global org id when organization parameter is null', function () {
     $request->route()->setParameter('organization', null);
 
     // Run the middleware
-    $response = $middleware->handle($request, function ($req): \Symfony\Component\HttpFoundation\Response {
+    $response = $middleware->handle($request, function ($req): Response {
         return new Response('Test Response');
     });
 

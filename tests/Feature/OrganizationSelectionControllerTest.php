@@ -2,8 +2,11 @@
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\OrganizationSelectionService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -17,10 +20,10 @@ it('redirects to organization dashboard if user has only one organization', func
     $user->organizations()->attach($organization->id);
 
     // Mock the OrganizationSelectionService to return a collection with one organization
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organization) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organization) {
         $mock->shouldReceive('getOrganizationsForUser')
             ->once()
-            ->andReturn(new \Illuminate\Database\Eloquent\Collection([$organization]));
+            ->andReturn(new Collection([$organization]));
     });
 
     // Act as the user and visit the organization selection page
@@ -39,17 +42,17 @@ it('shows organization selection page if user has multiple organizations', funct
     $user->organizations()->attach($organizations->pluck('id'));
 
     // Mock the OrganizationSelectionService to return a collection with multiple organizations
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organizations) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organizations) {
         $mock->shouldReceive('getOrganizationsForUser')
             ->once()
-            ->andReturn(new \Illuminate\Database\Eloquent\Collection($organizations));
+            ->andReturn(new Collection($organizations));
     });
 
     // Act as the user and visit the organization selection page
     $response = $this->actingAs($user)->get('/start');
 
     // Assert that the organization selection page is rendered with the organizations
-    $response->assertInertia(fn (Assert $page): \Illuminate\Testing\Fluent\AssertableJson => $page
+    $response->assertInertia(fn (Assert $page): AssertableJson => $page
         ->component('OrganizationSelection')
         ->has('organizations', $organizations->count())
     );
@@ -64,7 +67,7 @@ it('redirects to organization dashboard after successful selection', function ()
     $user->organizations()->attach($organization->id);
 
     // Mock the OrganizationSelectionService to process the organization selection
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organization) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organization) {
         $mock->shouldReceive('processOrganizationSelection')
             ->once()
             ->with($organization->id)
@@ -86,7 +89,7 @@ it('redirects back with error if user does not have access to the organization',
     $organization = Organization::factory()->create();
 
     // Mock the OrganizationSelectionService to throw an AuthorizationException
-    $this->mock(\App\Services\OrganizationSelectionService::class, function ($mock) use ($organization) {
+    $this->mock(OrganizationSelectionService::class, function ($mock) use ($organization) {
         $mock->shouldReceive('processOrganizationSelection')
             ->once()
             ->with($organization->id)

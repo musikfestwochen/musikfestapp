@@ -4,6 +4,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -61,7 +62,7 @@ it('belongs to a sensor', function () {
 });
 
 it('has factory', function () {
-    expect(Assignment::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(Assignment::factory())->toBeInstanceOf(Factory::class);
 });
 
 it('casts fields correctly', function () {

@@ -21,7 +21,7 @@ class HandleInertiaRequests extends Middleware
     /**
      * The GlobalPermissionService instance.
      */
-    protected \App\Services\GlobalPermissionService $globalPermissionService;
+    protected GlobalPermissionService $globalPermissionService;
 
     /**
      * Create a new middleware instance.

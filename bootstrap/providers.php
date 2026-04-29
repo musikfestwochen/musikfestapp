@@ -1,6 +1,9 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use Barryvdh\Debugbar\ServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    Barryvdh\Debugbar\ServiceProvider::class,
+    AppServiceProvider::class,
+    ServiceProvider::class,
 ];

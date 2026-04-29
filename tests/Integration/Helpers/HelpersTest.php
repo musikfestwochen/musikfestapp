@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\PermissionRegistrar;
 
 it('defines GLOBAL_ORG_ID constant', function () {
@@ -30,7 +31,7 @@ it('can set permissions org id with null', function () {
 });
 
 it('can set permissions org id with model', function () {
-    $model = new class extends \Illuminate\Database\Eloquent\Model
+    $model = new class extends Model
     {
         protected $primaryKey = 'id';
 

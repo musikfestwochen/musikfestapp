@@ -20,7 +20,7 @@ class UserService
     {
         $query = User::query();
 
-        if ($organization instanceof \App\Models\Organization) {
+        if ($organization instanceof Organization) {
             $query->whereHas('organizations', function (Builder $query) use ($organization) {
                 $query->where('organizations.id', $organization->id);
             });

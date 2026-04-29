@@ -448,7 +448,7 @@ class AreaService
     /**
      * Get single resets that fall within the event time period.
      *
-     * @return Collection<int, array{at: Carbon, reset_value: int, type: string}>
+     * @return Collection<int, array{at: Carbon, reset_value: int, type: 'single_reset'}>
      */
     protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
     {

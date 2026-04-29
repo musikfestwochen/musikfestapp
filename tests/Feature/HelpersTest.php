@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\Organization;
+use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
 use MathPHP\Statistics\Descriptive;
 
@@ -20,20 +23,20 @@ it('tests consistency of setupPeoplecountBasic methos', function () {
         ->and($organization->id)->toBe($setup['organization']->id);
 
     // check event
-    $event = \App\Models\Peoplecount\Event::query()->where('name', 'Test Event 24h')->first();
+    $event = Event::query()->where('name', 'Test Event 24h')->first();
     expect($event)->not->toBeNull()
         ->and($event->starts_at->toDateTimeString())->toBe('2025-08-02 10:00:00')
         ->and($event->ends_at->toDateTimeString())->toBe('2025-08-03 10:00:00')
         ->and($event->id)->toBe($setup['event']->id);
 
     // check area
-    $area = \App\Models\Peoplecount\Area::query()->where('name', 'Test Area')->first();
+    $area = Area::query()->where('name', 'Test Area')->first();
     expect($area)->not->toBeNull()
         ->and($area->event_id)->toBe($event->id)
         ->and($area->id)->toBe($setup['area']->id);
 
     // check sensors
-    $sensors = \App\Models\Peoplecount\Sensor::query()->where('organization_id', $organization->id)->get();
+    $sensors = Sensor::query()->where('organization_id', $organization->id)->get();
     expect($sensors)->toHaveCount(2);
 
     $sensor1 = $sensors->where('serial', 'TEST001')->first();
@@ -51,7 +54,7 @@ it('tests consistency of setupPeoplecountBasic methos', function () {
         ->and($sensor2->id)->toBe($setup['sensors'][1]->id);
 
     // check assignments
-    $assignments = \App\Models\Peoplecount\Assignment::query()->where('event_id', $event->id)->get();
+    $assignments = Assignment::query()->where('event_id', $event->id)->get();
     expect($assignments)->toHaveCount(2);
 
     $assignment1 = $assignments->where('sensor_id', $sensor1->id)->first();
@@ -71,19 +74,19 @@ it('tests consistency of setupPeoplecountBasic methos', function () {
         ->and($assignment2->id)->toBe($setup['assignments'][1]->id);
 
     // check interval counts - each sensor should have exactly 288 intervals (24h, 5 minutes each)
-    $sensor1IntervalCount = \App\Models\Peoplecount\IntervalCount::query()->where('sensor_id', $sensor1->id)->count();
+    $sensor1IntervalCount = IntervalCount::query()->where('sensor_id', $sensor1->id)->count();
     expect($sensor1IntervalCount)->toBe(288);
 
-    $sensor2IntervalCount = \App\Models\Peoplecount\IntervalCount::query()->where('sensor_id', $sensor2->id)->count();
+    $sensor2IntervalCount = IntervalCount::query()->where('sensor_id', $sensor2->id)->count();
     expect($sensor2IntervalCount)->toBe(288);
 
     // get each sensor's in and out counts
-    $sensor1Counts = \App\Models\Peoplecount\IntervalCount::query()->where('sensor_id', $sensor1->id)
+    $sensor1Counts = IntervalCount::query()->where('sensor_id', $sensor1->id)
         ->orderBy('ts_from')
         ->get(['count_in', 'count_out'])
         ->toArray();
 
-    $sensor2Counts = \App\Models\Peoplecount\IntervalCount::query()->where('sensor_id', $sensor2->id)
+    $sensor2Counts = IntervalCount::query()->where('sensor_id', $sensor2->id)
         ->orderBy('ts_from')
         ->get(['count_in', 'count_out'])
         ->toArray();
