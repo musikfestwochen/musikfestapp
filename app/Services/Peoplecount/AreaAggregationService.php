@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 
 class AreaAggregationService
@@ -346,7 +347,7 @@ class AreaAggregationService
         $cacheKey = 'org_active_area_counts:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cache_time), function () use ($organization): array {
-            $now = Carbon::now()->setTimezone('UTC');
+            $now = Date::now()->setTimezone('UTC');
             $oneHourAgo = $now->copy()->subHour();
 
             // Get all events and areas in a single query
@@ -401,12 +402,12 @@ class AreaAggregationService
                         ? $latestCount->count - $oneHourAgoCount->count
                         : null,
                     'net_change_time_ago' => $latestCount && $oneHourAgoCount
-                        ? Carbon::parse($latestCount->period_end)->diffForHumans(Carbon::parse($oneHourAgoCount->period_end), ['syntax' => true])
+                        ? Date::parse($latestCount->period_end)->diffForHumans(Date::parse($oneHourAgoCount->period_end), ['syntax' => true])
                         : null,
                     'debug_counts' => $debugCounts,
                     'last_updated' => $now->toIso8601String(),
                 ];
-            })->toArray();
+            })->all();
         });
 
     }

@@ -28,6 +28,7 @@
         "driftingly/rector-laravel": "^2.0",
         "jasonmccreary/laravel-test-assertions": "^2.8",
         "larastan/larastan": "^3.1",
+        "laravel/boost": "^2.1",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.18",
         "laravel/sail": "^1.41",
@@ -110,6 +111,15 @@
             "@typos",
             "@lint",
             "@test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php artisan boost:update --ansi",
+            "@php -r \"if (file_exists('AGENTS.md')) { is_dir('.github') || mkdir('.github', 0777, true); copy('AGENTS.md', '.github/copilot-instructions.md'); }\""
         ]
     },
     "extra": {

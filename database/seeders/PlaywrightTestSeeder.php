@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -70,7 +71,7 @@ class PlaywrightTestSeeder extends Seeder
 
         // 5. Edge-case/random users
         // User who is org admin for multiple orgs
-        $orgIds = array_map(fn ($org) => $org->id, $organizations);
+        $orgIds = array_map(fn (Organization|Collection $org) => $org->id, $organizations);
         User::factory()->organizationAdmin(null, [$orgIds[3], $orgIds[4]])->create([
             'name' => 'MultiOrgAdmin',
             'email' => 'multiorgadmin@e2e.test',

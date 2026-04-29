@@ -72,7 +72,7 @@ class AreaService
 
         $event = Event::query()->findOrFail($eventId);
 
-        throw_if($event->organization_id !== $currentOrgId, new AuthorizationException('You are not authorized to assign areas to this event.'));
+        throw_if($event->organization_id !== $currentOrgId, AuthorizationException::class, 'You are not authorized to assign areas to this event.');
     }
 
     /**
@@ -528,7 +528,7 @@ class AreaService
     {
         $query = $area->areaSingleResets()
             ->where('effective_at', '<=', $beforeTime ?? now())
-            ->orderBy('effective_at', 'desc');
+            ->latest('effective_at');
 
         return $query->first();
     }

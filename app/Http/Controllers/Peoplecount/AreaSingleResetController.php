@@ -41,7 +41,7 @@ class AreaSingleResetController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])
@@ -55,7 +55,7 @@ class AreaSingleResetController extends Controller
     {
         $this->areaResetService->deleteSingleReset($singleReset);
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])

@@ -30,7 +30,7 @@ class OrganizationSelectionController extends Controller
 
         // If user has only one organization, automatically select it
         if ($organizations->count() === 1) {
-            return redirect()->route('organization.dashboard', ['organization' => $organizations->first()->slug]);
+            return to_route('organization.dashboard', ['organization' => $organizations->first()->slug]);
         }
 
         return Inertia::render('OrganizationSelection', [
@@ -46,10 +46,10 @@ class OrganizationSelectionController extends Controller
         try {
             $organizationSlug = $this->organizationSelectionService->processOrganizationSelection($request->organization_id);
 
-            return redirect()->route('organization.dashboard', ['organization' => $organizationSlug]);
+            return to_route('organization.dashboard', ['organization' => $organizationSlug]);
         } catch (AuthorizationException $authorizationException) {
 
-            return redirect()->route('organization-selection.index')->with('error', $authorizationException->getMessage());
+            return to_route('organization-selection.index')->with('error', $authorizationException->getMessage());
         }
     }
 }

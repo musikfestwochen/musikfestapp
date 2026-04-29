@@ -51,7 +51,7 @@ class OrganizationSelectionService
         $user = Auth::user();
 
         // Check if the user belongs to the selected organization
-        throw_if(! $user->organizations->contains($organization->id) && ! $user->can('admin.organizations.index'), new AuthorizationException('You do not have access to this organization.'));
+        throw_if(! $user->organizations->contains($organization->id) && ! $user->can('admin.organizations.index'), AuthorizationException::class, 'You do not have access to this organization.');
 
         return $organization->slug;
     }

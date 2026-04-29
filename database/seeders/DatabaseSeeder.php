@@ -10,7 +10,7 @@ use App\Models\Peoplecount\Sensor;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 class DatabaseSeeder extends Seeder
 {
@@ -90,7 +90,7 @@ class DatabaseSeeder extends Seeder
         $org1 = Organization::factory()->create();
         $org2 = Organization::factory()->create();
 
-        $now = Carbon::now('UTC');
+        $now = Date::now('UTC');
 
         // Event for first organization: 1 area
         $event1 = Event::factory()->withOrganization($org1)->create([

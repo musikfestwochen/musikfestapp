@@ -29,10 +29,10 @@ class AggregateAreaCounts implements ShouldQueue
 
         foreach ($areas as $area) {
             // Update aggregated counts for each area
-            app(AreaAggregationService::class)->updateAggregatedCounts($area);
+            resolve(AreaAggregationService::class)->updateAggregatedCounts($area);
 
             // After aggregation, process alerts for the given area
-            app(AlertService::class)->processAlertsForArea($area);
+            resolve(AlertService::class)->processAlertsForArea($area);
         }
     }
 }

@@ -5,9 +5,9 @@ namespace App\Services\Peoplecount;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\AreaSingleReset;
-use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 
 class AreaResetService
 {
@@ -22,7 +22,7 @@ class AreaResetService
         $this->verifyAreaBelongsToCurrentOrganization($area);
 
         // Convert effective_at to UTC for storage
-        $effectiveAt = Carbon::parse($attributes['effective_at'])->utc();
+        $effectiveAt = Date::parse($attributes['effective_at'])->utc();
 
         return AreaSingleReset::query()->create([
             'area_id' => $area->id,
@@ -55,7 +55,8 @@ class AreaResetService
 
         throw_if(
             $area->event->organization_id !== $currentOrgId,
-            new AuthorizationException('You are not authorized to access this area.')
+            AuthorizationException::class,
+            'You are not authorized to access this area.'
         );
     }
 
@@ -71,7 +72,7 @@ class AreaResetService
 
         return $area->areaSingleResets()
             ->with('createdBy')
-            ->orderBy('effective_at', 'desc')
+            ->latest('effective_at')
             ->get();
     }
 
@@ -97,8 +98,7 @@ class AreaResetService
         $this->verifyAreaBelongsToCurrentOrganization($area);
 
         return $area->areaRecurringResets()
-            ->with(['area'])
-            ->orderBy('created_at', 'desc')
+            ->with(['area'])->latest()
             ->get();
     }
 

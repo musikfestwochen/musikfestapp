@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Peoplecount\IntervalCountController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;

@@ -24,7 +24,7 @@ class OrganizationController extends Controller
      */
     public function index(OrganizationIndexRequest $request): Response
     {
-        $organizationService = app(OrganizationService::class);
+        $organizationService = resolve(OrganizationService::class);
 
         return Inertia::render('admin/Organizations', [
             'organizations' => $organizationService->getOrganizations(),
@@ -39,7 +39,7 @@ class OrganizationController extends Controller
     {
         $organization = Organization::query()->create($request->all());
 
-        return redirect()->route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' created successfully.');
+        return to_route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' created successfully.');
     }
 
     /**
@@ -61,7 +61,7 @@ class OrganizationController extends Controller
      */
     public function show(OrganizationShowRequest $request, Organization $organization): RedirectResponse
     {
-        return redirect()->route('admin.organizations.edit', $organization);
+        return to_route('admin.organizations.edit', $organization);
     }
 
     /**
@@ -83,7 +83,7 @@ class OrganizationController extends Controller
     {
         $organization->update($request->all());
 
-        return redirect()->route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' updated successfully.');
+        return to_route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' updated successfully.');
     }
 
     /**
@@ -99,6 +99,6 @@ class OrganizationController extends Controller
         // delete organization
         $organization->delete();
 
-        return redirect()->route('admin.organizations.index')->with('status', 'Organization '.$name.' deleted successfully.');
+        return to_route('admin.organizations.index')->with('status', 'Organization '.$name.' deleted successfully.');
     }
 }

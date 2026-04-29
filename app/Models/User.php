@@ -70,6 +70,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Route notifications for the Vonage channel.
+     */
+    public function routeNotificationForVonage(Notification $notification): string
+    {
+        return $this->phone;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @pest-mutate-ignore
@@ -94,7 +102,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return Attribute::make(set: function (?string $value): array {
             $cleaned = $value !== null ? trim($value) : null;
-            if ($cleaned === null || $cleaned === '' || $cleaned === '0') {
+            if (in_array($cleaned, [null, '', '0'], true)) {
                 return ['phone' => null];
             }
 
@@ -102,13 +110,5 @@ class User extends Authenticatable implements MustVerifyEmail
 
             return ['phone' => $cleaned];
         });
-    }
-
-    /**
-     * Route notifications for the Vonage channel.
-     */
-    public function routeNotificationForVonage(Notification $notification): string
-    {
-        return $this->phone;
     }
 }

@@ -46,7 +46,7 @@ class SensorController extends Controller
             'organization_id' => $organization->id,
         ]);
 
-        return redirect()->route('peoplecount.sensors.index', [
+        return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Sensor created successfully ('.$sensor->vendor.' '.$sensor->model.' '.$sensor->serial.').');
@@ -70,7 +70,7 @@ class SensorController extends Controller
      */
     public function show(SensorShowRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
     {
-        return redirect()->route('peoplecount.sensors.edit', [
+        return to_route('peoplecount.sensors.edit', [
             'organization' => $organization,
             'sensor' => $sensor,
         ]);
@@ -102,7 +102,7 @@ class SensorController extends Controller
     {
         $sensor->update($request->all());
 
-        return redirect()->route('peoplecount.sensors.index', [
+        return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Sensor updated successfully ('.$sensor->vendor.' '.$sensor->model.' '.$sensor->serial.').');
@@ -119,7 +119,7 @@ class SensorController extends Controller
         $name = $sensor->vendor.' '.$sensor->model.' '.$sensor->serial;
         $sensor->delete();
 
-        return redirect()->route('peoplecount.sensors.index', [
+        return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Sensor '.$name.' deleted successfully.');

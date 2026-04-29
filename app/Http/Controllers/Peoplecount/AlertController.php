@@ -47,7 +47,7 @@ class AlertController extends Controller
     {
         $this->alertService->storeAreaAlert($organization, $area, $request->validated());
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])->with('status', 'Alert created successfully.');
@@ -60,7 +60,7 @@ class AlertController extends Controller
      */
     public function show(AlertShowRequest $request, Organization $organization, Area $area, Alert $alert): RedirectResponse
     {
-        return redirect()->route('peoplecount.areas.alerts.edit', [
+        return to_route('peoplecount.areas.alerts.edit', [
             'organization' => $organization,
             'area' => $area,
             'alert' => $alert,
@@ -93,7 +93,7 @@ class AlertController extends Controller
     {
         $this->alertService->updateAreaAlert($organization, $area, $alert, $request->validated());
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])->with('status', 'Alert updated successfully.');
@@ -108,7 +108,7 @@ class AlertController extends Controller
     {
         $this->alertService->destroyAreaAlert($organization, $area, $alert);
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])->with('status', 'Alert deleted successfully.');

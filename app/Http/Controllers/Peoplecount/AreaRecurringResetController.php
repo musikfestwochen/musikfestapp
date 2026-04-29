@@ -49,7 +49,7 @@ class AreaRecurringResetController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])
@@ -62,7 +62,7 @@ class AreaRecurringResetController extends Controller
     public function show(AreaRecurringResetShowRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
     {
         // forward to the edit page
-        return redirect()->route('peoplecount.areas.recurring-resets.edit', [
+        return to_route('peoplecount.areas.recurring-resets.edit', [
             'organization' => $organization,
             'area' => $area,
             'recurring_reset' => $recurringReset,
@@ -97,7 +97,7 @@ class AreaRecurringResetController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
-        return redirect()->route('peoplecount.areas.recurring-resets.show', [
+        return to_route('peoplecount.areas.recurring-resets.show', [
             'organization' => $organization,
             'area' => $area,
             'recurring_reset' => $recurringReset,
@@ -112,7 +112,7 @@ class AreaRecurringResetController extends Controller
     {
         $this->areaResetService->deleteRecurringReset($recurringReset);
 
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ])
