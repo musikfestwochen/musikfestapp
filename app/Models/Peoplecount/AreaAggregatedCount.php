@@ -7,7 +7,16 @@ use Database\Factories\Peoplecount\AreaAggregatedCountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $area_id
+ * @property int $count
+ * @property Carbon $period_start
+ * @property Carbon $period_end
+ * @property string $checksum
+ */
 class AreaAggregatedCount extends Model
 {
     /** @use HasFactory<AreaAggregatedCountFactory> */
