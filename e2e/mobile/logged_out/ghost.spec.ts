@@ -1,33 +1,70 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+import type { TestInfo } from '@playwright/test';
 
-async function ensureSidebarLinkVisible(page: Page, linkName: string): Promise<void> {
+async function ensureSidebarLinkVisible(page: Page, testInfo: TestInfo, linkName: string): Promise<void> {
     const sidebarToggle = page.getByRole('button', { name: 'Toggle Sidebar' });
     const targetLink = page.getByRole('link', { name: linkName });
 
     await expect(sidebarToggle).toBeVisible();
 
-    if (!(await targetLink.isVisible())) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        if (await targetLink.isVisible()) {
+            return;
+        }
+
+        const sidebarLinks = await page
+            .getByRole('navigation')
+            .getByRole('link')
+            .allTextContents()
+            .catch(() => []);
+
+        console.log(`Sidebar debug (${linkName}) attempt ${attempt}: url=${page.url()} links=[${sidebarLinks.join(', ')}]`);
         await sidebarToggle.click();
+        await page.waitForTimeout(300);
+
+        if (await targetLink.isVisible()) {
+            return;
+        }
+
+        await testInfo.attach(`sidebar-${linkName.toLowerCase()}-attempt-${attempt}`, {
+            body: await page.screenshot({ fullPage: true }),
+            contentType: 'image/png',
+        });
     }
 
     await expect(targetLink).toBeVisible();
 }
 
-async function ensureSidebarButtonVisible(page: Page, buttonName: string): Promise<void> {
+async function ensureSidebarButtonVisible(page: Page, testInfo: TestInfo, buttonName: string): Promise<void> {
     const sidebarToggle = page.getByRole('button', { name: 'Toggle Sidebar' });
     const targetButton = page.getByRole('button', { name: buttonName });
 
     await expect(sidebarToggle).toBeVisible();
 
-    if (!(await targetButton.isVisible())) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        if (await targetButton.isVisible()) {
+            return;
+        }
+
+        console.log(`Sidebar debug button (${buttonName}) attempt ${attempt}: url=${page.url()}`);
         await sidebarToggle.click();
+        await page.waitForTimeout(300);
+
+        if (await targetButton.isVisible()) {
+            return;
+        }
+
+        await testInfo.attach(`sidebar-button-${buttonName.toLowerCase().replace(/\s+/g, '-')}-attempt-${attempt}`, {
+            body: await page.screenshot({ fullPage: true }),
+            contentType: 'image/png',
+        });
     }
 
     await expect(targetButton).toBeVisible();
 }
 
-test('Mobile Ghost Test', async ({ page }) => {
+test('Mobile Ghost Test', async ({ page }, testInfo) => {
     // TODO: Refactor all e2e tests to use explicit waits for reliability
     console.log('Navigating to login page');
     await page.goto('/login');
@@ -46,13 +83,13 @@ test('Mobile Ghost Test', async ({ page }) => {
     console.log('Navigating through admin menu');
     await expect(page.getByText('AdministrationClick to select')).toBeVisible();
     await page.getByText('AdministrationClick to select').click();
-    await ensureSidebarLinkVisible(page, 'Users');
+    await ensureSidebarLinkVisible(page, testInfo, 'Users');
     await page.getByRole('link', { name: 'Users' }).click();
     await expect(page.getByRole('link', { name: 'Create User' })).toBeVisible();
     await page.getByRole('link', { name: 'Create User' }).click();
     await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
     await page.getByRole('link', { name: 'Users' }).click();
-    await ensureSidebarLinkVisible(page, 'Organizations');
+    await ensureSidebarLinkVisible(page, testInfo, 'Organizations');
     await page.getByRole('link', { name: 'Organizations' }).click();
     await expect(page.getByRole('button', { name: 'View' })).toBeVisible();
     await page.getByRole('button', { name: 'View' }).click();
@@ -60,7 +97,7 @@ test('Mobile Ghost Test', async ({ page }) => {
     await page.getByRole('menuitemcheckbox', { name: 'name' }).click();
     await expect(page.getByRole('link', { name: 'Create Organization' })).toBeVisible();
     await page.getByRole('link', { name: 'Create Organization' }).click();
-    await ensureSidebarButtonVisible(page, 'Super Admin');
+    await ensureSidebarButtonVisible(page, testInfo, 'Super Admin');
     await expect(page.getByRole('button', { name: 'Super Admin' })).toBeVisible();
     await page.getByRole('button', { name: 'Super Admin' }).click();
     await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
