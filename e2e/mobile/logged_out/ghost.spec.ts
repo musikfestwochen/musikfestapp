@@ -1,4 +1,31 @@
+import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+
+async function ensureSidebarLinkVisible(page: Page, linkName: string): Promise<void> {
+    const sidebarToggle = page.getByRole('button', { name: 'Toggle Sidebar' });
+    const targetLink = page.getByRole('link', { name: linkName });
+
+    await expect(sidebarToggle).toBeVisible();
+
+    if (!(await targetLink.isVisible())) {
+        await sidebarToggle.click();
+    }
+
+    await expect(targetLink).toBeVisible();
+}
+
+async function ensureSidebarButtonVisible(page: Page, buttonName: string): Promise<void> {
+    const sidebarToggle = page.getByRole('button', { name: 'Toggle Sidebar' });
+    const targetButton = page.getByRole('button', { name: buttonName });
+
+    await expect(sidebarToggle).toBeVisible();
+
+    if (!(await targetButton.isVisible())) {
+        await sidebarToggle.click();
+    }
+
+    await expect(targetButton).toBeVisible();
+}
 
 test('Mobile Ghost Test', async ({ page }) => {
     // TODO: Refactor all e2e tests to use explicit waits for reliability
@@ -19,17 +46,13 @@ test('Mobile Ghost Test', async ({ page }) => {
     console.log('Navigating through admin menu');
     await expect(page.getByText('AdministrationClick to select')).toBeVisible();
     await page.getByText('AdministrationClick to select').click();
-    await expect(page.getByRole('button', { name: 'Toggle Sidebar' })).toBeVisible();
-    await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
-    await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
+    await ensureSidebarLinkVisible(page, 'Users');
     await page.getByRole('link', { name: 'Users' }).click();
     await expect(page.getByRole('link', { name: 'Create User' })).toBeVisible();
     await page.getByRole('link', { name: 'Create User' }).click();
     await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
     await page.getByRole('link', { name: 'Users' }).click();
-    await expect(page.getByRole('button', { name: 'Toggle Sidebar' })).toBeVisible();
-    await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
-    await expect(page.getByRole('link', { name: 'Organizations' })).toBeVisible();
+    await ensureSidebarLinkVisible(page, 'Organizations');
     await page.getByRole('link', { name: 'Organizations' }).click();
     await expect(page.getByRole('button', { name: 'View' })).toBeVisible();
     await page.getByRole('button', { name: 'View' }).click();
@@ -37,8 +60,7 @@ test('Mobile Ghost Test', async ({ page }) => {
     await page.getByRole('menuitemcheckbox', { name: 'name' }).click();
     await expect(page.getByRole('link', { name: 'Create Organization' })).toBeVisible();
     await page.getByRole('link', { name: 'Create Organization' }).click();
-    await expect(page.getByRole('button', { name: 'Toggle Sidebar' })).toBeVisible();
-    await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+    await ensureSidebarButtonVisible(page, 'Super Admin');
     await expect(page.getByRole('button', { name: 'Super Admin' })).toBeVisible();
     await page.getByRole('button', { name: 'Super Admin' }).click();
     await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
