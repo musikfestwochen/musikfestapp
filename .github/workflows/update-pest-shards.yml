@@ -64,7 +64,7 @@ jobs:
         run: ./vendor/bin/pest --parallel --update-shards
 
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: 'chore: update Pest shard timings'
           branch: 'chore/update-pest-shards'
