@@ -1,0 +1,90 @@
+name: security
+
+on:
+  pull_request:
+    paths-ignore:
+      - '.junie/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.junie/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  schedule:
+    - cron: "35 4 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile-consistency:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate lockfile consistency
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+
+          if echo "$CHANGED_FILES" | grep -qx "package.json" && ! echo "$CHANGED_FILES" | grep -qx "package-lock.json"; then
+            echo "package.json changed without package-lock.json. Please update and commit package-lock.json."
+            exit 1
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qx "composer.json" && ! echo "$CHANGED_FILES" | grep -qx "composer.lock"; then
+            echo "composer.json changed without composer.lock. Please update and commit composer.lock."
+            exit 1
+          fi
+
+          echo "Lockfile consistency check passed."
+
+  composer-audit:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+
+      - name: Validate composer files
+        run: composer validate --strict --no-check-publish
+
+      - name: Audit Composer advisories (fail on medium+)
+        run: |
+          set -euo pipefail
+          composer audit --locked --format=json --no-interaction > composer-audit.json || true
+          php -r '$data = json_decode(file_get_contents("composer-audit.json"), true); if (!is_array($data)) { fwrite(STDERR, "Failed to parse composer audit JSON\n"); exit(1);} $fail = false; foreach (($data["advisories"] ?? []) as $package => $advisories) { foreach ($advisories as $advisory) { $severity = strtolower((string) ($advisory["severity"] ?? "unknown")); if (in_array($severity, ["medium", "high", "critical"], true)) { $id = $advisory["advisoryId"] ?? ($advisory["cve"] ?? "unknown"); fwrite(STDERR, sprintf("[%s] %s (%s)\n", $severity, $package, $id)); $fail = true; } } } if ($fail) { exit(1);} echo "No medium/high/critical Composer advisories found.\n";'
+
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Audit npm advisories (fail on high+)
+        run: npm audit --audit-level=high
