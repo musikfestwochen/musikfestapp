@@ -41,7 +41,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       " v-bind="{ ...forwarded, ...$attrs }"
     >
       <SelectScrollUpButton />
-      <SelectViewport :class="cn('p-1', position === 'popper' && 'h-[--reka-select-trigger-height] w-full min-w-[--reka-select-trigger-width]')">
+      <SelectViewport :class="cn('p-1', position === 'popper' && 'h-(--reka-select-trigger-height) w-full min-w-(--reka-select-trigger-width)')">
         <slot />
       </SelectViewport>
       <SelectScrollDownButton />

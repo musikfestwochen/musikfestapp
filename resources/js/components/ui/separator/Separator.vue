@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { cn } from '@/lib/utils';
 import { Separator, type SeparatorProps } from 'radix-vue';
 import { computed, type HTMLAttributes } from 'vue';
@@ -14,15 +14,15 @@ const delegatedProps = computed(() => {
 
 <template>
     <Separator
-        v-bind="delegatedProps"
         :class="cn('relative shrink-0 bg-border', props.orientation === 'vertical' ? 'h-full w-px' : 'h-px w-full', props.class)"
+        v-bind="delegatedProps"
     >
         <span
             v-if="props.label"
             :class="
                 cn(
                     'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-background text-xs text-muted-foreground',
-                    props.orientation === 'vertical' ? 'w-[1px] px-1 py-2' : 'h-[1px] px-2 py-1',
+                    props.orientation === 'vertical' ? 'w-px px-1 py-2' : 'h-px px-2 py-1',
                 )
             "
             >{{ props.label }}</span

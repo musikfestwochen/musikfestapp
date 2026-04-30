@@ -82,7 +82,7 @@ const datePickerConfig = {
                     type="number"
                 />
                 <InputError :message="form.errors.reset_value" />
-                <p class="text-sm text-muted-foreground">Enter the new count value to reset to (must be a positive integer).</p>
+                <p class="text-muted-foreground text-sm">Enter the new count value to reset to (must be a positive integer).</p>
             </div>
 
             <div class="grid gap-2">
@@ -96,14 +96,14 @@ const datePickerConfig = {
                     @update:model-value="handleDateChange"
                 />
                 <InputError :message="form.errors.effective_at" />
-                <p class="text-sm text-muted-foreground">Select when this reset should take effect. Times are in your local timezone.</p>
+                <p class="text-muted-foreground text-sm">Select when this reset should take effect. Times are in your local timezone.</p>
             </div>
 
             <div class="grid gap-2">
                 <Label for="notes">Notes</Label>
                 <Textarea id="notes" v-model="form.notes" :tabindex="3" placeholder="Optional notes about this reset" rows="3" />
                 <InputError :message="form.errors.notes" />
-                <p class="text-sm text-muted-foreground">Add any additional context or reason for this reset (optional).</p>
+                <p class="text-muted-foreground text-sm">Add any additional context or reason for this reset (optional).</p>
             </div>
 
             <Button :disabled="form.processing || form.reset_value < 0 || !effectiveDate" class="mt-2 w-full" tabindex="4" type="submit">
@@ -115,9 +115,11 @@ const datePickerConfig = {
 </template>
 
 <style scoped>
+@reference '../../../../css/app.css';
+
 /* Custom styling for the date picker to match the design system */
 :deep(.dp__input) {
-    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 :deep(.dp__input_wrap) {
