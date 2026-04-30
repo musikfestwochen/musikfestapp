@@ -93,7 +93,7 @@ jobs:
     uses: ./.github/workflows/mariadb-migration-tests.yml
     secrets: inherit
 
-  coverage-and-mutation-tests:
+  coverage-tests:
     runs-on: ubuntu-latest
     needs: basic-tests
     steps:
@@ -148,8 +148,65 @@ jobs:
       - name: Run Coverage Tests
         run: ./vendor/bin/pest --coverage --min=100 --parallel
 
+  mutation-tests:
+    runs-on: ubuntu-latest
+    needs: basic-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: Mutation Tests (Shard ${{ matrix.shard }}/4)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v5
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Install Node Dependencies
+        run: npm i
+
+      - name: Create SQLite Database
+        run: touch database/database.sqlite
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy Environment File
+        run: cp .env.local .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Publish Ziggy Configuration
+        run: php artisan ziggy:generate
+
+      - name: Download Built Assets
+        uses: actions/download-artifact@v8
+        with:
+          name: built-assets
+          path: public/build
+
       - name: Run Mutation Tests
-        run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations --parallel --covered-only
+        run: ./vendor/bin/pest --mutate --min=100 --ignore-min-score-on-zero-mutations --parallel --covered-only --shard=${{ matrix.shard }}/4
 
   e2e-tests:
     runs-on: ubuntu-latest
