@@ -18,10 +18,7 @@ if (! function_exists('setPermissionsOrgId')) {
 }
 
 if (! function_exists('getPermissionsOrgId')) {
-    /**
-     * @return int|string|null
-     */
-    function getPermissionsOrgId()
+    function getPermissionsOrgId(): int|string|null
     {
         return resolve(PermissionRegistrar::class)->getPermissionsTeamId();
     }

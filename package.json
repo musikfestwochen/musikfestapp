@@ -43,8 +43,9 @@
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.8.0",
         "sharp": "^0.34.2",
+        "svgo": "^4.0.1",
         "typescript-eslint": "^8.23.0",
-        "vite-plugin-imagemin": "^0.6.1",
+        "vite-plugin-image-optimizer": "^2.0.3",
         "vitest": "^4.1.5",
         "vue-tsc": "3.2.7"
     },

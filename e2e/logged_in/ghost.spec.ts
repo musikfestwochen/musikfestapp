@@ -39,7 +39,7 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
     // Sort by Email Asc/Desc (like orgs)
     console.log('Sorting users by Email Asc/Desc...');
     await page.getByRole('button', { name: 'Email' }).click();
-    await page.getByRole('menuitem', { name: 'Asc' }).getByRole('img').click();
+    await page.getByRole('menuitem', { name: 'Asc' }).click();
     await page.getByRole('button', { name: 'Email' }).click();
     await page.getByRole('menuitem', { name: 'Desc' }).click();
     // Go to last/first page (like before)
@@ -94,7 +94,7 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
     // Sort by Email Asc/Desc
     console.log('Sorting organizations by Email Asc/Desc...');
     await page.getByRole('button', { name: 'Email' }).click();
-    await page.getByRole('menuitem', { name: 'Asc' }).getByRole('img').click();
+    await page.getByRole('menuitem', { name: 'Asc' }).click();
     await page.getByRole('button', { name: 'Email' }).click();
     await page.getByRole('menuitem', { name: 'Desc' }).click();
 

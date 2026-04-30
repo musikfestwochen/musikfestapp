@@ -33,7 +33,7 @@ Expectations:
   docker compose run --rm app composer install --no-interaction
 
 - Node deps (Node 22 is available inside app container):
-  docker compose run --rm app npm ci
+  docker compose run --rm app npm i
 
 - Tooling checks:
   docker compose run --rm app composer validate --strict
