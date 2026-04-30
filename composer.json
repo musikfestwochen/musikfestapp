@@ -12,7 +12,7 @@
         "php": "^8.4",
         "fakerphp/faker": "^1.23",
         "guzzlehttp/guzzle": "^7.9",
-        "inertiajs/inertia-laravel": "^2.0",
+        "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.0",
         "laravel/pulse": "^1.4",
         "laravel/sanctum": "^4.0",
