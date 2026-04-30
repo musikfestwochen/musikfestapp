@@ -2,13 +2,7 @@
 import type { Column } from '@tanstack/vue-table';
 // import is not needed as cn is not used in this component
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff } from 'lucide-vue-next';
 
 interface DataTableColumnHeaderProps<TData, TValue> {

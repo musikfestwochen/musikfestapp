@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Organization, PeoplecountEvent } from '@/types';
 import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { LoaderCircle } from 'lucide-vue-next';
 import { ref } from 'vue';

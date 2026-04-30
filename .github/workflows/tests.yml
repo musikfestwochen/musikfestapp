@@ -48,7 +48,7 @@ jobs:
             composer-
 
       - name: Install Node Dependencies
-        run: npm ci
+        run: npm i
 
       - name: Create SQLite Database
         run: touch database/database.sqlite

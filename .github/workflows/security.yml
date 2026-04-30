@@ -84,7 +84,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Node dependencies
-        run: npm ci
+        run: npm i
 
       - name: Audit npm advisories (fail on high+)
         run: npm audit --audit-level=high
