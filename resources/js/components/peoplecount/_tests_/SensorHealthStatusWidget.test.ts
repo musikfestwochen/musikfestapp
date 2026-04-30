@@ -37,29 +37,18 @@ describe('SensorHealthStatusWidget', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        vi.useFakeTimers();
         // Silence error logs from components during negative-path tests
         vi.spyOn(console, 'error').mockImplementation(() => {});
         vi.spyOn(window, 'setInterval').mockImplementation(() => 123 as unknown as number);
         vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
 
-        // Fix Date.now and Date constructor
         const fixed = new Date('2025-08-09T18:02:00Z');
-        const RealDate = global.Date;
-        class MockDate extends RealDate {
-            constructor(...args: any[]) {
-                if (args.length === 0) {
-                    super(fixed);
-                } else {
-                    // @ts-expect-error mocking Date constructor signature for test
-                    super(...args);
-                }
-            }
-        }
-        vi.spyOn(global, 'Date').mockImplementation((...args: any[]) => new MockDate(...args) as any);
-        vi.spyOn(Date, 'now').mockReturnValue(fixed.getTime());
+        vi.setSystemTime(fixed);
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
     });
 

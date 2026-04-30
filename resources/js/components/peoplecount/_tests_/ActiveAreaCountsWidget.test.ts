@@ -60,6 +60,7 @@ describe('ActiveAreaCountsWidget', () => {
     beforeEach(() => {
         // Reset mocks before each test
         vi.resetAllMocks();
+        vi.useFakeTimers();
 
         // Silence error logs from components during negative-path tests
         vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -72,29 +73,12 @@ describe('ActiveAreaCountsWidget', () => {
         // Mock the window.clearInterval function
         vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
 
-        // Mock the Date constructor
         const fixedNowDate = new Date('2025-08-04T22:08:00Z');
-        const RealDate = global.Date;
-
-        class MockDate extends RealDate {
-            constructor(...args: any[]) {
-                if (args.length === 0) {
-                    // When called with no arguments, return our fixed date
-                    super(fixedNowDate);
-                } else {
-                    // When called with arguments, use the real Date constructor
-                    super(...args);
-                }
-            }
-        }
-
-        // Replace global Date with our MockDate
-        vi.spyOn(global, 'Date').mockImplementation((...args: any[]) => {
-            return new MockDate(...args) as any;
-        });
+        vi.setSystemTime(fixedNowDate);
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
     });
 
