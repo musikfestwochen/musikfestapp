@@ -19,7 +19,7 @@
         "laravel/tinker": "^3.0",
         "laravel/vonage-notification-channel": "^3.3",
         "markrogoyski/math-php": "^2.11",
-        "spatie/laravel-permission": "7.4",
+        "spatie/laravel-permission": "^7.4",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {
