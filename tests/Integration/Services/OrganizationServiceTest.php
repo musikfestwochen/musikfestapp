@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
-covers(App\Services\OrganizationService::class);
+covers(OrganizationService::class);
 
 beforeEach(function () {
     $this->service = new OrganizationService;

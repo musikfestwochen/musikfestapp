@@ -6,7 +6,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Event;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 /**
  * @extends Factory<Event>
@@ -21,7 +21,7 @@ class EventFactory extends Factory
     public function definition(): array
     {
         $startsAt = fake()->dateTimeBetween('-1 month', '+2 months');
-        $endsAt = Carbon::instance($startsAt)->addDays(fake()->numberBetween(1, 7));
+        $endsAt = Date::instance($startsAt)->addDays(fake()->numberBetween(1, 7));
 
         return [
             'name' => fake()->sentence(3),

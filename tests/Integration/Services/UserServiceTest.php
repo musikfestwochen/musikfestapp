@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
-covers(App\Services\UserService::class);
+covers(UserService::class);
 
 beforeEach(function () {
     if (! defined('GLOBAL_ORG_ID')) {

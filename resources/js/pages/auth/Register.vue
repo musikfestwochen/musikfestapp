@@ -74,7 +74,7 @@ const submit = () => {
                 </Button>
             </div>
 
-            <div class="text-center text-sm text-muted-foreground">
+            <div class="text-muted-foreground text-center text-sm">
                 Already have an account?
                 <TextLink :href="route('login')" :tabindex="6" class="underline underline-offset-4">Log in</TextLink>
             </div>

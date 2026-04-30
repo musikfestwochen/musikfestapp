@@ -136,7 +136,7 @@ function onSubmit() {
                         <SelectItem v-for="opt in alertTypeOptions" :key="opt.value" :value="opt.value">{{ opt.displayName }}</SelectItem>
                     </SelectContent>
                 </Select>
-                <p v-if="selectedTypeOption" class="text-sm text-muted-foreground">{{ selectedTypeOption.description }}</p>
+                <p v-if="selectedTypeOption" class="text-muted-foreground text-sm">{{ selectedTypeOption.description }}</p>
                 <InputError :message="form.errors.type" />
             </div>
 
@@ -150,7 +150,7 @@ function onSubmit() {
                         <SelectItem v-for="opt in alertChannelOptions" :key="opt.value" :value="opt.value">{{ opt.displayName }}</SelectItem>
                     </SelectContent>
                 </Select>
-                <p v-if="selectedChannelOption" class="text-sm text-muted-foreground">{{ selectedChannelOption.description }}</p>
+                <p v-if="selectedChannelOption" class="text-muted-foreground text-sm">{{ selectedChannelOption.description }}</p>
                 <InputError :message="form.errors.channel" />
             </div>
 
@@ -158,14 +158,14 @@ function onSubmit() {
                 <Label for="cooldown_minutes">Cooldown (minutes)</Label>
                 <Input id="cooldown_minutes" v-model.number="form.cooldown_minutes" min="30" required type="number" />
                 <InputError :message="form.errors.cooldown_minutes" />
-                <p class="text-sm text-muted-foreground">Minimum interval between repeated alerts.</p>
+                <p class="text-muted-foreground text-sm">Minimum interval between repeated alerts.</p>
             </div>
 
             <div v-if="isOccupancy" class="grid gap-2">
                 <Label for="occupancy_alert_threshold">Occupancy threshold</Label>
                 <Input id="occupancy_alert_threshold" v-model.number="form.occupancy_alert_threshold" min="0" required type="number" />
                 <InputError :message="form.errors.occupancy_alert_threshold" />
-                <p class="text-sm text-muted-foreground">Alert when occupancy reaches or exceeds this value.</p>
+                <p class="text-muted-foreground text-sm">Alert when occupancy reaches or exceeds this value.</p>
             </div>
 
             <div class="grid gap-2">

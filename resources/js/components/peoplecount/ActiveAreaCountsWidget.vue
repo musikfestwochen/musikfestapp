@@ -154,13 +154,13 @@ const lastUpdatedTime = computed(() => {
                 <Skeleton v-for="i in 2" :key="i" class="mb-4 h-24 w-full" />
             </div>
 
-            <div v-else-if="!areaCounts.length" class="py-8 text-center text-muted-foreground">No active areas found.</div>
+            <div v-else-if="!areaCounts.length" class="text-muted-foreground py-8 text-center">No active areas found.</div>
 
             <div v-else class="space-y-6">
                 <div v-for="area in areaCounts" :key="area.id" class="area-item border-b pb-4">
                     <div class="mb-2 text-center">
                         <div class="text-lg font-medium">{{ area.name }}</div>
-                        <div class="text-sm text-muted-foreground">{{ area.event_name }}</div>
+                        <div class="text-muted-foreground text-sm">{{ area.event_name }}</div>
                     </div>
                     <div class="count-display">{{ area.count }}</div>
 
@@ -176,7 +176,7 @@ const lastUpdatedTime = computed(() => {
                     >
                         <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
                         <span v-else>{{ area.net_change }}</span>
-                        <span class="ml-1 text-xs text-muted-foreground">({{ area.net_change_time_ago }})</span>
+                        <span class="text-muted-foreground ml-1 text-xs">({{ area.net_change_time_ago }})</span>
                     </div>
                     <div v-else class="text-xs text-gray-500">No net change data</div>
 
@@ -184,7 +184,7 @@ const lastUpdatedTime = computed(() => {
                     <div v-if="canViewDebugCounts" class="mt-4 w-full">
                         <Collapsible>
                             <CollapsibleTrigger
-                                class="flex w-full items-center justify-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+                                class="text-muted-foreground hover:text-foreground flex w-full items-center justify-center text-xs transition-colors"
                             >
                                 <span>Debug Counts</span>
                                 <svg class="ml-1 h-3 w-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,7 +209,7 @@ const lastUpdatedTime = computed(() => {
                                 <div v-if="area.debug_counts.last_reset_type" class="mt-3 grid grid-cols-2 gap-2 text-xs">
                                     <div class="rounded bg-gray-50 p-2">
                                         <div class="font-medium text-gray-700">Last reset</div>
-                                        <div class="capitalize text-gray-600">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
+                                        <div class="text-gray-600 capitalize">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
                                     </div>
                                     <div class="rounded bg-gray-50 p-2">
                                         <div class="font-medium text-gray-700">At</div>
@@ -229,7 +229,7 @@ const lastUpdatedTime = computed(() => {
                     </div>
                 </div>
 
-                <div class="mt-4 text-center text-xs text-muted-foreground">Last updated: {{ lastUpdatedTime }}</div>
+                <div class="text-muted-foreground mt-4 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
         </CardContent>
     </Card>

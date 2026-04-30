@@ -2,6 +2,7 @@
 
 use App\Http\Requests\Peoplecount\AreaRecurringResetStoreRequest;
 use App\Models\User;
+use Illuminate\Validation\Rules\Unique;
 
 covers(AreaRecurringResetStoreRequest::class);
 
@@ -29,7 +30,7 @@ it('has correct rules', function () {
     expect($actualRules['reset_time'])->toHaveCount(3);
     expect($actualRules['reset_time'][0])->toBe('required');
     expect($actualRules['reset_time'][1])->toBe('date_format:H:i');
-    expect($actualRules['reset_time'][2])->toBeInstanceOf(\Illuminate\Validation\Rules\Unique::class);
+    expect($actualRules['reset_time'][2])->toBeInstanceOf(Unique::class);
 });
 
 it('validates valid time formats', function () {
@@ -45,7 +46,7 @@ it('validates valid time formats', function () {
         $request = new AreaRecurringResetStoreRequest;
         $request->merge(['reset_time' => $validTime]);
 
-        $validator = \Validator::make(['reset_time' => $validTime], [
+        $validator = Validator::make(['reset_time' => $validTime], [
             'reset_time' => ['required', 'date_format:H:i'],
         ]);
 
@@ -65,7 +66,7 @@ it('validates invalid time formats', function () {
     ];
 
     foreach ($invalidTimes as $invalidTime) {
-        $validator = \Validator::make(['reset_time' => $invalidTime], [
+        $validator = Validator::make(['reset_time' => $invalidTime], [
             'reset_time' => ['required', 'date_format:H:i'],
         ]);
 

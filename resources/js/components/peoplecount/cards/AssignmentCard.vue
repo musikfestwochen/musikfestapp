@@ -43,7 +43,7 @@ const getSubtitle = () => {
 
                 <Badge v-if="assignment.direction_flipped" variant="destructive"> direction flipped </Badge>
 
-                <div class="text-xs text-muted-foreground">
+                <div class="text-muted-foreground text-xs">
                     <p><strong>Active from:</strong> {{ formatLocalDateTime(assignment.active_from) }}</p>
                     <p><strong>Active to:</strong> {{ formatLocalDateTime(assignment.active_to) }}</p>
                 </div>

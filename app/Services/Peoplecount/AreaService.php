@@ -72,7 +72,7 @@ class AreaService
 
         $event = Event::query()->findOrFail($eventId);
 
-        throw_if($event->organization_id !== $currentOrgId, new AuthorizationException('You are not authorized to assign areas to this event.'));
+        throw_if($event->organization_id !== $currentOrgId, AuthorizationException::class, 'You are not authorized to assign areas to this event.');
     }
 
     /**
@@ -448,7 +448,7 @@ class AreaService
     /**
      * Get single resets that fall within the event time period.
      *
-     * @return Collection<int, array{at: Carbon, reset_value: int, type: string}>
+     * @return Collection<int, array{at: Carbon, reset_value: int, type: 'single_reset'}>
      */
     protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
     {
@@ -528,7 +528,7 @@ class AreaService
     {
         $query = $area->areaSingleResets()
             ->where('effective_at', '<=', $beforeTime ?? now())
-            ->orderBy('effective_at', 'desc');
+            ->latest('effective_at');
 
         return $query->first();
     }

@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Install PHP and Composer dependencies
       - name: Setup PHP
@@ -59,9 +59,9 @@ jobs:
 
       # Install Node.js and build assets
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install Node dependencies
@@ -72,7 +72,7 @@ jobs:
 
       # Deploy built assets and PHP dependencies to the server
       - name: Deploy application files
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
           username: ${{ secrets.INFOMANIAK_SSH_USER }}
@@ -83,7 +83,7 @@ jobs:
 
       # SSH into the server and finalize the deployment
       - name: Run Laravel deployment commands on server
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
           username: ${{ secrets.INFOMANIAK_SSH_USER }}
@@ -137,7 +137,7 @@ jobs:
             $PHP_BIN artisan ziggy:generate || { echo "Ziggy generation failed! Exiting."; exit 1; }
 
       - name: Bring the application back online
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
           username: ${{ secrets.INFOMANIAK_SSH_USER }}

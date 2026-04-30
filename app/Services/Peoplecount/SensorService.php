@@ -6,9 +6,9 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Date;
 
 class SensorService
 {
@@ -48,7 +48,7 @@ class SensorService
         $cacheKey = 'peoplecount:sensor_health:org:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cacheTtlSeconds), function () use ($organization): array {
-            $now = Carbon::now()->setTimezone('UTC');
+            $now = Date::now()->setTimezone('UTC');
             $recentThreshold = $now->copy()->subMinutes(2);
 
             // Find sensors that are currently assigned somewhere within an active assignment window
@@ -90,7 +90,7 @@ class SensorService
                     ->get(['id', 'sensor_id', 'ts_from', 'ts_to', 'count_in', 'count_out']);
 
                 $latest = $counts->first();
-                $isRecent = $latest && Carbon::parse($latest->ts_to)->greaterThanOrEqualTo($recentThreshold);
+                $isRecent = $latest && Date::parse($latest->ts_to)->greaterThanOrEqualTo($recentThreshold);
                 $anyNonZero = $counts->contains(function (IntervalCount $c): bool {
                     return ($c->count_in ?? 0) > 0 || ($c->count_out ?? 0) > 0;
                 });
@@ -100,15 +100,15 @@ class SensorService
                     'serial' => $sensor->serial,
                     'vendor' => $sensor->vendor,
                     'model' => $sensor->model,
-                    'latest_ts' => $latest ? Carbon::parse($latest->ts_to)->toIso8601String() : null,
+                    'latest_ts' => $latest ? Date::parse($latest->ts_to)->toIso8601String() : null,
                     'interval_counts' => $counts->map(function (IntervalCount $c): array {
                         return [
-                            'ts_from' => Carbon::parse($c->ts_from)->toIso8601String(),
-                            'ts_to' => Carbon::parse($c->ts_to)->toIso8601String(),
+                            'ts_from' => Date::parse($c->ts_from)->toIso8601String(),
+                            'ts_to' => Date::parse($c->ts_to)->toIso8601String(),
                             'count_in' => (int) $c->count_in,
                             'count_out' => (int) $c->count_out,
                         ];
-                    })->toArray(),
+                    })->all(),
                 ];
 
                 if ($isRecent) {

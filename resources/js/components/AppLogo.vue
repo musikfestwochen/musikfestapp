@@ -13,9 +13,9 @@ const { state } = useSidebar();
 
 <template>
     <div
-        class="flex aspect-square items-center justify-center rounded-md bg-none text-sidebar-primary-foreground dark:bg-none dark:text-sidebar-primary-foreground"
         :class="state == 'collapsed' ? 'size-8' : 'size-32'"
+        class="text-sidebar-primary-foreground dark:text-sidebar-primary-foreground flex aspect-square items-center justify-center rounded-md bg-none dark:bg-none"
     >
-        <AppLogoIcon class="size-32 fill-black dark:fill-sidebar-primary-foreground" />
+        <AppLogoIcon class="dark:fill-sidebar-primary-foreground size-32 fill-black" />
     </div>
 </template>

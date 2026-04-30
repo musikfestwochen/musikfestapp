@@ -14,6 +14,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Assignment;
 use App\Services\Peoplecount\AssignmentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,12 +49,12 @@ class AssignmentController extends Controller
                 'active_to' => $request->input('active_to'),
             ]);
 
-            return redirect()->route('peoplecount.assignments.index', [
+            return to_route('peoplecount.assignments.index', [
                 'organization' => $organization,
             ])
                 ->with('status', 'Assignment created successfully.');
-        } catch (\Illuminate\Validation\ValidationException $validationException) {
-            return redirect()->back()->withErrors($validationException->errors())->withInput();
+        } catch (ValidationException $validationException) {
+            return back()->withErrors($validationException->errors())->withInput();
         }
     }
 
@@ -77,7 +78,7 @@ class AssignmentController extends Controller
      */
     public function show(AssignmentShowRequest $request, Organization $organization, Assignment $assignment): RedirectResponse
     {
-        return redirect()->route('peoplecount.assignments.edit', [
+        return to_route('peoplecount.assignments.edit', [
             'organization' => $organization,
             'assignment' => $assignment,
         ]);
@@ -117,12 +118,12 @@ class AssignmentController extends Controller
                 'active_to' => $request->input('active_to'),
             ]);
 
-            return redirect()->route('peoplecount.assignments.index', [
+            return to_route('peoplecount.assignments.index', [
                 'organization' => $organization,
             ])
                 ->with('status', 'Assignment updated successfully.');
-        } catch (\Illuminate\Validation\ValidationException $validationException) {
-            return redirect()->back()->withErrors($validationException->errors())->withInput();
+        } catch (ValidationException $validationException) {
+            return back()->withErrors($validationException->errors())->withInput();
         }
     }
 
@@ -135,7 +136,7 @@ class AssignmentController extends Controller
     {
         $assignment->delete();
 
-        return redirect()->route('peoplecount.assignments.index', [
+        return to_route('peoplecount.assignments.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Assignment deleted successfully.');

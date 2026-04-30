@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Peoplecount\AlertController;
 use App\Http\Controllers\Peoplecount\AreaController;
 use App\Http\Controllers\Peoplecount\AreaRecurringResetController;

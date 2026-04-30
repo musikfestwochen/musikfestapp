@@ -1,16 +1,16 @@
 import vue from '@vitejs/plugin-vue';
-import autoprefixer from 'autoprefixer';
 import laravel from 'laravel-vite-plugin';
 import path from 'path';
-import tailwindcss from 'tailwindcss';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
-import viteImagemin from 'vite-plugin-imagemin';
+import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
 export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/js/app.ts'],
             refresh: true,
+            assets: ['resources/img/**'],
         }),
         vue({
             template: {
@@ -20,23 +20,12 @@ export default defineConfig({
                 },
             },
         }),
-        viteImagemin({
-            gifsicle: { optimizationLevel: 7, interlaced: false },
-            optipng: { optimizationLevel: 7 },
-            mozjpeg: { quality: 80, progressive: true },
-            pngquant: { quality: [0.7, 0.9], speed: 1 },
-            svgo: {},
-            webp: { quality: 80 },
-        }),
+        tailwindcss(),
+        ViteImageOptimizer(),
     ],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './resources/js'),
-        },
-    },
-    css: {
-        postcss: {
-            plugins: [tailwindcss, autoprefixer],
         },
     },
     test: {

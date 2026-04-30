@@ -24,7 +24,7 @@ class SensorTokenController extends Controller
         $sensor->api_token = $token;
         $sensor->save();
 
-        return redirect()->route('peoplecount.sensors.index', [
+        return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
         ])->with('status', 'Sensor token regenerated successfully for '.$sensor->vendor.' '.$sensor->model.' '.$sensor->serial.'.');
     }

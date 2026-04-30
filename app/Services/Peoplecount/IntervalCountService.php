@@ -42,14 +42,14 @@ class IntervalCountService
     public function processAxisIntervalCount(Sensor $sensor, array $data): int
     {
         // Validate API name and version
-        throw_if(($data['apiName'] ?? null) !== 'Axis Retail Data' || ($data['apiVersion'] ?? null) !== '0.4', new Exception('Unsupported Axis API version or name.'));
+        throw_if(($data['apiName'] ?? null) !== 'Axis Retail Data' || ($data['apiVersion'] ?? null) !== '0.4', Exception::class, 'Unsupported Axis API version or name.');
 
         // Validate sensor serial
-        throw_if(($data['sensor']['serial'] ?? null) !== $sensor->serial, new Exception('Sensor serial mismatch: expected '.$sensor->serial.', got '.$data['sensor']['serial']));
+        throw_if(($data['sensor']['serial'] ?? null) !== $sensor->serial, Exception::class, 'Sensor serial mismatch: expected '.$sensor->serial.', got '.$data['sensor']['serial']);
 
         // Get measurements array
         $measurements = $data['data']['measurements'] ?? [];
-        throw_if(! is_array($measurements), new Exception('Invalid Axis data structure: measurements must be an array.'));
+        throw_if(! is_array($measurements), Exception::class, 'Invalid Axis data structure: measurements must be an array.');
 
         $numPersisted = 0;
 
@@ -61,7 +61,7 @@ class IntervalCountService
             }
 
             // Validate measurement-level timestamps
-            throw_if(! isset($measurement['utcFrom']) || ! isset($measurement['utcTo']), new Exception('Missing required UTC timestamps in measurement data.'));
+            throw_if(! isset($measurement['utcFrom']) || ! isset($measurement['utcTo']), Exception::class, 'Missing required UTC timestamps in measurement data.');
 
             $items = $measurement['items'] ?? [];
 

@@ -45,7 +45,7 @@ class EventController extends Controller
             'ends_at' => $request->input('ends_at'),
         ]);
 
-        return redirect()->route('peoplecount.events.index', [
+        return to_route('peoplecount.events.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Event created successfully ('.$event->name.').');
@@ -69,7 +69,7 @@ class EventController extends Controller
      */
     public function show(EventShowRequest $request, Organization $organization, Event $event): RedirectResponse
     {
-        return redirect()->route('peoplecount.events.edit', [
+        return to_route('peoplecount.events.edit', [
             'organization' => $organization,
             'event' => $event,
         ]);
@@ -102,7 +102,7 @@ class EventController extends Controller
             'ends_at' => $request->input('ends_at'),
         ]);
 
-        return redirect()->route('peoplecount.events.index', [
+        return to_route('peoplecount.events.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Event '.$event->name.' updated successfully.');
@@ -118,7 +118,7 @@ class EventController extends Controller
         $name = $event->name;
         $event->delete();
 
-        return redirect()->route('peoplecount.events.index', [
+        return to_route('peoplecount.events.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Event '.$name.' deleted successfully.');

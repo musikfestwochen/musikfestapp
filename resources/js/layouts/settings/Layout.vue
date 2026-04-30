@@ -29,7 +29,7 @@ const currentRoute = route().current();
 
         <div class="flex flex-col space-y-8">
             <aside class="w-full">
-                <nav class="flex flex-col space-x-0 space-y-1">
+                <nav class="flex flex-col space-y-1 space-x-0">
                     <Button
                         v-for="item in sidebarNavItems"
                         :key="item.route"
@@ -42,11 +42,11 @@ const currentRoute = route().current();
                         </Link>
                     </Button>
                     <Separator class="my-2" />
-                    <Button class="w-full justify-start" as-child variant="ghost">
+                    <Button as-child class="w-full justify-start" variant="ghost">
                         <Link :href="route('organization-selection.index')">Back to Home</Link>
                     </Button>
-                    <Button class="w-full justify-start" as-child variant="ghost">
-                        <Link :href="route('logout')" method="post" as="button">Logout</Link>
+                    <Button as-child class="w-full justify-start" variant="ghost">
+                        <Link :href="route('logout')" as="button" method="post">Logout</Link>
                     </Button>
                 </nav>
             </aside>

@@ -18,7 +18,7 @@ defineProps<{
             </CardTitle>
         </CardHeader>
         <CardContent>
-            <div class="space-y-2 text-sm text-muted-foreground">
+            <div class="text-muted-foreground space-y-2 text-sm">
                 <p><strong>Start:</strong> {{ formatLocalDateTime(event.starts_at) }}</p>
                 <p><strong>End:</strong> {{ formatLocalDateTime(event.ends_at) }}</p>
             </div>

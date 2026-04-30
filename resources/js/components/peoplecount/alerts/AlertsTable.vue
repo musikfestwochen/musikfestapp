@@ -135,7 +135,7 @@ const rows = computed(() => props.alerts || []);
                     </TableCell>
                 </TableRow>
                 <TableRow v-if="rows.length === 0">
-                    <TableCell class="text-center text-muted-foreground" colspan="8"> No alerts yet. </TableCell>
+                    <TableCell class="text-muted-foreground text-center" colspan="8"> No alerts yet. </TableCell>
                 </TableRow>
             </TableBody>
         </Table>

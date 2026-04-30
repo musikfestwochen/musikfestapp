@@ -13,6 +13,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
+use Database\Factories\Peoplecount\AlertFactory;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -117,11 +118,11 @@ it('shows the edit area form for an organization area with alert options and laz
     ]);
 
     // Create a couple of alerts to be returned on partial reload
-    $alert1 = \Database\Factories\Peoplecount\AlertFactory::new()->create([
+    $alert1 = AlertFactory::new()->create([
         'area_id' => $area->id,
         'created_by' => $admin->id,
     ]);
-    $alert2 = \Database\Factories\Peoplecount\AlertFactory::new()->create([
+    $alert2 = AlertFactory::new()->create([
         'area_id' => $area->id,
         'created_by' => $admin->id,
     ]);

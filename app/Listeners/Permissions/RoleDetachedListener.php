@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Services\GlobalPermissionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use Spatie\Permission\Events\RoleDetached;
+use Spatie\Permission\Events\RoleDetachedEvent;
 
 class RoleDetachedListener implements ShouldQueue
 {
@@ -22,7 +22,7 @@ class RoleDetachedListener implements ShouldQueue
     /**
      * Handle the event.
      */
-    public function handle(RoleDetached $event): void
+    public function handle(RoleDetachedEvent $event): void
     {
         // The event can receive the role details as a model ID, Eloquent record, array, or collection
         // We need to extract the user ID from the event
@@ -37,7 +37,7 @@ class RoleDetachedListener implements ShouldQueue
     /**
      * Extract the user ID from the event
      */
-    public function getUserId(RoleDetached $event): ?int
+    public function getUserId(RoleDetachedEvent $event): ?int
     {
         if (isset($event->model) && $event->model instanceof User) {
             return $event->model->id;

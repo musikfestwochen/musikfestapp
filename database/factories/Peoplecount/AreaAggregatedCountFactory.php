@@ -6,6 +6,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 /**
  * @extends Factory<AreaAggregatedCount>
@@ -20,7 +21,7 @@ class AreaAggregatedCountFactory extends Factory
     public function definition(): array
     {
         $periodStart = fake()->dateTimeBetween('-1 day', 'now');
-        $periodEnd = Carbon::instance($periodStart)->addMinutes(10);
+        $periodEnd = Date::instance($periodStart)->addMinutes(10);
 
         return [
             'area_id' => Area::query()->inRandomOrder()->first()->id ?? Area::factory()->create()->id,

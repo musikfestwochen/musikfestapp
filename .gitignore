@@ -33,3 +33,15 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /.junie/guidelines.md
+
+# Laravel Boost generated/local agent files
+/.mcp.json
+/boost.json
+/AGENTS.md
+/CLAUDE.md
+/.agents/
+/.junie/
+/junie/
+/opencode.json
+/.ai/*
+!/.ai/skills/

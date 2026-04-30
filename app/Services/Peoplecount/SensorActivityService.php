@@ -4,13 +4,12 @@ namespace App\Services\Peoplecount;
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
-use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\IntervalCount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Date;
 
 class SensorActivityService
 {
@@ -28,7 +27,7 @@ class SensorActivityService
         $cacheKey = 'peoplecount:most_active_sensors:org:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cacheTtlSeconds), function () use ($organization): array {
-            $now = Carbon::now()->setTimezone('UTC');
+            $now = Date::now()->setTimezone('UTC');
             $windows = [
                 '10m' => $now->copy()->subMinutes(10),
                 '30m' => $now->copy()->subMinutes(30),

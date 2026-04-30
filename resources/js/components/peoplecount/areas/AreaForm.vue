@@ -55,7 +55,7 @@ const submit = () => {
                     </SelectContent>
                 </Select>
                 <InputError :message="form.errors.event_id" />
-                <p class="text-sm text-muted-foreground">Select the event this area belongs to.</p>
+                <p class="text-muted-foreground text-sm">Select the event this area belongs to.</p>
             </div>
 
             <Button :disabled="form.processing || !form.name || !form.event_id" class="mt-2 w-full" tabindex="4" type="submit">

@@ -6,6 +6,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
+use DateTime;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -87,7 +88,8 @@ class AssignmentService
 
         throw_if(
             $event->organization_id !== $currentOrgId,
-            new AuthorizationException('You are not authorized to assign sensors to this event.')
+            AuthorizationException::class,
+            'You are not authorized to assign sensors to this event.'
         );
     }
 
@@ -103,7 +105,8 @@ class AssignmentService
 
         throw_if(
             $area->event_id !== $eventId,
-            new AuthorizationException('The area does not belong to the specified event.')
+            AuthorizationException::class,
+            'The area does not belong to the specified event.'
         );
     }
 
@@ -126,7 +129,8 @@ class AssignmentService
 
         throw_if(
             $sensor->organization_id !== $currentOrgId,
-            new AuthorizationException('You are not authorized to assign this sensor.')
+            AuthorizationException::class,
+            'You are not authorized to assign this sensor.'
         );
     }
 
@@ -139,10 +143,10 @@ class AssignmentService
     {
         $event = Event::query()->findOrFail($eventId);
 
-        $activeFromDate = new \DateTime($activeFrom);
-        $activeToDate = new \DateTime($activeTo);
-        $eventStartsAtDate = new \DateTime($event->starts_at);
-        $eventEndsAtDate = new \DateTime($event->ends_at);
+        $activeFromDate = new DateTime($activeFrom);
+        $activeToDate = new DateTime($activeTo);
+        $eventStartsAtDate = new DateTime($event->starts_at);
+        $eventEndsAtDate = new DateTime($event->ends_at);
 
         throw_if($activeFromDate < $eventStartsAtDate || $activeToDate > $eventEndsAtDate, ValidationException::withMessages([
             'active_from' => 'The assignment time boundaries must be within the event time boundaries.',

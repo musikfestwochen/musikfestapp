@@ -9,7 +9,7 @@ defineProps<{
 <template>
     <Card>
         <CardContent class="pt-6">
-            <p class="text-center text-muted-foreground">{{ message }}</p>
+            <p class="text-muted-foreground text-center">{{ message }}</p>
         </CardContent>
     </Card>
 </template>

@@ -1,8 +1,14 @@
 <?php
 
+use App\Listeners\Permissions\PermissionDetachedListener;
+use App\Listeners\Permissions\RoleAttachedListener;
+use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
 use Illuminate\Support\Facades\Cache;
+use Spatie\Permission\Events\PermissionDetachedEvent;
+use Spatie\Permission\Events\RoleAttachedEvent;
+use Spatie\Permission\Events\RoleDetachedEvent;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -95,12 +101,12 @@ it('handles PermissionDetachedListener when event model is not a User', function
     GlobalPermissionService::canGlobally($this->user, 'test.permission');
 
     // Create an event with a non-User model (to test the null return path)
-    $event = new \Spatie\Permission\Events\PermissionDetached(
+    $event = new PermissionDetachedEvent(
         $this->testPermission, // Use permission as model instead of user
         $this->testPermission->id
     );
 
-    $listener = app(\App\Listeners\Permissions\PermissionDetachedListener::class);
+    $listener = app(PermissionDetachedListener::class);
 
     // This should not clear cache since model is not a User
     $userId = $listener->getUserId($event);
@@ -115,12 +121,12 @@ it('handles PermissionDetachedListener when event model is not a User', function
 
 it('handles RoleAttachedListener when event model is not a User', function () {
     // Create an event with a non-User model
-    $event = new \Spatie\Permission\Events\RoleAttached(
+    $event = new RoleAttachedEvent(
         $this->testRole, // Use role as model instead of user
         $this->testRole->id
     );
 
-    $listener = app(\App\Listeners\Permissions\RoleAttachedListener::class);
+    $listener = app(RoleAttachedListener::class);
 
     // This should return null since model is not a User
     $userId = $listener->getUserId($event);
@@ -134,12 +140,12 @@ it('handles RoleAttachedListener when event model is not a User', function () {
 
 it('handles RoleDetachedListener when event model is not a User', function () {
     // Create an event with a non-User model
-    $event = new \Spatie\Permission\Events\RoleDetached(
+    $event = new RoleDetachedEvent(
         $this->testRole, // Use role as model instead of user
         $this->testRole->id
     );
 
-    $listener = app(\App\Listeners\Permissions\RoleDetachedListener::class);
+    $listener = app(RoleDetachedListener::class);
 
     // This should return null since model is not a User
     $userId = $listener->getUserId($event);
@@ -153,10 +159,10 @@ it('handles RoleDetachedListener when event model is not a User', function () {
 
 it('handles RoleDetachedListener when getUserId returns null', function () {
     // Test the case where getUserId returns null (covering the 47 line return null)
-    $listener = app(\App\Listeners\Permissions\RoleDetachedListener::class);
+    $listener = app(RoleDetachedListener::class);
 
     // Create a real RoleDetached event with a Role model (not User)
-    $event = new \Spatie\Permission\Events\RoleDetached(
+    $event = new RoleDetachedEvent(
         $this->testRole, // Use role as model instead of user
         $this->testRole->id
     );

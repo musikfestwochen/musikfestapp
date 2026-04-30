@@ -45,7 +45,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 <Heading title="Assignment Details" />
                 <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <!-- Event Information -->
-                    <div v-if="assignment.event" class="rounded-lg border bg-card p-6">
+                    <div v-if="assignment.event" class="bg-card rounded-lg border p-6">
                         <h3 class="text-lg font-semibold">Event</h3>
                         <div class="mt-2 space-y-2">
                             <p><span class="font-medium">Name:</span> {{ assignment.event.name }}</p>
@@ -55,7 +55,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     </div>
 
                     <!-- Area Information -->
-                    <div v-if="assignment.area" class="rounded-lg border bg-card p-6">
+                    <div v-if="assignment.area" class="bg-card rounded-lg border p-6">
                         <h3 class="text-lg font-semibold">Area</h3>
                         <div class="mt-2 space-y-2">
                             <p><span class="font-medium">Name:</span> {{ assignment.area.name }}</p>
@@ -63,7 +63,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     </div>
 
                     <!-- Sensor Information -->
-                    <div v-if="assignment.sensor" class="rounded-lg border bg-card p-6">
+                    <div v-if="assignment.sensor" class="bg-card rounded-lg border p-6">
                         <h3 class="text-lg font-semibold">Sensor</h3>
                         <div class="mt-2 space-y-2">
                             <p><span class="font-medium">Vendor:</span> {{ assignment.sensor.vendor }}</p>
@@ -73,7 +73,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     </div>
 
                     <!-- Assignment Configuration -->
-                    <div class="rounded-lg border bg-card p-6">
+                    <div class="bg-card rounded-lg border p-6">
                         <h3 class="text-lg font-semibold">Configuration</h3>
                         <div class="mt-2 space-y-2">
                             <p>

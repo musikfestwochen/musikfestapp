@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
 import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { LoaderCircle } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -120,7 +120,7 @@ const datePickerConfig = {
                     </SelectContent>
                 </Select>
                 <InputError :message="form.errors.area_id" />
-                <p v-if="!form.event_id" class="text-sm text-muted-foreground">Please select an event first</p>
+                <p v-if="!form.event_id" class="text-muted-foreground text-sm">Please select an event first</p>
             </div>
 
             <div class="grid gap-2">
@@ -143,7 +143,7 @@ const datePickerConfig = {
                     <Checkbox id="direction_flipped" v-model:checked="form.direction_flipped" :tabindex="4" />
                     <Label for="direction_flipped">Direction Flipped</Label>
                 </div>
-                <p class="text-sm text-muted-foreground">Toggle this if the sensor's counting direction should be reversed (in/out becomes out/in)</p>
+                <p class="text-muted-foreground text-sm">Toggle this if the sensor's counting direction should be reversed (in/out becomes out/in)</p>
                 <InputError :message="form.errors.direction_flipped" />
             </div>
 
@@ -158,7 +158,7 @@ const datePickerConfig = {
                 />
                 <InputError :message="form.errors.active_from" />
                 <InputError :message="form.errors.active_to" />
-                <p class="text-sm text-muted-foreground">Select when this assignment should be active. Times are in your local timezone.</p>
+                <p class="text-muted-foreground text-sm">Select when this assignment should be active. Times are in your local timezone.</p>
             </div>
 
             <Button :disabled="form.processing || !dateRange || !form.event_id || !form.area_id || !form.sensor_id" class="mt-2 w-full" type="submit">

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { HTMLAttributes } from 'vue';
 import { computed, ref, watch } from 'vue';
 import { useFilter } from 'reka-ui';
@@ -85,13 +85,13 @@ function removeTag(idx: number) {
 </script>
 
 <template>
-  <Combobox v-model="localModel" v-model:open="open" :ignore-filter="true" :disabled="disabled">
+  <Combobox v-model="localModel" v-model:open="open" :disabled="disabled" :ignore-filter="true">
     <ComboboxAnchor as-child>
       <TagsInput
         v-model="localModel"
-        :max="max"
         :class="cn('px-2 gap-2 w-80', props.class)"
         :disabled="disabled as any"
+        :max="max"
       >
         <div class="flex gap-2 flex-wrap items-center">
           <TagsInputItem v-for="(item, i) in localModel" :key="item" :value="item">
@@ -102,14 +102,14 @@ function removeTag(idx: number) {
 
         <ComboboxInput v-model="searchTerm" as-child>
           <TagsInputInput
-            :placeholder="placeholder ?? 'Select...'"
             :class="cn('min-w-[200px] w-full p-0 border-none focus-visible:ring-0 h-auto', inputClass)"
+            :placeholder="placeholder ?? 'Select...'"
             @keydown.enter.prevent
           />
         </ComboboxInput>
       </TagsInput>
 
-      <ComboboxList :class="cn('w-[--reka-popper-anchor-width]', listClass)">
+      <ComboboxList :class="cn('w-(--reka-popper-anchor-width)', listClass)">
         <ComboboxEmpty>{{ emptyText ?? 'No results' }}</ComboboxEmpty>
         <ComboboxGroup>
           <ComboboxItem

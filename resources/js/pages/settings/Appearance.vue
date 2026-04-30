@@ -32,7 +32,7 @@ function onToggle(checked: boolean) {
                     <div class="flex items-center justify-between gap-4">
                         <div>
                             <h3 class="text-sm font-medium">Easter eggs</h3>
-                            <p class="text-xs text-muted-foreground">Toggle fun easter eggs across the app.</p>
+                            <p class="text-muted-foreground text-xs">Toggle fun easter eggs across the app.</p>
                         </div>
                         <Switch :disabled="form.processing" :model-value="form.eastereggs_activated" @update:model-value="onToggle">
                             <template #thumb>
@@ -41,7 +41,7 @@ function onToggle(checked: boolean) {
                                     <svg
                                         v-if="form.processing"
                                         aria-hidden="true"
-                                        class="h-3.5 w-3.5 animate-spin text-muted-foreground"
+                                        class="text-muted-foreground h-3.5 w-3.5 animate-spin"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                         xmlns="http://www.w3.org/2000/svg"
@@ -53,7 +53,7 @@ function onToggle(checked: boolean) {
                                     <svg
                                         v-else-if="form.recentlySuccessful"
                                         aria-hidden="true"
-                                        class="h-3.5 w-3.5 text-primary"
+                                        class="text-primary h-3.5 w-3.5"
                                         fill="none"
                                         stroke="currentColor"
                                         stroke-linecap="round"

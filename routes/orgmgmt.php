@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Orgmgmt\UserController;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Route;

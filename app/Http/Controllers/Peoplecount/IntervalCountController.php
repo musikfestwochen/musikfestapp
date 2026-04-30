@@ -25,7 +25,7 @@ class IntervalCountController extends Controller
         $sensor = auth('sanctum')->user();
 
         try {
-            $numPersisted = app(IntervalCountService::class)
+            $numPersisted = resolve(IntervalCountService::class)
                 ->processIntervalCount(
                     sensor: $sensor,
                     data: $request->all()

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -158,7 +158,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 <div class="flex gap-2">
                     <Link
                         :href="route('peoplecount.areas.edit', { organization: organization.slug, area: area.id })"
-                        class="text-sm text-muted-foreground hover:underline"
+                        class="text-muted-foreground text-sm hover:underline"
                         >Back to Area</Link
                     >
                 </div>
@@ -194,19 +194,19 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 <div class="grid gap-2">
                     <Label for="cooldown_minutes">Cooldown (minutes)</Label>
                     <Input id="cooldown_minutes" v-model.number="form.cooldown_minutes" min="30" required type="number" />
-                    <p class="text-sm text-muted-foreground">Minimum interval between repeated alerts.</p>
+                    <p class="text-muted-foreground text-sm">Minimum interval between repeated alerts.</p>
                 </div>
 
                 <div v-if="isOccupancy" class="grid gap-2">
                     <Label for="occupancy_alert_threshold">Occupancy threshold</Label>
                     <Input id="occupancy_alert_threshold" v-model.number="form.occupancy_alert_threshold" min="0" required type="number" />
-                    <p class="text-sm text-muted-foreground">Alert when occupancy reaches or exceeds this value.</p>
+                    <p class="text-muted-foreground text-sm">Alert when occupancy reaches or exceeds this value.</p>
                 </div>
 
                 <div class="grid gap-2">
                     <Label>Recipients</Label>
-                    <TagsCombobox v-model="recipientsTags" :items="items" placeholder="Search users..." :max="20" input-class="min-w-[260px]" />
-                    <p class="text-sm text-muted-foreground">Select up to 20 recipients.</p>
+                    <TagsCombobox v-model="recipientsTags" :items="items" :max="20" input-class="min-w-[260px]" placeholder="Search users..." />
+                    <p class="text-muted-foreground text-sm">Select up to 20 recipients.</p>
                 </div>
 
                 <div>

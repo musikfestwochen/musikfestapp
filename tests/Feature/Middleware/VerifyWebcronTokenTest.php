@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
@@ -59,7 +60,7 @@ it('blocks requests with invalid token', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'invalid-token',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
     $middleware->handle($request, function ($req): Response {
@@ -82,7 +83,7 @@ it('blocks requests with missing token', function () {
         'REMOTE_ADDR' => '127.0.0.1',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
     $middleware->handle($request, function ($req): Response {
@@ -106,7 +107,7 @@ it('blocks requests from disallowed IP addresses', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
     $middleware->handle($request, function ($req): Response {
@@ -128,7 +129,7 @@ it('blocks all requests when API is unavailable', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
     $middleware->handle($request, function ($req): Response {
@@ -152,7 +153,7 @@ it('blocks all requests when API returns invalid data', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
     $middleware->handle($request, function ($req): Response {
@@ -217,7 +218,7 @@ it('handles network timeouts gracefully', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('IP address not allowed');
 
     $middleware->handle($request, function ($req): Response {
@@ -287,7 +288,7 @@ it('handles short tokens correctly in maskToken method', function () {
         'HTTP_X_WEBCRON_TOKEN' => 'bad',
     ]);
 
-    $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    $this->expectException(HttpException::class);
     $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
 
     $middleware->handle($request, function ($req): Response {

@@ -17,7 +17,7 @@ defineProps<{
             </CardTitle>
         </CardHeader>
         <CardContent>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 {{ area.assignments?.length || 0 }} assignment{{ (area.assignments?.length || 0) !== 1 ? 's' : '' }}
             </p>
         </CardContent>

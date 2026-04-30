@@ -1,12 +1,12 @@
 <?php
 
-covers(App\PHPStan\Rules\ForbiddenMethodsRule::class);
-
 use App\PHPStan\Rules\ForbiddenMethodsRule;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
 use PHPStan\Analyser\Scope;
+
+covers(ForbiddenMethodsRule::class);
 
 it('detects forbidden hasPermissionTo method', function () {
     $rule = new ForbiddenMethodsRule;

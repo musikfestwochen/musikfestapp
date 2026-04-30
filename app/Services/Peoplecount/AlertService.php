@@ -13,6 +13,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 
 class AlertService
 {
@@ -53,7 +54,7 @@ class AlertService
         }
 
         // 3. Cooldown check
-        $lastTriggeredAt = $alert->last_triggered_at ? Carbon::parse($alert->last_triggered_at) : null;
+        $lastTriggeredAt = $alert->last_triggered_at ? Date::parse($alert->last_triggered_at) : null;
         if ($lastTriggeredAt instanceof Carbon) {
             $cooldownUntil = $lastTriggeredAt->copy()->addMinutes($alert->cooldown_minutes);
             if ($now->lt($cooldownUntil)) {
@@ -159,7 +160,7 @@ class AlertService
     {
         // Area belongs to an Event which holds the organization_id
         $event = $area->event;
-        throw_if($event === null || $event->organization_id !== $organization->id, new AuthorizationException('Area does not belong to the current organization.'));
+        throw_if($event === null || $event->organization_id !== $organization->id, AuthorizationException::class, 'Area does not belong to the current organization.');
     }
 
     /**
@@ -265,7 +266,7 @@ class AlertService
 
         $allowedIds = $organization->users()->pluck('users.id')->all();
         $invalid = array_diff($recipientIds, $allowedIds);
-        throw_unless($invalid === [], new AuthorizationException('One or more recipients do not belong to the current organization.'));
+        throw_unless($invalid === [], AuthorizationException::class, 'One or more recipients do not belong to the current organization.');
 
         $alert->recipients()->sync($recipientIds);
     }
@@ -299,7 +300,7 @@ class AlertService
      */
     protected function assertAlertBelongsToAreaAndOrganization(Organization $organization, Area $area, Alert $alert): void
     {
-        throw_if($alert->area_id !== $area->id, new AuthorizationException('Alert does not belong to the specified area.'));
+        throw_if($alert->area_id !== $area->id, AuthorizationException::class, 'Alert does not belong to the specified area.');
 
         $this->assertAreaBelongsToOrganization($organization, $area);
     }

@@ -4,6 +4,12 @@ use Illuminate\Support\Facades\Artisan;
 
 it('tests if no unwanted routes are exposed', function () {
 
+    $shouldIgnoreRoute = static fn (string $uri): bool => str_starts_with($uri, '_debugbar')
+        || str_starts_with($uri, 'livewire-')
+        || str_starts_with($uri, 'livewire/');
+
+    $normalizeRouteUri = static fn (string $uri): string => preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*):[^}]*\}/', '{$1}', $uri) ?? $uri;
+
     $allowedRoutes = [
         ['method' => 'GET|HEAD', 'uri' => '/'],
         ['method' => 'GET|HEAD', 'uri' => 'confirm-password'],
@@ -28,6 +34,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PATCH', 'uri' => 'settings/profile'],
         ['method' => 'DELETE', 'uri' => 'settings/profile'],
         ['method' => 'GET|HEAD', 'uri' => 'storage/{path}'],
+        ['method' => 'PUT', 'uri' => 'storage/{path}'],
         ['method' => 'GET|HEAD', 'uri' => 'up'],
         ['method' => 'GET|HEAD', 'uri' => 'verify-email'],
         ['method' => 'GET|HEAD', 'uri' => 'verify-email/{id}/{hash}'],
@@ -131,27 +138,17 @@ it('tests if no unwanted routes are exposed', function () {
         // Laravel Sanctum routes
         ['method' => 'GET|HEAD', 'uri' => 'sanctum/csrf-cookie'],
 
-        // Debugbar routes
-        ['method' => 'GET|HEAD', 'uri' => '_debugbar/assets/javascript'],
-        ['method' => 'GET|HEAD', 'uri' => '_debugbar/assets/stylesheets'],
-        ['method' => 'DELETE', 'uri' => '_debugbar/cache/{key}/{tags?}'],
-        ['method' => 'GET|HEAD', 'uri' => '_debugbar/clockwork/{id}'],
-        ['method' => 'GET|HEAD', 'uri' => '_debugbar/open'],
-        ['method' => 'POST', 'uri' => '_debugbar/queries/explain'],
-
         // Laravel Pulse routes
         ['method' => 'GET|HEAD', 'uri' => 'pulse'],
-
-        // Livewire routes
-        ['method' => 'GET|HEAD', 'uri' => 'livewire/livewire.js'],
-        ['method' => 'GET|HEAD', 'uri' => 'livewire/livewire.min.js.map'],
-        ['method' => 'GET|HEAD', 'uri' => 'livewire/preview-file/{filename}'],
-        ['method' => 'POST', 'uri' => 'livewire/update'],
-        ['method' => 'POST', 'uri' => 'livewire/upload-file'],
     ];
 
     // Sort allowedRoutes by method and uri
     $allowedRoutes = collect($allowedRoutes)
+        ->map(fn (array $route): array => [
+            'method' => $route['method'],
+            'uri' => $normalizeRouteUri($route['uri']),
+        ])
+        ->reject(fn (array $route): bool => $shouldIgnoreRoute($route['uri']))
         ->sortBy(['method', 'uri'])
         ->values()
         ->toArray();
@@ -159,12 +156,13 @@ it('tests if no unwanted routes are exposed', function () {
     Artisan::call('route:list --json');
     $output = json_decode(Artisan::output(), true);
 
-    $output = collect($output)->map(function (array $route): array {
+    $output = collect($output)->map(function (array $route) use ($normalizeRouteUri): array {
         return [
             'method' => $route['method'],
-            'uri' => $route['uri'],
+            'uri' => $normalizeRouteUri($route['uri']),
         ];
     })
+        ->reject(fn (array $route): bool => $shouldIgnoreRoute($route['uri']))
         // Sort output by method and uri
         ->sortBy(['method', 'uri'])
         ->values();

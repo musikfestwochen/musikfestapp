@@ -24,7 +24,7 @@ class UserController extends Controller
      */
     public function index(UserIndexRequest $request): Response
     {
-        $userService = app(UserService::class);
+        $userService = resolve(UserService::class);
 
         return Inertia::render('admin/Users', [
             'users' => $userService->getUsers(),
@@ -42,7 +42,7 @@ class UserController extends Controller
 
         $user = User::query()->create($request->all());
 
-        return redirect()->route('admin.users.index')->with('status', 'User '.$user->name.' created successfully.');
+        return to_route('admin.users.index')->with('status', 'User '.$user->name.' created successfully.');
     }
 
     /**
@@ -62,7 +62,7 @@ class UserController extends Controller
      */
     public function show(UserShowRequest $request, User $user): RedirectResponse
     {
-        return redirect()->route('admin.users.edit', $user);
+        return to_route('admin.users.edit', $user);
     }
 
     /**
@@ -84,7 +84,7 @@ class UserController extends Controller
     {
         $user->update($request->all());
 
-        return redirect()->route('admin.users.index')->with('status', 'User '.$user->name.' updated successfully.');
+        return to_route('admin.users.index')->with('status', 'User '.$user->name.' updated successfully.');
     }
 
     /**
@@ -100,6 +100,6 @@ class UserController extends Controller
         // delete user
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('status', 'User '.$name.' deleted successfully.');
+        return to_route('admin.users.index')->with('status', 'User '.$name.' deleted successfully.');
     }
 }

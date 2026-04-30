@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use Spatie\Permission\DefaultTeamResolver;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 return [
 
@@ -15,7 +19,7 @@ return [
          * `Spatie\Permission\Contracts\Permission` contract.
          */
 
-        'permission' => Spatie\Permission\Models\Permission::class,
+        'permission' => Permission::class,
 
         /*
          * When using the "HasRoles" trait from this package, we need to know which
@@ -26,7 +30,7 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
-        'role' => Spatie\Permission\Models\Role::class,
+        'role' => Role::class,
 
     ],
 
@@ -114,10 +118,10 @@ return [
 
     /*
      * Events will fire when a role or permission is assigned/unassigned:
-     * \Spatie\Permission\Events\RoleAttached
-     * \Spatie\Permission\Events\RoleDetached
-     * \Spatie\Permission\Events\PermissionAttached
-     * \Spatie\Permission\Events\PermissionDetached
+     * \Spatie\Permission\Events\RoleAttachedEvent
+     * \Spatie\Permission\Events\RoleDetachedEvent
+     * \Spatie\Permission\Events\PermissionAttachedEvent
+     * \Spatie\Permission\Events\PermissionDetachedEvent
      *
      * To enable, set to true, and then create listeners to watch these events.
      */

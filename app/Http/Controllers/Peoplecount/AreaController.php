@@ -19,6 +19,7 @@ use App\Services\Peoplecount\AlertService;
 use App\Services\Peoplecount\AreaService;
 use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -52,7 +53,7 @@ class AreaController extends Controller
             'event_id' => $request->input('event_id'),
         ]);
 
-        return redirect()->route('peoplecount.areas.index', [
+        return to_route('peoplecount.areas.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Area created successfully ('.$area->name.').');
@@ -77,7 +78,7 @@ class AreaController extends Controller
      */
     public function show(AreaShowRequest $request, Organization $organization, Area $area): RedirectResponse
     {
-        return redirect()->route('peoplecount.areas.edit', [
+        return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
             'area' => $area,
         ]);
@@ -110,7 +111,7 @@ class AreaController extends Controller
                 ->sortBy('name')
                 ->values(),
             // Lazy optional prop to be loaded via Inertia partial reload when the Alerts tab is opened
-            'alerts' => Inertia::optional(fn (): \Illuminate\Support\Collection => $this->alertService->getAreaAlerts($organization, $area)),
+            'alerts' => Inertia::optional(fn (): Collection => $this->alertService->getAreaAlerts($organization, $area)),
             'alertTypeOptions' => $typeOptions,
             'alertChannelOptions' => $channelOptions,
             'status' => $request->session()->get('status'),
@@ -129,7 +130,7 @@ class AreaController extends Controller
             'event_id' => $request->input('event_id'),
         ]);
 
-        return redirect()->route('peoplecount.areas.index', [
+        return to_route('peoplecount.areas.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Area '.$area->name.' updated successfully.');
@@ -145,7 +146,7 @@ class AreaController extends Controller
         $name = $area->name;
         $area->delete();
 
-        return redirect()->route('peoplecount.areas.index', [
+        return to_route('peoplecount.areas.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Area '.$name.' deleted successfully.');

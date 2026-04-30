@@ -101,8 +101,8 @@ const submit = () => {
                     <ComboboxAnchor>
                         <div class="relative w-full items-center">
                             <ComboboxInput :display-value="(val) => val?.label ?? ''" :tabindex="3" placeholder="Select timezone..." />
-                            <ComboboxTrigger class="absolute inset-y-0 end-0 flex items-center justify-center px-3">
-                                <ChevronsUpDown class="size-4 text-muted-foreground" />
+                            <ComboboxTrigger class="absolute inset-y-0 inset-e-0 flex items-center justify-center px-3">
+                                <ChevronsUpDown class="text-muted-foreground size-4" />
                             </ComboboxTrigger>
                         </div>
                     </ComboboxAnchor>

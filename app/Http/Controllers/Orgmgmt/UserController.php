@@ -25,7 +25,7 @@ class UserController extends Controller
      */
     public function index(UserIndexRequest $request, Organization $organization): Response
     {
-        $userService = app(UserService::class);
+        $userService = resolve(UserService::class);
 
         return Inertia::render('orgmgmt/Users', [
             'organization' => $organization,
@@ -50,7 +50,7 @@ class UserController extends Controller
         // Give User default role
         $user->assignRole('PeopleCountViewer');
 
-        return redirect()->route('orgmgmt.users.index', [
+        return to_route('orgmgmt.users.index', [
             'organization' => $organization,
         ])
             ->with('status', 'User '.$user->name.' created successfully.');
@@ -74,7 +74,7 @@ class UserController extends Controller
      */
     public function show(UserShowRequest $request, Organization $organization, User $user): RedirectResponse
     {
-        return redirect()->route('orgmgmt.users.edit', [
+        return to_route('orgmgmt.users.edit', [
             'organization' => $organization,
             'user' => $user,
         ]);
@@ -100,7 +100,7 @@ class UserController extends Controller
     {
         $user->update($request->all());
 
-        return redirect()->route('orgmgmt.users.index', [
+        return to_route('orgmgmt.users.index', [
             'organization' => $organization,
         ])->with('status', 'User '.$user->name.' updated successfully.');
     }
@@ -120,7 +120,7 @@ class UserController extends Controller
         // delete user
         $user->delete();
 
-        return redirect()->route('orgmgmt.users.index', [
+        return to_route('orgmgmt.users.index', [
             'organization' => $organization,
         ])->with('status', 'User '.$name.' deleted successfully.');
     }
