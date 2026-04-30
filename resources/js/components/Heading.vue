@@ -13,7 +13,7 @@ defineProps<Props>();
     <div class="mb-8 flex flex-col items-start justify-between max-lg:space-y-4 lg:flex-row">
         <div class="space-y-0.5">
             <h2 class="text-xl font-semibold tracking-tight">{{ title }}</h2>
-            <p v-if="description" class="text-sm text-muted-foreground">
+            <p v-if="description" class="text-muted-foreground text-sm">
                 {{ description }}
             </p>
         </div>

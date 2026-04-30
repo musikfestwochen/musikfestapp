@@ -77,7 +77,7 @@ defineProps<{
 
 <template>
     <div class="relative grid h-dvh items-center justify-center overflow-hidden px-8 sm:px-0 lg:max-w-none lg:grid-cols-3 lg:px-0">
-        <div class="relative col-span-2 hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+        <div class="bg-muted relative col-span-2 hidden h-full flex-col p-10 text-white lg:flex dark:border-r">
             <div
                 :style="{ backgroundImage: `url(${bgUrl})`, filter: loaded ? 'none' : 'blur(16px)', transition: 'filter 0.6s' }"
                 class="absolute inset-0 bg-cover bg-center"
@@ -98,7 +98,7 @@ defineProps<{
                 <div class="mx-auto flex w-full max-w-xl flex-col space-y-6">
                     <div class="flex flex-col space-y-2 text-center">
                         <h1 v-if="title" class="text-xl font-medium tracking-tight">{{ title }}</h1>
-                        <p v-if="description" class="text-sm text-muted-foreground">{{ description }}</p>
+                        <p v-if="description" class="text-muted-foreground text-sm">{{ description }}</p>
                     </div>
                     <slot />
                 </div>

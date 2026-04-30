@@ -45,7 +45,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     <MeasurementCard v-for="measurement in props.sensor.interval_counts" :key="measurement.id" :measurement="measurement" />
                 </div>
 
-                <div v-else class="mt-4 text-sm text-muted-foreground">No measurements available.</div>
+                <div v-else class="text-muted-foreground mt-4 text-sm">No measurements available.</div>
             </div>
         </div>
     </Layout>

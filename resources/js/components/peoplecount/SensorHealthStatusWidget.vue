@@ -140,7 +140,7 @@ const lastUpdatedTime = computed(() => {
             </div>
 
             <div v-else-if="!data">
-                <div class="py-8 text-center text-muted-foreground">No sensor data</div>
+                <div class="text-muted-foreground py-8 text-center">No sensor data</div>
             </div>
 
             <div v-else>
@@ -164,17 +164,17 @@ const lastUpdatedTime = computed(() => {
                         <div class="flex items-center p-2">
                             <span class="dot dot-orange"></span>
                             <span class="font-medium">Suspicious</span>
-                            <span class="ml-2 text-muted-foreground">({{ data.suspicious.length }})</span>
+                            <span class="text-muted-foreground ml-2">({{ data.suspicious.length }})</span>
                         </div>
                         <ul class="grid grid-cols-2 gap-2 text-sm">
                             <li v-for="s in data.suspicious" :key="s.id" class="p-2">
                                 <div class="flex items-center justify-between">
                                     <div class="truncate">{{ s.vendor }} {{ s.model }} · {{ s.serial }}</div>
-                                    <div class="text-xs text-muted-foreground">
+                                    <div class="text-muted-foreground text-xs">
                                         {{ s.latest_ts ? new Date(s.latest_ts).toLocaleTimeString() : 'N/A' }}
                                     </div>
                                 </div>
-                                <div class="mt-1 text-xs text-muted-foreground">Recent counts are all zero</div>
+                                <div class="text-muted-foreground mt-1 text-xs">Recent counts are all zero</div>
                             </li>
                         </ul>
                     </template>
@@ -183,26 +183,26 @@ const lastUpdatedTime = computed(() => {
                         <div class="flex items-center p-2">
                             <span class="dot dot-red"></span>
                             <span class="font-medium">Unhealthy</span>
-                            <span class="ml-2 text-muted-foreground">({{ data.unhealthy.length }})</span>
+                            <span class="text-muted-foreground ml-2">({{ data.unhealthy.length }})</span>
                         </div>
                         <ul class="grid grid-cols-2 gap-2 text-sm">
                             <li v-for="s in data.unhealthy" :key="s.id" class="p-2">
                                 <div class="flex items-center justify-between">
                                     <div class="truncate">{{ s.vendor }} {{ s.model }} · {{ s.serial }}</div>
-                                    <div class="text-xs text-muted-foreground">
+                                    <div class="text-muted-foreground text-xs">
                                         {{ s.latest_ts ? new Date(s.latest_ts).toLocaleTimeString() : 'N/A' }}
                                     </div>
                                 </div>
-                                <div class="mt-1 text-xs text-muted-foreground">No recent counts</div>
+                                <div class="text-muted-foreground mt-1 text-xs">No recent counts</div>
                             </li>
                         </ul>
                     </template>
                 </div>
 
-                <div class="mt-2 text-center text-xs text-muted-foreground">
+                <div class="text-muted-foreground mt-2 text-center text-xs">
                     Healthy: {{ data.healthy.length }} • Suspicious: {{ data.suspicious.length }} • Unhealthy: {{ data.unhealthy.length }}
                 </div>
-                <div class="mt-2 text-center text-xs text-muted-foreground">Last updated: {{ lastUpdatedTime }}</div>
+                <div class="text-muted-foreground mt-2 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
         </CardContent>
     </Card>

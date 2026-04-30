@@ -54,7 +54,7 @@ const formattedEffectiveDate = computed(() => {
                         <span>{{ latestReset.created_by?.name || 'Unknown' }}</span>
                     </div>
                 </div>
-                <div v-else class="text-sm text-muted-foreground">No manual resets have been created for this area yet.</div>
+                <div v-else class="text-muted-foreground text-sm">No manual resets have been created for this area yet.</div>
 
                 <Button as-child class="w-full" size="sm" variant="outline">
                     <Link

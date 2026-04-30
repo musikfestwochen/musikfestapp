@@ -145,7 +145,7 @@ watch(
                 <Skeleton v-for="i in 2" :key="i" class="mb-4 h-24 w-full" />
             </div>
 
-            <div v-else-if="!data.length" class="py-8 text-center text-muted-foreground">No active areas or sensors.</div>
+            <div v-else-if="!data.length" class="text-muted-foreground py-8 text-center">No active areas or sensors.</div>
 
             <div v-else class="space-y-4">
                 <!-- Single area: show expanded content without collapsible -->
@@ -153,11 +153,11 @@ watch(
                     <div class="mb-2 flex items-center justify-between p-3">
                         <div>
                             <div class="text-sm font-medium">{{ sortedAreas[0].name }}</div>
-                            <div class="text-xs text-muted-foreground">{{ sortedAreas[0].event_name }}</div>
+                            <div class="text-muted-foreground text-xs">{{ sortedAreas[0].event_name }}</div>
                         </div>
-                        <div class="text-xs text-muted-foreground">Sorted by total ({{ selectedRange }})</div>
+                        <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
                     </div>
-                    <div v-if="!sortedAreas[0].sensors.length" class="px-3 pb-3 text-xs text-muted-foreground">No sensors assigned.</div>
+                    <div v-if="!sortedAreas[0].sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
                     <ul v-else class="divide-y px-3 pb-3 text-sm">
                         <li v-for="s in sortedAreas[0].sensors" :key="s.id" class="py-2">
                             <div class="flex flex-col">
@@ -179,13 +179,13 @@ watch(
                             <div class="flex w-full items-center justify-between">
                                 <div class="text-left">
                                     <div class="text-sm font-medium">{{ area.name }}</div>
-                                    <div class="text-xs text-muted-foreground">{{ area.event_name }}</div>
+                                    <div class="text-muted-foreground text-xs">{{ area.event_name }}</div>
                                 </div>
-                                <div class="text-xs text-muted-foreground">Sorted by total ({{ selectedRange }})</div>
+                                <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <div v-if="!area.sensors.length" class="px-3 pb-3 text-xs text-muted-foreground">No sensors assigned.</div>
+                            <div v-if="!area.sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
                             <ul v-else class="divide-y px-3 pb-3 text-sm">
                                 <li v-for="s in area.sensors" :key="s.id" class="py-2">
                                     <div class="flex flex-col">
@@ -202,7 +202,7 @@ watch(
                     </AccordionItem>
                 </Accordion>
 
-                <div class="mt-2 text-center text-xs text-muted-foreground">Last updated: {{ lastUpdatedTime }}</div>
+                <div class="text-muted-foreground mt-2 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
         </CardContent>
     </Card>
