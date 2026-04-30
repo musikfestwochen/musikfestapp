@@ -19,11 +19,17 @@ jobs:
         with:
           php-version: '8.4'
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y aspell aspell-en
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm install
+          npm ci
 
       - name: Run Rector
         run: vendor/bin/rector --dry-run
@@ -39,6 +45,9 @@ jobs:
 
       - name: Run Typos Check
         run: vendor/bin/peck
+
+      - name: Ignore package-lock auto-format changes
+        run: git restore --source=HEAD --worktree --staged package-lock.json
 
       - name: Commit Changes
         if: github.event_name == 'pull_request'
