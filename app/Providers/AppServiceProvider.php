@@ -21,10 +21,10 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Spatie\Permission\Events\PermissionAttached;
-use Spatie\Permission\Events\PermissionDetached;
-use Spatie\Permission\Events\RoleAttached;
-use Spatie\Permission\Events\RoleDetached;
+use Spatie\Permission\Events\PermissionAttachedEvent;
+use Spatie\Permission\Events\PermissionDetachedEvent;
+use Spatie\Permission\Events\RoleAttachedEvent;
+use Spatie\Permission\Events\RoleDetachedEvent;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -65,22 +65,22 @@ class AppServiceProvider extends ServiceProvider
 
         // Register event listeners directly using the Event facade
         Event::listen(
-            RoleAttached::class,
+            RoleAttachedEvent::class,
             RoleAttachedListener::class
         );
 
         Event::listen(
-            RoleDetached::class,
+            RoleDetachedEvent::class,
             RoleDetachedListener::class
         );
 
         Event::listen(
-            PermissionAttached::class,
+            PermissionAttachedEvent::class,
             PermissionAttachedListener::class
         );
 
         Event::listen(
-            PermissionDetached::class,
+            PermissionDetachedEvent::class,
             PermissionDetachedListener::class
         );
     }

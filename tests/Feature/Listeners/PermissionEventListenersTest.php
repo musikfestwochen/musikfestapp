@@ -6,9 +6,9 @@ use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
 use Illuminate\Support\Facades\Cache;
-use Spatie\Permission\Events\PermissionDetached;
-use Spatie\Permission\Events\RoleAttached;
-use Spatie\Permission\Events\RoleDetached;
+use Spatie\Permission\Events\PermissionDetachedEvent;
+use Spatie\Permission\Events\RoleAttachedEvent;
+use Spatie\Permission\Events\RoleDetachedEvent;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -101,7 +101,7 @@ it('handles PermissionDetachedListener when event model is not a User', function
     GlobalPermissionService::canGlobally($this->user, 'test.permission');
 
     // Create an event with a non-User model (to test the null return path)
-    $event = new PermissionDetached(
+    $event = new PermissionDetachedEvent(
         $this->testPermission, // Use permission as model instead of user
         $this->testPermission->id
     );
@@ -121,7 +121,7 @@ it('handles PermissionDetachedListener when event model is not a User', function
 
 it('handles RoleAttachedListener when event model is not a User', function () {
     // Create an event with a non-User model
-    $event = new RoleAttached(
+    $event = new RoleAttachedEvent(
         $this->testRole, // Use role as model instead of user
         $this->testRole->id
     );
@@ -140,7 +140,7 @@ it('handles RoleAttachedListener when event model is not a User', function () {
 
 it('handles RoleDetachedListener when event model is not a User', function () {
     // Create an event with a non-User model
-    $event = new RoleDetached(
+    $event = new RoleDetachedEvent(
         $this->testRole, // Use role as model instead of user
         $this->testRole->id
     );
@@ -162,7 +162,7 @@ it('handles RoleDetachedListener when getUserId returns null', function () {
     $listener = app(RoleDetachedListener::class);
 
     // Create a real RoleDetached event with a Role model (not User)
-    $event = new RoleDetached(
+    $event = new RoleDetachedEvent(
         $this->testRole, // Use role as model instead of user
         $this->testRole->id
     );

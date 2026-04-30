@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Services\GlobalPermissionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use Spatie\Permission\Events\PermissionAttached;
+use Spatie\Permission\Events\PermissionAttachedEvent;
 
 class PermissionAttachedListener implements ShouldQueue
 {
@@ -22,7 +22,7 @@ class PermissionAttachedListener implements ShouldQueue
     /**
      * Handle the event.
      */
-    public function handle(PermissionAttached $event): void
+    public function handle(PermissionAttachedEvent $event): void
     {
         // The event can receive the permission details as a model ID, Eloquent record, array, or collection
         // We need to extract the user ID from the event
@@ -40,7 +40,7 @@ class PermissionAttachedListener implements ShouldQueue
     /**
      * Extract the user ID from the event
      */
-    public function getUserId(PermissionAttached $event): ?int
+    public function getUserId(PermissionAttachedEvent $event): ?int
     {
         if (isset($event->model) && $event->model instanceof User) {
             return $event->model->id;
