@@ -73,26 +73,49 @@
             "npm run lint",
             "npm run format"
         ],
+        "lint:ai": [
+            "pint --quiet",
+            "npx eslint . --fix --quiet --format compact",
+            "npx prettier --write resources/ --log-level error"
+        ],
         "rector": [
             "rector"
         ],
         "test:sca": [
             "phpstan --xdebug"
         ],
+        "test:sca:ai": [
+            "phpstan --xdebug --no-progress --error-format=raw"
+        ],
         "test:coverage": [
             "pest --coverage --parallel --min=100"
         ],
+        "test:coverage:ai": [
+            "pest --coverage --parallel --min=100 --compact --no-progress --coverage-text=storage/logs/precommit-ai-coverage.txt --only-summary-for-coverage-text"
+        ],
         "test:types": [
             "pest --type-coverage --parallel --min=100"
+        ],
+        "test:types:ai": [
+            "pest --type-coverage --parallel --min=100 --compact --no-progress"
         ],
         "test:mutation": [
             "Composer\\Config::disableProcessTimeout",
             "pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations"
         ],
+        "test:mutation:ai": [
+            "Composer\\Config::disableProcessTimeout",
+            "pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations --compact --no-progress"
+        ],
         "test:e2e": [
             "npm run build",
             "npm run e2e",
             "php artisan migrate:fresh --seed"
+        ],
+        "test:e2e:ai": [
+            "npx vite build --logLevel error",
+            "npx playwright test --reporter=line --quiet",
+            "php artisan migrate:fresh --seed --quiet"
         ],
         "test": [
             "npm run test",
@@ -101,6 +124,14 @@
             "@test:types",
             "@test:mutation",
             "@test:e2e"
+        ],
+        "test:ai": [
+            "npx vitest run --reporter=dot --silent=passed-only",
+            "@test:sca:ai",
+            "@test:coverage:ai",
+            "@test:types:ai",
+            "@test:mutation:ai",
+            "@test:e2e:ai"
         ],
         "generate": [
             "php artisan generate:erd ./docs/diagrams/er-diagram.svg",
@@ -112,6 +143,12 @@
             "@typos",
             "@lint",
             "@test"
+        ],
+        "precommit:ai": [
+            "@rector",
+            "@typos",
+            "@lint:ai",
+            "@test:ai"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
