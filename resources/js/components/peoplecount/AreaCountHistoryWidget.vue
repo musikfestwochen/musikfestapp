@@ -2,22 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import axios from 'axios';
 import type { TooltipItem } from 'chart.js';
-import {
-    CategoryScale,
-    Chart as ChartJS,
-    Filler,
-    Legend,
-    LinearScale,
-    LineElement,
-    PointElement,
-    TimeScale,
-    Title,
-    Tooltip,
-} from 'chart.js';
+import { CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, TimeScale, Title, Tooltip } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Line } from 'vue-chartjs';
@@ -221,7 +210,10 @@ onBeforeUnmount(() => {
                 <Skeleton class="h-full w-full" />
             </div>
 
-            <div v-else-if="!series.length || series.every((s) => s.data.length === 0)" class="flex h-[350px] items-center justify-center text-muted-foreground">
+            <div
+                v-else-if="!series.length || series.every((s) => s.data.length === 0)"
+                class="text-muted-foreground flex h-[350px] items-center justify-center"
+            >
                 No data available for the selected time range.
             </div>
 

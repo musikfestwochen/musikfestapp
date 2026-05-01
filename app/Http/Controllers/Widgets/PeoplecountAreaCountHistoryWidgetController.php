@@ -9,18 +9,18 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 class PeoplecountAreaCountHistoryWidgetController extends Controller
 {
     public function index(AreaCountHistoryIndexRequest $request, Organization $organization): JsonResponse
     {
-        $now = Carbon::now()->setTimezone('UTC');
+        $now = Date::now()->setTimezone('UTC');
         $from = $request->validated('from')
-            ? Carbon::parse($request->validated('from'))->setTimezone('UTC')
+            ? Date::parse($request->validated('from'))->setTimezone('UTC')
             : $now->copy()->subHour();
         $to = $request->validated('to')
-            ? Carbon::parse($request->validated('to'))->setTimezone('UTC')
+            ? Date::parse($request->validated('to'))->setTimezone('UTC')
             : $now;
 
         $areas = Area::query()
@@ -40,12 +40,12 @@ class PeoplecountAreaCountHistoryWidgetController extends Controller
             ])
             ->get(['id', 'name', 'event_id']);
 
-        $series = $areas->map(function (Area $area) {
+        $series = $areas->map(function (Area $area): array {
             return [
                 'id' => $area->id,
                 'name' => $area->name,
                 'event_name' => $area->event->name,
-                'data' => $area->aggregatedCounts->map(function (AreaAggregatedCount $count) {
+                'data' => $area->aggregatedCounts->map(function (AreaAggregatedCount $count): array {
                     return [
                         'time' => $count->period_end->toIso8601String(),
                         'count' => $count->count,
