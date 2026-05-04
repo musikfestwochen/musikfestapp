@@ -60,8 +60,11 @@ jobs:
       - name: Publish Ziggy Configuration
         run: php artisan ziggy:generate
 
+      - name: Build Assets
+        run: npm run build
+
       - name: Update shard timings
-        run: ./vendor/bin/pest --parallel --update-shards
+        run: ./vendor/bin/pest --ci --parallel --update-shards
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
