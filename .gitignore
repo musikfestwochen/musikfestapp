@@ -43,6 +43,7 @@ node_modules/
 /CLAUDE.md
 /.agents/
 /.junie/
+/.claude/
 /junie/
 /opencode.json
 /.ai/*

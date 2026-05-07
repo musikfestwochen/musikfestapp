@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, componentToString, type ChartConfig } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CurveType } from '@unovis/ts';
+import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
+import { useStorage } from '@vueuse/core';
 import axios from 'axios';
-import type { TooltipItem } from 'chart.js';
-import { CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, TimeScale, Title, Tooltip } from 'chart.js';
-import 'chartjs-adapter-date-fns';
+import { ToggleLeft, ToggleRight } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Line } from 'vue-chartjs';
-
-ChartJS.register(CategoryScale, LinearScale, TimeScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 interface DataPoint {
     time: string;
@@ -25,6 +25,11 @@ interface AreaSeries {
     data: DataPoint[];
 }
 
+interface ChartDataPoint {
+    date: Date;
+    [key: `area_${number}`]: number | null | undefined;
+}
+
 const props = defineProps<{
     organization: { id: number; slug: string; name: string };
 }>();
@@ -34,16 +39,36 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const timeRange = ref('1h');
 const customRange = ref<[Date, Date] | null>(null);
+const chartStyle = useStorage<'area' | 'step'>('peoplecount.area-count-history.chart-style', 'area');
+const hiddenAreaIds = ref<Set<number>>(new Set());
 let refreshInterval: number | null = null;
 
-const AREA_COLORS = [
-    { border: 'rgb(59, 130, 246)', background: 'rgba(59, 130, 246, 0.1)' },
-    { border: 'rgb(239, 68, 68)', background: 'rgba(239, 68, 68, 0.1)' },
-    { border: 'rgb(34, 197, 94)', background: 'rgba(34, 197, 94, 0.1)' },
-    { border: 'rgb(168, 85, 247)', background: 'rgba(168, 85, 247, 0.1)' },
-    { border: 'rgb(249, 115, 22)', background: 'rgba(249, 115, 22, 0.1)' },
-    { border: 'rgb(20, 184, 166)', background: 'rgba(20, 184, 166, 0.1)' },
-];
+function toggleChartStyle(): void {
+    chartStyle.value = chartStyle.value === 'area' ? 'step' : 'area';
+}
+
+function toggleAreaVisibility(id: number): void {
+    const next = new Set(hiddenAreaIds.value);
+    if (next.has(id)) {
+        next.delete(id);
+    } else {
+        next.add(id);
+    }
+    hiddenAreaIds.value = next;
+}
+
+function isAreaVisible(id: number): boolean {
+    return !hiddenAreaIds.value.has(id);
+}
+
+function lineDashForIndex(index: number): number[] | undefined {
+    if (index === 0) {
+        return undefined;
+    }
+    return [2, 4];
+}
+
+const AREA_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
 const timeRangeOptions = [
     { value: '1h', label: 'Last hour' },
@@ -70,76 +95,43 @@ function getTimeParams(): { from: string; to: string } {
     return { from: from.toISOString(), to: now.toISOString() };
 }
 
-const chartData = computed(() => {
-    return {
-        datasets: series.value.map((area, index) => {
-            const color = AREA_COLORS[index % AREA_COLORS.length];
-            return {
-                label: area.name,
-                data: area.data.map((d) => ({ x: new Date(d.time).getTime(), y: d.count })),
-                borderColor: color.border,
-                backgroundColor: color.background,
-                borderWidth: 2,
-                pointRadius: area.data.length > 100 ? 0 : 3,
-                pointHoverRadius: 5,
-                tension: 0.3,
-                fill: true,
-            };
-        }),
+const chartConfig = computed<ChartConfig>(() => {
+    const config: ChartConfig = {
+        outline: {
+            theme: { light: '#0a0a0a', dark: '#fafafa' },
+        },
     };
+    series.value.forEach((area, index) => {
+        config[`area_${area.id}`] = {
+            label: `${area.name} (${area.event_name})`,
+            color: AREA_COLORS[index % AREA_COLORS.length],
+        };
+    });
+    return config;
 });
 
-const chartOptions = computed(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-        mode: 'index' as const,
-        intersect: false,
-    },
-    scales: {
-        x: {
-            type: 'time' as const,
-            time: {
-                tooltipFormat: 'HH:mm',
-                displayFormats: {
-                    minute: 'HH:mm',
-                    hour: 'HH:mm',
-                },
-            },
-            title: {
-                display: true,
-                text: 'Time',
-            },
-            grid: {
-                display: false,
-            },
-        },
-        y: {
-            beginAtZero: true,
-            title: {
-                display: true,
-                text: 'People count',
-            },
-            ticks: {
-                precision: 0,
-            },
-        },
-    },
-    plugins: {
-        legend: {
-            position: 'top' as const,
-        },
-        tooltip: {
-            callbacks: {
-                title: (items: TooltipItem<'line'>[]) => {
-                    if (!items.length || items[0].parsed.x == null) return '';
-                    const date = new Date(items[0].parsed.x);
-                    return date.toLocaleTimeString();
-                },
-            },
-        },
-    },
-}));
+const chartData = computed<ChartDataPoint[]>(() => {
+    const buckets = new Map<number, ChartDataPoint>();
+    for (const area of series.value) {
+        for (const point of area.data) {
+            const ts = new Date(point.time).getTime();
+            if (!buckets.has(ts)) {
+                buckets.set(ts, { date: new Date(ts) });
+            }
+            const row = buckets.get(ts) as ChartDataPoint;
+            row[`area_${area.id}`] = point.count;
+        }
+    }
+    return Array.from(buckets.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+});
+
+const hasData = computed(() => chartData.value.length > 0);
+const areaColors = computed(() => series.value.map((_, index) => AREA_COLORS[index % AREA_COLORS.length]));
+const areaAccessors = computed(() => series.value.map((area) => (d: ChartDataPoint) => (d[`area_${area.id}`] ?? undefined) as number | undefined));
+
+function formatTickDate(d: number): string {
+    return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 async function fetchHistory() {
     if (timeRange.value === 'custom' && !customRange.value) return;
@@ -176,9 +168,19 @@ onBeforeUnmount(() => {
 
 <template>
     <Card class="col-span-full">
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
             <CardTitle>Area Count History</CardTitle>
             <div class="flex items-center gap-2">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    :aria-label="chartStyle === 'area' ? 'Switch to step line chart' : 'Switch to area chart'"
+                    :title="chartStyle === 'area' ? 'Switch to step line chart' : 'Switch to area chart'"
+                    @click="toggleChartStyle"
+                >
+                    <ToggleLeft v-if="chartStyle === 'area'" class="h-5 w-5" />
+                    <ToggleRight v-else class="h-5 w-5" />
+                </Button>
                 <Select v-model="timeRange">
                     <SelectTrigger class="w-[160px]">
                         <SelectValue placeholder="Select range" />
@@ -206,20 +208,82 @@ onBeforeUnmount(() => {
                 {{ error }}
             </div>
 
-            <div v-if="loading && !series.length" class="flex h-[350px] items-center justify-center">
+            <div v-if="loading && !hasData" class="flex h-[350px] items-center justify-center">
                 <Skeleton class="h-full w-full" />
             </div>
 
-            <div
-                v-else-if="!series.length || series.every((s) => s.data.length === 0)"
-                class="text-muted-foreground flex h-[350px] items-center justify-center"
-            >
+            <div v-else-if="!hasData" class="text-muted-foreground flex h-[350px] items-center justify-center">
                 No data available for the selected time range.
             </div>
 
-            <div v-else class="h-[350px]">
-                <Line :data="chartData" :options="chartOptions" />
-            </div>
+            <ChartContainer v-else :config="chartConfig" class="h-[350px] w-full">
+                <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 32 }">
+                    <template v-for="(area, index) in series" :key="`line-${area.id}`">
+                        <VisLine
+                            v-if="isAreaVisible(area.id)"
+                            :x="(d: ChartDataPoint) => d.date.getTime()"
+                            :y="areaAccessors[index]"
+                            color="var(--color-outline)"
+                            :curve-type="chartStyle === 'area' ? CurveType.MonotoneX : CurveType.Step"
+                            :line-width="2"
+                            :line-dash-array="lineDashForIndex(index)"
+                        />
+                    </template>
+                    <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
+                    <VisAxis
+                        type="y"
+                        :tick-line="false"
+                        :domain-line="false"
+                        :grid-line="true"
+                        :tick-format="(d: number) => Math.round(d).toString()"
+                    />
+                    <ChartTooltip />
+                    <ChartCrosshair
+                        :template="
+                            componentToString(chartConfig, ChartTooltipContent, {
+                                indicator: 'line',
+                                labelFormatter: (d: number | Date) =>
+                                    new Date(typeof d === 'number' ? d : d.getTime()).toLocaleString([], {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    }),
+                            })
+                        "
+                        :color="areaColors"
+                    />
+                </VisXYContainer>
+                <div class="mt-3 flex flex-col items-start gap-2 text-sm">
+                    <div v-for="(area, index) in series" :key="`legend-${area.id}`" class="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            :aria-label="`Toggle ${area.name}`"
+                            :title="`Toggle ${area.name}`"
+                            @click="toggleAreaVisibility(area.id)"
+                        >
+                            <ToggleRight v-if="isAreaVisible(area.id)" class="h-5 w-5" />
+                            <ToggleLeft v-else class="text-muted-foreground h-5 w-5" />
+                        </Button>
+                        <svg :width="24" :height="8" :class="{ 'opacity-40': !isAreaVisible(area.id) }">
+                            <line
+                                x1="0"
+                                y1="4"
+                                x2="24"
+                                y2="4"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                :stroke-dasharray="lineDashForIndex(index)?.join(',') ?? 'none'"
+                            />
+                        </svg>
+                        <span :class="{ 'text-muted-foreground line-through': !isAreaVisible(area.id) }">
+                            {{ area.name }}
+                            <span class="text-muted-foreground">({{ area.event_name }})</span>
+                        </span>
+                    </div>
+                </div>
+            </ChartContainer>
         </CardContent>
     </Card>
 </template>

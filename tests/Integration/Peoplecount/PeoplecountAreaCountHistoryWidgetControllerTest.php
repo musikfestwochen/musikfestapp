@@ -1,0 +1,208 @@
+<?php
+
+use App\Http\Controllers\Widgets\PeoplecountAreaCountHistoryWidgetController;
+use App\Http\Requests\Widgets\Peoplecount\AreaCountHistoryIndexRequest;
+use App\Models\Organization;
+use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaAggregatedCount;
+use App\Models\Peoplecount\Event;
+use App\Models\User;
+use Illuminate\Support\Carbon;
+
+beforeEach(function () {
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+});
+
+it('returns area count history for active areas of an organization', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHours(1),
+        'ends_at' => Carbon::now()->addHours(1),
+    ]);
+
+    $area = Area::factory()->create([
+        'event_id' => $event->id,
+        'name' => 'History Area',
+    ]);
+
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subMinutes(30),
+        'period_end' => Carbon::now()->subMinutes(20),
+        'count' => 10,
+    ]);
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subMinutes(20),
+        'period_end' => Carbon::now()->subMinutes(10),
+        'count' => 25,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1)
+        ->assertJsonStructure([
+            '*' => [
+                'id',
+                'name',
+                'event_name',
+                'data' => [
+                    '*' => ['time', 'count'],
+                ],
+            ],
+        ])
+        ->assertJsonPath('0.id', $area->id)
+        ->assertJsonPath('0.name', 'History Area')
+        ->assertJsonPath('0.event_name', $event->name)
+        ->assertJsonCount(2, '0.data')
+        ->assertJsonPath('0.data.0.count', 10)
+        ->assertJsonPath('0.data.1.count', 25);
+
+    Carbon::setTestNow();
+});
+
+it('honors the from and to query parameters', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHours(5),
+        'ends_at' => Carbon::now()->addHours(5),
+    ]);
+
+    $area = Area::factory()->create([
+        'event_id' => $event->id,
+    ]);
+
+    // Inside the window
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subMinutes(50),
+        'period_end' => Carbon::now()->subMinutes(40),
+        'count' => 7,
+    ]);
+
+    // Outside the requested window
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subHours(3),
+        'period_end' => Carbon::now()->subHours(2)->subMinutes(50),
+        'count' => 99,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', [
+            'organization' => $org->slug,
+            'from' => Carbon::now()->subHour()->toIso8601String(),
+            'to' => Carbon::now()->toIso8601String(),
+        ]));
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1, '0.data')
+        ->assertJsonPath('0.data.0.count', 7);
+
+    Carbon::setTestNow();
+});
+
+it('only returns areas belonging to currently active events', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $pastEvent = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHours(5),
+        'ends_at' => Carbon::now()->subHours(2),
+    ]);
+    $pastArea = Area::factory()->create(['event_id' => $pastEvent->id]);
+    AreaAggregatedCount::factory()->withArea($pastArea)->create([
+        'period_start' => Carbon::now()->subHours(4),
+        'period_end' => Carbon::now()->subHours(4)->addMinutes(10),
+        'count' => 5,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(200)
+        ->assertJsonCount(0);
+
+    Carbon::setTestNow();
+});
+
+it('does not leak areas from other organizations', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+
+    $otherEvent = Event::factory()->create([
+        'organization_id' => $otherOrg->id,
+        'starts_at' => Carbon::now()->subHour(),
+        'ends_at' => Carbon::now()->addHour(),
+    ]);
+    $otherArea = Area::factory()->create(['event_id' => $otherEvent->id]);
+    AreaAggregatedCount::factory()->withArea($otherArea)->create([
+        'period_start' => Carbon::now()->subMinutes(10),
+        'period_end' => Carbon::now(),
+        'count' => 42,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(200)
+        ->assertJsonCount(0);
+
+    Carbon::setTestNow();
+});
+
+it('returns 403 when user does not have permission', function () {
+    $user = User::factory()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(403);
+});
+
+it('rejects invalid date parameters', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', [
+            'organization' => $org->slug,
+            'from' => 'not-a-date',
+        ]));
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['from']);
+});
+
+it('uses the correct form request and middleware', function () {
+    test()->assertRouteUsesMiddleware(
+        'peoplecount.area-count-history.index',
+        ['permissions.organization_slug', 'auth', 'verified'],
+    );
+
+    test()->assertActionUsesFormRequest(
+        PeoplecountAreaCountHistoryWidgetController::class,
+        'index',
+        AreaCountHistoryIndexRequest::class,
+    );
+
+    test()->assertRouteUsesFormRequest(
+        'peoplecount.area-count-history.index',
+        AreaCountHistoryIndexRequest::class,
+    );
+});

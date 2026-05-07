@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Date;
 
@@ -31,7 +32,7 @@ class PeoplecountAreaCountHistoryWidgetController extends Controller
             })
             ->with([
                 'event:id,name',
-                'aggregatedCounts' => function ($query) use ($from, $to) {
+                'aggregatedCounts' => function (Relation $query) use ($from, $to): void {
                     $query->where('period_start', '>=', $from)
                         ->where('period_end', '<=', $to)
                         ->orderBy('period_start', 'asc')
