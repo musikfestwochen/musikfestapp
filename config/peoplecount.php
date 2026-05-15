@@ -24,6 +24,6 @@ return [
         | This value determines how data points are grouped together for analysis.
         |
         */
-        'granularity_minutes' => env('PEOPLECOUNT_AGGREGATION_GRANULARITY', 10),
+        'granularity_minutes' => env('PEOPLECOUNT_AGGREGATION_GRANULARITY', 1),
     ],
 ];

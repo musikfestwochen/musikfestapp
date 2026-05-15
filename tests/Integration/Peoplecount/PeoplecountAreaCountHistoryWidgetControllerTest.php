@@ -110,6 +110,37 @@ it('honors the from and to query parameters', function () {
     Carbon::setTestNow();
 });
 
+it('includes the in-progress bucket whose period_end is in the future', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHour(),
+        'ends_at' => Carbon::now()->addHour(),
+    ]);
+
+    $area = Area::factory()->create(['event_id' => $event->id]);
+
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subMinutes(5),
+        'period_end' => Carbon::now()->addMinutes(5),
+        'count' => 42,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1, '0.data')
+        ->assertJsonPath('0.data.0.count', 42)
+        ->assertJsonPath('0.data.0.time', Carbon::now()->setTimezone('UTC')->toIso8601String());
+
+    Carbon::setTestNow();
+});
+
 it('only returns areas belonging to currently active events', function () {
     Carbon::setTestNow('2025-08-04 22:08:00');
 

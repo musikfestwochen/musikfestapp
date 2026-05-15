@@ -10,7 +10,7 @@ import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { useStorage } from '@vueuse/core';
 import axios from 'axios';
-import { ToggleLeft, ToggleRight } from 'lucide-vue-next';
+import { ChartColumnIncreasing, ChartSpline, ToggleLeft, ToggleRight } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 interface DataPoint {
@@ -39,12 +39,12 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const timeRange = ref('1h');
 const customRange = ref<[Date, Date] | null>(null);
-const chartStyle = useStorage<'area' | 'step'>('peoplecount.area-count-history.chart-style', 'area');
+const chartStyle = useStorage<'spline' | 'step'>('peoplecount.area-count-history.chart-style', 'spline');
 const hiddenAreaIds = ref<Set<number>>(new Set());
 let refreshInterval: number | null = null;
 
 function toggleChartStyle(): void {
-    chartStyle.value = chartStyle.value === 'area' ? 'step' : 'area';
+    chartStyle.value = chartStyle.value === 'spline' ? 'step' : 'spline';
 }
 
 function toggleAreaVisibility(id: number): void {
@@ -66,6 +66,13 @@ function lineDashForIndex(index: number): number[] | undefined {
         return undefined;
     }
     return [2, 4];
+}
+
+function shortenName(name: string, maxLength = 18): string {
+    if (name.length <= maxLength) {
+        return name;
+    }
+    return `${name.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 const AREA_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
@@ -103,7 +110,7 @@ const chartConfig = computed<ChartConfig>(() => {
     };
     series.value.forEach((area, index) => {
         config[`area_${area.id}`] = {
-            label: `${area.name} (${area.event_name})`,
+            label: shortenName(area.name),
             color: AREA_COLORS[index % AREA_COLORS.length],
         };
     });
@@ -167,22 +174,23 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Card class="col-span-full">
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
+    <Card class="col-span-full min-w-0">
+        <CardHeader class="flex flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:space-y-0">
             <CardTitle>Area Count History</CardTitle>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button
                     variant="ghost"
                     size="icon"
-                    :aria-label="chartStyle === 'area' ? 'Switch to step line chart' : 'Switch to area chart'"
-                    :title="chartStyle === 'area' ? 'Switch to step line chart' : 'Switch to area chart'"
+                    class="self-start sm:self-auto"
+                    :aria-label="chartStyle === 'spline' ? 'Switch to step line chart' : 'Switch to spline chart'"
+                    :title="chartStyle === 'spline' ? 'Switch to step line chart' : 'Switch to spline chart'"
                     @click="toggleChartStyle"
                 >
-                    <ToggleLeft v-if="chartStyle === 'area'" class="h-5 w-5" />
-                    <ToggleRight v-else class="h-5 w-5" />
+                    <ChartSpline v-if="chartStyle === 'spline'" class="h-5 w-5" />
+                    <ChartColumnIncreasing v-else class="h-5 w-5" />
                 </Button>
                 <Select v-model="timeRange">
-                    <SelectTrigger class="w-[160px]">
+                    <SelectTrigger class="w-full sm:w-[160px]">
                         <SelectValue placeholder="Select range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -199,66 +207,69 @@ onBeforeUnmount(() => {
                     :auto-apply="true"
                     :dark="false"
                     input-class-name="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                    class="w-[280px]"
+                    class="w-full sm:w-[280px]"
                 />
             </div>
         </CardHeader>
-        <CardContent>
+        <CardContent class="min-w-0">
             <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">
                 {{ error }}
             </div>
 
-            <div v-if="loading && !hasData" class="flex h-[350px] items-center justify-center">
+            <div v-if="loading && !hasData" class="flex h-[280px] items-center justify-center sm:h-[350px]">
                 <Skeleton class="h-full w-full" />
             </div>
 
-            <div v-else-if="!hasData" class="text-muted-foreground flex h-[350px] items-center justify-center">
+            <div v-else-if="!hasData" class="text-muted-foreground flex h-[280px] items-center justify-center sm:h-[350px]">
                 No data available for the selected time range.
             </div>
 
-            <ChartContainer v-else :config="chartConfig" class="h-[350px] w-full">
-                <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 32 }">
-                    <template v-for="(area, index) in series" :key="`line-${area.id}`">
-                        <VisLine
-                            v-if="isAreaVisible(area.id)"
-                            :x="(d: ChartDataPoint) => d.date.getTime()"
-                            :y="areaAccessors[index]"
-                            color="var(--color-outline)"
-                            :curve-type="chartStyle === 'area' ? CurveType.MonotoneX : CurveType.Step"
-                            :line-width="2"
-                            :line-dash-array="lineDashForIndex(index)"
+            <template v-else>
+                <ChartContainer :config="chartConfig" class="h-[280px] w-full min-w-0 sm:h-[350px]">
+                    <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 32 }">
+                        <template v-for="(area, index) in series" :key="`line-${area.id}`">
+                            <VisLine
+                                v-if="isAreaVisible(area.id)"
+                                :x="(d: ChartDataPoint) => d.date.getTime()"
+                                :y="areaAccessors[index]"
+                                color="var(--color-outline)"
+                                :curve-type="chartStyle === 'spline' ? CurveType.MonotoneX : CurveType.Step"
+                                :line-width="2"
+                                :line-dash-array="lineDashForIndex(index)"
+                            />
+                        </template>
+                        <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
+                        <VisAxis
+                            type="y"
+                            :tick-line="false"
+                            :domain-line="false"
+                            :grid-line="true"
+                            :tick-format="(d: number) => Math.round(d).toString()"
                         />
-                    </template>
-                    <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
-                    <VisAxis
-                        type="y"
-                        :tick-line="false"
-                        :domain-line="false"
-                        :grid-line="true"
-                        :tick-format="(d: number) => Math.round(d).toString()"
-                    />
-                    <ChartTooltip />
-                    <ChartCrosshair
-                        :template="
-                            componentToString(chartConfig, ChartTooltipContent, {
-                                indicator: 'line',
-                                labelFormatter: (d: number | Date) =>
-                                    new Date(typeof d === 'number' ? d : d.getTime()).toLocaleString([], {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    }),
-                            })
-                        "
-                        :color="areaColors"
-                    />
-                </VisXYContainer>
-                <div class="mt-3 flex flex-col items-start gap-2 text-sm">
+                        <ChartTooltip />
+                        <ChartCrosshair
+                            :template="
+                                componentToString(chartConfig, ChartTooltipContent, {
+                                    indicator: 'line',
+                                    labelFormatter: (d: number | Date) =>
+                                        new Date(typeof d === 'number' ? d : d.getTime()).toLocaleString([], {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        }),
+                                })
+                            "
+                            :color="areaColors"
+                        />
+                    </VisXYContainer>
+                </ChartContainer>
+                <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                     <div v-for="(area, index) in series" :key="`legend-${area.id}`" class="flex items-center gap-2">
                         <Button
                             variant="ghost"
                             size="icon"
+                            class="h-7 w-7"
                             :aria-label="`Toggle ${area.name}`"
                             :title="`Toggle ${area.name}`"
                             @click="toggleAreaVisibility(area.id)"
@@ -277,13 +288,12 @@ onBeforeUnmount(() => {
                                 :stroke-dasharray="lineDashForIndex(index)?.join(',') ?? 'none'"
                             />
                         </svg>
-                        <span :class="{ 'text-muted-foreground line-through': !isAreaVisible(area.id) }">
-                            {{ area.name }}
-                            <span class="text-muted-foreground">({{ area.event_name }})</span>
+                        <span :class="{ 'text-muted-foreground line-through': !isAreaVisible(area.id) }" :title="`${area.name} (${area.event_name})`">
+                            {{ shortenName(area.name) }}
                         </span>
                     </div>
                 </div>
-            </ChartContainer>
+            </template>
         </CardContent>
     </Card>
 </template>

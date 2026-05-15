@@ -34,21 +34,23 @@ class PeoplecountAreaCountHistoryWidgetController extends Controller
                 'event:id,name',
                 'aggregatedCounts' => function (Relation $query) use ($from, $to): void {
                     $query->where('period_start', '>=', $from)
-                        ->where('period_end', '<=', $to)
+                        ->where('period_start', '<', $to)
                         ->orderBy('period_start', 'asc')
                         ->select(['id', 'area_id', 'count', 'period_start', 'period_end']);
                 },
             ])
             ->get(['id', 'name', 'event_id']);
 
-        $series = $areas->map(function (Area $area): array {
+        $series = $areas->map(function (Area $area) use ($now): array {
             return [
                 'id' => $area->id,
                 'name' => $area->name,
                 'event_name' => $area->event->name,
-                'data' => $area->aggregatedCounts->map(function (AreaAggregatedCount $count): array {
+                'data' => $area->aggregatedCounts->map(function (AreaAggregatedCount $count) use ($now): array {
                     return [
-                        'time' => $count->period_end->toIso8601String(),
+                        'time' => $count->period_end->greaterThan($now)
+                            ? $now->toIso8601String()
+                            : $count->period_end->toIso8601String(),
                         'count' => $count->count,
                     ];
                 })->values(),
