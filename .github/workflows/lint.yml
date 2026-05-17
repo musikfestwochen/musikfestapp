@@ -2,6 +2,11 @@ name: linter
 
 on:
   pull_request:
+  merge_group:
+    branches:
+      - main
+    types:
+      - checks_requested
   workflow_call:
 
 permissions:
@@ -35,13 +40,28 @@ jobs:
         run: vendor/bin/rector --dry-run
 
       - name: Run Pint
-        run: vendor/bin/pint
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            vendor/bin/pint --test
+          else
+            vendor/bin/pint
+          fi
 
       - name: Format Frontend
-        run: npm run format
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            npm run format:check
+          else
+            npm run format
+          fi
 
       - name: Lint Frontend
-        run: npm run lint
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            npx eslint .
+          else
+            npm run lint
+          fi
 
       - name: Run Typos Check
         run: vendor/bin/peck

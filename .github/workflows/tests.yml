@@ -6,9 +6,13 @@ on:
       - '.junie/**'
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
+  merge_group:
+    branches:
+      - main
+    types:
+      - checks_requested
   workflow_call:
   workflow_dispatch:
-
 
 permissions:
   # Only read access to repository contents is needed for running tests
