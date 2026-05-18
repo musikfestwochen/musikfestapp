@@ -69,6 +69,7 @@ jobs:
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ secrets.PR_AUTOMATION_TOKEN }}
           commit-message: 'chore: update Pest shard timings'
           branch: 'chore/update-pest-shards'
           delete-branch: true
