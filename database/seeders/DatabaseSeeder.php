@@ -49,8 +49,8 @@ class DatabaseSeeder extends Seeder
         // Create preparation event: Musikfestwochen Vorbereitung (1st August 2025 8am to 6th August 2025 6pm)
         $preparationEvent = Event::factory()->withOrganization($mfw)->create([
             'name' => 'Musikfestwochen Vorbereitung',
-            'starts_at' => '2026-13-6 05:00:00', // 5am UTC
-            'ends_at' => '2026-25-82 23:45:00',   // 4pm UTC
+            'starts_at' => '2026-05-20 05:00:00', // 5am UTC
+            'ends_at' => '2026-05-28 23:45:00',   // 4pm UTC
         ]);
 
         // Create main event: Musikfestwochen 2025 (6th August 2025 6pm to 17th August 2025 10pm)

@@ -6,8 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
-import { VueDatePicker } from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css';
 import { useStorage } from '@vueuse/core';
 import axios from 'axios';
 import { ChartColumnIncreasing, ChartSpline, ToggleLeft, ToggleRight } from 'lucide-vue-next';
@@ -38,7 +36,6 @@ const series = ref<AreaSeries[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const timeRange = ref('1h');
-const customRange = ref<[Date, Date] | null>(null);
 const chartStyle = useStorage<'spline' | 'step'>('peoplecount.area-count-history.chart-style', 'spline');
 const hiddenAreaIds = ref<Set<number>>(new Set());
 let refreshInterval: number | null = null;
@@ -61,11 +58,10 @@ function isAreaVisible(id: number): boolean {
     return !hiddenAreaIds.value.has(id);
 }
 
+const LINE_DASH_PATTERNS: (number[] | undefined)[] = [undefined, [6, 3], [2, 3], [10, 4, 2, 4], [10, 4]];
+
 function lineDashForIndex(index: number): number[] | undefined {
-    if (index === 0) {
-        return undefined;
-    }
-    return [2, 4];
+    return LINE_DASH_PATTERNS[index % LINE_DASH_PATTERNS.length];
 }
 
 function shortenName(name: string, maxLength = 18): string {
@@ -83,19 +79,9 @@ const timeRangeOptions = [
     { value: '6h', label: 'Last 6 hours' },
     { value: '12h', label: 'Last 12 hours' },
     { value: '24h', label: 'Last 24 hours' },
-    { value: 'custom', label: 'Custom range' },
 ];
 
-const isCustomRange = computed(() => timeRange.value === 'custom');
-
 function getTimeParams(): { from: string; to: string } {
-    if (timeRange.value === 'custom' && customRange.value) {
-        return {
-            from: customRange.value[0].toISOString(),
-            to: customRange.value[1].toISOString(),
-        };
-    }
-
     const now = new Date();
     const hours = parseInt(timeRange.value);
     const from = new Date(now.getTime() - hours * 60 * 60 * 1000);
@@ -141,8 +127,6 @@ function formatTickDate(d: number): string {
 }
 
 async function fetchHistory() {
-    if (timeRange.value === 'custom' && !customRange.value) return;
-
     try {
         error.value = null;
         const params = getTimeParams();
@@ -156,7 +140,7 @@ async function fetchHistory() {
     }
 }
 
-watch([timeRange, customRange], () => {
+watch(timeRange, () => {
     loading.value = true;
     fetchHistory();
 });
@@ -199,16 +183,6 @@ onBeforeUnmount(() => {
                         </SelectItem>
                     </SelectContent>
                 </Select>
-                <VueDatePicker
-                    v-if="isCustomRange"
-                    v-model="customRange"
-                    range
-                    :enable-time-picker="true"
-                    :auto-apply="true"
-                    :dark="false"
-                    input-class-name="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                    class="w-full sm:w-[280px]"
-                />
             </div>
         </CardHeader>
         <CardContent class="min-w-0">

@@ -332,6 +332,54 @@ class AreaAggregationService
     }
 
     /**
+     * Get aggregated count series for active areas in an organization within a time window.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getActiveAreaAggregatedCountsHistory(Organization $organization, Carbon $from, Carbon $to): array
+    {
+        $now = Date::now()->setTimezone('UTC');
+        $from = $from->copy()->setTimezone('UTC');
+        $to = $to->copy()->setTimezone('UTC');
+
+        $areas = Area::query()
+            ->whereHas('event', function (Builder $query) use ($organization, $now) {
+                $query->where('organization_id', $organization->id)
+                    ->where('starts_at', '<=', $now)
+                    ->where('ends_at', '>=', $now);
+            })
+            ->with([
+                'event:id,name',
+                'aggregatedCounts' => function (Relation $query) use ($from, $to): void {
+                    $query->where('period_start', '>=', $from)
+                        ->where('period_start', '<', $to)
+                        ->orderBy('period_start', 'asc')
+                        ->select(['id', 'area_id', 'count', 'period_start', 'period_end']);
+                },
+            ])
+            ->orderBy('name')
+            ->orderBy('id')
+            ->get(['id', 'name', 'event_id']);
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Area> $areas */
+        return $areas->map(function (Area $area) use ($now): array {
+            return [
+                'id' => $area->id,
+                'name' => $area->name,
+                'event_name' => $area->event->name,
+                'data' => $area->aggregatedCounts->map(function (AreaAggregatedCount $count) use ($now): array {
+                    return [
+                        'time' => $count->period_end->greaterThan($now)
+                            ? $now->toIso8601String()
+                            : $count->period_end->toIso8601String(),
+                        'count' => $count->count,
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
+    }
+
+    /**
      * Get the latest aggregated counts for active areas in an organization.
      *
      * @return array<int, array<string, mixed>>

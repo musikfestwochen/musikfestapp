@@ -66,7 +66,7 @@ it('returns area count history for active areas of an organization', function ()
     Carbon::setTestNow();
 });
 
-it('honors the from and to query parameters', function () {
+it('does not return data outside the requested range', function () {
     Carbon::setTestNow('2025-08-04 22:08:00');
 
     $admin = User::factory()->globalAdmin()->create();
@@ -218,6 +218,127 @@ it('rejects invalid date parameters', function () {
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['from']);
+});
+
+it('rejects history ranges above maximum allowed duration', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', [
+            'organization' => $org->slug,
+            'from' => Carbon::now()->subHours(25)->toIso8601String(),
+            'to' => Carbon::now()->toIso8601String(),
+        ]));
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['to']);
+
+    Carbon::setTestNow();
+});
+
+it('rejects an inverted history range', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', [
+            'organization' => $org->slug,
+            'from' => Carbon::now()->toIso8601String(),
+            'to' => Carbon::now()->subHour()->toIso8601String(),
+        ]));
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['from', 'to']);
+
+    Carbon::setTestNow();
+});
+
+it('returns areas in deterministic name order', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHour(),
+        'ends_at' => Carbon::now()->addHour(),
+    ]);
+
+    Area::factory()->create(['event_id' => $event->id, 'name' => 'Charlie']);
+    Area::factory()->create(['event_id' => $event->id, 'name' => 'Alpha']);
+    Area::factory()->create(['event_id' => $event->id, 'name' => 'Bravo']);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(200)
+        ->assertJsonPath('0.name', 'Alpha')
+        ->assertJsonPath('1.name', 'Bravo')
+        ->assertJsonPath('2.name', 'Charlie');
+
+    Carbon::setTestNow();
+});
+
+it('allows history ranges at maximum allowed duration', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', [
+            'organization' => $org->slug,
+            'from' => Carbon::now()->subHours(24)->toIso8601String(),
+            'to' => Carbon::now()->toIso8601String(),
+        ]));
+
+    $response->assertStatus(200);
+
+    Carbon::setTestNow();
+});
+
+it('defaults to the safe one-hour history range when no dates are provided', function () {
+    Carbon::setTestNow('2025-08-04 22:08:00');
+
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $event = Event::factory()->create([
+        'organization_id' => $org->id,
+        'starts_at' => Carbon::now()->subHours(5),
+        'ends_at' => Carbon::now()->addHours(5),
+    ]);
+
+    $area = Area::factory()->create(['event_id' => $event->id]);
+
+    // Inside the implicit one-hour window
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subMinutes(30),
+        'period_end' => Carbon::now()->subMinutes(20),
+        'count' => 11,
+    ]);
+
+    // Outside the implicit one-hour window
+    AreaAggregatedCount::factory()->withArea($area)->create([
+        'period_start' => Carbon::now()->subHours(3),
+        'period_end' => Carbon::now()->subHours(2)->subMinutes(50),
+        'count' => 99,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', ['organization' => $org->slug]));
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1, '0.data')
+        ->assertJsonPath('0.data.0.count', 11);
+
+    Carbon::setTestNow();
 });
 
 it('uses the correct form request and middleware', function () {

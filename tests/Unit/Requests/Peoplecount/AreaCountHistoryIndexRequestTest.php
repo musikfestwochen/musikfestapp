@@ -11,8 +11,8 @@ beforeEach(function () {
 
 it('has correct rules', function () {
     expect($this->request->rules())->toBe([
-        'from' => ['nullable', 'date'],
-        'to' => ['nullable', 'date'],
+        'from' => ['nullable', 'date', 'required_with:to', 'before_or_equal:to'],
+        'to' => ['nullable', 'date', 'required_with:from', 'after_or_equal:from'],
     ]);
 });
 
