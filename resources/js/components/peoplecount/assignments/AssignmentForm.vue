@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
 import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
-import { VueDatePicker } from '@vuepic/vue-datepicker';
+import { VueDatePicker, WeekStart } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { LoaderCircle } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -84,6 +84,7 @@ const datePickerConfig = {
     placeholder: 'Select active date and time range',
     autoApply: true,
     closeOnAutoApply: true,
+    weekStart: WeekStart.Monday,
     utc: false, // We handle UTC conversion manually
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 };

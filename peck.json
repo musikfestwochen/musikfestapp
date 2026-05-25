@@ -32,7 +32,8 @@
             "makefile",
             "eastereggs",
             "ids",
-            "ds"
+            "ds",
+            "datepicker"
         ],
         "paths": []
     }
