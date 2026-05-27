@@ -25,6 +25,8 @@ yarn-error.log
 .GITHUB_SECRETS
 coverage/
 /temp/**
+.DS_Store
+**/.DS_Store
 
 # Playwright
 node_modules/
@@ -41,6 +43,7 @@ node_modules/
 /CLAUDE.md
 /.agents/
 /.junie/
+/.claude/
 /junie/
 /opencode.json
 /.ai/*
