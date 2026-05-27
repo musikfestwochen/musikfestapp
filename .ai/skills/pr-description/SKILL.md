@@ -59,6 +59,10 @@ npm run build
 ```
 
 Fixes #<number>
+
+---
+**«<inspiring quote here>»**
+_<author>_
 ````
 
 ### Section Guidelines
@@ -88,6 +92,15 @@ Fixes #<number>
     - A screenshot placeholder (`> TODO: attach before/after screenshots`) for visual changes.
     - Do **not** include these subsections by default. Only when they are genuinely important.
 - **Fixes #N**: Only include when the PR actually fixes/closes a GitHub issue. Use `Fixes #<number>` syntax (one per line if multiple). Do not fabricate issue numbers -- ask the user if unsure.
+- **Ending line + quote (required):** End every PR description with horizontal rule, then one inspiring quote line. Format:
+
+  ```markdown
+  ---
+  **«<inspiring quote here>»**
+  _<author>_
+  ```
+
+  Use `php artisan inspire --no-interaction` to source quote.
 
 ## Multi-Purpose PR Detection
 

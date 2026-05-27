@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Organization, PeoplecountArea, PeoplecountAreaSingleReset } from '@/types';
 import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
-import { VueDatePicker } from '@vuepic/vue-datepicker';
+import { VueDatePicker, WeekStart } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { LoaderCircle } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -59,6 +59,7 @@ const datePickerConfig = {
     placeholder: 'Select effective date and time',
     autoApply: true,
     closeOnAutoApply: true,
+    weekStart: WeekStart.Monday,
     utc: false, // We handle UTC conversion manually
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 };
@@ -118,15 +119,15 @@ const datePickerConfig = {
 @reference '../../../../css/app.css';
 
 /* Custom styling for the date picker to match the design system */
-:deep(.dp__input) {
+:deep(.dp--input) {
     @apply border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
 }
 
-:deep(.dp__input_wrap) {
+:deep(.dp--input-wrap) {
     @apply w-full;
 }
 
-:deep(.dp__main) {
+:deep(.dp--main) {
     @apply font-sans;
 }
 </style>

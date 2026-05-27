@@ -6,6 +6,11 @@ on:
       - '.junie/**'
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
+  merge_group:
+    branches:
+      - main
+    types:
+      - checks_requested
   push:
     branches:
       - main
@@ -14,7 +19,7 @@ on:
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
   schedule:
-    - cron: "35 4 * * 2"
+    - cron: '35 4 * * 2'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +27,7 @@ permissions:
 
 jobs:
   lockfile-consistency:
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -33,8 +38,15 @@ jobs:
       - name: Validate lockfile consistency
         run: |
           set -euo pipefail
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.sha }}"
+
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            BASE_SHA="${{ github.event.merge_group.base_sha }}"
+            HEAD_SHA="${{ github.event.merge_group.head_sha }}"
+          else
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
           CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
 
           if echo "$CHANGED_FILES" | grep -qx "package.json" && ! echo "$CHANGED_FILES" | grep -qx "package-lock.json"; then
@@ -59,7 +71,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: '8.4'
           tools: composer:v2
 
       - name: Validate composer files

@@ -8,8 +8,8 @@ on:
       - '.junie/**'
       - '.run/**'
       - 'docs/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/PULL_REQUEST_TEMPLATE/**'
+      - '.github/**'
+      - '.ai/**'
       - 'docker-compose.yml'
       - 'Dockerfile'
       - '**/*.md'
@@ -95,8 +95,9 @@ jobs:
 
             PHP_BIN="/opt/php8.4/bin/php"
             COMPOSER_BIN="/opt/php8.4/bin/composer"
+            APP_PATH="/home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp"
 
-            cd /home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp
+            cd "$APP_PATH"
 
             if $PHP_BIN artisan down --refresh=15; then
               echo "Application in maintenance mode."
@@ -104,9 +105,9 @@ jobs:
               echo "Failed to put application in maintenance mode. Continuing deployment..."
             fi
 
-            echo "Pulling latest changes from the repository..."
-            git reset --hard
-            git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
+            echo "Fetching latest changes from the repository..."
+            git fetch origin main || { echo "Git fetch failed! Exiting."; exit 1; }
+            git reset --hard origin/main || { echo "Git reset to origin/main failed! Exiting."; exit 1; }
 
             echo "Decrypting environment file..."
             $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY_2 }} --force --filename=new-env || { echo "Environment decryption failed! Exiting."; exit 1; }

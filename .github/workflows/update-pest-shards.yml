@@ -21,6 +21,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PR_AUTOMATION_CLIENT_ID }}
+          private-key: ${{ secrets.PR_AUTOMATION_APP_PRIVATE_KEY }}
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -65,10 +72,11 @@ jobs:
 
       - name: Update shard timings
         run: ./vendor/bin/pest --ci --parallel --update-shards
-
+    
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: 'chore: update Pest shard timings'
           branch: 'chore/update-pest-shards'
           delete-branch: true
