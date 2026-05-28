@@ -5,8 +5,11 @@
             "php",
             "filesystems",
             "eslint",
+            "erd",
             "favicon",
             "img",
+            "javascripts",
+            "mkdocs",
             "mfw",
             "js",
             "nav",
@@ -30,10 +33,12 @@
             "deduplicate",
             "dockerfile",
             "makefile",
+            "pyproject",
             "eastereggs",
             "ids",
             "ds",
-            "datepicker"
+            "datepicker",
+            "stylesheets"
         ],
         "paths": []
     }

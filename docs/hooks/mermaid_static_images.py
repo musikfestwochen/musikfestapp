@@ -11,6 +11,7 @@ MERMAID_FENCE_PATTERN = re.compile(
     re.DOTALL | re.MULTILINE,
 )
 RENDERED_HASHES: set[str] = set()
+PUPPETEER_CONFIG_PATH = Path(__file__).with_name('puppeteer-config.json')
 
 
 def _render_mermaid_to_svg(source: str, destination: Path) -> None:
@@ -31,6 +32,8 @@ def _render_mermaid_to_svg(source: str, destination: Path) -> None:
             str(destination),
             '-b',
             'transparent',
+            '-p',
+            str(PUPPETEER_CONFIG_PATH),
         ]
         subprocess.run(command, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as error:

@@ -1,6 +1,19 @@
 name: Deploy Documentation
 
 on:
+  pull_request:
+    paths:
+      - docs/**
+      - overrides/**
+      - mkdocs.yml
+      - pyproject.toml
+      - uv.lock
+      - app/Models/**
+      - database/migrations/**
+      - config/database.php
+      - composer.json
+      - composer.lock
+      - .github/workflows/docs-pages.yml
   push:
     branches:
       - main
@@ -14,7 +27,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,12 +36,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  docs-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -45,14 +67,73 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
       - name: Install docs dependencies
         run: uv sync --frozen
 
       - name: Prepare app environment for ERD generation
         run: |
-          cp .env.example .env
+          cp .env.local .env
           touch database/database.sqlite
           php artisan key:generate --force
+          php artisan migrate --force --no-interaction
+
+      - name: Regenerate ER diagram markdown
+        run: composer docs:erd
+
+      - name: Auto-commit regenerated ERD
+        if: github.event.pull_request.head.repo.fork == false
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          file_pattern: docs/diagrams/erd.md
+          commit_message: 'chore(docs): regenerate ERD'
+
+      - name: Build docs site
+        run: uv run mkdocs build --strict
+
+  build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install docs dependencies
+        run: uv sync --frozen
+
+      - name: Prepare app environment for ERD generation
+        run: |
+          cp .env.local .env
+          touch database/database.sqlite
+          php artisan key:generate --force
+          php artisan migrate --force --no-interaction
 
       - name: Regenerate ER diagram markdown
         run: composer docs:erd
@@ -69,6 +150,7 @@ jobs:
           path: site
 
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

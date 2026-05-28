@@ -95,6 +95,8 @@ function openImageViewer(sourceImage) {
   const zoomOut = document.createElement('button');
   zoomOut.type = 'button';
   zoomOut.textContent = '-';
+  zoomOut.setAttribute('aria-label', 'Zoom out');
+  zoomOut.title = 'Zoom out';
 
   const zoomLabel = document.createElement('span');
   zoomLabel.className = 'docs-image-viewer__zoom-label';
@@ -103,10 +105,14 @@ function openImageViewer(sourceImage) {
   const zoomIn = document.createElement('button');
   zoomIn.type = 'button';
   zoomIn.textContent = '+';
+  zoomIn.setAttribute('aria-label', 'Zoom in');
+  zoomIn.title = 'Zoom in';
 
   const zoomReset = document.createElement('button');
   zoomReset.type = 'button';
   zoomReset.textContent = 'Reset';
+  zoomReset.setAttribute('aria-label', 'Reset zoom');
+  zoomReset.title = 'Reset zoom';
 
   controls.append(zoomOut, zoomLabel, zoomIn, zoomReset);
 
