@@ -2,6 +2,11 @@ function closeImageViewer() {
   const viewer = document.getElementById('docs-image-viewer');
 
   if (viewer) {
+    const resizeHandler = viewer.__resizeHandler;
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler);
+    }
+
     viewer.remove();
   }
 
@@ -238,11 +243,14 @@ function openImageViewer(sourceImage) {
     event.preventDefault();
   });
 
-  window.addEventListener('resize', () => {
+  const resizeHandler = () => {
     if (state.zoom <= 1.01) {
       fitZoom(state);
     }
-  });
+  };
+
+  viewer.__resizeHandler = resizeHandler;
+  window.addEventListener('resize', resizeHandler);
 
   backdrop.addEventListener('click', closeImageViewer);
   viewer.addEventListener('keydown', (event) => {

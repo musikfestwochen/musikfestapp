@@ -48,6 +48,15 @@ jobs:
       - name: Install docs dependencies
         run: uv sync --frozen
 
+      - name: Prepare app environment for ERD generation
+        run: |
+          cp .env.example .env
+          touch database/database.sqlite
+          php artisan key:generate --force
+
+      - name: Regenerate ER diagram markdown
+        run: composer docs:erd
+
       - name: Build docs site
         run: uv run mkdocs build --strict
 
