@@ -1,0 +1,134 @@
+:root {
+  --md-primary-fg-color: #1c4f8f;
+  --md-primary-fg-color--light: #4d7ab3;
+  --md-primary-fg-color--dark: #123866;
+  --md-accent-fg-color: #d97706;
+}
+
+[data-md-color-scheme='slate'] {
+  --md-primary-fg-color: #4c82c4;
+  --md-primary-fg-color--light: #7aa8df;
+  --md-primary-fg-color--dark: #335b8b;
+  --md-accent-fg-color: #f59e0b;
+}
+
+.md-typeset img.mermaid-diagram {
+  background: #fff;
+  border-radius: 0.4rem;
+  padding: 0.35rem;
+}
+
+.md-typeset img {
+  cursor: zoom-in;
+}
+
+body.docs-image-viewer-open {
+  overflow: hidden;
+}
+
+.docs-image-viewer {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1.25rem;
+  position: fixed;
+  z-index: 9999;
+}
+
+.docs-image-viewer__backdrop {
+  background: rgba(0, 0, 0, 0.78);
+  inset: 0;
+  position: absolute;
+}
+
+.docs-image-viewer__frame {
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  height: 92vh;
+  max-height: 96vh;
+  max-width: 96vw;
+  overflow: auto;
+  padding: 0.5rem;
+  position: relative;
+  width: 96vw;
+  z-index: 1;
+}
+
+.docs-image-viewer__frame.is-panning {
+  cursor: grabbing;
+}
+
+.docs-image-viewer__canvas {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100%;
+  min-width: 100%;
+}
+
+.docs-image-viewer__controls {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+  position: fixed;
+  right: 1.25rem;
+  top: 1.25rem;
+  z-index: 10001;
+}
+
+.docs-image-viewer__controls button,
+.docs-image-viewer__zoom-label {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.35rem;
+  color: #fff;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+}
+
+.docs-image-viewer__controls button {
+  cursor: pointer;
+}
+
+[data-md-color-scheme='default'] .docs-image-viewer__controls button,
+[data-md-color-scheme='default'] .docs-image-viewer__zoom-label {
+  background: rgba(248, 250, 252, 0.92);
+  border-color: rgba(15, 23, 42, 0.2);
+  color: #0f172a;
+}
+
+[data-md-color-scheme='slate'] .docs-image-viewer__frame {
+  background: #0f172a;
+}
+
+.docs-image-viewer__frame--light,
+[data-md-color-scheme='slate'] .docs-image-viewer__frame--light {
+  background: #fff;
+}
+
+.docs-image-viewer__frame img {
+  -webkit-user-drag: none;
+  user-select: none;
+  cursor: grab;
+  display: block;
+  height: auto;
+  max-height: none;
+  max-width: none;
+  transition: width 120ms ease, height 120ms ease;
+  width: auto;
+}
+
+.md-header__button.md-logo {
+  padding: 0.15rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg,
+.md-nav__button.md-logo img,
+.md-nav__button.md-logo svg {
+  display: block;
+  margin: 0.2rem;
+}

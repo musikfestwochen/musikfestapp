@@ -2,6 +2,14 @@ name: linter
 
 on:
   pull_request:
+    paths-ignore:
+      - '.junie/**'
+      - 'docs/**'
+      - 'overrides/**'
+      - 'mkdocs.yml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/ISSUE_TEMPLATE/**'
   merge_group:
     branches:
       - main

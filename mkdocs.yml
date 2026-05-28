@@ -1,0 +1,70 @@
+site_name: Musikfestapp Documentation
+site_description: Technical documentation for Musikfestapp
+site_url: https://musikfestwochen.github.io/musikfestapp/
+dev_addr: 127.0.0.1:8001
+repo_url: https://github.com/musikfestwochen/musikfestapp
+repo_name: musikfestwochen/musikfestapp
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+plugins:
+  - search
+
+hooks:
+  - docs/hooks/mermaid_static_images.py
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+exclude_docs: README.md
+
+extra_css:
+  - stylesheets/brand.css
+
+extra_javascript:
+  - javascripts/image-viewer.js
+
+nav:
+  - Home: index.md
+  - People Count:
+      - Introduction: peoplecount/index.md
+      - Aggregation Overview: peoplecount/overview.md
+      - Aggregation Algorithm: peoplecount/aggregation-algorithm.md
+  - Diagrams:
+      - Entity Relationship Diagram: diagrams/erd.md

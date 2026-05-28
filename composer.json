@@ -23,8 +23,8 @@
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {
+        "bambamboole/laravel-mermaid-erd": "^0.3.5",
         "barryvdh/laravel-debugbar": "^4.2",
-        "beyondcode/laravel-er-diagram-generator": "6.0",
         "driftingly/rector-laravel": "^2.0",
         "jasonmccreary/laravel-test-assertions": "^2.8",
         "larastan/larastan": "^3.1",
@@ -133,10 +133,8 @@
             "@test:mutation:ai",
             "@test:e2e:ai"
         ],
-        "generate": [
-            "php artisan generate:erd ./docs/diagrams/er-diagram.svg",
-            "php artisan generate:erd ./docs/diagrams/er-diagram.png",
-            "php artisan generate:erd ./docs/diagrams/er-diagram.txt"
+        "docs:erd": [
+            "php artisan generate:mermaid-erd --output=file --path=docs/diagrams/erd.md"
         ],
         "precommit": [
             "@rector",

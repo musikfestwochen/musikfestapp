@@ -1,0 +1,114 @@
+name: Deploy Documentation
+
+on:
+  pull_request:
+    paths:
+      - docs/**
+      - overrides/**
+      - mkdocs.yml
+      - pyproject.toml
+      - uv.lock
+      - app/Models/**
+      - database/migrations/**
+      - config/database.php
+      - composer.json
+      - composer.lock
+      - .github/workflows/docs-pages.yml
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - overrides/**
+      - mkdocs.yml
+      - pyproject.toml
+      - uv.lock
+      - app/Models/**
+      - database/migrations/**
+      - config/database.php
+      - composer.json
+      - composer.lock
+      - .github/workflows/docs-pages.yml
+  workflow_dispatch:
+
+jobs:
+  docs-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: docs-pr-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Prepare docs environment
+        uses: ./.github/actions/docs-prepare
+
+      - name: Auto-commit regenerated ERD
+        if: github.event.pull_request.head.repo.fork == false
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          file_pattern: docs/diagrams/erd.md
+          commit_message: 'chore(docs): regenerate ERD'
+
+      - name: Enforce committed ERD on fork PRs
+        if: github.event.pull_request.head.repo.fork == true
+        run: |
+          if ! git diff --quiet -- docs/diagrams/erd.md; then
+            echo 'ERD drift detected in docs/diagrams/erd.md for fork PR.'
+            echo 'Please run composer docs:erd locally and commit result.'
+            git diff -- docs/diagrams/erd.md
+            exit 1
+          fi
+
+      - name: Build docs site
+        run: uv run mkdocs build --strict
+
+  build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Prepare docs environment
+        uses: ./.github/actions/docs-prepare
+
+      - name: Build docs site
+        run: uv run mkdocs build --strict
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    if: github.event_name == 'push'
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -35,6 +35,10 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /.junie/guidelines.md
+/site/
+/.venv/
+/docs/assets/diagrams/
+__pycache__/
 
 # Laravel Boost generated/local agent files
 /.mcp.json
