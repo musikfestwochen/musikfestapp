@@ -89,7 +89,7 @@ def on_page_markdown(markdown: str, page, config, files):
         source = match.group(1).strip()
         source_hash = hashlib.sha256(source.encode('utf-8')).hexdigest()[:16]
         svg_name = f'mermaid-{source_hash}.svg'
-        svg_path = Path(config['docs_dir']) / 'assets' / 'diagrams' / svg_name
+        svg_path = Path(config['site_dir']) / 'assets' / 'diagrams' / svg_name
 
         if not svg_path.exists():
             _render_mermaid_to_svg(source, svg_path)
