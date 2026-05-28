@@ -1,0 +1,25 @@
+:root {
+  --md-primary-fg-color: #1c4f8f;
+  --md-primary-fg-color--light: #4d7ab3;
+  --md-primary-fg-color--dark: #123866;
+  --md-accent-fg-color: #d97706;
+}
+
+[data-md-color-scheme='slate'] {
+  --md-primary-fg-color: #4c82c4;
+  --md-primary-fg-color--light: #7aa8df;
+  --md-primary-fg-color--dark: #335b8b;
+  --md-accent-fg-color: #f59e0b;
+}
+
+.md-header__button.md-logo {
+  padding: 0.15rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg,
+.md-nav__button.md-logo img,
+.md-nav__button.md-logo svg {
+  display: block;
+  margin: 0.2rem;
+}

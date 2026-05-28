@@ -1,0 +1,161 @@
+{% extends "main.html" %}
+
+{% block tabs %}
+  {{ super() }}
+
+  <style>
+    html,
+    body {
+      background-image: url("{{ 'assets/mfw_background_01-1280.webp' | url }}");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      overflow: hidden;
+    }
+
+    .md-header {
+      background: transparent;
+      box-shadow: none;
+      position: initial;
+    }
+
+    .md-header__button.md-icon {
+      backdrop-filter: blur(3px);
+      background-color: rgba(15, 23, 42, 0.42);
+      border-radius: 999px;
+      color: #f8fafc;
+      margin: 0.2rem;
+      padding: 0.35rem;
+    }
+
+    [data-md-color-scheme="default"] .md-header__button.md-icon {
+      background-color: rgba(248, 250, 252, 0.7);
+      color: #0f172a;
+    }
+
+    .md-tabs {
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .md-main__inner {
+      margin: 0;
+    }
+
+    .md-main {
+      min-height: 0;
+    }
+
+    .md-main,
+    .md-main__inner {
+      height: 0;
+      padding: 0;
+    }
+
+    .md-content {
+      display: none;
+    }
+
+    @media screen and (min-width: 60em) {
+      .md-sidebar--secondary {
+        display: none;
+      }
+    }
+
+    @media screen and (min-width: 76.25em) {
+      .md-sidebar--primary {
+        display: none;
+      }
+    }
+
+    .mdx-container {
+      height: 100vh;
+      inset: 0;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      z-index: 0;
+    }
+
+    .mdx-hero {
+      align-items: flex-end;
+      color: #f8fafc;
+      display: flex;
+      height: 100vh;
+      position: relative;
+    }
+
+    .md-header,
+    .md-tabs {
+      position: relative;
+      z-index: 2;
+    }
+
+    .mdx-hero::before {
+      background: linear-gradient(
+        0deg,
+        rgba(248, 250, 252, 0.92) 0%,
+        rgba(248, 250, 252, 0.78) 22%,
+        rgba(248, 250, 252, 0.08) 54%,
+        rgba(248, 250, 252, 0) 68%
+      );
+      content: "";
+      inset: 0;
+      position: absolute;
+    }
+
+    [data-md-color-scheme="slate"] .mdx-hero::before {
+      background: linear-gradient(
+        0deg,
+        rgba(7, 15, 26, 0.96) 0%,
+        rgba(7, 15, 26, 0.82) 22%,
+        rgba(7, 15, 26, 0.2) 54%,
+        rgba(7, 15, 26, 0) 68%
+      );
+    }
+
+    .mdx-hero__content {
+      margin: 0 auto;
+      max-width: 70rem;
+      padding: 0 1.5rem 3.2rem;
+      position: relative;
+      width: 100%;
+      z-index: 1;
+    }
+
+    .mdx-hero__content h1 {
+      color: #0f172a;
+      font-size: clamp(2rem, 6vw, 4rem);
+      line-height: 1.08;
+      margin: 0;
+    }
+
+    [data-md-color-scheme="slate"] .mdx-hero__content h1 {
+      color: #f8fafc;
+    }
+
+    .mdx-hero__content p {
+      color: #1e293b;
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      margin: 0.9rem 0 0;
+      max-width: 42rem;
+    }
+
+    [data-md-color-scheme="slate"] .mdx-hero__content p {
+      color: #e2e8f0;
+    }
+  </style>
+
+  <section class="mdx-container">
+    <div class="mdx-hero">
+      <div class="mdx-hero__content md-typeset">
+        <h1>Musikfestapp Documentation</h1>
+        <p>{{ config.site_description }}</p>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}{% endblock %}
+
+{% block footer %}{% endblock %}
