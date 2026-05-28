@@ -1,0 +1,46 @@
+name: Docs prepare
+description: Setup environment and regenerate docs ERD
+
+runs:
+  using: composite
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        tools: composer:v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Setup Node
+      uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    - name: Install PHP dependencies
+      shell: bash
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+    - name: Install docs dependencies
+      shell: bash
+      run: uv sync --frozen
+
+    - name: Prepare app environment for ERD generation
+      shell: bash
+      run: |
+        cp .env.local .env
+        touch database/database.sqlite
+        php artisan key:generate --force
+        php artisan migrate --force --no-interaction
+
+    - name: Regenerate ER diagram markdown
+      shell: bash
+      run: composer docs:erd
