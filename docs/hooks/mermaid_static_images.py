@@ -91,7 +91,7 @@ def on_page_markdown(markdown: str, page, config, files):
         svg_name = f'mermaid-{source_hash}.svg'
         svg_path = Path(config['docs_dir']) / 'assets' / 'diagrams' / svg_name
 
-        if source_hash not in RENDERED_HASHES and not svg_path.exists():
+        if not svg_path.exists():
             _render_mermaid_to_svg(source, svg_path)
 
         _normalize_svg_dimensions(svg_path, source_hash)

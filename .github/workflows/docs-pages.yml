@@ -23,22 +23,23 @@ on:
       - mkdocs.yml
       - pyproject.toml
       - uv.lock
+      - app/Models/**
+      - database/migrations/**
+      - config/database.php
+      - composer.json
+      - composer.lock
       - .github/workflows/docs-pages.yml
   workflow_dispatch:
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   docs-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: docs-pr-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout
@@ -56,12 +57,24 @@ jobs:
           file_pattern: docs/diagrams/erd.md
           commit_message: 'chore(docs): regenerate ERD'
 
+      - name: Enforce committed ERD on fork PRs
+        if: github.event.pull_request.head.repo.fork == true
+        run: |
+          if ! git diff --quiet -- docs/diagrams/erd.md; then
+            echo 'ERD drift detected in docs/diagrams/erd.md for fork PR.'
+            echo 'Please run composer docs:erd locally and commit result.'
+            git diff -- docs/diagrams/erd.md
+            exit 1
+          fi
+
       - name: Build docs site
         run: uv run mkdocs build --strict
 
   build:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -83,6 +96,12 @@ jobs:
 
   deploy:
     if: github.event_name == 'push'
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
