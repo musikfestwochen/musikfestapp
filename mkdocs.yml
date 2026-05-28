@@ -57,9 +57,14 @@ exclude_docs: README.md
 extra_css:
   - stylesheets/brand.css
 
+extra_javascript:
+  - javascripts/image-viewer.js
+
 nav:
   - Home: index.md
   - People Count:
       - Introduction: peoplecount/index.md
       - Aggregation Overview: peoplecount/overview.md
       - Aggregation Algorithm: peoplecount/aggregation-algorithm.md
+  - Diagrams:
+      - Entity Relationship Diagram: diagrams/erd.md

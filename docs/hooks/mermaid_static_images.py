@@ -96,6 +96,6 @@ def on_page_markdown(markdown: str, page, config, files):
         RENDERED_HASHES.add(source_hash)
 
         image_path = _image_path_for_page(page.url, svg_name)
-        return f'<img src="{image_path}" alt="Mermaid diagram" loading="lazy">'
+        return f'<img src="{image_path}" alt="Mermaid diagram" loading="lazy" class="mermaid-diagram">'
 
     return MERMAID_FENCE_PATTERN.sub(replace_fence, markdown)

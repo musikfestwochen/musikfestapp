@@ -19,6 +19,14 @@ uv run mkdocs build --strict
 
 `--strict` fails build on documentation warnings.
 
+## Regenerate ER Diagram
+
+```bash
+composer docs:erd
+```
+
+This updates `docs/diagrams/erd.md` from current Laravel schema.
+
 ## Run Local Preview
 
 ```bash
