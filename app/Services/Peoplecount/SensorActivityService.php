@@ -27,7 +27,8 @@ class SensorActivityService
         $cacheKey = 'peoplecount:most_active_sensors:org:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cacheTtlSeconds), function () use ($organization): array {
-            $now = Date::now()->setTimezone('UTC');
+            $timezone = (string) config('app.timezone');
+            $now = Date::now()->setTimezone($timezone);
             $windows = [
                 '10m' => $now->copy()->subMinutes(10),
                 '30m' => $now->copy()->subMinutes(30),

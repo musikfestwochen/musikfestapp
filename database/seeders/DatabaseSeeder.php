@@ -90,7 +90,8 @@ class DatabaseSeeder extends Seeder
         $org1 = Organization::factory()->create();
         $org2 = Organization::factory()->create();
 
-        $now = Date::now('UTC');
+        $timezone = (string) config('app.timezone');
+        $now = Date::now($timezone);
 
         // Event for first organization: 1 area
         $event1 = Event::factory()->withOrganization($org1)->create([
