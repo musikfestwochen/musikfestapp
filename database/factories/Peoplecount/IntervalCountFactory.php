@@ -20,14 +20,11 @@ class IntervalCountFactory extends Factory
      */
     public function definition(): array
     {
-        $tsFrom = now()->subMinute();
-        $tsTo = now();
-
         return [
             'sensor_id' => Sensor::query()->inRandomOrder()->first()->id ?? Sensor::factory()->create()->id,
-            'ts_from' => $tsFrom,
-            'ts_to' => $tsTo,
-            'received_at' => $tsTo,
+            'ts_from' => now()->subMinute(),
+            'ts_to' => now(),
+            'received_at' => fn (array $attributes) => $attributes['ts_to'],
             'count_in' => fake()->numberBetween(0, 100),
             'count_out' => fake()->numberBetween(0, 100),
         ];

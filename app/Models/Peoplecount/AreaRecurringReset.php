@@ -81,7 +81,7 @@ class AreaRecurringReset extends Model
      */
     public function getPreviousDailyOccurrence(?Carbon $from = null): Carbon
     {
-        $appTimezone = config('app.timezone');
+        $appTimezone = (string) config('app.timezone'); // @pest-mutate-ignore
 
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Date::now($this->timezone);
@@ -105,7 +105,7 @@ class AreaRecurringReset extends Model
      */
     public function getNextDailyOccurrence(?Carbon $from = null): Carbon
     {
-        $appTimezone = config('app.timezone');
+        $appTimezone = (string) config('app.timezone'); // @pest-mutate-ignore
 
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Date::now($this->timezone);

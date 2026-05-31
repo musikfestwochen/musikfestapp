@@ -197,6 +197,21 @@ describe('processIntervalCount', function () {
         $this->service->processIntervalCount($sensor, $data);
     });
 
+    it('throws on missing sensor serial with exact message', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'ABC123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => [],
+            'data' => ['utcFrom' => now()->toIso8601String(), 'utcTo' => now()->toIso8601String(), 'measurements' => []],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Sensor serial mismatch: expected ABC123, got missing');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
     it('returns 0 for empty measurements array', function () {
         $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
 

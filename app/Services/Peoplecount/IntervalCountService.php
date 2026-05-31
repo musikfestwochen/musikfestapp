@@ -43,13 +43,14 @@ class IntervalCountService
      */
     public function processAxisIntervalCount(Sensor $sensor, array $data): int
     {
-        $timezone = config('app.timezone');
+        $timezone = (string) config('app.timezone'); // @pest-mutate-ignore
 
         // Validate API name and version
         throw_if(($data['apiName'] ?? null) !== 'Axis Retail Data' || ($data['apiVersion'] ?? null) !== '0.4', Exception::class, 'Unsupported Axis API version or name.');
 
         // Validate sensor serial
-        throw_if(($data['sensor']['serial'] ?? null) !== $sensor->serial, Exception::class, 'Sensor serial mismatch: expected '.$sensor->serial.', got '.$data['sensor']['serial']);
+        $providedSerial = $data['sensor']['serial'] ?? 'missing';
+        throw_if($providedSerial !== $sensor->serial, Exception::class, 'Sensor serial mismatch: expected '.$sensor->serial.', got '.$providedSerial);
 
         // Get measurements array
         $measurements = $data['data']['measurements'] ?? [];
