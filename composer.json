@@ -87,8 +87,14 @@
         "test:sca:ai": [
             "phpstan --xdebug --no-progress --error-format=raw"
         ],
+        "test:frontend": [
+            "npm run test"
+        ],
         "test:coverage": [
             "pest --coverage --parallel --min=100"
+        ],
+        "test:coverage:ci": [
+            "pest --ci --coverage --parallel --min=100"
         ],
         "test:coverage:ai": [
             "pest --coverage --parallel --min=100 --compact --no-progress --coverage-text=storage/logs/precommit-ai-coverage.txt --only-summary-for-coverage-text"
@@ -96,13 +102,25 @@
         "test:types": [
             "pest --type-coverage --parallel --min=100"
         ],
+        "test:types:ci": [
+            "pest --ci --type-coverage --parallel --min=100"
+        ],
         "test:types:ai": [
             "pest --type-coverage --parallel --min=100 --compact --no-progress"
+        ],
+        "test:mariadb": [
+            "pest --compact --filter=\"Migration|Database|Model\""
+        ],
+        "test:update-shards": [
+            "pest --ci --parallel --update-shards"
         ],
         "test:e2e": [
             "npm run build",
             "npm run e2e",
             "php artisan migrate:fresh --seed"
+        ],
+        "test:e2e:ci": [
+            "npx playwright test"
         ],
         "test:e2e:ai": [
             "npx vite build --logLevel error",

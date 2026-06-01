@@ -27,54 +27,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  basic-tests:
+  quality-tests:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          php-version: 8.4
-          tools: composer:v2
-          coverage: xdebug
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v5
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
-
-      - name: Install Node Dependencies
-        run: npm i
-
-      - name: Create SQLite Database
-        run: touch database/database.sqlite
-
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.local .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Publish Ziggy Configuration
-        run: php artisan ziggy:generate
-
-      - name: Build Assets
-        run: npm run build
+          build-assets: 'true'
 
       - name: Upload Built Assets
         uses: actions/upload-artifact@v7
@@ -83,82 +46,25 @@ jobs:
           path: public/build
 
       - name: Run Vitest
-        run: npx vitest run
+        run: composer test:frontend
         env:
           LARAVEL_BYPASS_ENV_CHECK: 1
 
       - name: SCA Tests
-        run: ./vendor/bin/phpstan analyse
+        run: composer test:sca
 
-      - name: Pest Tests
-        run: ./vendor/bin/pest --ci --parallel
+      - name: Pest Coverage Tests
+        run: composer test:coverage:ci
 
       - name: Type Coverage Tests
-        run: ./vendor/bin/pest --type-coverage
+        run: composer test:types:ci
 
   mariadb-migration-tests:
-    needs: basic-tests
     uses: ./.github/workflows/mariadb-migration-tests.yml
     secrets: inherit
 
-  coverage-tests:
-    runs-on: ubuntu-latest
-    needs: basic-tests
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.4
-          tools: composer:v2
-          coverage: xdebug
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v5
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
-
-      - name: Install Node Dependencies
-        run: npm i
-
-      - name: Create SQLite Database
-        run: touch database/database.sqlite
-
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.local .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Publish Ziggy Configuration
-        run: php artisan ziggy:generate
-
-      - name: Download Built Assets
-        uses: actions/download-artifact@v8
-        with:
-          name: built-assets
-          path: public/build
-
-      - name: Run Coverage Tests
-        run: ./vendor/bin/pest --coverage --min=100 --parallel
-
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: basic-tests
     services:
       mailpit:
         image: axllent/mailpit:latest
@@ -169,53 +75,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          php-version: 8.4
-          tools: composer:v2
-          coverage: xdebug
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v5
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
-
-      - name: Install Node Dependencies
-        run: npm i
-
-      - name: Install Playwright Browsers
-        run: npx playwright install chromium webkit --with-deps
-
-      - name: Create SQLite Database
-        run: touch database/database.sqlite
-
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.local .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Publish Ziggy Configuration
-        run: php artisan ziggy:generate
-
-      - name: Download Built Assets
-        uses: actions/download-artifact@v8
-        with:
-          name: built-assets
-          path: public/build
+          install-playwright: 'true'
+          coverage: 'none'
+          build-assets: 'true'
 
       - name: Start Laravel Server
         run: php artisan serve --port=8000 &
@@ -226,7 +91,7 @@ jobs:
           DB_DATABASE: database/database.sqlite
 
       - name: Run E2E Tests
-        run: npx playwright test
+        run: composer test:e2e:ci
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:8000
           CI: true
