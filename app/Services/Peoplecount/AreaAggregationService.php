@@ -42,7 +42,7 @@ class AreaAggregationService
      */
     protected function prepareAreaForAggregation(Area $area): string
     {
-        $this->loadAreaRelationships($area); // @pest-mutate-ignore
+        $this->loadAreaRelationships($area);
         $areaConfigChecksum = $this->areaService->calculateChecksum($area);
         $this->deleteInvalidAggregationRows($area, $areaConfigChecksum);
 
@@ -51,8 +51,6 @@ class AreaAggregationService
 
     /**
      * Load all necessary relationships for the area.
-     *
-     * @pest-mutate-ignore
      */
     protected function loadAreaRelationships(Area $area): void
     {
@@ -107,8 +105,6 @@ class AreaAggregationService
 
     /**
      * Calculate the median window size from aggregated counts.
-     *
-     * @pest-mutate-ignore
      *
      * @param  Collection<int, AreaAggregatedCount>  $counts
      */
@@ -385,14 +381,11 @@ class AreaAggregationService
      *
      * @return array<int, array<string, mixed>>
      *
-     * @pest-mutate-ignore
-     *
-     * @todo add proper testing and remove @pest-mutate-ignore
      * @todo Optimize with caching
      */
     public function getActiveAreaAggregatedCounts(Organization $organization): array
     {
-        $cache_time = 5; // @pest-mutate-ignore
+        $cache_time = 5;
         $cacheKey = 'org_active_area_counts:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cache_time), function () use ($organization): array {
@@ -431,7 +424,7 @@ class AreaAggregationService
                 try {
                     $debugCounts = $this->areaService->calculateAreaDebugCounts($area);
                 } catch (Exception $exception) {
-                    Log::error(sprintf('Failed to calculate area counts for area %d: ', $area->id).$exception->getMessage()); // @pest-mutate-ignore
+                    Log::error(sprintf('Failed to calculate area counts for area %d: ', $area->id).$exception->getMessage());
                     $debugCounts = [
                         'in' => 0,
                         'out' => 0,

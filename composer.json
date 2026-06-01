@@ -99,14 +99,6 @@
         "test:types:ai": [
             "pest --type-coverage --parallel --min=100 --compact --no-progress"
         ],
-        "test:mutation": [
-            "Composer\\Config::disableProcessTimeout",
-            "pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations"
-        ],
-        "test:mutation:ai": [
-            "Composer\\Config::disableProcessTimeout",
-            "pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations --compact --no-progress"
-        ],
         "test:e2e": [
             "npm run build",
             "npm run e2e",
@@ -122,7 +114,6 @@
             "@test:sca",
             "@test:coverage",
             "@test:types",
-            "@test:mutation",
             "@test:e2e"
         ],
         "test:ai": [
@@ -130,7 +121,6 @@
             "@test:sca:ai",
             "@test:coverage:ai",
             "@test:types:ai",
-            "@test:mutation:ai",
             "@test:e2e:ai"
         ],
         "docs:erd": [

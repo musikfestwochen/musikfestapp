@@ -14,8 +14,6 @@ class IntervalCount extends Model
 
     /**
      * Disable created_at and modified_at timestamps
-     *
-     * @pest-mutate-ignore
      */
     public $timestamps = false;
 
@@ -24,8 +22,6 @@ class IntervalCount extends Model
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @pest-mutate-ignore
      */
     protected $fillable = [
         'sensor_id',

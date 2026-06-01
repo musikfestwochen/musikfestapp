@@ -30,8 +30,6 @@ class AreaSingleReset extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @pest-mutate-ignore
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -64,8 +62,6 @@ class AreaSingleReset extends Model
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @pest-mutate-ignore
      *
      * @return array<string, string>
      */

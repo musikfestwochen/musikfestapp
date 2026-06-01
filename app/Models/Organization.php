@@ -34,8 +34,6 @@ class Organization extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @pest-mutate-ignore
-     *
      * @var list<string>
      */
     protected $fillable = [

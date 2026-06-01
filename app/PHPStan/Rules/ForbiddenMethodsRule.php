@@ -26,8 +26,6 @@ class ForbiddenMethodsRule implements Rule
      *     'identifier' => 'unique.error.identifier'
      * ]
      *
-     * @pest-mutate-ignore
-     *
      * @var array<string, array{message: string, identifier: string}>
      */
     private array $forbiddenMethods = [

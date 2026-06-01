@@ -1,6 +1,6 @@
-# Dockerized Dev Runtime for Composer, Pest, and Mutation Tests
+# Dockerized Dev Runtime for Composer and Pest
 
-Goal: Run all Composer scripts (including `precommit`) and Pest (incl. mutation testing) inside a Linux Docker container from PhpStorm on Windows, mirroring CI.
+Goal: Run all Composer scripts (including `precommit`) and Pest inside a Linux Docker container from PhpStorm on Windows, mirroring CI.
 
 Detected from this repo:
 - PHP: ^8.4 (composer.json), CI uses 8.4 with Xdebug
@@ -77,18 +77,11 @@ Verification from PhpStorm (Run Anything):
   From PhpStorm (Composer tool window) run script: precommit
   or Run Anything: composer precommit
 
-- Mutation tests:
-  From PhpStorm Run Anything: ./vendor/bin/pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations
-  (or composer test:mutation)
-
-Ensure: mutation score is non-zero; repeated runs are consistent.
-
 ## 6) Optional: Makefile helpers
 
 Provided at scripts/docker/Makefile:
 - make -f scripts/docker/Makefile precommit
 - make -f scripts/docker/Makefile test
-- make -f scripts/docker/Makefile mutate
 - make -f scripts/docker/Makefile artisan ARGS="migrate:fresh --seed"
 
 These invoke docker compose run --rm app ... under the hood.

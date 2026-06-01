@@ -84,6 +84,6 @@ jobs:
           body: |
             Weekly automated update for `tests/.pest/shards.json`.
             
-            This keeps Pest test sharding time-balanced for CI mutation shard jobs.
+            This keeps Pest test sharding time-balanced for CI jobs.
           add-paths: |
             tests/.pest/shards.json

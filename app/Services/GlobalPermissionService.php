@@ -9,8 +9,6 @@ class GlobalPermissionService
 {
     /**
      * Cache duration in minutes.
-     *
-     * @pest-mutate-ignore
      */
     private const int CACHE_DURATION = 60;
 
