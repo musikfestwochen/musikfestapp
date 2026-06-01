@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models\Peoplecount;
 
 use App\Models\User;
 use Database\Factories\Peoplecount\AreaSingleResetFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,26 +23,18 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
+#[Fillable([
+    'area_id',
+    'reset_value',
+    'effective_at',
+    'created_by',
+    'notes',
+])]
+#[Table(name: 'peoplecount_area_single_resets')]
 class AreaSingleReset extends Model
 {
     /** @use HasFactory<AreaSingleResetFactory> */
     use HasFactory;
-
-    /** The table associated with the model. */
-    protected $table = 'peoplecount_area_single_resets';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'area_id',
-        'reset_value',
-        'effective_at',
-        'created_by',
-        'notes',
-    ];
 
     /**
      * The Area that owns the reset.

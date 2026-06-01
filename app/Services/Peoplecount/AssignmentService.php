@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Peoplecount;
 
 use App\Models\Peoplecount\Area;
@@ -145,8 +147,8 @@ class AssignmentService
 
         $activeFromDate = new DateTime($activeFrom);
         $activeToDate = new DateTime($activeTo);
-        $eventStartsAtDate = new DateTime($event->starts_at);
-        $eventEndsAtDate = new DateTime($event->ends_at);
+        $eventStartsAtDate = new DateTime($event->starts_at->toDateTimeString());
+        $eventEndsAtDate = new DateTime($event->ends_at->toDateTimeString());
 
         throw_if($activeFromDate < $eventStartsAtDate || $activeToDate > $eventEndsAtDate, ValidationException::withMessages([
             'active_from' => 'The assignment time boundaries must be within the event time boundaries.',

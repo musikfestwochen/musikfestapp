@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Peoplecount;
 
 use App\Http\Controllers\Controller;
@@ -34,9 +36,9 @@ class IntervalCountController extends Controller
             // Return the number of persisted IntervalCount records
             if ($numPersisted > 0) {
                 return response()->json(['message' => 'Interval count data processed successfully.', 'count' => $numPersisted], 201);
-            } else {
-                return response()->json(['message' => 'No interval count data to process.'], 200);
             }
+
+            return response()->json(['message' => 'No interval count data to process.'], 200);
         } catch (Exception $exception) {
             // Return the exception message in JSON response without logging
             return response()->json([

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\PHPStan\Rules;
 
 use PhpParser\Node;
