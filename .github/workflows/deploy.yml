@@ -54,10 +54,10 @@ jobs:
         uses: ./.github/actions/laravel-ci-prepare
         with:
           coverage: 'none'
+          install-php-dependencies: 'false'
           bootstrap-laravel: 'false'
           create-sqlite-database: 'false'
           publish-ziggy: 'false'
-          composer-install-command: 'composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader'
           node-install-command: 'npm clean-install'
           build-assets: 'true'
 

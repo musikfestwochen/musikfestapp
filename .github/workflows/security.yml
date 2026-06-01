@@ -92,6 +92,7 @@ jobs:
         uses: ./.github/actions/laravel-ci-prepare
         with:
           coverage: 'none'
+          install-php-dependencies: 'false'
           install-node-dependencies: 'false'
           bootstrap-laravel: 'false'
           create-sqlite-database: 'false'

@@ -39,12 +39,6 @@ jobs:
         with:
           build-assets: 'true'
 
-      - name: Upload Built Assets
-        uses: actions/upload-artifact@v7
-        with:
-          name: built-assets
-          path: public/build
-
       - name: Run Vitest
         run: composer test:frontend
         env:
