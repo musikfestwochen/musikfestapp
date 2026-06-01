@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
+use Rector\CodeQuality\Rector\FuncCall\CompactToVariablesRector;
 use Rector\Config\RectorConfig;
 use Rector\Renaming\Rector\Name\RenameClassRector;
 use Rector\Set\ValueObject\SetList;
 use Rector\TypeDeclaration\Rector\Closure\AddClosureVoidReturnTypeWhereNoReturnRector;
+use Rector\TypeDeclaration\Rector\StmtsAwareInterface\DeclareStrictTypesRector;
+use Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRector;
 use Rector\ValueObject\PhpVersion;
 use RectorLaravel\Set\LaravelLevelSetList;
 use RectorLaravel\Set\LaravelSetList;
 
 return static function (RectorConfig $rectorConfig): void {
-    // Paths to analyze (keep lean for precommit)
     $rectorConfig->paths([
         __DIR__.'/app',
         __DIR__.'/config',
@@ -19,10 +21,11 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__.'/routes',
     ]);
 
-    // Explicitly skip heavy or external directories
     $rectorConfig->skip([
-        RenameClassRector::class, // Skipping class renaming
-        AddClosureVoidReturnTypeWhereNoReturnRector::class, // Skipping void return type addition for closures
+        RenameClassRector::class,
+        AddClosureVoidReturnTypeWhereNoReturnRector::class,
+        SafeDeclareStrictTypesRector::class,
+        CompactToVariablesRector::class,
         __DIR__.'/vendor/*',
         __DIR__.'/node_modules/*',
         __DIR__.'/storage/*',
@@ -30,9 +33,8 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__.'/tests/*',
     ]);
 
-    // Apply sets for Laravel and general code quality
     $rectorConfig->sets([
-        LaravelLevelSetList::UP_TO_LARAVEL_120,
+        LaravelLevelSetList::UP_TO_LARAVEL_130,
         LaravelSetList::LARAVEL_CODE_QUALITY,
         LaravelSetList::LARAVEL_COLLECTION,
         LaravelSetList::LARAVEL_ARRAYACCESS_TO_METHOD_CALL,
@@ -46,9 +48,13 @@ return static function (RectorConfig $rectorConfig): void {
         SetList::CODE_QUALITY,
         SetList::CODING_STYLE,
         SetList::TYPE_DECLARATION,
-        SetList::STRICT_BOOLEANS,
+        SetList::PHP_84,
+        SetList::EARLY_RETURN,
     ]);
 
-    // Define PHP version for Rector
+    $rectorConfig->rules([
+        DeclareStrictTypesRector::class,
+    ]);
+
     $rectorConfig->phpVersion(PhpVersion::PHP_84);
 };
