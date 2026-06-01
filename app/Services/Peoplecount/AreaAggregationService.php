@@ -338,9 +338,10 @@ class AreaAggregationService
      */
     public function getActiveAreaAggregatedCountsHistory(Organization $organization, Carbon $from, Carbon $to): array
     {
-        $now = Date::now()->setTimezone('UTC');
-        $from = $from->copy()->setTimezone('UTC');
-        $to = $to->copy()->setTimezone('UTC');
+        $timezone = (string) config('app.timezone');
+        $now = Date::now()->setTimezone($timezone);
+        $from = $from->copy()->setTimezone($timezone);
+        $to = $to->copy()->setTimezone($timezone);
 
         $areas = Area::query()
             ->whereHas('event', function (Builder $query) use ($organization, $now) {
@@ -395,7 +396,8 @@ class AreaAggregationService
         $cacheKey = 'org_active_area_counts:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cache_time), function () use ($organization): array {
-            $now = Date::now()->setTimezone('UTC');
+            $timezone = (string) config('app.timezone');
+            $now = Date::now()->setTimezone($timezone);
             $oneHourAgo = $now->copy()->subHour();
 
             // Get all events and areas in a single query

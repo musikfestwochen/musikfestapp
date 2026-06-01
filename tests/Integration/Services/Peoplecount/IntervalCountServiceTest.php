@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\Organization;
+use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\IntervalCountService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
@@ -52,6 +55,94 @@ describe('processIntervalCount', function () {
             'count_in' => 7,
             'count_out' => 3,
         ]);
+    });
+
+    it('stores received_at timestamp when interval arrives', function () {
+        $timezone = (string) config('app.timezone');
+
+        Carbon::setTestNow(Carbon::parse('2026-01-01 10:15:00', $timezone));
+
+        try {
+            $org = Organization::factory()->create();
+            $sensor = Sensor::factory()->withOrganization($org)->create([
+                'vendor' => 'Axis',
+                'serial' => 'AXIS-002',
+            ]);
+
+            $payload = [
+                'apiName' => 'Axis Retail Data',
+                'apiVersion' => '0.4',
+                'sensor' => [
+                    'serial' => 'AXIS-002',
+                ],
+                'data' => [
+                    'utcFrom' => now()->subMinute()->toIso8601String(),
+                    'utcTo' => now()->toIso8601String(),
+                    'measurements' => [
+                        [
+                            'kind' => 'people-counts',
+                            'utcFrom' => now()->subMinute()->toIso8601String(),
+                            'utcTo' => now()->toIso8601String(),
+                            'items' => [
+                                ['direction' => 'in', 'count' => 2],
+                                ['direction' => 'out', 'count' => 1],
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+
+            $this->service->processIntervalCount($sensor, $payload);
+
+            $intervalCount = IntervalCount::query()->first();
+
+            expect($intervalCount)->not->toBeNull()
+                ->and($intervalCount->received_at)->not->toBeNull()
+                ->and($intervalCount->received_at->toIso8601String())->toBe('2026-01-01T10:15:00+00:00');
+        } finally {
+            Carbon::setTestNow();
+        }
+    });
+
+    it('logs warning when interval arrives more than one minute late', function () {
+        $timezone = (string) config('app.timezone');
+        Carbon::setTestNow(Carbon::parse('2026-01-01 10:15:00', $timezone));
+        Log::spy();
+
+        try {
+            $org = Organization::factory()->create();
+            $sensor = Sensor::factory()->withOrganization($org)->create([
+                'vendor' => 'Axis',
+                'serial' => 'AXIS-LATE-001',
+            ]);
+
+            $payload = [
+                'apiName' => 'Axis Retail Data',
+                'apiVersion' => '0.4',
+                'sensor' => [
+                    'serial' => 'AXIS-LATE-001',
+                ],
+                'data' => [
+                    'measurements' => [
+                        [
+                            'kind' => 'people-counts',
+                            'utcFrom' => '2026-01-01T10:10:00+00:00',
+                            'utcTo' => '2026-01-01T10:13:00+00:00',
+                            'items' => [
+                                ['direction' => 'in', 'count' => 4],
+                                ['direction' => 'out', 'count' => 1],
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+
+            $this->service->processIntervalCount($sensor, $payload);
+
+            Log::shouldHaveReceived('warning')->once();
+        } finally {
+            Carbon::setTestNow();
+        }
     });
 
     it('throws on unsupported vendor with correct message content', function () {
@@ -103,6 +194,21 @@ describe('processIntervalCount', function () {
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sensor serial mismatch: expected ABC123, got XYZ999');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws on missing sensor serial with exact message', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'ABC123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => [],
+            'data' => ['utcFrom' => now()->toIso8601String(), 'utcTo' => now()->toIso8601String(), 'measurements' => []],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Sensor serial mismatch: expected ABC123, got missing');
         $this->service->processIntervalCount($sensor, $data);
     });
 
@@ -257,6 +363,176 @@ describe('processIntervalCount', function () {
         expect($result)->toBe(2);
 
         $this->assertDatabaseCount('peoplecount_interval_counts', 2);
+
+        $receivedAts = IntervalCount::query()->pluck('received_at')->unique();
+        expect($receivedAts)->toHaveCount(1);
+    });
+
+    it('throws when UTC timestamps do not include timezone offset', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => '2026-01-01 10:00:00',
+                        'utcTo' => '2026-01-01 10:01:00',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 1],
+                            ['direction' => 'out', 'count' => 0],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when utcFrom is empty string', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => '',
+                        'utcTo' => '2026-01-01T10:01:00+00:00',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 1],
+                            ['direction' => 'out', 'count' => 0],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when utcFrom has timezone suffix but invalid date format', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => 'not-a-dateZ',
+                        'utcTo' => '2026-01-01T10:01:00+00:00',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 1],
+                            ['direction' => 'out', 'count' => 0],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when utcFrom is whitespace-only string', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => '   ',
+                        'utcTo' => '2026-01-01T10:01:00+00:00',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 1],
+                            ['direction' => 'out', 'count' => 0],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('throws when utcFrom is not a string', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => 12345,
+                        'utcTo' => '2026-01-01T10:01:00+00:00',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 1],
+                            ['direction' => 'out', 'count' => 0],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
+        $this->service->processIntervalCount($sensor, $data);
+    });
+
+    it('accepts utcFrom with surrounding whitespace when timezone suffix is valid', function () {
+        $sensor = Sensor::factory()->create(['vendor' => 'Axis', 'serial' => 'SN123']);
+
+        $data = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => ['serial' => 'SN123'],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => ' 2026-01-01T10:00:00+00:00   ',
+                        'utcTo' => ' 2026-01-01T10:01:00+00:00   ',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 1],
+                            ['direction' => 'out', 'count' => 0],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = $this->service->processIntervalCount($sensor, $data);
+
+        expect($result)->toBe(1);
+        $this->assertDatabaseHas('peoplecount_interval_counts', [
+            'sensor_id' => $sensor->id,
+            'count_in' => 1,
+            'count_out' => 0,
+        ]);
     });
 
     it('skips non-people-counts measurements and processes only people-counts', function () {

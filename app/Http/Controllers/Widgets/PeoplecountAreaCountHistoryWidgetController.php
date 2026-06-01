@@ -17,12 +17,13 @@ class PeoplecountAreaCountHistoryWidgetController extends Controller
 
     public function index(AreaCountHistoryIndexRequest $request, Organization $organization): JsonResponse
     {
-        $now = Date::now()->setTimezone('UTC');
+        $timezone = (string) config('app.timezone');
+        $now = Date::now()->setTimezone($timezone);
         $from = $request->validated('from')
-            ? Date::parse($request->validated('from'))->setTimezone('UTC')
+            ? Date::parse($request->validated('from'))->setTimezone($timezone)
             : $now->copy()->subHour();
         $to = $request->validated('to')
-            ? Date::parse($request->validated('to'))->setTimezone('UTC')
+            ? Date::parse($request->validated('to'))->setTimezone($timezone)
             : $now;
 
         $series = $this->areaAggregationService->getActiveAreaAggregatedCountsHistory($organization, $from, $to);

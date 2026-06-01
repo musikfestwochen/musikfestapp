@@ -11,6 +11,7 @@ it('has correct fillable attributes', function () {
         'sensor_id',
         'ts_from',
         'ts_to',
+        'received_at',
         'count_in',
         'count_out',
     ]);
@@ -29,8 +30,9 @@ it('does not use timestamps', function () {
 it('casts all attributes correctly', function () {
     $model = new IntervalCount;
     expect($model->getCasts())->toMatchArray([
-        'ts_from' => 'datetime',
-        'ts_to' => 'datetime',
+        'ts_from' => 'immutable_datetime',
+        'ts_to' => 'immutable_datetime',
+        'received_at' => 'immutable_datetime',
         'count_in' => 'integer',
         'count_out' => 'integer',
     ]);

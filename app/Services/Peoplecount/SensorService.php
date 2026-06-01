@@ -48,7 +48,8 @@ class SensorService
         $cacheKey = 'peoplecount:sensor_health:org:'.$organization->id;
 
         return Cache::remember($cacheKey, now()->addSeconds($cacheTtlSeconds), function () use ($organization): array {
-            $now = Date::now()->setTimezone('UTC');
+            $timezone = (string) config('app.timezone');
+            $now = Date::now()->setTimezone($timezone);
             $recentThreshold = $now->copy()->subMinutes(2);
 
             // Find sensors that are currently assigned somewhere within an active assignment window

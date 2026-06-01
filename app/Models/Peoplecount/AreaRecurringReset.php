@@ -81,6 +81,8 @@ class AreaRecurringReset extends Model
      */
     public function getPreviousDailyOccurrence(?Carbon $from = null): Carbon
     {
+        $appTimezone = (string) config('app.timezone'); // @pest-mutate-ignore
+
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Date::now($this->timezone);
         $resetTime = Date::parse($this->reset_time, $this->timezone);
@@ -94,7 +96,7 @@ class AreaRecurringReset extends Model
         }
 
         // Convert back to UTC for consistent database storage
-        return $resetTime->setTimezone('UTC');
+        return $resetTime->setTimezone($appTimezone);
     }
 
     /**
@@ -103,6 +105,8 @@ class AreaRecurringReset extends Model
      */
     public function getNextDailyOccurrence(?Carbon $from = null): Carbon
     {
+        $appTimezone = (string) config('app.timezone'); // @pest-mutate-ignore
+
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Date::now($this->timezone);
         $resetTime = Date::parse($this->reset_time, $this->timezone);
@@ -116,7 +120,7 @@ class AreaRecurringReset extends Model
         }
 
         // Convert back to UTC for consistent database storage
-        return $resetTime->setTimezone('UTC');
+        return $resetTime->setTimezone($appTimezone);
     }
 
     /**

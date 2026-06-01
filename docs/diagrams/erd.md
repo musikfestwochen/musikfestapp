@@ -7,7 +7,7 @@ Do not edit diagram block manually. Run `composer docs:erd`.
 <!-- mermaid-erd-start -->
 ```mermaid
 ---
-title: 21 tables · 143 columns
+title: 21 tables · 144 columns
 ---
 erDiagram
     model_has_permissions["model_has_permissions (4)"] {
@@ -118,13 +118,14 @@ erDiagram
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_interval_counts["peoplecount_interval_counts (6)"] {
+    peoplecount_interval_counts["peoplecount_interval_counts (7)"] {
         integer id PK
         integer sensor_id FK
         datetime ts_from
         datetime ts_to
         integer count_in
         integer count_out
+        datetime received_at
     }
     peoplecount_sensors["peoplecount_sensors (9)"] {
         integer id PK

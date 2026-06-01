@@ -31,6 +31,7 @@ class IntervalCount extends Model
         'sensor_id',
         'ts_from',
         'ts_to',
+        'received_at',
         'count_in',
         'count_out',
     ];
@@ -54,8 +55,9 @@ class IntervalCount extends Model
     protected function casts(): array
     {
         return [
-            'ts_from' => 'datetime',
-            'ts_to' => 'datetime',
+            'ts_from' => 'immutable_datetime',
+            'ts_to' => 'immutable_datetime',
+            'received_at' => 'immutable_datetime',
             'count_in' => 'integer',
             'count_out' => 'integer',
         ];

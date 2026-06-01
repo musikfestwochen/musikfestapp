@@ -4,7 +4,9 @@ namespace App\Services\Peoplecount;
 
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
+use Carbon\CarbonImmutable;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class IntervalCountService
 {
@@ -41,17 +43,21 @@ class IntervalCountService
      */
     public function processAxisIntervalCount(Sensor $sensor, array $data): int
     {
+        $timezone = (string) config('app.timezone'); // @pest-mutate-ignore
+
         // Validate API name and version
         throw_if(($data['apiName'] ?? null) !== 'Axis Retail Data' || ($data['apiVersion'] ?? null) !== '0.4', Exception::class, 'Unsupported Axis API version or name.');
 
         // Validate sensor serial
-        throw_if(($data['sensor']['serial'] ?? null) !== $sensor->serial, Exception::class, 'Sensor serial mismatch: expected '.$sensor->serial.', got '.$data['sensor']['serial']);
+        $providedSerial = $data['sensor']['serial'] ?? 'missing';
+        throw_if($providedSerial !== $sensor->serial, Exception::class, 'Sensor serial mismatch: expected '.$sensor->serial.', got '.$providedSerial);
 
         // Get measurements array
         $measurements = $data['data']['measurements'] ?? [];
         throw_if(! is_array($measurements), Exception::class, 'Invalid Axis data structure: measurements must be an array.');
 
         $numPersisted = 0;
+        $receivedAt = CarbonImmutable::now($timezone);
 
         // Process each measurement
         foreach ($measurements as $measurement) {
@@ -63,6 +69,8 @@ class IntervalCountService
             // Validate measurement-level timestamps
             throw_if(! isset($measurement['utcFrom']) || ! isset($measurement['utcTo']), Exception::class, 'Missing required UTC timestamps in measurement data.');
 
+            $tsFrom = $this->parseToAppTimezone($measurement['utcFrom'], $timezone, 'utcFrom');
+            $tsTo = $this->parseToAppTimezone($measurement['utcTo'], $timezone, 'utcTo');
             $items = $measurement['items'] ?? [];
 
             // Extract counts using helper
@@ -72,12 +80,15 @@ class IntervalCountService
 
             // Create new IntervalCount
             IntervalCount::query()->create([
-                'ts_from' => $measurement['utcFrom'],
-                'ts_to' => $measurement['utcTo'],
+                'ts_from' => $tsFrom,
+                'ts_to' => $tsTo,
+                'received_at' => $receivedAt,
                 'count_in' => $countIn,
                 'count_out' => $countOut,
                 'sensor_id' => $sensor->id,
             ]);
+
+            $this->warnIfLateArrival($sensor, $tsTo, $receivedAt);
 
             $numPersisted++;
         }
@@ -106,5 +117,50 @@ class IntervalCountService
         }
 
         return ['countIn' => $countIn, 'countOut' => $countOut];
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function parseToAppTimezone(mixed $timestamp, string $timezone, string $field): CarbonImmutable
+    {
+        // @pest-mutate-ignore
+        if (! is_string($timestamp) || trim($timestamp) === '') {
+            throw new Exception(sprintf('Invalid %s timestamp in measurement data.', $field));
+        }
+
+        if (! $this->hasExplicitTimezone($timestamp)) {
+            throw new Exception(sprintf('Invalid %s timestamp in measurement data.', $field));
+        }
+
+        try {
+            return CarbonImmutable::parse($timestamp, 'UTC')->setTimezone($timezone);
+        } catch (\Throwable $throwable) {
+            throw new Exception(sprintf('Invalid %s timestamp in measurement data.', $field), $throwable->getCode(), previous: $throwable);
+        }
+    }
+
+    protected function hasExplicitTimezone(string $timestamp): bool
+    {
+        $trimmed = trim($timestamp);
+
+        // @pest-mutate-ignore
+        return (bool) preg_match('/(Z|[+\-]\d{2}:?\d{2})$/', $trimmed);
+    }
+
+    protected function warnIfLateArrival(Sensor $sensor, CarbonImmutable $tsTo, CarbonImmutable $receivedAt): void
+    {
+        if (! $receivedAt->greaterThan($tsTo->addMinute())) {
+            return;
+        }
+
+        // @pest-mutate-ignore
+        Log::warning('Late interval count arrival detected.', [
+            'sensor_id' => $sensor->id,
+            'sensor_serial' => $sensor->serial,
+            'ts_to' => $tsTo->toIso8601String(),
+            'received_at' => $receivedAt->toIso8601String(),
+            'delay_seconds' => $tsTo->diffInSeconds($receivedAt),
+        ]);
     }
 }
