@@ -28,7 +28,7 @@ class AlertService
      */
     public function processAlertsForArea(Area $area): void
     {
-        $area->loadMissing(['event', 'aggregatedCounts' => fn (HasMany $q) => $q->orderBy('period_end', 'desc'), 'alerts.recipients']); // @pest-mutate-ignore
+        $area->loadMissing(['event', 'aggregatedCounts' => fn (HasMany $q) => $q->orderBy('period_end', 'desc'), 'alerts.recipients']);
         foreach ($area->alerts as $alert) {
             $this->processSingleAlert($alert, $area);
         }
@@ -66,10 +66,10 @@ class AlertService
         switch ($alert->type->value) {
             case AlertType::OccupancyAlert->value:
                 $this->evaluateOccupancyAlert($alert, $area, $latest->count, $now);
-                break; // @pest-mutate-ignore
+                break;
             default:
                 // No-op for unknown types for forward compatibility
-                break; // @pest-mutate-ignore
+                break;
         }
     }
 

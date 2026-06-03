@@ -28,23 +28,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          php-version: 8.4
-          tools: composer:v2
-          extensions: pdo_mysql
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v5
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
-
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+          coverage: 'none'
+          php-extensions: 'pdo_mysql'
+          install-node-dependencies: 'false'
+          bootstrap-laravel: 'false'
+          create-sqlite-database: 'false'
+          publish-ziggy: 'false'
 
       - name: Create MariaDB Test Environment
         run: |
@@ -81,9 +73,7 @@ jobs:
           php artisan migrate:fresh --seed --force --database=mariadb
 
       - name: Run Basic Database Tests
-        run: |
-          # Run only database-related tests against MariaDB
-          ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --stop-on-failure
+        run: composer test:mariadb
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1

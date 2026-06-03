@@ -43,7 +43,7 @@ class IntervalCountService
      */
     public function processAxisIntervalCount(Sensor $sensor, array $data): int
     {
-        $timezone = (string) config('app.timezone'); // @pest-mutate-ignore
+        $timezone = (string) config('app.timezone');
 
         // Validate API name and version
         throw_if(($data['apiName'] ?? null) !== 'Axis Retail Data' || ($data['apiVersion'] ?? null) !== '0.4', Exception::class, 'Unsupported Axis API version or name.');
@@ -124,7 +124,6 @@ class IntervalCountService
      */
     protected function parseToAppTimezone(mixed $timestamp, string $timezone, string $field): CarbonImmutable
     {
-        // @pest-mutate-ignore
         if (! is_string($timestamp) || trim($timestamp) === '') {
             throw new Exception(sprintf('Invalid %s timestamp in measurement data.', $field));
         }
@@ -144,7 +143,6 @@ class IntervalCountService
     {
         $trimmed = trim($timestamp);
 
-        // @pest-mutate-ignore
         return (bool) preg_match('/(Z|[+\-]\d{2}:?\d{2})$/', $trimmed);
     }
 
@@ -154,7 +152,6 @@ class IntervalCountService
             return;
         }
 
-        // @pest-mutate-ignore
         Log::warning('Late interval count arrival detected.', [
             'sensor_id' => $sensor->id,
             'sensor_serial' => $sensor->serial,

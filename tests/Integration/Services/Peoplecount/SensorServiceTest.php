@@ -235,7 +235,7 @@ describe('createOrRegenerateToken', function () {
         $token = $this->service->createOrRegenerateToken($sensorMock);
 
         // With limit=2, this should return 'actual_token_part|extra_part'
-        // With limit=3 (mutation), this would return 'actual_token_part'
+        // With limit=3, this would return 'actual_token_part'
         expect($token)->toBe('actual_token_part|extra_part');
     });
 });

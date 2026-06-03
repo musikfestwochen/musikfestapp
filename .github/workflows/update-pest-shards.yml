@@ -3,7 +3,7 @@ name: update-pest-shards
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 1'
+    - cron: '0 0 1 * *'
 
 permissions:
   contents: write
@@ -28,50 +28,13 @@ jobs:
           client-id: ${{ secrets.PR_AUTOMATION_CLIENT_ID }}
           private-key: ${{ secrets.PR_AUTOMATION_APP_PRIVATE_KEY }}
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          php-version: 8.4
-          tools: composer:v2
-          coverage: xdebug
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v5
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
-
-      - name: Install Node Dependencies
-        run: npm i
-
-      - name: Create SQLite Database
-        run: touch database/database.sqlite
-
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.local .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Publish Ziggy Configuration
-        run: php artisan ziggy:generate
-
-      - name: Build Assets
-        run: npm run build
+          build-assets: 'true'
 
       - name: Update shard timings
-        run: ./vendor/bin/pest --ci --parallel --update-shards
+        run: composer test:update-shards
     
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
@@ -82,8 +45,8 @@ jobs:
           delete-branch: true
           title: 'chore: update Pest shard timings'
           body: |
-            Weekly automated update for `tests/.pest/shards.json`.
+            Monthly automated update for `tests/.pest/shards.json`.
             
-            This keeps Pest test sharding time-balanced for CI mutation shard jobs.
+            This keeps Pest test sharding time-balanced for CI jobs.
           add-paths: |
             tests/.pest/shards.json

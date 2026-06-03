@@ -15,7 +15,7 @@ class UserDestroyRequest extends FormRequest
     public function authorize(): bool
     {
         $userRoute = $this->route('user');
-        $userId = $userRoute instanceof User ? $userRoute->id : $userRoute; // @pest-mutate-ignore
+        $userId = $userRoute instanceof User ? $userRoute->id : $userRoute;
 
         throw_if($userId && $userId === auth()->id(), AuthorizationException::class, 'You cannot delete your own account.');
 

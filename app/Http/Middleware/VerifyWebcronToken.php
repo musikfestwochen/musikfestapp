@@ -35,7 +35,7 @@ class VerifyWebcronToken
                 'received_token' => $this->maskToken($receivedToken),
                 'expected_token' => $this->maskToken($expectedToken),
                 'ip' => $request->ip(),
-            ]); // @pest-mutate-ignore
+            ]);
 
             // Return a 401 with more detailed feedback (non-sensitive)
             abort(401, 'Invalid webcron token provided. Please check your configuration.');
@@ -49,8 +49,6 @@ class VerifyWebcronToken
 
     /**
      * Mask a token for logging purposes to hide sensitive information
-     *
-     * @pest-mutate-ignore
      */
     protected function maskToken(?string $token): string
     {

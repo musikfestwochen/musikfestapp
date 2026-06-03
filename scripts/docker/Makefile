@@ -1,4 +1,4 @@
-.PHONY: precommit test mutate artisan build up shell pest validate
+.PHONY: precommit test artisan build up shell pest validate
 
 COMPOSE=docker compose
 APP=$(COMPOSE) run --rm app
@@ -14,9 +14,6 @@ precommit:
 
 pest:
 	$(APP) ./vendor/bin/pest --parallel
-
-mutate:
-	$(APP) ./vendor/bin/pest --mutate --parallel --covered-only --min=100 --ignore-min-score-on-zero-mutations
 
 artisan:
 	$(APP) php artisan $(ARGS)

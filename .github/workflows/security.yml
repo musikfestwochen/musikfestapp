@@ -35,6 +35,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare lockfile verification environment
+        uses: ./.github/actions/laravel-ci-prepare
+        with:
+          coverage: 'none'
+          install-php-dependencies: 'false'
+          install-node-dependencies: 'false'
+          bootstrap-laravel: 'false'
+          create-sqlite-database: 'false'
+          publish-ziggy: 'false'
+
       - name: Validate lockfile consistency
         run: |
           set -euo pipefail
@@ -49,14 +59,24 @@ jobs:
 
           CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
 
-          if echo "$CHANGED_FILES" | grep -qx "package.json" && ! echo "$CHANGED_FILES" | grep -qx "package-lock.json"; then
-            echo "package.json changed without package-lock.json. Please update and commit package-lock.json."
-            exit 1
+          file_changed() {
+            printf '%s\n' "$CHANGED_FILES" | grep -qx "$1"
+          }
+
+          if file_changed "package.json" && ! file_changed "package-lock.json"; then
+            echo "package.json changed without package-lock.json. Verifying lockfile via npm..."
+            npm install --package-lock-only --ignore-scripts
+
+            if ! git diff --quiet -- package-lock.json; then
+              echo "package-lock.json is out of date for package.json changes."
+              echo "Run 'npm install' and commit package-lock.json."
+              exit 1
+            fi
           fi
 
-          if echo "$CHANGED_FILES" | grep -qx "composer.json" && ! echo "$CHANGED_FILES" | grep -qx "composer.lock"; then
-            echo "composer.json changed without composer.lock. Please update and commit composer.lock."
-            exit 1
+          if file_changed "composer.json" && ! file_changed "composer.lock"; then
+            echo "composer.json changed without composer.lock. Verifying lockfile via composer..."
+            composer install --no-interaction --prefer-dist --dry-run --no-scripts
           fi
 
           echo "Lockfile consistency check passed."
@@ -68,11 +88,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare PHP environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          php-version: '8.4'
-          tools: composer:v2
+          coverage: 'none'
+          install-php-dependencies: 'false'
+          install-node-dependencies: 'false'
+          bootstrap-laravel: 'false'
+          create-sqlite-database: 'false'
+          publish-ziggy: 'false'
 
       - name: Validate composer files
         run: composer validate --strict --no-check-publish
@@ -89,14 +113,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - name: Prepare Node environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install Node dependencies
-        run: npm i
+          coverage: 'none'
+          install-php-dependencies: 'false'
+          bootstrap-laravel: 'false'
+          create-sqlite-database: 'false'
+          publish-ziggy: 'false'
 
       - name: Audit npm advisories (fail on high+)
         run: npm audit --audit-level=high

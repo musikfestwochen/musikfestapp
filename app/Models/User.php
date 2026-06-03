@@ -25,8 +25,6 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * The attributes that are mass assignable.
      *
-     * @pest-mutate-ignore
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -39,8 +37,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @pest-mutate-ignore
      *
      * @var list<string>
      */
@@ -79,8 +75,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @pest-mutate-ignore
      *
      * @return array<string, string>
      */

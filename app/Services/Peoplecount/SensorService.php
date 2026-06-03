@@ -38,8 +38,6 @@ class SensorService
      * If recent (< 2 minutes) but all last 10 are zero => suspicious.
      * If not recent => unhealthy.
      *
-     * @pest-mutate-ignore
-     *
      * @return array{last_updated: string, total: int, all_healthy: bool, healthy: array<int, array<string, mixed>>, suspicious: array<int, array<string, mixed>>, unhealthy: array<int, array<string, mixed>>}
      */
     public function getAssignedSensorsHealthStatus(Organization $organization): array

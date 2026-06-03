@@ -30,8 +30,6 @@ class AreaRecurringReset extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @pest-mutate-ignore
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -81,7 +79,7 @@ class AreaRecurringReset extends Model
      */
     public function getPreviousDailyOccurrence(?Carbon $from = null): Carbon
     {
-        $appTimezone = (string) config('app.timezone'); // @pest-mutate-ignore
+        $appTimezone = (string) config('app.timezone');
 
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Date::now($this->timezone);
@@ -105,7 +103,7 @@ class AreaRecurringReset extends Model
      */
     public function getNextDailyOccurrence(?Carbon $from = null): Carbon
     {
-        $appTimezone = (string) config('app.timezone'); // @pest-mutate-ignore
+        $appTimezone = (string) config('app.timezone');
 
         // Ensure we're working with a copy of the input date to avoid modifying the original
         $now = $from instanceof Carbon ? $from->copy()->setTimezone($this->timezone) : Date::now($this->timezone);
@@ -125,8 +123,6 @@ class AreaRecurringReset extends Model
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @pest-mutate-ignore
      *
      * @return array<string, string>
      */

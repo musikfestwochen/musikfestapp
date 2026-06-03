@@ -27,22 +27,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
         with:
-          php-version: '8.4'
+          coverage: 'none'
+          bootstrap-laravel: 'false'
+          create-sqlite-database: 'false'
+          composer-install-command: 'composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist'
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y aspell aspell-en
-          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm i
+      - name: Install aspell dependencies
+        run: sudo apt-get update && sudo apt-get install -y aspell aspell-en
 
       - name: Run Rector
         run: vendor/bin/rector --dry-run

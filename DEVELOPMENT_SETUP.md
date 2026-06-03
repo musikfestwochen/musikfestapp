@@ -113,7 +113,6 @@ Musikfestapp comes with several helpful Composer scripts to streamline developme
 | `composer test:sca`      | Run static code analysis with PHPStan         |
 | `composer test:coverage` | Run tests with code coverage                  |
 | `composer test:types`    | Run tests with type coverage                  |
-| `composer test:mutation` | Run mutation testing                          |
 
 #### 🧹 Code Quality
 

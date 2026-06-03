@@ -100,7 +100,7 @@ describe('OrganizationSelectionService', function () {
         expect($result->first()->id)->toBe(GLOBAL_ORG_ID);
     });
 
-    it('properly creates admin organization with correct properties and mutations', function () {
+    it('properly creates admin organization with correct properties', function () {
         $user = User::factory()->create();
         setPermissionsOrgId(GLOBAL_ORG_ID);
         Permission::findOrCreate('admin.organizations.index');
@@ -118,7 +118,7 @@ describe('OrganizationSelectionService', function () {
         // Test that the admin org is actually an Organization instance
         expect($adminOrg)->toBeInstanceOf(Organization::class);
 
-        // Test that the id mutation was applied correctly
+        // Test that the id assignment was applied correctly
         expect($adminOrg->getAttributes()['id'])->toBe(GLOBAL_ORG_ID);
     });
 
@@ -146,7 +146,7 @@ describe('OrganizationSelectionService', function () {
         expect($result->pluck('id'))->toContain($org2->id);
     });
 
-    it('admin organization id mutation overrides constructor value', function () {
+    it('admin organization id assignment overrides constructor value', function () {
         $user = User::factory()->create();
         setPermissionsOrgId(GLOBAL_ORG_ID);
         Permission::findOrCreate('admin.organizations.index');

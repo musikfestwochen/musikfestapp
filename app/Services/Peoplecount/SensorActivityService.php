@@ -18,8 +18,6 @@ class SensorActivityService
      * Sums respect active assignments and direction flipping (swap in/out when flipped).
      *
      * @return array<int, array<string, mixed>>
-     *
-     * @pest-mutate-ignore
      */
     public function getMostActiveSensorsPerArea(Organization $organization): array
     {

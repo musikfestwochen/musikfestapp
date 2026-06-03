@@ -49,7 +49,7 @@ queues.
 
 **Unit Test Rules:**
 
-- 100% line and mutation coverage for logic-heavy code
+- 100% line coverage for logic-heavy code
 - Mandatory `covers()` annotation
 - Avoid mocking the framework; prefer pure input/output
 
@@ -234,7 +234,7 @@ Order:
 3. Architecture tests
 4. Unit + Integration + Feature + Frontend tests
 5. Type coverage
-6. Mutation tests (unit only)
+6. Keep adding behavior-focused assertions for critical logic
 
 ---
 

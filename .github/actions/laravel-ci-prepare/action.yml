@@ -1,0 +1,122 @@
+name: Laravel CI prepare
+description: Setup PHP/Node and bootstrap Laravel for CI jobs
+
+inputs:
+  php-version:
+    description: PHP version
+    required: false
+    default: '8.4'
+  node-version:
+    description: Node version
+    required: false
+    default: '24'
+  coverage:
+    description: PHP coverage driver
+    required: false
+    default: 'xdebug'
+  php-extensions:
+    description: Comma-separated PHP extensions to enable
+    required: false
+    default: ''
+  install-php-dependencies:
+    description: Install Composer dependencies
+    required: false
+    default: 'true'
+  composer-install-command:
+    description: Composer install command
+    required: false
+    default: 'composer install --no-interaction --prefer-dist --optimize-autoloader'
+  install-node-dependencies:
+    description: Install Node dependencies
+    required: false
+    default: 'true'
+  node-install-command:
+    description: Node install command
+    required: false
+    default: 'npm i'
+  bootstrap-laravel:
+    description: Bootstrap Laravel env and key
+    required: false
+    default: 'true'
+  create-sqlite-database:
+    description: Create SQLite database file
+    required: false
+    default: 'true'
+  publish-ziggy:
+    description: Publish Ziggy routes
+    required: false
+    default: 'true'
+  install-playwright:
+    description: Install Playwright browsers
+    required: false
+    default: 'false'
+  build-assets:
+    description: Build frontend assets
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        tools: composer:v2
+        coverage: ${{ inputs.coverage }}
+        extensions: ${{ inputs.php-extensions }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Cache Composer dependencies
+      if: ${{ inputs.install-php-dependencies == 'true' }}
+      uses: actions/cache@v5
+      with:
+        path: vendor
+        key: composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          composer-
+
+    - name: Install Node dependencies
+      if: ${{ inputs.install-node-dependencies == 'true' }}
+      shell: bash
+      run: ${{ inputs.node-install-command }}
+
+    - name: Create SQLite database
+      if: ${{ inputs.create-sqlite-database == 'true' }}
+      shell: bash
+      run: touch database/database.sqlite
+
+    - name: Install PHP dependencies
+      if: ${{ inputs.install-php-dependencies == 'true' }}
+      shell: bash
+      run: ${{ inputs.composer-install-command }}
+
+    - name: Copy environment file
+      if: ${{ inputs.bootstrap-laravel == 'true' }}
+      shell: bash
+      run: cp .env.local .env
+
+    - name: Generate application key
+      if: ${{ inputs.bootstrap-laravel == 'true' }}
+      shell: bash
+      run: php artisan key:generate
+
+    - name: Publish Ziggy configuration
+      if: ${{ inputs.bootstrap-laravel == 'true' && inputs.publish-ziggy == 'true' }}
+      shell: bash
+      run: php artisan ziggy:generate
+
+    - name: Install Playwright browsers
+      if: ${{ inputs.install-playwright == 'true' }}
+      shell: bash
+      run: npx playwright install chromium webkit --with-deps
+
+    - name: Build assets
+      if: ${{ inputs.build-assets == 'true' }}
+      shell: bash
+      run: npm run build

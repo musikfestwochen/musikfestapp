@@ -24,6 +24,6 @@ class BinaryHexCast implements CastsAttributes
     {
         $bin = $value !== null ? hex2bin($value) : null;
 
-        return $bin === false ? null : $bin; // @pest-mutate-ignore
+        return $bin === false ? null : $bin;
     }
 }

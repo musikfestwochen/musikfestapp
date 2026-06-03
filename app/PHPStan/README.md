@@ -47,7 +47,7 @@ services:
 ```
 
 4. Create unit tests in `tests/Unit/PHPStan/Rules/`
-5. Add the `covers()` annotation for mutation testing
+5. Add the `covers()` annotation when test scope should be explicit
 
 ## Testing Custom Rules
 

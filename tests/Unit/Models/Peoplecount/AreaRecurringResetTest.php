@@ -360,7 +360,7 @@ it('throws on invalid timezone when getting next daily occurrence', function () 
     expect(fn (): Carbon => $model->getNextDailyOccurrence())->toThrow(Exception::class);
 });
 
-it('does not mutate the provided $from Carbon instance and returns UTC timezone', function () {
+it('does not modify the provided $from Carbon instance and returns UTC timezone', function () {
     $from = Carbon::parse('2024-01-15 23:30:00', 'UTC');
 
     $model = new AreaRecurringReset;

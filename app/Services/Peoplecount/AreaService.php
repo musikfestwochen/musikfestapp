@@ -117,17 +117,15 @@ class AreaService
      */
     public function calculateChecksum(Area $area): string
     {
-        $this->loadChecksumRelationships($area); // @pest-mutate-ignore - relationships are loaded lazily when accessed in collectChecksumData
+        $this->loadChecksumRelationships($area);
         $checksumData = $this->collectChecksumData($area);
         $sortedData = $this->sortChecksumData($checksumData);
 
-        return hash('sha256', (string) json_encode($sortedData)); // @pest-mutate-ignore
+        return hash('sha256', (string) json_encode($sortedData));
     }
 
     /**
      * Load all relationships needed for checksum calculation.
-     *
-     * @pest-mutate-ignore
      */
     protected function loadChecksumRelationships(Area $area): void
     {
@@ -364,7 +362,7 @@ class AreaService
     public function calculateAreaDebugCounts(Area $area): array
     {
         // We need recurring resets as well to derive the latest reset of any type
-        $area->load(['assignments.sensor.intervalCounts', 'event', 'areaSingleResets', 'areaRecurringResets']); // @pest-mutate-ignore
+        $area->load(['assignments.sensor.intervalCounts', 'event', 'areaSingleResets', 'areaRecurringResets']);
 
         $now = now();
 
