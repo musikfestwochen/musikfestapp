@@ -57,7 +57,7 @@
         "@unovis/ts": "^1.6.5",
         "@unovis/vue": "^1.6.5",
         "@vitejs/plugin-vue": "^6.0.7",
-        "@vuepic/vue-datepicker": "13.0.0",
+        "@vuepic/vue-datepicker": "14.0.0",
         "@vueuse/core": "14.3.0",
         "autoprefixer": "^10.4.20",
         "axios": "^1.17.0",
