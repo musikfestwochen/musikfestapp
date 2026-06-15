@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models\Peoplecount;
 
 use Database\Factories\Peoplecount\AssignmentFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,29 +25,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
+#[Fillable([
+    'event_id',
+    'area_id',
+    'sensor_id',
+    'direction_flipped',
+    'active_from',
+    'active_to',
+])]
+#[Table(name: 'peoplecount_assignments')]
 class Assignment extends Model
 {
     /** @use HasFactory<AssignmentFactory> */
     use HasFactory;
 
     use SoftDeletes;
-
-    /** The table associated with the model. */
-    protected $table = 'peoplecount_assignments';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'event_id',
-        'area_id',
-        'sensor_id',
-        'direction_flipped',
-        'active_from',
-        'active_to',
-    ];
 
     /**
      * The Event that owns the assignment.

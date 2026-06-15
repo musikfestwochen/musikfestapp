@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models\Peoplecount;
 
 use App\Models\Organization;
 use Database\Factories\Peoplecount\EventFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,27 +25,19 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
+#[Fillable([
+    'name',
+    'organization_id',
+    'starts_at',
+    'ends_at',
+])]
+#[Table(name: 'peoplecount_events')]
 class Event extends Model
 {
     /** @use HasFactory<EventFactory> */
     use HasFactory;
 
     use SoftDeletes;
-
-    /** The table associated with the model. */
-    protected $table = 'peoplecount_events';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'organization_id',
-        'starts_at',
-        'ends_at',
-    ];
 
     /**
      * The Organization that owns the event.

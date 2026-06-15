@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Peoplecount;
 
 use Illuminate\Contracts\Validation\ValidationRule;

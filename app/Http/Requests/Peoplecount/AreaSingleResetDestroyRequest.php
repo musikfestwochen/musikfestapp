@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Peoplecount;
 
 use App\Models\Peoplecount\AreaSingleReset;
@@ -15,8 +17,11 @@ class AreaSingleResetDestroyRequest extends FormRequest
     {
         /** @var AreaSingleReset $singleReset */
         $singleReset = $this->route('single_reset');
+        if (auth()->user()->can('peoplecount.area_resets.destroy')) {
+            return true;
+        }
 
-        return auth()->user()->can('peoplecount.area_resets.destroy') || $singleReset->created_by === auth()->user()->id;
+        return $singleReset->created_by === auth()->user()->id;
     }
 
     /**

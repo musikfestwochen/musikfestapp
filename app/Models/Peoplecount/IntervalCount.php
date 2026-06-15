@@ -1,36 +1,41 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models\Peoplecount;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\Peoplecount\IntervalCountFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $sensor_id
+ * @property CarbonImmutable $ts_from
+ * @property CarbonImmutable $ts_to
+ * @property CarbonImmutable $received_at
+ * @property int $count_in
+ * @property int $count_out
+ */
+#[Fillable([
+    'sensor_id',
+    'ts_from',
+    'ts_to',
+    'received_at',
+    'count_in',
+    'count_out',
+])]
+#[Table(name: 'peoplecount_interval_counts')]
+#[WithoutTimestamps]
 class IntervalCount extends Model
 {
     /** @use HasFactory<IntervalCountFactory> */
     use HasFactory;
-
-    /**
-     * Disable created_at and modified_at timestamps
-     */
-    public $timestamps = false;
-
-    /** The table associated with the model. */
-    protected $table = 'peoplecount_interval_counts';
-
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'sensor_id',
-        'ts_from',
-        'ts_to',
-        'received_at',
-        'count_in',
-        'count_out',
-    ];
 
     /**
      * Relationship with the Sensor model.

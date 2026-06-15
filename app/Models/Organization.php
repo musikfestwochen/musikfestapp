@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Database\Factories\OrganizationFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -24,27 +27,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
+#[Fillable([
+    'name',
+    'slug',
+    'description',
+    'email',
+    'phone',
+    'website',
+    'logo',
+])]
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
     use HasFactory;
 
     use SoftDeletes;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'slug',
-        'description',
-        'email',
-        'phone',
-        'website',
-        'logo',
-    ];
 
     /**
      * The users that belong to the organization.

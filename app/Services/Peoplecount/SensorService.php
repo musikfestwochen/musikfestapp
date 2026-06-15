@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Peoplecount;
 
 use App\Models\Organization;
@@ -89,7 +91,7 @@ class SensorService
                     ->get(['id', 'sensor_id', 'ts_from', 'ts_to', 'count_in', 'count_out']);
 
                 $latest = $counts->first();
-                $isRecent = $latest && Date::parse($latest->ts_to)->greaterThanOrEqualTo($recentThreshold);
+                $isRecent = $latest && $latest->ts_to->greaterThanOrEqualTo($recentThreshold);
                 $anyNonZero = $counts->contains(function (IntervalCount $c): bool {
                     return ($c->count_in ?? 0) > 0 || ($c->count_out ?? 0) > 0;
                 });
@@ -99,11 +101,11 @@ class SensorService
                     'serial' => $sensor->serial,
                     'vendor' => $sensor->vendor,
                     'model' => $sensor->model,
-                    'latest_ts' => $latest ? Date::parse($latest->ts_to)->toIso8601String() : null,
+                    'latest_ts' => $latest ? $latest->ts_to->toIso8601String() : null,
                     'interval_counts' => $counts->map(function (IntervalCount $c): array {
                         return [
-                            'ts_from' => Date::parse($c->ts_from)->toIso8601String(),
-                            'ts_to' => Date::parse($c->ts_to)->toIso8601String(),
+                            'ts_from' => $c->ts_from->toIso8601String(),
+                            'ts_to' => $c->ts_to->toIso8601String(),
                             'count_in' => (int) $c->count_in,
                             'count_out' => (int) $c->count_out,
                         ];
