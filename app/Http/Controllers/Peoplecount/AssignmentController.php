@@ -14,15 +14,21 @@ use App\Http\Requests\Peoplecount\AssignmentStoreRequest;
 use App\Http\Requests\Peoplecount\AssignmentUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Assignment;
+use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\AssignmentService;
+use App\Services\Peoplecount\SensorService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AssignmentController extends Controller
 {
-    public function __construct(private readonly AssignmentService $assignmentService) {}
+    public function __construct(
+        private readonly AssignmentService $assignmentService,
+        private readonly SensorService $sensorService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -68,7 +74,7 @@ class AssignmentController extends Controller
         return Inertia::render('peoplecount/NewAssignment', [
             'organization' => $organization,
             'events' => $organization->events()->with('areas')->get(),
-            'sensors' => $organization->sensors()->get(),
+            'sensors' => $this->sensorService->getAssignableSensorsForOrganization($organization),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -80,6 +86,8 @@ class AssignmentController extends Controller
      */
     public function show(AssignmentShowRequest $request, Organization $organization, Assignment $assignment): RedirectResponse
     {
+        $this->assignmentService->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
         return to_route('peoplecount.assignments.edit', [
             'organization' => $organization,
             'assignment' => $assignment,
@@ -91,14 +99,16 @@ class AssignmentController extends Controller
      */
     public function edit(AssignmentEditRequest $request, Organization $organization, Assignment $assignment): Response
     {
+        $this->assignmentService->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
         // Load relationships
-        $assignment->load(['event', 'area', 'sensor']);
+        $assignment->load(['event', 'area', 'sensor.organization']);
 
         return Inertia::render('peoplecount/EditAssignment', [
             'organization' => $organization,
             'assignment' => $assignment,
             'events' => $organization->events()->with('areas')->get(),
-            'sensors' => $organization->sensors()->get(),
+            'sensors' => $this->getAssignableSensorsForAssignmentEdit($organization, $assignment),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -136,11 +146,29 @@ class AssignmentController extends Controller
      */
     public function destroy(AssignmentDestroyRequest $request, Organization $organization, Assignment $assignment): RedirectResponse
     {
+        $this->assignmentService->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
         $assignment->delete();
 
         return to_route('peoplecount.assignments.index', [
             'organization' => $organization,
         ])
             ->with('status', 'Assignment deleted successfully.');
+    }
+
+    /**
+     * Include current assignment sensor even when archived or outside current share window.
+     *
+     * @return Collection<int, Sensor>
+     */
+    protected function getAssignableSensorsForAssignmentEdit(Organization $organization, Assignment $assignment): Collection
+    {
+        $sensors = $this->sensorService->getAssignableSensorsForOrganization($organization);
+
+        if ($assignment->sensor && $sensors->doesntContain('id', $assignment->sensor->id)) {
+            $sensors->push($assignment->sensor);
+        }
+
+        return $sensors->unique('id')->values();
     }
 }

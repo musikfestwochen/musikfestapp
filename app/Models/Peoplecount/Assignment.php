@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $event_id
  * @property int $area_id
  * @property int $sensor_id
+ * @property int|null $sensor_share_id
  * @property bool $direction_flipped
  * @property Carbon $active_from
  * @property Carbon $active_to
@@ -29,6 +30,7 @@ use Illuminate\Support\Carbon;
     'event_id',
     'area_id',
     'sensor_id',
+    'sensor_share_id',
     'direction_flipped',
     'active_from',
     'active_to',
@@ -69,6 +71,16 @@ class Assignment extends Model
     public function sensor(): BelongsTo
     {
         return $this->belongsTo(Sensor::class);
+    }
+
+    /**
+     * The share that authorized this assignment, when using a foreign sensor.
+     *
+     * @return BelongsTo<SensorShare, $this>
+     */
+    public function sensorShare(): BelongsTo
+    {
+        return $this->belongsTo(SensorShare::class);
     }
 
     /**

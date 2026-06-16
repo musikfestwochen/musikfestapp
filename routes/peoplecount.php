@@ -8,7 +8,9 @@ use App\Http\Controllers\Peoplecount\AreaRecurringResetController;
 use App\Http\Controllers\Peoplecount\AreaSingleResetController;
 use App\Http\Controllers\Peoplecount\AssignmentController;
 use App\Http\Controllers\Peoplecount\EventController;
+use App\Http\Controllers\Peoplecount\SensorArchiveController;
 use App\Http\Controllers\Peoplecount\SensorController;
+use App\Http\Controllers\Peoplecount\SensorShareController;
 use App\Http\Controllers\Peoplecount\SensorTokenController;
 use App\Http\Controllers\Widgets\PeoplecountActiveAreaCountsWidgetController;
 use App\Http\Controllers\Widgets\PeoplecountAreaCountHistoryWidgetController;
@@ -58,6 +60,18 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         // Regenerate token route
         Route::post('sensors/{sensor}/regenerate-token', [SensorTokenController::class, 'update'])
             ->name('sensors.regenerate-token');
+
+        Route::post('sensors/{sensor}/archive', [SensorArchiveController::class, 'store'])
+            ->name('sensors.archive.store');
+        Route::delete('sensors/{sensor}/archive', [SensorArchiveController::class, 'destroy'])
+            ->name('sensors.archive.destroy');
+
+        Route::post('sensors/{sensor}/shares', [SensorShareController::class, 'store'])
+            ->name('sensors.shares.store');
+        Route::put('sensors/{sensor}/shares/{share}', [SensorShareController::class, 'update'])
+            ->name('sensors.shares.update');
+        Route::delete('sensors/{sensor}/shares/{share}', [SensorShareController::class, 'destroy'])
+            ->name('sensors.shares.destroy');
 
         // Area Aggregation route
         Route::get('area-aggregation', [PeoplecountActiveAreaCountsWidgetController::class, 'index'])

@@ -38,7 +38,8 @@
             "ids",
             "ds",
             "datepicker",
-            "stylesheets"
+            "stylesheets",
+            "unarchive"
         ],
         "paths": []
     }

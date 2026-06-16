@@ -5,6 +5,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
+use App\Models\Peoplecount\SensorShare;
 use App\Services\Peoplecount\AssignmentService;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -770,6 +771,117 @@ describe('verifySensorBelongsToCurrentOrganization', function () {
 
         // If we get here, the test passes
         $this->assertTrue(true);
+    });
+});
+
+describe('verifyAssignmentBelongsToCurrentOrganization', function () {
+    it('passes for any assignment when organization is global', function () {
+        $owner = Organization::factory()->create();
+        $event = Event::factory()->for($owner, 'organization')->create();
+        $area = Area::factory()->for($event)->create();
+        $sensor = Sensor::factory()->withOrganization($owner)->create();
+        $assignment = Assignment::factory()->for($event)->for($area)->for($sensor)->create();
+
+        setPermissionsOrgId(GLOBAL_ORG_ID);
+
+        $this->service->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
+        $this->assertTrue(true);
+    });
+
+    it('throws when assignment belongs to another organization', function () {
+        $org = Organization::factory()->create();
+        $foreignOrg = Organization::factory()->create();
+        $event = Event::factory()->for($foreignOrg, 'organization')->create();
+        $area = Area::factory()->for($event)->create();
+        $sensor = Sensor::factory()->withOrganization($foreignOrg)->create();
+        $assignment = Assignment::factory()->for($event)->for($area)->for($sensor)->create();
+
+        setPermissionsOrgId($org->id);
+
+        $this->expectException(AuthorizationException::class);
+        $this->service->verifyAssignmentBelongsToCurrentOrganization($assignment);
+    });
+});
+
+describe('verifySensorAssignableToEvent', function () {
+    it('returns a valid share for a borrowed sensor', function () {
+        $owner = Organization::factory()->create();
+        $borrower = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($owner)->create();
+        $event = Event::factory()->withOrganization($borrower)->create();
+        $share = SensorShare::factory()
+            ->withSensor($sensor)
+            ->withBorrowerOrganization($borrower)
+            ->create([
+                'starts_at' => '2026-08-01 09:00:00',
+                'ends_at' => '2026-08-01 18:00:00',
+            ]);
+
+        setPermissionsOrgId($borrower->id);
+
+        $result = $this->service->verifySensorAssignableToEvent(
+            $sensor->id,
+            $event->id,
+            '2026-08-01 10:00:00',
+            '2026-08-01 12:00:00'
+        );
+
+        expect($result)->toBeInstanceOf(SensorShare::class)
+            ->and($result->is($share))->toBeTrue();
+    });
+
+    it('returns null for global organization before loading event', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        setPermissionsOrgId(GLOBAL_ORG_ID);
+
+        $result = $this->service->verifySensorAssignableToEvent(
+            $sensor->id,
+            999999,
+            now()->toDateTimeString(),
+            now()->addHour()->toDateTimeString()
+        );
+
+        expect($result)->toBeNull();
+    });
+
+    it('allows keeping an archived sensor on its existing assignment', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->for($org, 'organization')->create();
+        $area = Area::factory()->for($event)->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['archived_at' => now()]);
+        $assignment = Assignment::factory()->withEvent($event)->withArea($area)->withSensor($sensor)->create();
+
+        setPermissionsOrgId($org->id);
+
+        $result = $this->service->verifySensorAssignableToEvent(
+            $sensor->id,
+            $event->id,
+            $assignment->active_from->toDateTimeString(),
+            $assignment->active_to->toDateTimeString(),
+            $assignment
+        );
+
+        expect($result)->toBeNull();
+    });
+
+    it('rejects assigning an archived sensor to a new assignment', function () {
+        $org = Organization::factory()->create();
+        $event = Event::factory()->for($org, 'organization')->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['archived_at' => now()]);
+
+        setPermissionsOrgId($org->id);
+
+        $this->expectException(ValidationException::class);
+
+        $this->service->verifySensorAssignableToEvent(
+            $sensor->id,
+            $event->id,
+            now()->toDateTimeString(),
+            now()->addHour()->toDateTimeString()
+        );
     });
 });
 

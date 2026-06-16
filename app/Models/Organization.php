@@ -92,4 +92,24 @@ class Organization extends Model
     {
         return $this->hasManyThrough(Peoplecount\Assignment::class, Peoplecount\Event::class);
     }
+
+    /**
+     * Sensor shares this organization has created for other organizations.
+     *
+     * @return HasMany<Peoplecount\SensorShare, $this>
+     */
+    public function lentSensorShares(): HasMany
+    {
+        return $this->hasMany(Peoplecount\SensorShare::class, 'owner_organization_id');
+    }
+
+    /**
+     * Sensor shares this organization can use from other organizations.
+     *
+     * @return HasMany<Peoplecount\SensorShare, $this>
+     */
+    public function borrowedSensorShares(): HasMany
+    {
+        return $this->hasMany(Peoplecount\SensorShare::class, 'borrower_organization_id');
+    }
 }

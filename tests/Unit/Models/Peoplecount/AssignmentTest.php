@@ -4,6 +4,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
+use App\Models\Peoplecount\SensorShare;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,6 +17,7 @@ it('has correct fillable attributes', function () {
         'event_id',
         'area_id',
         'sensor_id',
+        'sensor_share_id',
         'direction_flipped',
         'active_from',
         'active_to',
@@ -59,6 +61,14 @@ it('belongs to a sensor', function () {
 
     expect($relation)->toBeInstanceOf(BelongsTo::class);
     expect($relation->getRelated())->toBeInstanceOf(Sensor::class);
+});
+
+it('belongs to a sensor share', function () {
+    $model = new Assignment;
+    $relation = $model->sensorShare();
+
+    expect($relation)->toBeInstanceOf(BelongsTo::class);
+    expect($relation->getRelated())->toBeInstanceOf(SensorShare::class);
 });
 
 it('has factory', function () {

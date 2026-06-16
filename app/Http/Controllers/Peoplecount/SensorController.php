@@ -17,6 +17,7 @@ use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\SensorService;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,8 +31,9 @@ class SensorController extends Controller
     public function index(SensorIndexRequest $request, Organization $organization): Response
     {
         return Inertia::render('peoplecount/Sensors', [
-            'sensors' => $this->sensorService->getSensors(),
+            'sensors' => $this->sensorService->getSensors($request->boolean('archived')),
             'organization' => $organization,
+            'showArchived' => $request->boolean('archived'),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -83,14 +85,24 @@ class SensorController extends Controller
      */
     public function edit(SensorEditRequest $request, Organization $organization, Sensor $sensor): Response
     {
+        $this->sensorService->verifySensorManagedByCurrentOrganization($sensor);
+
         // get the last 10 interval counts for the sensor
         $sensor->load(['intervalCounts' => function (HasMany $query) {
             $query->orderBy('ts_from', 'desc')->take(10);
+        }, 'shares' => function (HasMany $query) {
+            $query->with('borrowerOrganization')
+                ->withCount('assignments')
+                ->latest('starts_at');
         }]);
 
         return Inertia::render('peoplecount/EditSensor', [
             'organization' => $organization,
             'sensor' => $sensor,
+            'organizations' => Organization::query()
+                ->whereKeyNot($organization->id)
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -102,7 +114,9 @@ class SensorController extends Controller
      */
     public function update(SensorUpdateRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
     {
-        $sensor->update($request->all());
+        $this->sensorService->verifySensorManagedByCurrentOrganization($sensor);
+
+        $sensor->update($request->validated());
 
         return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
@@ -119,7 +133,12 @@ class SensorController extends Controller
     public function destroy(SensorDestroyRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
     {
         $name = $sensor->vendor.' '.$sensor->model.' '.$sensor->serial;
-        $sensor->delete();
+
+        try {
+            $this->sensorService->delete($sensor);
+        } catch (ValidationException $validationException) {
+            return back()->withErrors($validationException->errors());
+        }
 
         return to_route('peoplecount.sensors.index', [
             'organization' => $organization,

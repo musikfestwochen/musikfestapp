@@ -76,6 +76,7 @@ export interface PeoplecountSensor {
     model: string;
     serial: string;
     organization_id: number;
+    archived_at?: string | null;
     api_token?: string | null; // Plaintext API token, nullable
     created_at: string;
     updated_at: string;
@@ -83,6 +84,23 @@ export interface PeoplecountSensor {
     interval_counts?: PeopleCountIntervalCount[]; // Optional, for related interval counts
     organization?: Organization; // Optional, for related organization
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
+    shares?: PeoplecountSensorShare[]; // Optional, for related shares
+}
+
+export interface PeoplecountSensorShare {
+    id: number;
+    sensor_id: number;
+    owner_organization_id: number;
+    borrower_organization_id: number;
+    starts_at: string;
+    ends_at: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string;
+    assignments_count?: number;
+    sensor?: PeoplecountSensor;
+    borrower_organization?: Organization;
+    owner_organization?: Organization;
 }
 
 export interface PeopleCountIntervalCount {
@@ -127,6 +145,7 @@ export interface PeoplecountAssignment {
     event_id: number;
     area_id: number;
     sensor_id: number;
+    sensor_share_id?: number | null;
     direction_flipped: boolean;
     active_from: string; // ISO 8601 date-time string (UTC)
     active_to: string; // ISO 8601 date-time string (UTC)

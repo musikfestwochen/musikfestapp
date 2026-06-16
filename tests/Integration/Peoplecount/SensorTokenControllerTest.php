@@ -53,6 +53,20 @@ it('regenerates an existing token', function () {
         ->and($sensor->fresh()->api_token)->not->toBe($originalToken);
 });
 
+it('does not regenerate token for another organization sensor', function () {
+    $org = Organization::factory()->create();
+    $foreignOrg = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $foreignSensor = Sensor::factory()->withOrganization($foreignOrg)->create();
+
+    test()->actingAs($admin)
+        ->post(route('peoplecount.sensors.regenerate-token', [
+            'organization' => $org->slug,
+            'sensor' => $foreignSensor->id,
+        ]))
+        ->assertForbidden();
+});
+
 it('uses the correct form requests', function () {
     // middleware
     test()->assertRouteUsesMiddleware(

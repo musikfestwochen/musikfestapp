@@ -8,9 +8,12 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Validation\ValidationException;
 
 class SensorService
 {
@@ -19,7 +22,7 @@ class SensorService
     /**
      * @return Collection<int, Sensor>
      */
-    public function getSensors(): Collection
+    public function getSensors(bool $onlyArchived = false): Collection
     {
         $currentOrgId = getPermissionsOrgId();
         $query = Sensor::query();
@@ -28,7 +31,30 @@ class SensorService
             $query->where('organization_id', $currentOrgId);
         }
 
+        $onlyArchived
+            ? $query->whereNotNull('archived_at')
+            : $query->whereNull('archived_at');
+
         return $query->get();
+    }
+
+    /**
+     * @return Collection<int, Sensor>
+     */
+    public function getAssignableSensorsForOrganization(Organization $organization): Collection
+    {
+        $ownedSensors = $organization->sensors()
+            ->whereNull('archived_at')
+            ->get();
+
+        $borrowedSensors = $organization->borrowedSensorShares()
+            ->where('ends_at', '>=', Date::now())
+            ->with(['sensor.organization'])
+            ->get()
+            ->pluck('sensor')
+            ->filter(fn (?Sensor $sensor): bool => $sensor instanceof Sensor && $sensor->archived_at === null);
+
+        return $ownedSensors->concat($borrowedSensors)->unique('id')->values();
     }
 
     /**
@@ -52,10 +78,13 @@ class SensorService
             $now = Date::now()->setTimezone($timezone);
             $recentThreshold = $now->copy()->subMinutes(2);
 
-            // Find sensors that are currently assigned somewhere within an active assignment window
+            // Find sensors currently assigned to this organization's events.
             $assignedSensorIds = Assignment::query()
                 ->whereBetween('active_from', ['1900-01-01', $now])
                 ->where('active_to', '>=', $now)
+                ->whereHas('event', function (Builder $query) use ($organization): void {
+                    $query->where('organization_id', $organization->id);
+                })
                 ->pluck('sensor_id')
                 ->unique()
                 ->values();
@@ -74,7 +103,6 @@ class SensorService
             // Load sensors for the organization and that are currently assigned
             $sensors = Sensor::query()
                 ->whereIn('id', $assignedSensorIds)
-                ->where('organization_id', $organization->id)
                 ->get(['id', 'vendor', 'model', 'serial']);
 
             $healthy = [];
@@ -169,5 +197,49 @@ class SensorService
         $parts = explode('|', $token->plainTextToken, 2);
 
         return $parts[1] ?? $token->plainTextToken;
+    }
+
+    public function archive(Sensor $sensor): Sensor
+    {
+        $this->verifySensorManagedByCurrentOrganization($sensor);
+
+        $sensor->update(['archived_at' => Date::now()]);
+
+        return $sensor;
+    }
+
+    public function unarchive(Sensor $sensor): Sensor
+    {
+        $this->verifySensorManagedByCurrentOrganization($sensor);
+
+        $sensor->update(['archived_at' => null]);
+
+        return $sensor;
+    }
+
+    public function delete(Sensor $sensor): void
+    {
+        $this->verifySensorManagedByCurrentOrganization($sensor);
+
+        throw_if($sensor->assignments()->exists(), ValidationException::withMessages([
+            'sensor_id' => 'This sensor cannot be deleted because it is used by assignments.',
+        ]));
+
+        $sensor->delete();
+    }
+
+    public function verifySensorManagedByCurrentOrganization(Sensor $sensor): void
+    {
+        $currentOrgId = getPermissionsOrgId();
+
+        if ($currentOrgId === GLOBAL_ORG_ID) {
+            return;
+        }
+
+        throw_if(
+            $sensor->organization_id !== $currentOrgId,
+            AuthorizationException::class,
+            'You are not authorized to manage this sensor.'
+        );
     }
 }

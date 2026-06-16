@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -22,12 +23,14 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $serial
  * @property int $organization_id
  * @property string|null $api_token
+ * @property Carbon|null $archived_at
  */
 #[Fillable([
     'vendor',
     'model',
     'serial',
     'organization_id',
+    'archived_at',
     'api_token', // TODO: Storing token in plaintext, revisit if API becomes sensitive
 ])]
 #[Table(name: 'peoplecount_sensors')]
@@ -68,5 +71,25 @@ class Sensor extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(Assignment::class);
+    }
+
+    /**
+     * The shares associated with the sensor.
+     *
+     * @return HasMany<SensorShare, $this>
+     */
+    public function shares(): HasMany
+    {
+        return $this->hasMany(SensorShare::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
     }
 }
