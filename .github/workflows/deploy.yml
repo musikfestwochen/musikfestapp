@@ -61,16 +61,25 @@ jobs:
           node-install-command: 'npm clean-install'
           build-assets: 'true'
 
-      # Deploy built assets and PHP dependencies to the server
-      - name: Deploy application files
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
-          username: ${{ secrets.INFOMANIAK_SSH_USER }}
-          password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
-          source: |
-            public/build
-          target: '/home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp'
+      # Deploy built assets without scp-action's remote OS autodetection.
+      - name: Deploy built assets
+        env:
+          SSH_HOST: ${{ secrets.INFOMANIAK_SSH_SERVER }}
+          SSH_USER: ${{ secrets.INFOMANIAK_SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
+          APP_PATH: /home/clients/58c2b2f1ec280a97dfe624b840e761b7/sites/musikfestapp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+          export SSHPASS="$SSH_PASSWORD"
+
+          tar -czf - public/build | sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            -o PreferredAuthentications=password \
+            -o PubkeyAuthentication=no \
+            "$SSH_USER@$SSH_HOST" \
+            "APP_PATH='$APP_PATH' bash -lc 'rm -rf \"\$APP_PATH/public/build\" && mkdir -p \"\$APP_PATH/public\" && tar -xzf - -C \"\$APP_PATH\"'"
 
       # SSH into the server and finalize the deployment
       - name: Run Laravel deployment commands on server
