@@ -42,7 +42,7 @@ Expectations:
 ## 3) App bootstrap (SQLite)
 
 - Ensure env and DB file:
-  copy .env.local .env   # on Windows PowerShell
+  copy .env.example .env   # on Windows PowerShell
   New-Item -ItemType File database/database.sqlite -Force | Out-Null
 
 - Laravel init:
@@ -88,5 +88,5 @@ These invoke docker compose run --rm app ... under the hood.
 
 ## Notes
 - Only Xdebug is enabled as coverage driver.
-- SQLite is the default DB. The .env template uses DB_CONNECTION=sqlite. DB file path: database/database.sqlite.
+- SQLite is the default DB. The `.env.example` template uses `DB_CONNECTION=sqlite`. DB file path: `database/database.sqlite`.
 - The PHP container also has Node 22 installed to support npm commands inside Composer scripts.

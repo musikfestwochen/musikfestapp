@@ -65,10 +65,10 @@ To ensure a productive development environment, install the following extensions
 Musikfestapp uses different environment files for different scenarios:
 
 - **Local Development:**
-    - Use `.env.local` as the template for your local environment.
-    - To set up your local environment, copy `.env.local` to `.env`:
+    - Use `.env.example` as the template for your local environment.
+    - To set up your local environment, copy `.env.example` to `.env`:
         ```sh
-        cp .env.local .env
+        cp .env.example .env
         ```
     - Then generate your application key:
         ```sh
@@ -77,7 +77,7 @@ Musikfestapp uses different environment files for different scenarios:
 - **Production:**
     - The production server uses its own `.env.production` file (not committed to version control).
 - **CI/CD & Examples:**
-    - `.env.example` is used as a generic template for CI/CD and as a reference for required variables.
+    - `.env.example` is used as the bootstrap template for CI/CD and as a reference for required variables.
 
 > **Note:** Always keep your `.env` files out of version control to protect sensitive data.
 

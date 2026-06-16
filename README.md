@@ -15,7 +15,7 @@ Laravel application for Winterthurer Musikfestwochen operations.
 ```bash
 composer install
 npm install
-cp .env.local .env
+cp .env.example .env
 php artisan key:generate
 php artisan migrate
 npm run dev

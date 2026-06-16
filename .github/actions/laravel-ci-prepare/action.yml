@@ -99,7 +99,7 @@ runs:
     - name: Copy environment file
       if: ${{ inputs.bootstrap-laravel == 'true' }}
       shell: bash
-      run: cp .env.local .env
+      run: cp .env.example .env
 
     - name: Generate application key
       if: ${{ inputs.bootstrap-laravel == 'true' }}
