@@ -21,13 +21,15 @@ class SensorShareFactory extends Factory
      */
     public function definition(): array
     {
-        $ownerOrganization = Organization::factory()->create();
-        $borrowerOrganization = Organization::factory()->create();
-        $sensor = Sensor::factory()->withOrganization($ownerOrganization)->create();
+        $ownerOrganization = Organization::query()->inRandomOrder()->first() ?? Organization::factory()->create();
+        $borrowerOrganization = Organization::query()->where('id', '!=', $ownerOrganization->id)->inRandomOrder()->first()
+            ?? Organization::factory()->create();
+        $sensor = Sensor::query()->where('organization_id', $ownerOrganization->id)->inRandomOrder()->first()
+            ?? Sensor::factory()->withOrganization($ownerOrganization)->create();
 
         return [
             'sensor_id' => $sensor->id,
-            'owner_organization_id' => $ownerOrganization->id,
+            'owner_organization_id' => $sensor->organization_id,
             'borrower_organization_id' => $borrowerOrganization->id,
             'starts_at' => now()->subDay(),
             'ends_at' => now()->addDay(),

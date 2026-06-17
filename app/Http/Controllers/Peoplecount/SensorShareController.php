@@ -24,9 +24,9 @@ class SensorShareController extends Controller
         try {
             $this->sensorShareService->create([
                 'sensor_id' => $sensor->id,
-                'borrower_organization_id' => $request->input('borrower_organization_id'),
-                'starts_at' => $request->input('starts_at'),
-                'ends_at' => $request->input('ends_at'),
+                'borrower_organization_id' => $request->validated('borrower_organization_id'),
+                'starts_at' => $request->validated('starts_at'),
+                'ends_at' => $request->validated('ends_at'),
             ]);
         } catch (ValidationException $validationException) {
             return back()->withErrors($validationException->errors())->withInput();
@@ -44,9 +44,9 @@ class SensorShareController extends Controller
 
         try {
             $this->sensorShareService->update($share, [
-                'borrower_organization_id' => $request->input('borrower_organization_id'),
-                'starts_at' => $request->input('starts_at'),
-                'ends_at' => $request->input('ends_at'),
+                'borrower_organization_id' => $request->validated('borrower_organization_id'),
+                'starts_at' => $request->validated('starts_at'),
+                'ends_at' => $request->validated('ends_at'),
             ]);
         } catch (ValidationException $validationException) {
             return back()->withErrors($validationException->errors())->withInput();

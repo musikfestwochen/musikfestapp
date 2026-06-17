@@ -14,11 +14,9 @@ use App\Http\Requests\Peoplecount\AssignmentStoreRequest;
 use App\Http\Requests\Peoplecount\AssignmentUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Assignment;
-use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\AssignmentService;
 use App\Services\Peoplecount\SensorService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -49,12 +47,12 @@ class AssignmentController extends Controller
     {
         try {
             $this->assignmentService->create([
-                'event_id' => $request->input('event_id'),
-                'area_id' => $request->input('area_id'),
-                'sensor_id' => $request->input('sensor_id'),
-                'direction_flipped' => $request->input('direction_flipped'),
-                'active_from' => $request->input('active_from'),
-                'active_to' => $request->input('active_to'),
+                'event_id' => $request->validated('event_id'),
+                'area_id' => $request->validated('area_id'),
+                'sensor_id' => $request->validated('sensor_id'),
+                'direction_flipped' => $request->validated('direction_flipped'),
+                'active_from' => $request->validated('active_from'),
+                'active_to' => $request->validated('active_to'),
             ]);
 
             return to_route('peoplecount.assignments.index', [
@@ -108,7 +106,7 @@ class AssignmentController extends Controller
             'organization' => $organization,
             'assignment' => $assignment,
             'events' => $organization->events()->with('areas')->get(),
-            'sensors' => $this->getAssignableSensorsForAssignmentEdit($organization, $assignment),
+            'sensors' => $this->sensorService->getAssignableSensorsForAssignmentEdit($organization, $assignment),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -122,12 +120,12 @@ class AssignmentController extends Controller
     {
         try {
             $this->assignmentService->update($assignment, [
-                'event_id' => $request->input('event_id'),
-                'area_id' => $request->input('area_id'),
-                'sensor_id' => $request->input('sensor_id'),
-                'direction_flipped' => $request->input('direction_flipped'),
-                'active_from' => $request->input('active_from'),
-                'active_to' => $request->input('active_to'),
+                'event_id' => $request->validated('event_id'),
+                'area_id' => $request->validated('area_id'),
+                'sensor_id' => $request->validated('sensor_id'),
+                'direction_flipped' => $request->validated('direction_flipped'),
+                'active_from' => $request->validated('active_from'),
+                'active_to' => $request->validated('active_to'),
             ]);
 
             return to_route('peoplecount.assignments.index', [
@@ -154,21 +152,5 @@ class AssignmentController extends Controller
             'organization' => $organization,
         ])
             ->with('status', 'Assignment deleted successfully.');
-    }
-
-    /**
-     * Include current assignment sensor even when archived or outside current share window.
-     *
-     * @return Collection<int, Sensor>
-     */
-    protected function getAssignableSensorsForAssignmentEdit(Organization $organization, Assignment $assignment): Collection
-    {
-        $sensors = $this->sensorService->getAssignableSensorsForOrganization($organization);
-
-        if ($assignment->sensor && $sensors->doesntContain('id', $assignment->sensor->id)) {
-            $sensors->push($assignment->sensor);
-        }
-
-        return $sensors->unique('id')->values();
     }
 }

@@ -97,6 +97,7 @@ class SensorShareService
             ->where('borrower_organization_id', $event->organization_id)
             ->where('starts_at', '<=', $activeFrom)
             ->where('ends_at', '>=', $activeTo)
+            ->orderByDesc('id')
             ->first();
     }
 

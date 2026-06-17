@@ -58,6 +58,23 @@ class SensorService
     }
 
     /**
+     * Get assignable sensors for editing an assignment, including the assignment's
+     * current sensor even if archived or outside share windows.
+     *
+     * @return Collection<int, Sensor>
+     */
+    public function getAssignableSensorsForAssignmentEdit(Organization $organization, Assignment $assignment): Collection
+    {
+        $sensors = $this->getAssignableSensorsForOrganization($organization);
+
+        if ($assignment->sensor && $sensors->doesntContain('id', $assignment->sensor->id)) {
+            $sensors->push($assignment->sensor);
+        }
+
+        return $sensors->unique('id')->values();
+    }
+
+    /**
      * Get health status for currently assigned sensors in an organization.
      *
      * A sensor is healthy if:
