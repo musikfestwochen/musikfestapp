@@ -40,6 +40,14 @@ If assignment direction is flipped, interval net becomes negative of normal net.
 
 Explicit starting count that takes effect from reset timestamp forward.
 
+### Data watermark
+
+Timestamp recording the latest `received_at` of interval counts that have been incorporated into aggregation for a given area.
+
+Stored explicitly per area. Updated after each successful aggregation pass.
+
+Used to detect late-arriving data: any interval count with `received_at` after the watermark that falls in an already-aggregated window triggers recalculation.
+
 ## Boundary Rules
 
 These boundaries are important because many edge cases depend on them.
@@ -98,13 +106,18 @@ flowchart TD
   A[Load area and related records] --> B[Calculate current configuration checksum]
   B --> C[Delete rows with outdated checksum]
   C --> D[Check stored window size against configured size]
-  D --> E[Build reset list]
-  E --> F[Generate windows from event start to event end]
-  F --> G[Split windows when reset lands inside]
-  G --> H[Drop future windows]
-  H --> I[Drop stable early windows already stored]
-  I --> J[Calculate each remaining window in order]
-  J --> K[Store cumulative count per window]
+  D --> E[Compare interval received_at against data watermark]
+  E --> F{Late arrivals detected?}
+  F -->|Yes| G[Extend recalculation range to earliest affected window]
+  F -->|No| H[Build reset list]
+  G --> H
+  H --> I[Generate windows from event start to event end]
+  I --> J[Split windows when reset lands inside]
+  J --> K[Drop future windows]
+  K --> L[Drop stable early windows already stored]
+  L --> M[Calculate each remaining window in order]
+  M --> N[Store cumulative count per window]
+  N --> O[Update data watermark]
 ```
 
 ## Window Construction
@@ -252,6 +265,70 @@ for each active assignment:
         window_net += net
 ```
 
+## Duplicate Interval Count Rule
+
+If multiple interval count rows exist for the same `(sensor_id, ts_from, ts_to)` combination, only the row with the latest `received_at` is authoritative.
+
+All other rows for that combination are superseded and must not contribute to any net calculation.
+
+This applies regardless of whether the duplicate carries identical or different `count_in`/`count_out` values.
+
+### Why latest-wins
+
+1. Retransmissions carry same values — summing would inflate counts.
+2. Corrections carry updated values — latest is most authoritative.
+3. First-wins would ignore corrections.
+
+### Pseudocode
+
+```text
+for each group of intervals sharing (sensor_id, ts_from, ts_to):
+    authoritative = row with max(received_at)
+    use only authoritative in net calculation
+```
+
+### Implementation note
+
+Enforce at write time with upsert on `(sensor_id, ts_from, ts_to)`. On conflict, update `count_in`, `count_out`, `received_at`. This prevents duplicates from accumulating.
+
+## Late-Arriving Data Rule
+
+Sensors may buffer and deliver interval counts after their natural time window has already been aggregated and marked stable.
+
+Late arrival is defined as: interval count where `received_at` > area's stored data watermark, and `ts_from` falls within an already-aggregated window.
+
+### Detection
+
+Before incremental tail recalculation begins, system compares interval count `received_at` values against the area's data watermark.
+
+```text
+late_intervals = all interval counts where:
+    received_at > area.data_watermark
+    and ts_from falls in a window with stored aggregated count
+```
+
+### Recalculation range extension
+
+If late intervals exist, recalculation range is extended backward to cover the earliest affected window.
+
+```text
+if late_intervals is not empty:
+    earliest_affected = min(late_intervals.ts_from)
+    affected_window = window containing earliest_affected
+    recalculate from affected_window.start forward
+else:
+    proceed with normal incremental tail recalculation
+```
+
+### Watermark update
+
+After aggregation completes (including any backfill recalculation), data watermark is updated to:
+
+```text
+area.data_watermark = max(received_at) of all interval counts
+                      incorporated in this aggregation pass
+```
+
 ## Cumulative Count Rule
 
 Windows are processed in chronological order.
@@ -305,6 +382,19 @@ If median stored window size differs from current configured size, all stored ro
 
 This protects history from being mixed across different aggregation step sizes.
 
+### Late-arrival invalidation
+
+Data watermark is compared against interval count `received_at` values.
+
+If any interval count has `received_at` newer than the watermark and its `ts_from` falls in an already-stable window, those stable windows must be recalculated.
+
+This is distinct from checksum invalidation:
+
+1. checksum invalidation handles configuration changes
+2. late-arrival invalidation handles data arrival timing
+
+Both may trigger wider recalculation, but for different reasons.
+
 ### Incremental tail recalculation
 
 After invalidation checks, system recalculates only tail portion of history.
@@ -314,6 +404,7 @@ Current behavior:
 1. older stable windows are kept
 2. recalculation starts around second-last stored window
 3. seed count comes from around third-last stored window
+4. if late-arrival detection extended the range, recalculation starts from the earliest affected window instead
 
 Reason is practical: recent windows are most likely to change because data may arrive late or current period may still be incomplete.
 
@@ -400,6 +491,40 @@ Each active assignment contributes independently.
 
 Final window net is sum of all included interval nets across all active assignments.
 
+## 9. Duplicate interval count for same sensor and time range
+
+Example:
+
+- sensor sends interval `10:00-10:10` with `in=5, out=2` at `received_at=10:10:30`
+- sensor retransmits same interval with `in=5, out=2` at `received_at=10:11:00`
+
+Result:
+
+Only the row with `received_at=10:11:00` is used. Net is `3`, not `6`.
+
+## 10. Corrected interval count
+
+Example:
+
+- sensor sends interval `10:00-10:10` with `in=5, out=2` at `received_at=10:10:30`
+- sensor sends correction with `in=7, out=1` at `received_at=10:15:00`
+
+Result:
+
+Only the corrected row is used. Net is `6`. Original `3` is superseded.
+
+## 11. Late-arriving data for already-stable window
+
+Example:
+
+- event `10:00-12:00`, window size 10min
+- aggregation ran at `11:00`, windows `10:00-10:50` are stable, data watermark set to `11:00`
+- at `11:45`, sensor delivers buffered intervals for `10:30-10:40`, `10:40-10:50`, `10:50-11:00` — all with `received_at=11:45`
+
+Result:
+
+System detects `received_at=11:45 > watermark=11:00` for intervals in already-stable windows. Recalculation range extended to window `10:30-10:40`. All windows from `10:30` forward are recalculated. Cumulative counts from `10:30` onward change. Watermark updated to `11:45` after pass completes.
+
 ## Worked Examples
 
 ### Example A: Basic assignment boundary
@@ -449,6 +574,50 @@ Result:
 
 Those are two separate windows with separate cumulative outcomes.
 
+### Example D: Late arrival backfill
+
+Given:
+
+- window size `10 minutes`
+- event `10:00-12:00`
+- one assignment active entire event
+- initial aggregation at `11:00` produced:
+
+| Window | Net | Cumulative |
+|--------|-----|-----------|
+| 10:00-10:10 | +3 | 3 |
+| 10:10-10:20 | +2 | 5 |
+| 10:20-10:30 | +5 | 10 |
+| 10:30-10:40 | 0  | 10 |
+| 10:40-10:50 | 0  | 10 |
+| 10:50-11:00 | +4 | 14 |
+
+Data watermark set to `11:00`.
+
+Then sensor delivers late data at `11:45`:
+
+- interval `10:30-10:40` net `+7`, `received_at=11:45`
+- interval `10:40-10:50` net `+3`, `received_at=11:45`
+
+Next aggregation pass:
+
+1. detects `received_at=11:45 > watermark=11:00`
+2. earliest affected `ts_from` = `10:30`
+3. recalculation from window `10:30-10:40` forward
+
+Recalculated:
+
+| Window | Net | Cumulative |
+|--------|-----|-----------|
+| 10:00-10:10 | +3 | 3 |
+| 10:10-10:20 | +2 | 5 |
+| 10:20-10:30 | +5 | 10 |
+| 10:30-10:40 | +7 | 17 |
+| 10:40-10:50 | +3 | 20 |
+| 10:50-11:00 | +4 | 24 |
+
+Watermark updated to `11:45`.
+
 ## Non-Authoritative Helper Logic
 
 Some helper/debug views use simpler calculations for diagnostics.
@@ -464,12 +633,14 @@ So they should not be treated as authoritative occupancy history.
 
 ## Summary
 
-Authoritative aggregation logic is built on five strict ideas:
+Authoritative aggregation logic is built on seven strict ideas:
 
 1. fixed event-bounded windows
 2. reset-aware window splitting
 3. strict interval inclusion by `ts_from`
 4. assignment-aware and direction-aware net calculation
 5. cumulative count carry-forward across windows
+6. latest-wins deduplication for duplicate interval counts
+7. backfill-aware recalculation for late-arriving sensor data
 
-If those five ideas are preserved, behavior stays aligned with current implementation.
+If those seven ideas are preserved, behavior stays aligned with current implementation.
