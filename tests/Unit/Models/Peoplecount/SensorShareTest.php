@@ -37,10 +37,10 @@ it('uses timestamps', function () {
     expect($model->timestamps)->toBeTrue();
 });
 
-it('uses soft deletes', function () {
+it('does not use soft deletes', function () {
     $model = new SensorShare;
 
-    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeTrue();
+    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeFalse();
 });
 
 it('belongs to a sensor', function () {

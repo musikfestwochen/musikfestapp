@@ -90,7 +90,7 @@ it('deletes an unused share', function () {
 
     $this->sensorShareService->delete($share);
 
-    $this->assertSoftDeleted('peoplecount_sensor_shares', ['id' => $share->id]);
+    $this->assertDatabaseMissing('peoplecount_sensor_shares', ['id' => $share->id]);
 });
 
 it('allows global organization to manage shares', function () {

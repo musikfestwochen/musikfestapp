@@ -145,7 +145,7 @@ it('destroys a sensor share', function () {
             'sensor' => $sensor->id,
         ]));
 
-    $this->assertSoftDeleted('peoplecount_sensor_shares', ['id' => $share->id]);
+    $this->assertDatabaseMissing('peoplecount_sensor_shares', ['id' => $share->id]);
 });
 
 it('rejects destroying a share for another sensor', function () {

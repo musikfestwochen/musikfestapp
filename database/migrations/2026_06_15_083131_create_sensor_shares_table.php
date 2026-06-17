@@ -21,7 +21,6 @@ return new class extends Migration
             $table->foreignIdFor(User::class, 'created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('starts_at');
             $table->dateTime('ends_at');
-            $table->softDeletes();
             $table->timestamps();
 
             $table->index(['sensor_id', 'borrower_organization_id', 'starts_at', 'ends_at'], 'peoplecount_sensor_shares_lookup_index');

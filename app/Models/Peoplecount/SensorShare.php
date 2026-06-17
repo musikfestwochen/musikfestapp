@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -24,7 +23,6 @@ use Illuminate\Support\Carbon;
  * @property int|null $created_by
  * @property Carbon $starts_at
  * @property Carbon $ends_at
- * @property Carbon|null $deleted_at
  */
 #[Fillable([
     'sensor_id',
@@ -39,8 +37,6 @@ class SensorShare extends Model
 {
     /** @use HasFactory<SensorShareFactory> */
     use HasFactory;
-
-    use SoftDeletes;
 
     /**
      * @return BelongsTo<Sensor, $this>
