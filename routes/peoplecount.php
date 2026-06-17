@@ -66,12 +66,10 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         Route::delete('sensors/{sensor}/archive', [SensorArchiveController::class, 'destroy'])
             ->name('sensors.archive.destroy');
 
-        Route::post('sensors/{sensor}/shares', [SensorShareController::class, 'store'])
-            ->name('sensors.shares.store');
-        Route::put('sensors/{sensor}/shares/{share}', [SensorShareController::class, 'update'])
-            ->name('sensors.shares.update');
-        Route::delete('sensors/{sensor}/shares/{share}', [SensorShareController::class, 'destroy'])
-            ->name('sensors.shares.destroy');
+        Route::resource('sensors.shares', SensorShareController::class)
+            ->scoped(['organization' => 'slug'])
+            ->only(['store', 'update', 'destroy'])
+            ->names('sensors.shares');
 
         // Area Aggregation route
         Route::get('area-aggregation', [PeoplecountActiveAreaCountsWidgetController::class, 'index'])

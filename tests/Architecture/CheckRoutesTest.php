@@ -76,7 +76,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/archive'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}/archive'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares'],
-        ['method' => 'PUT', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
 
         // People Count Events Routes
