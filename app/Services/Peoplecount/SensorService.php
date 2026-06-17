@@ -117,7 +117,7 @@ class SensorService
                 ];
             }
 
-            // Load sensors for the organization and that are currently assigned
+            // Load sensors that are currently assigned within the organization's events
             $sensors = Sensor::query()
                 ->whereIn('id', $assignedSensorIds)
                 ->get(['id', 'vendor', 'model', 'serial']);

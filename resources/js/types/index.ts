@@ -96,7 +96,6 @@ export interface PeoplecountSensorShare {
     ends_at: string;
     created_at: string;
     updated_at: string;
-    deleted_at?: string;
     assignments_count?: number;
     sensor?: PeoplecountSensor;
     borrower_organization?: Organization;
