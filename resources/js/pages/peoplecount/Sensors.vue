@@ -1,14 +1,16 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
 import SensorsTable from '@/components/peoplecount/sensors/SensorsTable.vue';
+import { Button } from '@/components/ui/button';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization, PeoplecountSensor } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps<{
     sensors: PeoplecountSensor[];
     status?: string;
     organization: Organization;
+    showArchived: boolean;
 }>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
@@ -36,7 +38,15 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your sensors and manage their API tokens" title="Sensors" />
+            <div class="flex items-start justify-between gap-4">
+                <Heading description="See all your sensors and manage their API tokens" title="Sensors" />
+
+                <Button as-child size="sm" variant="outline">
+                    <Link :href="route('peoplecount.sensors.index', { organization: props.organization.slug, archived: !props.showArchived })">
+                        {{ props.showArchived ? 'Show Active' : 'Show Archived' }}
+                    </Link>
+                </Button>
+            </div>
 
             <div class="mt-4">
                 <SensorsTable :organization="props.organization" :sensors="sensors" />

@@ -14,6 +14,7 @@ it('has correct fillable attributes', function () {
         'serial',
         'api_token',
         'organization_id',
+        'archived_at',
     ]);
 });
 
@@ -48,6 +49,13 @@ it('has many interval counts', function () {
 it('has many assignments', function () {
     $sensor = new Sensor;
     $relation = $sensor->assignments();
+
+    expect($relation)->toBeInstanceOf(HasMany::class);
+});
+
+it('has many shares', function () {
+    $sensor = new Sensor;
+    $relation = $sensor->shares();
 
     expect($relation)->toBeInstanceOf(HasMany::class);
 });

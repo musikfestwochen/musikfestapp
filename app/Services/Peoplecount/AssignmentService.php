@@ -8,6 +8,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
+use App\Models\Peoplecount\SensorShare;
 use DateTime;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,13 @@ use Illuminate\Validation\ValidationException;
 
 class AssignmentService
 {
+    private readonly SensorShareService $sensorShareService;
+
+    public function __construct(?SensorShareService $sensorShareService = null)
+    {
+        $this->sensorShareService = $sensorShareService ?? new SensorShareService;
+    }
+
     /**
      * Get all assignments for the current organization.
      *
@@ -47,10 +55,9 @@ class AssignmentService
      */
     public function create(array $attributes): Assignment
     {
-        // Verify that the event, area, and sensor belong to the current organization
+        // Verify that the event and area belong to the current organization
         $this->verifyEventBelongsToCurrentOrganization($attributes['event_id']);
         $this->verifyAreaBelongsToEvent($attributes['area_id'], $attributes['event_id']);
-        $this->verifySensorBelongsToCurrentOrganization($attributes['sensor_id']);
 
         // Verify that the assignment time boundaries are within event time boundaries
         $this->verifyAssignmentTimeWithinEventTime(
@@ -67,6 +74,8 @@ class AssignmentService
             $attributes['active_from'],
             $attributes['active_to']
         );
+
+        $attributes['sensor_share_id'] = $this->resolveSensorShareIdForAssignment($attributes);
 
         return Assignment::query()->create($attributes);
     }
@@ -118,11 +127,42 @@ class AssignmentService
      *
      * @throws AuthorizationException
      */
+    public function verifySensorAssignableToEvent(int $sensorId, int $eventId, string $activeFrom, string $activeTo, ?Assignment $assignment = null): ?SensorShare
+    {
+        $currentOrgId = getPermissionsOrgId();
+        $sensor = Sensor::query()->findOrFail($sensorId);
+
+        $this->verifySensorIsNotArchivedForAssignment($sensor, $assignment);
+
+        // Skip check for global organization
+        if ($currentOrgId === GLOBAL_ORG_ID) {
+            return null;
+        }
+
+        $event = Event::query()->findOrFail($eventId);
+
+        if ($sensor->organization_id === $currentOrgId) {
+            return null;
+        }
+
+        $sensorShare = $this->sensorShareService->findValidShareForAssignment($sensor, $event, $activeFrom, $activeTo);
+
+        throw_if(
+            ! $sensorShare instanceof SensorShare,
+            AuthorizationException::class,
+            'You are not authorized to assign this sensor for the selected period.'
+        );
+
+        return $sensorShare;
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
     public function verifySensorBelongsToCurrentOrganization(int $sensorId): void
     {
         $currentOrgId = getPermissionsOrgId();
 
-        // Skip check for global organization
         if ($currentOrgId === GLOBAL_ORG_ID) {
             return;
         }
@@ -170,29 +210,23 @@ class AssignmentService
     ): void {
         $query = Assignment::query()
             ->where('sensor_id', $sensorId)
-            ->where('direction_flipped', $directionFlipped);
+            ->where('direction_flipped', $directionFlipped)
+            ->whereHas('event', function (Builder $query) {
+                $currentOrgId = getPermissionsOrgId();
+
+                if ($currentOrgId !== GLOBAL_ORG_ID) {
+                    $query->where('organization_id', $currentOrgId);
+                }
+            });
 
         // Exclude the current assignment when updating
         if ($assignmentId !== null) {
             $query->where('id', '!=', $assignmentId);
         }
 
-        // Check for overlapping time periods
-        $query->where(function (Builder $query) use ($activeFrom, $activeTo) {
-            $query->where(function (Builder $query) use ($activeFrom) {
-                // New assignment starts during an existing assignment
-                $query->where('active_from', '<=', $activeFrom)
-                    ->where('active_to', '>=', $activeFrom);
-            })->orWhere(function (Builder $query) use ($activeTo) {
-                // New assignment ends during an existing assignment
-                $query->where('active_from', '<=', $activeTo)
-                    ->where('active_to', '>=', $activeTo);
-            })->orWhere(function (Builder $query) use ($activeFrom, $activeTo) {
-                // New assignment completely contains an existing assignment
-                $query->where('active_from', '>=', $activeFrom)
-                    ->where('active_to', '<=', $activeTo);
-            });
-        });
+        // Exclusive boundary overlap: [existing_from, existing_to) intersects [new_from, new_to)
+        $query->where('active_from', '<', $activeTo)
+            ->where('active_to', '>', $activeFrom);
 
         $overlappingAssignments = $query->get();
 
@@ -214,10 +248,11 @@ class AssignmentService
      */
     public function update(Assignment $assignment, array $attributes): Assignment
     {
-        // Verify that the event, area, and sensor belong to the current organization
+        $this->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
+        // Verify that the event and area belong to the current organization
         $this->verifyEventBelongsToCurrentOrganization($attributes['event_id']);
         $this->verifyAreaBelongsToEvent($attributes['area_id'], $attributes['event_id']);
-        $this->verifySensorBelongsToCurrentOrganization($attributes['sensor_id']);
 
         // Verify that the assignment time boundaries are within event time boundaries
         $this->verifyAssignmentTimeWithinEventTime(
@@ -235,8 +270,59 @@ class AssignmentService
             $attributes['active_to']
         );
 
+        $attributes['sensor_share_id'] = $this->resolveSensorShareIdForAssignment($attributes, $assignment);
+
         $assignment->update($attributes);
 
         return $assignment;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function resolveSensorShareIdForAssignment(array $attributes, ?Assignment $assignment = null): ?int
+    {
+        return $this->verifySensorAssignableToEvent(
+            $attributes['sensor_id'],
+            $attributes['event_id'],
+            $attributes['active_from'],
+            $attributes['active_to'],
+            $assignment
+        )?->id;
+    }
+
+    protected function verifySensorIsNotArchivedForAssignment(Sensor $sensor, ?Assignment $assignment): void
+    {
+        if ($sensor->archived_at === null) {
+            return;
+        }
+
+        if ($assignment?->sensor_id === $sensor->id) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'sensor_id' => 'Archived sensors cannot be assigned.',
+        ]);
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    public function verifyAssignmentBelongsToCurrentOrganization(Assignment $assignment): void
+    {
+        $currentOrgId = getPermissionsOrgId();
+
+        if ($currentOrgId === GLOBAL_ORG_ID) {
+            return;
+        }
+
+        $assignment->loadMissing('event');
+
+        throw_if(
+            $assignment->event->organization_id !== $currentOrgId,
+            AuthorizationException::class,
+            'You are not authorized to manage this assignment.'
+        );
     }
 }

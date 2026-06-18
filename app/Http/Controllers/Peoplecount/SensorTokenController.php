@@ -22,6 +22,8 @@ class SensorTokenController extends Controller
      */
     public function update(SensorTokenUpdateRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
     {
+        $this->sensorService->verifySensorManagedByCurrentOrganization($sensor);
+
         $token = $this->sensorService->createOrRegenerateToken($sensor);
         $sensor->api_token = $token;
         $sensor->save();

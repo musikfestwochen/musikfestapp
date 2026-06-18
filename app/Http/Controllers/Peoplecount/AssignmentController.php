@@ -15,6 +15,7 @@ use App\Http\Requests\Peoplecount\AssignmentUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Assignment;
 use App\Services\Peoplecount\AssignmentService;
+use App\Services\Peoplecount\SensorService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -22,7 +23,10 @@ use Inertia\Response;
 
 class AssignmentController extends Controller
 {
-    public function __construct(private readonly AssignmentService $assignmentService) {}
+    public function __construct(
+        private readonly AssignmentService $assignmentService,
+        private readonly SensorService $sensorService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -43,12 +47,12 @@ class AssignmentController extends Controller
     {
         try {
             $this->assignmentService->create([
-                'event_id' => $request->input('event_id'),
-                'area_id' => $request->input('area_id'),
-                'sensor_id' => $request->input('sensor_id'),
-                'direction_flipped' => $request->input('direction_flipped'),
-                'active_from' => $request->input('active_from'),
-                'active_to' => $request->input('active_to'),
+                'event_id' => $request->validated('event_id'),
+                'area_id' => $request->validated('area_id'),
+                'sensor_id' => $request->validated('sensor_id'),
+                'direction_flipped' => $request->validated('direction_flipped'),
+                'active_from' => $request->validated('active_from'),
+                'active_to' => $request->validated('active_to'),
             ]);
 
             return to_route('peoplecount.assignments.index', [
@@ -68,7 +72,7 @@ class AssignmentController extends Controller
         return Inertia::render('peoplecount/NewAssignment', [
             'organization' => $organization,
             'events' => $organization->events()->with('areas')->get(),
-            'sensors' => $organization->sensors()->get(),
+            'sensors' => $this->sensorService->getAssignableSensorsForOrganization($organization),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -80,6 +84,8 @@ class AssignmentController extends Controller
      */
     public function show(AssignmentShowRequest $request, Organization $organization, Assignment $assignment): RedirectResponse
     {
+        $this->assignmentService->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
         return to_route('peoplecount.assignments.edit', [
             'organization' => $organization,
             'assignment' => $assignment,
@@ -91,14 +97,16 @@ class AssignmentController extends Controller
      */
     public function edit(AssignmentEditRequest $request, Organization $organization, Assignment $assignment): Response
     {
+        $this->assignmentService->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
         // Load relationships
-        $assignment->load(['event', 'area', 'sensor']);
+        $assignment->load(['event', 'area', 'sensor.organization']);
 
         return Inertia::render('peoplecount/EditAssignment', [
             'organization' => $organization,
             'assignment' => $assignment,
             'events' => $organization->events()->with('areas')->get(),
-            'sensors' => $organization->sensors()->get(),
+            'sensors' => $this->sensorService->getAssignableSensorsForAssignmentEdit($organization, $assignment),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -112,12 +120,12 @@ class AssignmentController extends Controller
     {
         try {
             $this->assignmentService->update($assignment, [
-                'event_id' => $request->input('event_id'),
-                'area_id' => $request->input('area_id'),
-                'sensor_id' => $request->input('sensor_id'),
-                'direction_flipped' => $request->input('direction_flipped'),
-                'active_from' => $request->input('active_from'),
-                'active_to' => $request->input('active_to'),
+                'event_id' => $request->validated('event_id'),
+                'area_id' => $request->validated('area_id'),
+                'sensor_id' => $request->validated('sensor_id'),
+                'direction_flipped' => $request->validated('direction_flipped'),
+                'active_from' => $request->validated('active_from'),
+                'active_to' => $request->validated('active_to'),
             ]);
 
             return to_route('peoplecount.assignments.index', [
@@ -136,6 +144,8 @@ class AssignmentController extends Controller
      */
     public function destroy(AssignmentDestroyRequest $request, Organization $organization, Assignment $assignment): RedirectResponse
     {
+        $this->assignmentService->verifyAssignmentBelongsToCurrentOrganization($assignment);
+
         $assignment->delete();
 
         return to_route('peoplecount.assignments.index', [

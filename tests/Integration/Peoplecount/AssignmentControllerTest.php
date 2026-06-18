@@ -109,6 +109,48 @@ it('shows the edit assignment form for an organization assignment', function () 
         );
 });
 
+it('shows archived current sensor when editing an existing assignment', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $event = Event::factory()->for($org, 'organization')->create();
+    $area = Area::factory()->for($event)->create();
+    $sensor = Sensor::factory()->for($org)->create([
+        'archived_at' => now(),
+    ]);
+    $assignment = Assignment::factory()
+        ->for($event)
+        ->for($area)
+        ->for($sensor)
+        ->create();
+
+    $this->actingAs($admin)
+        ->get(route('peoplecount.assignments.edit', ['organization' => $org->slug, 'assignment' => $assignment->id]))
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/EditAssignment')
+            ->has('sensors', 1)
+            ->where('sensors.0.id', $sensor->id)
+        );
+});
+
+it('does not show edit form for another organization assignment', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $foreignOrg = Organization::factory()->create();
+    $foreignEvent = Event::factory()->for($foreignOrg, 'organization')->create();
+    $foreignArea = Area::factory()->for($foreignEvent)->create();
+    $foreignSensor = Sensor::factory()->for($foreignOrg)->create();
+    $foreignAssignment = Assignment::factory()
+        ->for($foreignEvent)
+        ->for($foreignArea)
+        ->for($foreignSensor)
+        ->create();
+
+    $this->actingAs($admin)
+        ->get(route('peoplecount.assignments.edit', ['organization' => $org->slug, 'assignment' => $foreignAssignment->id]))
+        ->assertNotFound();
+});
+
 it('can update an assignment for an organization', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -147,6 +189,42 @@ it('can update an assignment for an organization', function () {
     ]);
 });
 
+it('does not update another organization assignment', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $event = Event::factory()->for($org, 'organization')->create([
+        'starts_at' => now()->subDays(5),
+        'ends_at' => now()->addDays(5),
+    ]);
+    $area = Area::factory()->for($event)->create();
+    $sensor = Sensor::factory()->for($org)->create();
+    $foreignOrg = Organization::factory()->create();
+    $foreignEvent = Event::factory()->for($foreignOrg, 'organization')->create([
+        'starts_at' => now()->subDays(5),
+        'ends_at' => now()->addDays(5),
+    ]);
+    $foreignArea = Area::factory()->for($foreignEvent)->create();
+    $foreignSensor = Sensor::factory()->for($foreignOrg)->create();
+    $foreignAssignment = Assignment::factory()
+        ->for($foreignEvent)
+        ->for($foreignArea)
+        ->for($foreignSensor)
+        ->create(['direction_flipped' => false]);
+
+    $this->actingAs($admin)
+        ->put(route('peoplecount.assignments.update', ['organization' => $org->slug, 'assignment' => $foreignAssignment->id]), [
+            'event_id' => $event->id,
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'direction_flipped' => true,
+            'active_from' => now()->subDay()->toDateTimeString(),
+            'active_to' => now()->addDay()->toDateTimeString(),
+        ])
+        ->assertNotFound();
+
+    expect($foreignAssignment->refresh()->direction_flipped)->toBeFalse();
+});
+
 it('can delete an assignment for an organization', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -167,6 +245,26 @@ it('can delete an assignment for an organization', function () {
     ]);
 });
 
+it('does not delete another organization assignment', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $foreignOrg = Organization::factory()->create();
+    $foreignEvent = Event::factory()->for($foreignOrg, 'organization')->create();
+    $foreignArea = Area::factory()->for($foreignEvent)->create();
+    $foreignSensor = Sensor::factory()->for($foreignOrg)->create();
+    $foreignAssignment = Assignment::factory()
+        ->for($foreignEvent)
+        ->for($foreignArea)
+        ->for($foreignSensor)
+        ->create();
+
+    $this->actingAs($admin)
+        ->delete(route('peoplecount.assignments.destroy', ['organization' => $org->slug, 'assignment' => $foreignAssignment->id]))
+        ->assertNotFound();
+
+    $this->assertNotSoftDeleted('peoplecount_assignments', ['id' => $foreignAssignment->id]);
+});
+
 it('redirects show to edit for an organization assignment', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -182,6 +280,24 @@ it('redirects show to edit for an organization assignment', function () {
     $response = $this->actingAs($admin)
         ->get(route('peoplecount.assignments.show', ['organization' => $org->slug, 'assignment' => $assignment->id]));
     $response->assertRedirect(route('peoplecount.assignments.edit', ['organization' => $org->slug, 'assignment' => $assignment->id]));
+});
+
+it('does not show another organization assignment', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $foreignOrg = Organization::factory()->create();
+    $foreignEvent = Event::factory()->for($foreignOrg, 'organization')->create();
+    $foreignArea = Area::factory()->for($foreignEvent)->create();
+    $foreignSensor = Sensor::factory()->for($foreignOrg)->create();
+    $foreignAssignment = Assignment::factory()
+        ->for($foreignEvent)
+        ->for($foreignArea)
+        ->for($foreignSensor)
+        ->create();
+
+    $this->actingAs($admin)
+        ->get(route('peoplecount.assignments.show', ['organization' => $org->slug, 'assignment' => $foreignAssignment->id]))
+        ->assertNotFound();
 });
 
 it('validates overlapping assignments on create', function () {

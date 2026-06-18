@@ -73,6 +73,11 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/regenerate-token'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/archive'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}/archive'],
+        ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
 
         // People Count Events Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events'],

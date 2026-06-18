@@ -7,7 +7,7 @@ Do not edit diagram block manually. Run `composer docs:erd`.
 <!-- mermaid-erd-start -->
 ```mermaid
 ---
-title: 21 tables · 144 columns
+title: 22 tables · 155 columns
 ---
 erDiagram
     model_has_permissions["model_has_permissions (4)"] {
@@ -96,7 +96,7 @@ erDiagram
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_assignments["peoplecount_assignments (10)"] {
+    peoplecount_assignments["peoplecount_assignments (11)"] {
         integer id PK
         integer event_id FK
         integer area_id FK
@@ -107,6 +107,7 @@ erDiagram
         datetime deleted_at "soft-delete, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
+        integer sensor_share_id FK "nullable"
     }
     peoplecount_events["peoplecount_events (8)"] {
         integer id PK
@@ -127,7 +128,18 @@ erDiagram
         integer count_out
         datetime received_at
     }
-    peoplecount_sensors["peoplecount_sensors (9)"] {
+    peoplecount_sensor_shares["peoplecount_sensor_shares (9)"] {
+        integer id PK
+        integer sensor_id FK
+        integer owner_organization_id FK
+        integer borrower_organization_id FK
+        integer created_by FK "nullable"
+        datetime starts_at
+        datetime ends_at
+        datetime created_at "nullable"
+        datetime updated_at "nullable"
+    }
+    peoplecount_sensors["peoplecount_sensors (10)"] {
         integer id PK
         varchar vendor
         varchar model
@@ -137,6 +149,7 @@ erDiagram
         datetime deleted_at "soft-delete, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
+        datetime archived_at "nullable"
     }
     permissions["permissions (5)"] {
         integer id PK
@@ -211,11 +224,16 @@ erDiagram
     users |o--o{ peoplecount_area_single_resets : "has many via created_by, set null delete"
     peoplecount_areas ||--o{ peoplecount_area_single_resets : "has many via area_id, cascade delete"
     peoplecount_events ||--o{ peoplecount_areas : "has many via event_id, cascade delete"
-    peoplecount_sensors ||--o{ peoplecount_assignments : "has many via sensor_id, cascade delete"
-    peoplecount_areas ||--o{ peoplecount_assignments : "has many via area_id, cascade delete"
+    peoplecount_sensor_shares |o--o{ peoplecount_assignments : "has many via sensor_share_id"
     peoplecount_events ||--o{ peoplecount_assignments : "has many via event_id, cascade delete"
+    peoplecount_areas ||--o{ peoplecount_assignments : "has many via area_id, cascade delete"
+    peoplecount_sensors ||--o{ peoplecount_assignments : "has many via sensor_id, cascade delete"
     organizations ||--o{ peoplecount_events : "has many via organization_id, cascade delete"
     peoplecount_sensors ||--o{ peoplecount_interval_counts : "has many via sensor_id"
+    users |o--o{ peoplecount_sensor_shares : "has many via created_by, set null delete"
+    organizations ||--o{ peoplecount_sensor_shares : "has many via borrower_organization_id, cascade delete"
+    organizations ||--o{ peoplecount_sensor_shares : "has many via owner_organization_id, cascade delete"
+    peoplecount_sensors ||--o{ peoplecount_sensor_shares : "has many via sensor_id, cascade delete"
     organizations ||--o{ peoplecount_sensors : "has many via organization_id, cascade delete"
     roles ||--o{ role_has_permissions : "pivot, has many via role_id, cascade delete"
     permissions ||--o{ role_has_permissions : "pivot, has many via permission_id, cascade delete"

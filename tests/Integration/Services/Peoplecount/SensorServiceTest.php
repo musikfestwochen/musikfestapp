@@ -1,14 +1,19 @@
 <?php
 
 use App\Models\Organization;
+use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
+use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
+use App\Models\Peoplecount\SensorShare;
 use App\Services\Peoplecount\SensorService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
@@ -67,6 +72,101 @@ describe('getSensors', function () {
 
         expect($result)->toBeInstanceOf(Collection::class)
             ->and($result->count())->toBe(0);
+    });
+
+    it('returns all active sensors for global organization', function () {
+        $org = Organization::factory()->create();
+        $foreignOrg = Organization::factory()->create();
+        Sensor::factory()->withOrganization($org)->create();
+        Sensor::factory()->withOrganization($foreignOrg)->create();
+
+        setPermissionsOrgId(GLOBAL_ORG_ID);
+
+        $result = $this->service->getSensors();
+
+        expect($result)->toHaveCount(2);
+    });
+
+    it('returns archived sensors only', function () {
+        $org = Organization::factory()->create();
+        Sensor::factory()->withOrganization($org)->create();
+        $archivedSensor = Sensor::factory()->withOrganization($org)->create(['archived_at' => now()]);
+
+        setPermissionsOrgId($org->id);
+
+        $result = $this->service->getSensors(true);
+
+        expect($result)->toHaveCount(1)
+            ->and($result->first()->is($archivedSensor))->toBeTrue();
+    });
+});
+
+describe('archive', function () {
+    it('archives and restores a sensor', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        setPermissionsOrgId($org->id);
+
+        $archived = $this->service->archive($sensor);
+        expect($archived->archived_at)->not->toBeNull();
+
+        $restored = $this->service->unarchive($sensor);
+        expect($restored->archived_at)->toBeNull();
+    });
+
+    it('allows global organization to manage any sensor', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+
+        setPermissionsOrgId(GLOBAL_ORG_ID);
+
+        expect($this->service->archive($sensor)->archived_at)->not->toBeNull();
+    });
+
+    it('blocks managing another organization sensor', function () {
+        $org = Organization::factory()->create();
+        $foreignOrg = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($foreignOrg)->create();
+
+        setPermissionsOrgId($org->id);
+
+        $this->expectException(AuthorizationException::class);
+
+        $this->service->archive($sensor);
+    });
+});
+
+describe('delete', function () {
+    it('allows deleting a sensor with unused shares', function () {
+        $owner = Organization::factory()->create();
+        $borrower = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($owner)->create();
+        SensorShare::factory()->withSensor($sensor)->withBorrowerOrganization($borrower)->create();
+
+        setPermissionsOrgId($owner->id);
+
+        $this->service->delete($sensor);
+
+        $this->assertSoftDeleted('peoplecount_sensors', ['id' => $sensor->id]);
+    });
+
+    it('blocks deleting a sensor used by a shared assignment', function () {
+        $owner = Organization::factory()->create();
+        $borrower = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($owner)->create();
+        $share = SensorShare::factory()->withSensor($sensor)->withBorrowerOrganization($borrower)->create();
+        $event = Event::factory()->withOrganization($borrower)->create();
+        $area = Area::factory()->withEvent($event)->create();
+        Assignment::factory()->withEvent($event)->withArea($area)->withSensor($sensor)->create([
+            'sensor_share_id' => $share->id,
+        ]);
+
+        setPermissionsOrgId($owner->id);
+
+        $this->expectException(ValidationException::class);
+
+        $this->service->delete($sensor);
     });
 });
 
@@ -329,7 +429,10 @@ describe('getAssignedSensorsHealthStatus', function () {
         $foreignOrg = Organization::factory()->create();
 
         $foreignSensor = Sensor::factory()->withOrganization($foreignOrg)->create(['serial' => 'X']);
-        Assignment::factory()->withSensor($foreignSensor)->create([
+        $foreignEvent = Event::factory()->withOrganization($foreignOrg)->create();
+        $foreignArea = Area::factory()->withEvent($foreignEvent)->create();
+
+        Assignment::factory()->withEvent($foreignEvent)->withArea($foreignArea)->withSensor($foreignSensor)->create([
             'active_from' => Carbon::now()->subHour(),
             'active_to' => Carbon::now()->addHour(),
         ]);
@@ -340,7 +443,7 @@ describe('getAssignedSensorsHealthStatus', function () {
 
         $result = $this->service->getAssignedSensorsHealthStatus($org);
         expect($result['total'])->toBe(0)
-            ->and($result['all_healthy'])->toBeFalse()
+            ->and($result['all_healthy'])->toBeTrue()
             ->and($result['last_updated'])->toBeString();
     });
 

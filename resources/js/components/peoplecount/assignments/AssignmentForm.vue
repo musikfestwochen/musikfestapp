@@ -133,6 +133,9 @@ const datePickerConfig = {
                     <SelectContent>
                         <SelectItem v-for="sensor in sensors" :key="sensor.id" :value="sensor.id.toString()">
                             {{ sensor.vendor }} {{ sensor.model }} ({{ sensor.serial }})
+                            <span v-if="sensor.organization && sensor.organization_id !== props.organization.id">
+                                · shared by {{ sensor.organization.name }}</span
+                            >
                         </SelectItem>
                     </SelectContent>
                 </Select>
