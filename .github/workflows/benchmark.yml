@@ -1,0 +1,72 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Benchmark scenario
+        required: false
+        default: small
+        type: choice
+        options:
+          - small
+          - medium
+          - large
+          - xlarge
+      iterations:
+        description: Number of iterations
+        required: false
+        default: 3
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mariadb:
+        image: mariadb:lts
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: musikfestapp_benchmark
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
+        with:
+          coverage: 'none'
+          php-extensions: 'pdo_mysql'
+          install-node-dependencies: 'false'
+          create-sqlite-database: 'false'
+          publish-ziggy: 'false'
+
+      - name: Run Benchmark
+        run: |
+          php artisan peoplecount:benchmark \
+            --scenario=${{ inputs.scenario }} \
+            --iterations=${{ inputs.iterations }} \
+            --db=mariadb \
+            --mariadb=external \
+            --output=both
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: benchmark-results
+          path: storage/app/benchmarks/*.json
+          retention-days: 30
