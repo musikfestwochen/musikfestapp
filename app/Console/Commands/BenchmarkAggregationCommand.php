@@ -12,10 +12,16 @@ use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
+use Closure;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Sleep;
 use Laravel\Prompts\Support\Logger;
 
 use function Laravel\Prompts\error;
@@ -29,18 +35,28 @@ use function Laravel\Prompts\table;
 use function Laravel\Prompts\task;
 use function Laravel\Prompts\warning;
 
-final class BenchmarkAggregationCommand extends Command
-{
-    protected $signature = 'peoplecount:benchmark
+/**
+ * @phpstan-type Scenario array{days: int, areas: int, sensors_per_area: int, granularity_minutes: int, interval_minutes: int, description: string}
+ * @phpstan-type SeedData array{organization_id: int, event_id: int, areas_count: int, sensors_count: int, assignments_count: int, interval_counts_total: int, event_days: int, granularity_minutes: int}
+ * @phpstan-type SeedMetrics array{wall_time_ms: float, peak_memory_mib: float, areas_count: int, sensors_count: int, assignments_count: int, interval_counts_total: int, event_days: int, granularity_minutes: int}
+ * @phpstan-type MeasurementMetric array{mean: float|int, p5: float|int, p95: float|int, iterations: int}
+ * @phpstan-type Measurement array{wall_time_ms: MeasurementMetric, query_count: MeasurementMetric, query_time_ms: MeasurementMetric, peak_memory_mib: MeasurementMetric, memory_delta_mib: float, scenario?: string, phase?: int, algorithm?: string, is_correct?: bool}
+ * @phpstan-type SummaryMetric array{mean: float, p5: float, p95: float, min: float, max: float}
+ * @phpstan-type Summary array{}|array{wall_time_ms: SummaryMetric, query_count: SummaryMetric, query_time_ms: SummaryMetric, peak_memory_mib: SummaryMetric, iterations: int}
+ * @phpstan-type BenchmarkOutput array{generated_at: string, scenario: string, scenario_config: Scenario, db_connection: string, iterations: int, seed_metrics: SeedMetrics, measurements: list<Measurement>, summary: Summary}
+ *
+ * @codeCoverageIgnore
+ */
+#[Description('Benchmark peoplecount aggregation performance')]
+#[Signature('peoplecount:benchmark
         {--scenario=large : Scenario: small, medium, large, xlarge}
         {--iterations=3 : Number of iterations}
         {--db=sqlite : Database: sqlite, mariadb}
         {--mariadb=docker : MariaDB source: docker, external}
         {--output=both : Output format: json, table, both}
-    ';
-
-    protected $description = 'Benchmark peoplecount aggregation performance';
-
+    ')]
+class BenchmarkAggregationCommand extends Command
+{
     private int $queryCount = 0;
 
     private float $queryTimeMs = 0.0;
@@ -51,30 +67,27 @@ final class BenchmarkAggregationCommand extends Command
 
     private ?string $temporarySqlitePath = null;
 
-    /**
-     * @var callable|null
-     */
-    private $queryListener = null;
+    private ?Closure $queryListener = null;
 
-    private const MARIADB_DOCKER_COMPOSE_FILE = __DIR__.'/../../../docker-compose.yml';
+    private const string MARIADB_DOCKER_COMPOSE_FILE = __DIR__.'/../../../docker-compose.yml';
 
-    private const DATABASES = [
+    private const array DATABASES = [
         'sqlite' => 'SQLite',
         'mariadb' => 'MariaDB',
     ];
 
-    private const MARIADB_SOURCES = [
+    private const array MARIADB_SOURCES = [
         'docker' => 'Docker Compose (local)',
         'external' => 'External / already running',
     ];
 
-    private const OUTPUT_FORMATS = [
+    private const array OUTPUT_FORMATS = [
         'json' => 'JSON file only',
         'table' => 'Summary table only',
         'both' => 'Summary table + JSON file',
     ];
 
-    private const SCENARIOS = [
+    private const array SCENARIOS = [
         'small' => [
             'days' => 1,
             'areas' => 1,
@@ -173,7 +186,7 @@ final class BenchmarkAggregationCommand extends Command
     /**
      * @return array{scenario: string, db: string, mariadb: string, iterations: int, output: string}
      */
-    private function resolveOptions(bool $wizardMode): array
+    protected function resolveOptions(bool $wizardMode): array
     {
         if (! $wizardMode) {
             return [
@@ -189,7 +202,7 @@ final class BenchmarkAggregationCommand extends Command
 
         $scenario = (string) select(
             label: 'Scenario',
-            options: collect(self::SCENARIOS)->mapWithKeys(fn (array $v, string $k) => [$k => $v['description']])->toArray(),
+            options: collect(self::SCENARIOS)->mapWithKeys(fn (array $v, string $k): array => [$k => $v['description']])->all(),
             default: $this->option('scenario'),
         );
         $dbConnection = (string) select(
@@ -225,10 +238,10 @@ final class BenchmarkAggregationCommand extends Command
     /**
      * @param  array{scenario: string, db: string, mariadb: string, iterations: int, output: string}  $options
      */
-    private function displaySettings(array $options): void
+    protected function displaySettings(array $options): void
     {
         $rows = [
-            ['Scenario', "{$options['scenario']} — ".self::SCENARIOS[$options['scenario']]['description']],
+            ['Scenario', $options['scenario'].' — '.self::SCENARIOS[$options['scenario']]['description']],
             ['Database', self::DATABASES[$options['db']]],
         ];
 
@@ -245,15 +258,15 @@ final class BenchmarkAggregationCommand extends Command
         );
     }
 
-    private function hasExplicitOptions(): bool
+    protected function hasExplicitOptions(): bool
     {
         return $this->input->hasParameterOption(['--scenario', '--iterations', '--db', '--mariadb', '--output']);
     }
 
-    private function validateOptions(string $scenarioName, int $iterations, string $dbConnection, string $mariadbSource, string $outputFormat): bool
+    protected function validateOptions(string $scenarioName, int $iterations, string $dbConnection, string $mariadbSource, string $outputFormat): bool
     {
         if (! isset(self::SCENARIOS[$scenarioName])) {
-            error("Unknown scenario: {$scenarioName}. Available: ".implode(', ', array_keys(self::SCENARIOS)));
+            error(sprintf('Unknown scenario: %s. Available: ', $scenarioName).implode(', ', array_keys(self::SCENARIOS)));
 
             return false;
         }
@@ -285,7 +298,10 @@ final class BenchmarkAggregationCommand extends Command
         return true;
     }
 
-    private function runBenchmark(string $scenarioName, array $scenario, int $iterations, string $dbConnection, string $outputFormat): int
+    /**
+     * @param  Scenario  $scenario
+     */
+    protected function runBenchmark(string $scenarioName, array $scenario, int $iterations, string $dbConnection, string $outputFormat): int
     {
         config(['database.default' => $dbConnection]);
         config(['peoplecount.aggregation.granularity_minutes' => $scenario['granularity_minutes']]);
@@ -381,27 +397,31 @@ final class BenchmarkAggregationCommand extends Command
         if ($outputFormat !== 'table') {
             $path = $this->writeOutput($output);
 
-            info("Results saved to {$path}");
+            info('Results saved to '.$path);
         }
 
         if ($outputFormat !== 'json') {
             $this->printSummaryTable($output);
         }
 
-        outro($path === null ? 'Benchmark complete' : "Benchmark complete — results saved to {$path}");
+        outro($path === null ? 'Benchmark complete' : 'Benchmark complete — results saved to '.$path);
 
         return self::SUCCESS;
     }
 
-    private function seedScenarioData(array $scenario): array
+    /**
+     * @param  Scenario  $scenario
+     * @return SeedData
+     */
+    protected function seedScenarioData(array $scenario): array
     {
-        $eventStart = Carbon::parse('2026-01-01 00:00:00')->utc();
+        $eventStart = Date::parse('2026-01-01 00:00:00')->utc();
         $eventEnd = $eventStart->copy()->addDays($scenario['days']);
 
         $organization = Organization::factory()->create(['name' => 'Benchmark Org']);
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'name' => "Benchmark {$scenario['days']}d Event",
+            'name' => sprintf('Benchmark %sd Event', $scenario['days']),
             'starts_at' => $eventStart,
             'ends_at' => $eventEnd,
         ]);
@@ -451,7 +471,7 @@ final class BenchmarkAggregationCommand extends Command
         ];
     }
 
-    private function seedIntervalCounts(Sensor $sensor, Carbon $start, Carbon $end, int $intervalMinutes): int
+    protected function seedIntervalCounts(Sensor $sensor, Carbon $start, Carbon $end, int $intervalMinutes): int
     {
         $current = $start->copy();
         $batch = [];
@@ -485,7 +505,11 @@ final class BenchmarkAggregationCommand extends Command
         return $count;
     }
 
-    private function measureSeeder(array $scenario): array
+    /**
+     * @param  Scenario  $scenario
+     * @return SeedMetrics
+     */
+    protected function measureSeeder(array $scenario): array
     {
         memory_reset_peak_usage();
 
@@ -509,7 +533,10 @@ final class BenchmarkAggregationCommand extends Command
         ];
     }
 
-    private function measureAggregation(): array
+    /**
+     * @return Measurement
+     */
+    protected function measureAggregation(): array
     {
         $this->startQueryListener();
         memory_reset_peak_usage();
@@ -554,17 +581,18 @@ final class BenchmarkAggregationCommand extends Command
         ];
     }
 
-    private function startQueryListener(): void
+    protected function startQueryListener(): void
     {
         $this->queryCount = 0;
         $this->queryTimeMs = 0.0;
         $this->listening = true;
 
-        if ($this->queryListener === null) {
-            $this->queryListener = function ($query) {
+        if (! $this->queryListener instanceof Closure) {
+            $this->queryListener = function (QueryExecuted $query): void {
                 if (! $this->listening) {
                     return;
                 }
+
                 $this->queryCount++;
                 $this->queryTimeMs += $query->time;
             };
@@ -572,22 +600,26 @@ final class BenchmarkAggregationCommand extends Command
         }
     }
 
-    private function stopQueryListener(): void
+    protected function stopQueryListener(): void
     {
         $this->listening = false;
     }
 
-    private function runAggregation(): void
+    protected function runAggregation(): void
     {
-        AggregateAreaCounts::dispatchSync();
+        dispatch_sync(new AggregateAreaCounts);
     }
 
-    private function clearAggregatedCounts(): void
+    protected function clearAggregatedCounts(): void
     {
         AreaAggregatedCount::query()->delete();
     }
 
-    private function summarize(array $measurements): array
+    /**
+     * @param  list<Measurement>  $measurements
+     * @return Summary
+     */
+    protected function summarize(array $measurements): array
     {
         if ($measurements === []) {
             return [];
@@ -641,11 +673,14 @@ final class BenchmarkAggregationCommand extends Command
         ];
     }
 
-    private function writeOutput(array $output): string
+    /**
+     * @param  BenchmarkOutput  $output
+     */
+    protected function writeOutput(array $output): string
     {
         $timestamp = now()->format('Ymd-His');
-        $filename = "peoplecount-benchmark-{$timestamp}.json";
-        $path = storage_path("app/benchmarks/{$filename}");
+        $filename = sprintf('peoplecount-benchmark-%s.json', $timestamp);
+        $path = storage_path('app/benchmarks/'.$filename);
 
         if (! is_dir(dirname($path))) {
             mkdir(dirname($path), 0755, true);
@@ -656,7 +691,7 @@ final class BenchmarkAggregationCommand extends Command
         return $path;
     }
 
-    private function createTemporarySqliteDatabase(): string
+    protected function createTemporarySqliteDatabase(): string
     {
         $directory = storage_path('app/benchmarks');
 
@@ -671,7 +706,7 @@ final class BenchmarkAggregationCommand extends Command
         return $this->temporarySqlitePath;
     }
 
-    private function deleteTemporarySqliteDatabase(): void
+    protected function deleteTemporarySqliteDatabase(): void
     {
         if ($this->temporarySqlitePath === null) {
             return;
@@ -686,7 +721,10 @@ final class BenchmarkAggregationCommand extends Command
         $this->temporarySqlitePath = null;
     }
 
-    private function printSummaryTable(array $output): void
+    /**
+     * @param  BenchmarkOutput  $output
+     */
+    protected function printSummaryTable(array $output): void
     {
         $summary = $output['summary'];
         $seed = $output['seed_metrics'];
@@ -696,24 +734,24 @@ final class BenchmarkAggregationCommand extends Command
             rows: [
                 ['Scenario', $output['scenario']],
                 ['DB Connection', $output['db_connection']],
-                ['Days', $seed['event_days']],
-                ['Areas', $seed['areas_count']],
-                ['Sensors', $seed['sensors_count']],
-                ['Assignments', $seed['assignments_count']],
+                ['Days', (string) $seed['event_days']],
+                ['Areas', (string) $seed['areas_count']],
+                ['Sensors', (string) $seed['sensors_count']],
+                ['Assignments', (string) $seed['assignments_count']],
                 ['Interval Counts', number_format($seed['interval_counts_total'])],
-                ['Granularity (min)', $seed['granularity_minutes']],
-                ['Seed Time (ms)', $seed['wall_time_ms']],
+                ['Granularity (min)', (string) $seed['granularity_minutes']],
+                ['Seed Time (ms)', (string) $seed['wall_time_ms']],
                 ['---', '---'],
-                ['Wall Time Mean (ms)', $summary['wall_time_ms']['mean'] ?? '-'],
-                ['Wall Time P95 (ms)', $summary['wall_time_ms']['p95'] ?? '-'],
-                ['Query Count Mean', $summary['query_count']['mean'] ?? '-'],
-                ['Query Time Mean (ms)', $summary['query_time_ms']['mean'] ?? '-'],
-                ['Peak Memory (MiB)', $summary['peak_memory_mib']['mean'] ?? '-'],
+                ['Wall Time Mean (ms)', (string) ($summary['wall_time_ms']['mean'] ?? '-')],
+                ['Wall Time P95 (ms)', (string) ($summary['wall_time_ms']['p95'] ?? '-')],
+                ['Query Count Mean', (string) ($summary['query_count']['mean'] ?? '-')],
+                ['Query Time Mean (ms)', (string) ($summary['query_time_ms']['mean'] ?? '-')],
+                ['Peak Memory (MiB)', (string) ($summary['peak_memory_mib']['mean'] ?? '-')],
             ],
         );
     }
 
-    private function ensureMariaDbRunning(): bool
+    protected function ensureMariaDbRunning(): bool
     {
         $startResult = Process::run(['docker', 'compose', '-f', self::MARIADB_DOCKER_COMPOSE_FILE, 'up', '-d', 'mariadb']);
 
@@ -732,13 +770,13 @@ final class BenchmarkAggregationCommand extends Command
             }
 
             $attempt++;
-            sleep(1);
+            Sleep::sleep(1);
         }
 
         return false;
     }
 
-    private function stopMariaDb(): void
+    protected function stopMariaDb(): void
     {
         Process::run(['docker', 'compose', '-f', self::MARIADB_DOCKER_COMPOSE_FILE, 'stop', 'mariadb']);
     }
