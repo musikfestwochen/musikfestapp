@@ -15,7 +15,7 @@ describe('window construction', function () {
     it('generates correct number of windows', function (int $granularity) {
         $start = '2025-08-02 10:00:00';
         $end = '2025-08-02 11:00:00';
-        $expectedWindows = 60 / $granularity;
+        $expectedWindows = intdiv(60, $granularity);
 
         $setup = setupAggregationScenario([
             'event_start' => Carbon::parse($start)->utc(),

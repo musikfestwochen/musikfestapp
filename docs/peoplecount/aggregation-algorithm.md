@@ -631,16 +631,4 @@ In particular, debug count helpers may ignore:
 
 So they should not be treated as authoritative occupancy history.
 
-## Summary
 
-Authoritative aggregation logic is built on seven strict ideas:
-
-1. fixed event-bounded windows
-2. reset-aware window splitting
-3. strict interval inclusion by `ts_from`
-4. assignment-aware and direction-aware net calculation
-5. cumulative count carry-forward across windows
-6. latest-wins deduplication for duplicate interval counts
-7. backfill-aware recalculation for late-arriving sensor data
-
-If those seven ideas are preserved, behavior stays aligned with current implementation.
