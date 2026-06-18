@@ -28,6 +28,24 @@ services:
         tty: true
         stdin_open: true
 
+    mariadb:
+        image: mariadb:lts
+        container_name: musikfestapp_mariadb
+        profiles:
+            - benchmark
+        environment:
+            MARIADB_ROOT_PASSWORD: password
+            MARIADB_DATABASE: musikfestapp_benchmark
+        ports:
+            - "3306:3306"
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+
 volumes:
     composer-cache:
         name: musikfestapp_composer_cache
@@ -37,3 +55,5 @@ volumes:
         name: musikfestapp_node_modules
     phpstan-cache:
         name: musikfestapp_phpstan_cache
+    mariadb-data:
+        name: musikfestapp_mariadb_data

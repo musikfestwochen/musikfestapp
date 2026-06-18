@@ -2,10 +2,13 @@
 
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaRecurringReset;
+use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 
 function setupPeoplecountBasic(): array
@@ -142,4 +145,108 @@ function setupPeoplecountBasic(): array
         'event_end' => $eventEnd,
         'interval_counts' => $intervalCounts,
     ];
+}
+
+function setupAggregationScenario(array $config = []): array
+{
+    $granularityMinutes = $config['granularity_minutes'] ?? 10;
+    config(['peoplecount.aggregation.granularity_minutes' => $granularityMinutes]);
+
+    $organization = Organization::factory()->create();
+
+    $eventStart = $config['event_start'] ?? Carbon::parse('2025-08-02 10:00:00')->utc();
+    $eventEnd = $config['event_end'] ?? $eventStart->copy()->addHours(1);
+
+    $event = Event::factory()->create([
+        'organization_id' => $organization->id,
+        'starts_at' => $eventStart,
+        'ends_at' => $eventEnd,
+    ]);
+
+    $area = Area::factory()->create([
+        'event_id' => $event->id,
+    ]);
+
+    $sensors = [];
+    $assignments = [];
+
+    foreach ($config['sensors'] ?? [['direction_flipped' => false]] as $sensorConfig) {
+        $sensor = Sensor::factory()->create([
+            'organization_id' => $organization->id,
+        ]);
+
+        $activeFrom = $sensorConfig['active_from'] ?? $eventStart;
+        $activeTo = $sensorConfig['active_to'] ?? $eventEnd;
+
+        $assignment = Assignment::factory()->create([
+            'event_id' => $event->id,
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'direction_flipped' => $sensorConfig['direction_flipped'] ?? false,
+            'active_from' => $activeFrom,
+            'active_to' => $activeTo,
+        ]);
+
+        $sensors[] = $sensor;
+        $assignments[] = $assignment;
+    }
+
+    $intervalCounts = [];
+    foreach ($config['interval_counts'] ?? [] as $ic) {
+        $sensorIndex = $ic['sensor'] ?? 0;
+
+        $intervalCounts[] = IntervalCount::factory()->create([
+            'sensor_id' => $sensors[$sensorIndex]->id,
+            'ts_from' => $ic['ts_from'],
+            'ts_to' => $ic['ts_to'],
+            'count_in' => $ic['count_in'] ?? 0,
+            'count_out' => $ic['count_out'] ?? 0,
+            'received_at' => $ic['received_at'] ?? $ic['ts_to'],
+        ]);
+    }
+
+    foreach ($config['single_resets'] ?? [] as $reset) {
+        AreaSingleReset::factory()->create([
+            'area_id' => $area->id,
+            'reset_value' => $reset['reset_value'],
+            'effective_at' => $reset['effective_at'],
+            'created_by' => User::factory()->create()->id,
+        ]);
+    }
+
+    foreach ($config['recurring_resets'] ?? [] as $reset) {
+        AreaRecurringReset::factory()->create([
+            'area_id' => $area->id,
+            'reset_value' => $reset['reset_value'],
+            'reset_time' => $reset['reset_time'],
+            'timezone' => $reset['timezone'] ?? 'UTC',
+        ]);
+    }
+
+    if (isset($config['now'])) {
+        Carbon::setTestNow($config['now']);
+    }
+
+    return [
+        'organization' => $organization,
+        'event' => $event,
+        'area' => $area,
+        'sensors' => $sensors,
+        'assignments' => $assignments,
+        'event_start' => $eventStart,
+        'event_end' => $eventEnd,
+        'interval_counts' => $intervalCounts,
+    ];
+}
+
+function assertWindowCount(Area $area, string $periodStart, string $periodEnd, int $expectedCount): void
+{
+    $found = $area->aggregatedCounts()
+        ->where('period_start', Carbon::parse($periodStart)->utc())
+        ->where('period_end', Carbon::parse($periodEnd)->utc())
+        ->first();
+
+    expect($found)->not->toBeNull("Expected aggregated count window {$periodStart} to {$periodEnd} to exist");
+
+    expect($found->count)->toBe($expectedCount, "Expected cumulative count of {$expectedCount} for window {$periodStart} to {$periodEnd}, got {$found->count}");
 }

@@ -31,7 +31,7 @@ RUN set -eux; \
 
 # Install PHP extensions
 RUN docker-php-ext-configure zip \
-    && docker-php-ext-install -j"$(nproc)" zip pcntl pdo pdo_sqlite
+    && docker-php-ext-install -j"$(nproc)" zip pcntl pdo pdo_sqlite pdo_mysql
 
 # Install PCOV for coverage
 RUN pecl install pcov \
