@@ -104,6 +104,58 @@ describe('processIntervalCount', function () {
         }
     });
 
+    it('upserts duplicate sensor intervals with latest received values', function () {
+        $timezone = (string) config('app.timezone');
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create([
+            'vendor' => 'Axis',
+            'serial' => 'AXIS-UPSERT-001',
+        ]);
+
+        $payload = [
+            'apiName' => 'Axis Retail Data',
+            'apiVersion' => '0.4',
+            'sensor' => [
+                'serial' => 'AXIS-UPSERT-001',
+            ],
+            'data' => [
+                'measurements' => [
+                    [
+                        'kind' => 'people-counts',
+                        'utcFrom' => '2026-01-01T10:00:00+00:00',
+                        'utcTo' => '2026-01-01T10:01:00+00:00',
+                        'items' => [
+                            ['direction' => 'in', 'count' => 5],
+                            ['direction' => 'out', 'count' => 1],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        try {
+            Carbon::setTestNow(Carbon::parse('2026-01-01 10:02:00', $timezone));
+            $this->service->processIntervalCount($sensor, $payload);
+
+            $payload['data']['measurements'][0]['items'] = [
+                ['direction' => 'in', 'count' => 9],
+                ['direction' => 'out', 'count' => 3],
+            ];
+
+            Carbon::setTestNow(Carbon::parse('2026-01-01 10:03:00', $timezone));
+            $result = $this->service->processIntervalCount($sensor, $payload);
+        } finally {
+            Carbon::setTestNow();
+        }
+
+        $intervalCount = IntervalCount::query()->sole();
+
+        expect($result)->toBe(1)
+            ->and($intervalCount->count_in)->toBe(9)
+            ->and($intervalCount->count_out)->toBe(3)
+            ->and($intervalCount->received_at->toIso8601String())->toBe('2026-01-01T10:03:00+00:00');
+    });
+
     it('logs warning when interval arrives more than one minute late', function () {
         $timezone = (string) config('app.timezone');
         Carbon::setTestNow(Carbon::parse('2026-01-01 10:15:00', $timezone));
@@ -339,8 +391,8 @@ describe('processIntervalCount', function () {
                 'measurements' => [
                     [
                         'kind' => 'people-counts',
-                        'utcFrom' => now()->subMinute()->toIso8601String(),
-                        'utcTo' => now()->toIso8601String(),
+                        'utcFrom' => now()->subMinutes(2)->toIso8601String(),
+                        'utcTo' => now()->subMinute()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 5],
                             ['direction' => 'out', 'count' => 2],
@@ -553,8 +605,8 @@ describe('processIntervalCount', function () {
                     ['kind' => 'temperature'],
                     [
                         'kind' => 'people-counts',
-                        'utcFrom' => now()->subMinute()->toIso8601String(),
-                        'utcTo' => now()->toIso8601String(),
+                        'utcFrom' => now()->subMinutes(2)->toIso8601String(),
+                        'utcTo' => now()->subMinute()->toIso8601String(),
                         'items' => [
                             ['direction' => 'in', 'count' => 5],
                             ['direction' => 'out', 'count' => 2],

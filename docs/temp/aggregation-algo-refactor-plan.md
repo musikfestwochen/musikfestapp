@@ -62,11 +62,11 @@ The temp-window-table approach is intentionally boring. It avoids vendor-specifi
 
 # Implementation Plan
 
-## Migration: add indexes, `data_watermark`, unique aggregate key, cleanup + unique interval key.
+## Migration: add indexes, `data_watermark`, unique aggregate key, and unique interval key. Done.
 
-Intent: prepare schema for fast range reads, idempotent bulk writes, late-arrival detection, and duplicate prevention. Existing duplicate interval rows must be cleaned before adding the unique interval key, keeping highest `received_at` and then highest `id` as tie-breaker.
+Intent: prepare schema for fast range reads, idempotent bulk writes, late-arrival detection, and duplicate prevention. Existing production duplicates were checked and removed before adding the unique interval key, so the migration fails loudly if duplicates reappear.
 
-## Ingest: switch interval writes to `upsert`.
+## Ingest: switch interval writes to `upsert`. Done.
 
 Intent: make latest-wins duplicate policy permanent at write time. Aggregation should read normal interval rows without query-time dedupe.
 

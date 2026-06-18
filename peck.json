@@ -39,7 +39,8 @@
             "ds",
             "datepicker",
             "stylesheets",
-            "unarchive"
+            "unarchive",
+            "algo"
         ],
         "paths": []
     }

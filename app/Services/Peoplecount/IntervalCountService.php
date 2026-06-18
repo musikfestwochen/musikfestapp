@@ -17,7 +17,7 @@ class IntervalCountService
      *
      * @param  Sensor  $sensor  The sensor to process data for.
      * @param  array<mixed>  $data  The data to process, expected to be in a specific format.
-     * @return int number of persisted IntervalCount records
+     * @return int number of processed people-count measurements
      *
      * @throws Exception if the data does not match expected structure or values.
      */
@@ -39,7 +39,7 @@ class IntervalCountService
      *
      * @param  Sensor  $sensor  The Axis sensor to process data for.
      * @param  array<mixed>  $data  The data to process, expected to be in Axis format.
-     * @return int number of persisted IntervalCount
+     * @return int number of processed people-count measurements
      *
      * @throws Exception if the data does not match expected structure or values.
      */
@@ -58,8 +58,9 @@ class IntervalCountService
         $measurements = $data['data']['measurements'] ?? [];
         throw_if(! is_array($measurements), Exception::class, 'Invalid Axis data structure: measurements must be an array.');
 
-        $numPersisted = 0;
+        $numProcessed = 0;
         $receivedAt = CarbonImmutable::now($timezone);
+        $rows = [];
 
         // Process each measurement
         foreach ($measurements as $measurement) {
@@ -80,23 +81,30 @@ class IntervalCountService
             $countIn = $counts['countIn'];
             $countOut = $counts['countOut'];
 
-            // Create new IntervalCount
-            IntervalCount::query()->create([
+            $rows[$sensor->id.'|'.$tsFrom->toIso8601String().'|'.$tsTo->toIso8601String()] = [
                 'ts_from' => $tsFrom,
                 'ts_to' => $tsTo,
                 'received_at' => $receivedAt,
                 'count_in' => $countIn,
                 'count_out' => $countOut,
                 'sensor_id' => $sensor->id,
-            ]);
+            ];
 
             $this->warnIfLateArrival($sensor, $tsTo, $receivedAt);
 
-            $numPersisted++;
+            $numProcessed++;
         }
 
-        // Return the number of persisted IntervalCount records
-        return $numPersisted;
+        if ($rows !== []) {
+            IntervalCount::query()->upsert(
+                array_values($rows),
+                ['sensor_id', 'ts_from', 'ts_to'],
+                ['received_at', 'count_in', 'count_out'],
+            );
+        }
+
+        // Return the number of processed people-count measurements.
+        return $numProcessed;
     }
 
     /**

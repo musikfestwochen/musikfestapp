@@ -395,50 +395,6 @@ describe('multiple sensors', function () {
     })->with('granularities');
 });
 
-describe('duplicate interval counts', function () {
-    it('uses only latest received_at for duplicate sensor interval', function () {
-        $start = '2025-08-02 10:00:00';
-        $intervalEnd = Carbon::parse($start)->addMinutes(5);
-
-        $setup = setupAggregationScenario([
-            'event_start' => Carbon::parse($start)->utc(),
-            'event_end' => Carbon::parse($start)->addMinutes(10)->utc(),
-            'granularity_minutes' => 10,
-            'now' => Carbon::parse($start)->addMinutes(15),
-            'sensors' => [['direction_flipped' => false]],
-            'interval_counts' => [
-                ['sensor' => 0, 'ts_from' => $start, 'ts_to' => $intervalEnd, 'count_in' => 10, 'count_out' => 3, 'received_at' => Carbon::parse($start)->addMinutes(6)],
-                ['sensor' => 0, 'ts_from' => $start, 'ts_to' => $intervalEnd, 'count_in' => 7, 'count_out' => 2, 'received_at' => Carbon::parse($start)->addMinutes(8)],
-            ],
-        ]);
-
-        AggregateAreaCounts::dispatch();
-
-        assertWindowCount($setup['area'], $start, Carbon::parse($start)->addMinutes(10)->utc()->format('Y-m-d H:i:s'), 5);
-    })->skip('not yet implemented');
-
-    it('uses corrected values when sensor resends with different counts', function () {
-        $start = '2025-08-02 10:00:00';
-        $intervalEnd = Carbon::parse($start)->addMinutes(5);
-
-        $setup = setupAggregationScenario([
-            'event_start' => Carbon::parse($start)->utc(),
-            'event_end' => Carbon::parse($start)->addMinutes(10)->utc(),
-            'granularity_minutes' => 10,
-            'now' => Carbon::parse($start)->addMinutes(15),
-            'sensors' => [['direction_flipped' => false]],
-            'interval_counts' => [
-                ['sensor' => 0, 'ts_from' => $start, 'ts_to' => $intervalEnd, 'count_in' => 10, 'count_out' => 3, 'received_at' => Carbon::parse($start)->addMinutes(6)],
-                ['sensor' => 0, 'ts_from' => $start, 'ts_to' => $intervalEnd, 'count_in' => 20, 'count_out' => 8, 'received_at' => Carbon::parse($start)->addMinutes(12)],
-            ],
-        ]);
-
-        AggregateAreaCounts::dispatch();
-
-        assertWindowCount($setup['area'], $start, Carbon::parse($start)->addMinutes(10)->utc()->format('Y-m-d H:i:s'), 12);
-    })->skip('not yet implemented');
-});
-
 describe('late-arriving data', function () {
     it('recalculates affected windows when data arrives late', function () {
         $setup = setupAggregationScenario([
