@@ -11,16 +11,20 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 
 class AreaAggregationService
 {
     private const int WINDOW_CHUNK_SIZE = 1440;
+
+    private const string TEMP_WINDOW_TABLE = 'temp_peoplecount_aggregation_windows';
 
     public function __construct(
         protected AreaService $areaService
@@ -271,17 +275,83 @@ class AreaAggregationService
      */
     protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount): int
     {
-        foreach ($aggregationWindows as $window) {
-            $lastCount = $this->areaService->calculateAndStoreAggregatedCount(
+        $windows = collect($aggregationWindows)->values();
+        $netCounts = $this->calculateNetCountsForWindows($area, $windows);
+
+        foreach ($windows as $index => $window) {
+            $lastCount = ($window['reset_value'] ?? $lastCount) + ($netCounts->get($index, 0));
+
+            $this->storeAggregatedCount(
                 $area,
                 $window['start'],
                 $window['end'],
-                $window['reset_value'] ?? $lastCount,
+                $lastCount,
                 $areaConfigChecksum
             );
         }
 
         return $lastCount;
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $windows
+     * @return Collection<int, int>
+     */
+    protected function calculateNetCountsForWindows(Area $area, Collection $windows): Collection
+    {
+        if ($windows->isEmpty()) {
+            return collect();
+        }
+
+        $this->replaceTemporaryWindows($windows);
+
+        return DB::table(self::TEMP_WINDOW_TABLE.' as windows')
+            ->leftJoin('peoplecount_assignments as assignments', function (JoinClause $join) use ($area): void {
+                $join->where('assignments.area_id', $area->id)
+                    ->whereNull('assignments.deleted_at')
+                    ->whereColumn('assignments.active_from', '<=', 'windows.period_end')
+                    ->whereColumn('assignments.active_to', '>=', 'windows.period_start');
+            })
+            ->leftJoin('peoplecount_interval_counts as interval_counts', function (JoinClause $join): void {
+                $join->on('interval_counts.sensor_id', '=', 'assignments.sensor_id')
+                    ->whereColumn('interval_counts.ts_from', '>=', 'windows.period_start')
+                    ->whereColumn('interval_counts.ts_from', '<', 'windows.period_end')
+                    ->whereColumn('interval_counts.ts_from', '>=', 'assignments.active_from')
+                    ->whereColumn('interval_counts.ts_from', '<', 'assignments.active_to');
+            })
+            ->select('windows.window_index')
+            ->selectRaw('COALESCE(SUM(CASE WHEN assignments.direction_flipped = 1 THEN CAST(interval_counts.count_out AS SIGNED) - CAST(interval_counts.count_in AS SIGNED) ELSE CAST(interval_counts.count_in AS SIGNED) - CAST(interval_counts.count_out AS SIGNED) END), 0) as net_count')
+            ->groupBy('windows.window_index')
+            ->orderBy('windows.window_index')
+            ->get()
+            ->mapWithKeys(fn (object $row): array => [(int) $row->window_index => (int) $row->net_count]);
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $windows
+     */
+    protected function replaceTemporaryWindows(Collection $windows): void
+    {
+        DB::statement('CREATE TEMPORARY TABLE IF NOT EXISTS '.self::TEMP_WINDOW_TABLE.' (window_index INTEGER PRIMARY KEY, period_start DATETIME NOT NULL, period_end DATETIME NOT NULL)');
+        DB::table(self::TEMP_WINDOW_TABLE)->delete();
+
+        DB::table(self::TEMP_WINDOW_TABLE)->insert($windows->map(fn (array $window, int $index): array => [
+            'window_index' => $index,
+            'period_start' => $window['start']->toDateTimeString(),
+            'period_end' => $window['end']->toDateTimeString(),
+        ])->all());
+    }
+
+    protected function storeAggregatedCount(Area $area, Carbon $start, Carbon $end, int $finalCount, string $areaConfigChecksum): void
+    {
+        AreaAggregatedCount::query()->updateOrCreate([
+            'area_id' => $area->id,
+            'period_start' => $start,
+            'period_end' => $end,
+        ], [
+            'checksum' => $areaConfigChecksum,
+            'count' => $finalCount,
+        ]);
     }
 
     /**

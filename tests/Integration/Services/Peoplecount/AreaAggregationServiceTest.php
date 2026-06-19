@@ -67,6 +67,7 @@ describe('updateAggregatedCounts method', function () {
 
     it('processes full aggregation flow when area has assignments', function () {
         $area = Mockery::mock(Area::class);
+        $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
         $area->shouldReceive('load')->once();
 
         // Mock assignments collection with data
@@ -103,6 +104,7 @@ describe('updateAggregatedCounts method', function () {
 
     it('verifies deleteInvalidAggregationRows is called by testing its side effects', function () {
         $area = Mockery::mock(Area::class);
+        $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
         $area->shouldReceive('load')->once();
 
         // Mock assignments collection with data
@@ -148,6 +150,8 @@ describe('updateAggregatedCounts method', function () {
 
     it('verifies calculateAggregatedCountsForWindows is called by testing its side effects', function () {
         $area = Mockery::mock(Area::class);
+        $areaId = Area::factory()->create()->id;
+        $area->shouldReceive('getAttribute')->with('id')->andReturn($areaId);
         $area->shouldReceive('load')->once();
 
         // Mock assignments collection with data
@@ -162,18 +166,6 @@ describe('updateAggregatedCounts method', function () {
         // Mock area service calls
         $this->areaServiceMock->shouldReceive('calculateChecksum')->once()->andReturn('abc123');
         $this->areaServiceMock->shouldReceive('getAreaResets')->once()->andReturn(collect());
-
-        // This expectation will fail if calculateAggregatedCountsForWindows is not called
-        $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
-            ->once()
-            ->with(
-                $area,
-                Mockery::type(Carbon::class),
-                Mockery::type(Carbon::class),
-                0,
-                'abc123'
-            )
-            ->andReturn(10);
 
         // Mock event for window configuration
         $event = Mockery::mock(Event::class);
@@ -190,7 +182,7 @@ describe('updateAggregatedCounts method', function () {
 
         $this->service->updateAggregatedCounts($area);
 
-        expect(true)->toBeTrue(); // Test passes if calculateAndStoreAggregatedCount was called, proving calculateAggregatedCountsForWindows was executed
+        expect(AreaAggregatedCount::query()->where('area_id', $areaId)->exists())->toBeTrue();
     });
 
 });
@@ -669,6 +661,7 @@ describe('getAggregationWindowChunks method', function () {
 describe('calculateAggregatedCountsForWindows method', function () {
     it('calculates and stores aggregated counts for windows', function () {
         $area = Mockery::mock(Area::class);
+        $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
         $windows = collect([
             [
                 'start' => Carbon::parse('2024-08-15 10:00:00'),
@@ -678,19 +671,14 @@ describe('calculateAggregatedCountsForWindows method', function () {
         ]);
         $checksum = 'abc123';
 
-        // Mock area service call
-        $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
-            ->once()
-            ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 0, $checksum)
-            ->andReturn(15);
-
         $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum, 0);
 
-        expect($result)->toBe(15);
+        expect($result)->toBe(0);
     });
 
     it('uses reset_value when provided instead of lastCount', function () {
         $area = Mockery::mock(Area::class);
+        $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
         $windows = collect([
             [
                 'start' => Carbon::parse('2024-08-15 10:00:00'),
@@ -700,19 +688,14 @@ describe('calculateAggregatedCountsForWindows method', function () {
         ]);
         $checksum = 'abc123';
 
-        // Mock area service call - should use reset_value (50) not lastCount (25)
-        $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
-            ->once()
-            ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 50, $checksum)
-            ->andReturn(15);
-
         $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum, 25);
 
-        expect($result)->toBe(15);
+        expect($result)->toBe(50);
     });
 
     it('uses lastCount when reset_value is null', function () {
         $area = Mockery::mock(Area::class);
+        $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
         $windows = collect([
             [
                 'start' => Carbon::parse('2024-08-15 10:00:00'),
@@ -722,15 +705,20 @@ describe('calculateAggregatedCountsForWindows method', function () {
         ]);
         $checksum = 'abc123';
 
-        // Mock area service call - should use passed lastCount (25) since reset_value is null
-        $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
-            ->once()
-            ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 25, $checksum)
-            ->andReturn(15);
-
         $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum, 25);
 
-        expect($result)->toBe(15);
+        expect($result)->toBe(25);
+    });
+});
+
+describe('calculateNetCountsForWindows method', function () {
+    it('returns an empty collection when no windows are provided', function () {
+        $area = Mockery::mock(Area::class);
+
+        $result = ($this->callProtectedMethod)('calculateNetCountsForWindows', $area, collect());
+
+        expect($result)->toBeInstanceOf(Collection::class);
+        expect($result)->toBeEmpty();
     });
 });
 

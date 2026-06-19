@@ -212,6 +212,25 @@ describe('net contribution', function () {
         assertWindowCount($setup['area'], $start, Carbon::parse($start)->addMinutes($granularity)->utc()->format('Y-m-d H:i:s'), 7);
     })->with('granularities');
 
+    it('allows negative net counts', function () {
+        $start = '2025-08-02 10:00:00';
+
+        $setup = setupAggregationScenario([
+            'event_start' => Carbon::parse($start)->utc(),
+            'event_end' => Carbon::parse($start)->addMinutes(10)->utc(),
+            'granularity_minutes' => 10,
+            'now' => Carbon::parse($start)->addMinutes(15),
+            'sensors' => [['direction_flipped' => false]],
+            'interval_counts' => [
+                ['sensor' => 0, 'ts_from' => $start, 'ts_to' => Carbon::parse($start)->addMinutes(5), 'count_in' => 3, 'count_out' => 10],
+            ],
+        ]);
+
+        AggregateAreaCounts::dispatch();
+
+        assertWindowCount($setup['area'], $start, Carbon::parse($start)->addMinutes(10)->utc()->format('Y-m-d H:i:s'), -7);
+    });
+
     it('negates net when direction is flipped', function (int $granularity) {
         $start = '2025-08-02 10:00:00';
         $intervalEnd = Carbon::parse($start)->addMinutes(5);

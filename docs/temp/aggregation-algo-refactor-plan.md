@@ -74,7 +74,7 @@ Intent: make latest-wins duplicate policy permanent at write time. Aggregation s
 
 Intent: isolate window/reset planning while keeping current rules. Windows should be generated per area and processed in bounded chunks so 1-minute granularity over long events stays within the `1024MB` worker memory limit.
 
-## Net query: temp window table + grouped DB aggregate per chunk.
+## Net query: temp window table + grouped DB aggregate per chunk. Done.
 
 Intent: replace per-window/per-assignment interval queries with one grouped query per window chunk. Database computes net deltas by joining chunk windows, assignments, and interval counts, applying assignment bounds and direction flips.
 
