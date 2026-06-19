@@ -709,6 +709,32 @@ describe('calculateAggregatedCountsForWindows method', function () {
 
         expect($result)->toBe(25);
     });
+
+    it('upserts existing aggregate rows for the same window', function () {
+        $area = Area::factory()->create();
+        $start = Carbon::parse('2024-08-15 10:00:00');
+        $end = Carbon::parse('2024-08-15 10:10:00');
+
+        AreaAggregatedCount::factory()->create([
+            'area_id' => $area->id,
+            'period_start' => $start,
+            'period_end' => $end,
+            'count' => 99,
+            'checksum' => str_repeat('a', 64),
+        ]);
+
+        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, collect([
+            [
+                'start' => $start,
+                'end' => $end,
+                'reset_value' => 7,
+            ],
+        ]), str_repeat('b', 64), 0);
+
+        expect($result)->toBe(7);
+        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->count())->toBe(1);
+        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->first()->count)->toBe(7);
+    });
 });
 
 describe('calculateNetCountsForWindows method', function () {
@@ -719,6 +745,46 @@ describe('calculateNetCountsForWindows method', function () {
 
         expect($result)->toBeInstanceOf(Collection::class);
         expect($result)->toBeEmpty();
+    });
+});
+
+describe('writeAggregatedCounts method', function () {
+    it('returns early when no rows are provided', function () {
+        $result = ($this->callProtectedMethod)('writeAggregatedCounts', collect());
+
+        expect($result)->toBeNull();
+    });
+
+    it('upserts aggregate rows', function () {
+        $area = Area::factory()->create();
+        $periodStart = '2024-08-15 10:00:00';
+        $periodEnd = '2024-08-15 10:10:00';
+
+        ($this->callProtectedMethod)('writeAggregatedCounts', collect([
+            [
+                'area_id' => $area->id,
+                'period_start' => $periodStart,
+                'period_end' => $periodEnd,
+                'count' => 5,
+                'checksum' => hex2bin(str_repeat('a', 64)),
+            ],
+        ]));
+
+        ($this->callProtectedMethod)('writeAggregatedCounts', collect([
+            [
+                'area_id' => $area->id,
+                'period_start' => $periodStart,
+                'period_end' => $periodEnd,
+                'count' => 9,
+                'checksum' => hex2bin(str_repeat('b', 64)),
+            ],
+        ]));
+
+        $count = AreaAggregatedCount::query()->where('area_id', $area->id)->first();
+
+        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->count())->toBe(1);
+        expect($count->count)->toBe(9);
+        expect($count->checksum)->toBe(str_repeat('b', 64));
     });
 });
 

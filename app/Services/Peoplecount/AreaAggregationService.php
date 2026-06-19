@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
+use RuntimeException;
 
 class AreaAggregationService
 {
@@ -277,18 +278,24 @@ class AreaAggregationService
     {
         $windows = collect($aggregationWindows)->values();
         $netCounts = $this->calculateNetCountsForWindows($area, $windows);
+        $aggregatedRows = collect();
+        $binaryChecksum = hex2bin($areaConfigChecksum);
+
+        throw_if($binaryChecksum === false, RuntimeException::class, 'Area config checksum must be valid hexadecimal.');
 
         foreach ($windows as $index => $window) {
             $lastCount = ($window['reset_value'] ?? $lastCount) + ($netCounts->get($index, 0));
 
-            $this->storeAggregatedCount(
-                $area,
-                $window['start'],
-                $window['end'],
-                $lastCount,
-                $areaConfigChecksum
-            );
+            $aggregatedRows->push([
+                'area_id' => $area->id,
+                'period_start' => $window['start']->toDateTimeString(),
+                'period_end' => $window['end']->toDateTimeString(),
+                'count' => $lastCount,
+                'checksum' => $binaryChecksum,
+            ]);
         }
+
+        $this->writeAggregatedCounts($aggregatedRows);
 
         return $lastCount;
     }
@@ -342,16 +349,20 @@ class AreaAggregationService
         ])->all());
     }
 
-    protected function storeAggregatedCount(Area $area, Carbon $start, Carbon $end, int $finalCount, string $areaConfigChecksum): void
+    /**
+     * @param  Collection<int, array{area_id: int, period_start: string, period_end: string, count: int, checksum: string}>  $rows
+     */
+    protected function writeAggregatedCounts(Collection $rows): void
     {
-        AreaAggregatedCount::query()->updateOrCreate([
-            'area_id' => $area->id,
-            'period_start' => $start,
-            'period_end' => $end,
-        ], [
-            'checksum' => $areaConfigChecksum,
-            'count' => $finalCount,
-        ]);
+        if ($rows->isEmpty()) {
+            return;
+        }
+
+        AreaAggregatedCount::query()->upsert(
+            $rows->all(),
+            ['area_id', 'period_start', 'period_end'],
+            ['count', 'checksum']
+        );
     }
 
     /**

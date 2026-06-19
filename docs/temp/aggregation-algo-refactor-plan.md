@@ -82,7 +82,7 @@ Intent: replace per-window/per-assignment interval queries with one grouped quer
 
 Intent: keep stateful logic in PHP because reset priority and cumulative counts are sequential. Input is planned windows plus DB net deltas; output is aggregate rows ready for writing.
 
-## Writer: chunked `upsert` aggregated rows.
+## Writer: chunked `upsert` aggregated rows. Done.
 
 Intent: replace per-window `updateOrCreate()` with batched writes keyed by `(area_id, period_start, period_end)`. Delete affected rows first when window boundaries can change, then upsert calculated rows.
 
