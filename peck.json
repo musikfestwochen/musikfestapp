@@ -40,7 +40,10 @@
             "datepicker",
             "stylesheets",
             "unarchive",
-            "algo"
+            "algo",
+            "tty",
+            "pcntl",
+            "stdout"
         ],
         "paths": []
     }

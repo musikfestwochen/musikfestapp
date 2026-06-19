@@ -141,7 +141,7 @@ class BenchmarkAggregationCommand extends Command
         $scenario = self::SCENARIOS[$options['scenario']];
 
         if ($options['db'] === 'mariadb' && $options['mariadb'] === 'docker') {
-            $started = task(
+            $started = $this->runTask(
                 label: 'Starting MariaDB container',
                 callback: function (Logger $logger): bool {
                     $started = $this->ensureMariaDbRunning();
@@ -168,7 +168,7 @@ class BenchmarkAggregationCommand extends Command
             return $this->runBenchmark($options['scenario'], $scenario, $options['iterations'], $options['db'], $options['output']);
         } finally {
             if ($this->startedMariaDb) {
-                task(
+                $this->runTask(
                     label: 'Stopping MariaDB container',
                     callback: function (Logger $logger): void {
                         $this->stopMariaDb();
@@ -181,6 +181,36 @@ class BenchmarkAggregationCommand extends Command
 
             $this->deleteTemporarySqliteDatabase();
         }
+    }
+
+    /**
+     * Run a task with spinner in TTY, plain log lines in non-interactive CI.
+     *
+     * ponytail: Spinner::spin() ignores Prompt::shouldFallback() and only
+     * checks pcntl_fork availability, so GH Actions (which has PCNTL) floods
+     * the log with animation frames. InputInterface::isInteractive() reflects
+     * the --no-interaction flag, not TTY status, so it returns true in CI
+     * unless the flag is passed. Check stdout TTY directly — that's where the
+     * spinner renders.
+     *
+     * @param  Closure(Logger): TReturn  $callback
+     * @return TReturn
+     *
+     * @template TReturn of mixed
+     */
+    protected function runTask(string $label, Closure $callback, bool $keepSummary = false): mixed
+    {
+        if (defined('STDOUT') && stream_isatty(STDOUT)) {
+            return task(label: $label, callback: $callback, keepSummary: $keepSummary);
+        }
+
+        $this->info($label.'...');
+
+        $result = $callback(new Logger('plain'));
+
+        $this->info($label.': '.($result === false ? 'FAIL' : 'OK'));
+
+        return $result;
     }
 
     /**
@@ -320,7 +350,7 @@ class BenchmarkAggregationCommand extends Command
             DB::purge('sqlite');
         }
 
-        $migrated = task(
+        $migrated = $this->runTask(
             label: 'Running migrate:fresh',
             callback: function (Logger $logger): int {
                 $exitCode = $this->callSilent('migrate:fresh', ['--force' => true]);
@@ -340,7 +370,7 @@ class BenchmarkAggregationCommand extends Command
             return self::FAILURE;
         }
 
-        $seedMetrics = task(
+        $seedMetrics = $this->runTask(
             label: 'Seeding benchmark data',
             callback: function (Logger $logger) use ($scenario): array {
                 $metrics = $this->measureSeeder($scenario);
@@ -352,7 +382,7 @@ class BenchmarkAggregationCommand extends Command
             keepSummary: true,
         );
 
-        task(
+        $this->runTask(
             label: 'Running warmup iteration',
             callback: function (Logger $logger): void {
                 $this->clearAggregatedCounts();

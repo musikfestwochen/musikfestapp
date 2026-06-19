@@ -1,4 +1,5 @@
 name: Benchmark
+run-name: Benchmark · ${{ inputs.scenario }} · ${{ inputs.iterations }}x
 
 on:
   workflow_dispatch:
@@ -61,12 +62,13 @@ jobs:
             --iterations=${{ inputs.iterations }} \
             --db=mariadb \
             --mariadb=external \
-            --output=both
+            --output=both \
+            --no-interaction
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: benchmark-results
+          name: benchmark-results-${{ inputs.scenario }}-${{ inputs.iterations }}x
           path: storage/app/benchmarks/*.json
           retention-days: 30
