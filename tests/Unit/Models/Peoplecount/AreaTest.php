@@ -14,6 +14,7 @@ it('has correct fillable attributes', function () {
     expect($model->getFillable())->toEqualCanonicalizing([
         'name',
         'event_id',
+        'data_watermark',
     ]);
 });
 

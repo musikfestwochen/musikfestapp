@@ -339,6 +339,7 @@ describe('createWindow method', function () {
         $startTime = Carbon::parse('2024-08-15 10:00:00');
         $config = [
             'windowSize' => 10,
+            'startTime' => Carbon::parse('2024-08-15 10:00:00'),
             'endTime' => Carbon::parse('2024-08-15 18:00:00'),
         ];
         $resetTimes = collect();
@@ -357,37 +358,40 @@ describe('createWindow method', function () {
 describe('calculateWindowEnd method', function () {
     it('returns natural window end when no reset within window', function () {
         $startTime = Carbon::parse('2024-08-15 10:00:00');
+        $eventStartTime = Carbon::parse('2024-08-15 10:00:00');
         $eventEndTime = Carbon::parse('2024-08-15 18:00:00');
         $windowSize = 10;
         $resetTimes = collect();
 
-        $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventEndTime, $windowSize, $resetTimes);
+        $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventStartTime, $eventEndTime, $windowSize, $resetTimes);
 
         expect($result->format('H:i'))->toBe('10:10');
     });
 
     it('returns reset time when reset occurs within window', function () {
         $startTime = Carbon::parse('2024-08-15 10:00:00');
+        $eventStartTime = Carbon::parse('2024-08-15 10:00:00');
         $eventEndTime = Carbon::parse('2024-08-15 18:00:00');
         $windowSize = 10;
         $resetTimes = collect([
             ['at' => Carbon::parse('2024-08-15 10:05:00')],
         ]);
 
-        $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventEndTime, $windowSize, $resetTimes);
+        $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventStartTime, $eventEndTime, $windowSize, $resetTimes);
 
         expect($result->format('H:i'))->toBe('10:05');
     });
 
     it('returns natural window end when reset is exactly at start time', function () {
         $startTime = Carbon::parse('2024-08-15 10:00:00');
+        $eventStartTime = Carbon::parse('2024-08-15 10:00:00');
         $eventEndTime = Carbon::parse('2024-08-15 18:00:00');
         $windowSize = 10;
         $resetTimes = collect([
             ['at' => Carbon::parse('2024-08-15 10:00:00')], // Reset exactly at start time
         ]);
 
-        $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventEndTime, $windowSize, $resetTimes);
+        $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventStartTime, $eventEndTime, $windowSize, $resetTimes);
 
         // Should return natural window end because reset is not > startTime
         expect($result->format('H:i'))->toBe('10:10');

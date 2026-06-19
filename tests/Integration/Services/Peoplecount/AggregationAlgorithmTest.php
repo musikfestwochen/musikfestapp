@@ -364,7 +364,7 @@ describe('reset handling', function () {
             && $w->period_end->format('H:i') === '10:10');
         expect($afterReset)->not->toBeNull('Expected a split window 10:05-10:10');
         expect($afterReset->count)->toBe(42);
-    })->skip('not yet implemented: current algorithm does not split windows at reset points');
+    });
 
     it('applies recurring reset at configured time', function () {
         $setup = setupAggregationScenario([
@@ -455,20 +455,20 @@ describe('late-arriving data', function () {
         assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 3);
         assertWindowCount($setup['area'], '2025-08-02 10:10:00', '2025-08-02 10:20:00', 6);
 
-        IntervalCount::factory()->create([
+        IntervalCount::query()->upsert([[
             'sensor_id' => $setup['sensors'][0]->id,
             'ts_from' => Carbon::parse('2025-08-02 10:00:00')->utc(),
             'ts_to' => Carbon::parse('2025-08-02 10:05:00')->utc(),
             'count_in' => 10,
             'count_out' => 3,
             'received_at' => Carbon::parse('2025-08-02 10:45:00')->utc(),
-        ]);
+        ]], ['sensor_id', 'ts_from', 'ts_to'], ['count_in', 'count_out', 'received_at']);
 
         Carbon::setTestNow('2025-08-02 10:50:00');
         AggregateAreaCounts::dispatch();
 
         assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 7);
-    })->skip('not yet implemented');
+    });
 
     it('updates data watermark after aggregation pass', function () {
         $setup = setupAggregationScenario([
@@ -486,7 +486,7 @@ describe('late-arriving data', function () {
 
         $area = $setup['area']->refresh();
         expect($area->data_watermark)->not->toBeNull();
-    })->skip('not yet implemented');
+    });
 
     it('extends recalculation range to earliest affected window', function () {
         $setup = setupAggregationScenario([
@@ -506,19 +506,19 @@ describe('late-arriving data', function () {
         assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 2);
         assertWindowCount($setup['area'], '2025-08-02 10:10:00', '2025-08-02 10:20:00', 4);
 
-        IntervalCount::factory()->create([
+        IntervalCount::query()->upsert([[
             'sensor_id' => $setup['sensors'][0]->id,
             'ts_from' => Carbon::parse('2025-08-02 10:00:00')->utc(),
             'ts_to' => Carbon::parse('2025-08-02 10:05:00')->utc(),
             'count_in' => 10,
             'count_out' => 1,
             'received_at' => Carbon::parse('2025-08-02 10:45:00')->utc(),
-        ]);
+        ]], ['sensor_id', 'ts_from', 'ts_to'], ['count_in', 'count_out', 'received_at']);
 
         Carbon::setTestNow('2025-08-02 10:50:00');
         AggregateAreaCounts::dispatch();
 
         assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 9);
         assertWindowCount($setup['area'], '2025-08-02 10:10:00', '2025-08-02 10:20:00', 11);
-    })->skip('not yet implemented');
+    });
 });

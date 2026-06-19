@@ -7,10 +7,12 @@ namespace App\Services\Peoplecount;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
+use App\Models\Peoplecount\IntervalCount;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -49,6 +51,8 @@ class AreaAggregationService
         foreach ($this->getAggregationWindowChunks($area, $resetTimes, $checkpoint['recalculate_from']) as $aggregationWindows) {
             $lastCount = $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum, $lastCount);
         }
+
+        $this->updateDataWatermark($area);
     }
 
     /**
@@ -217,7 +221,7 @@ class AreaAggregationService
      */
     protected function createWindow(Carbon $startTime, array $config, Collection $resetTimes): array
     {
-        $windowEnd = $this->calculateWindowEnd($startTime, $config['endTime'], $config['windowSize'], $resetTimes);
+        $windowEnd = $this->calculateWindowEnd($startTime, $config['startTime'], $config['endTime'], $config['windowSize'], $resetTimes);
         $resetValue = $this->getResetValueAtWindowStart($startTime, $resetTimes);
 
         return [
@@ -232,9 +236,16 @@ class AreaAggregationService
      *
      * @param  Collection<int, array<string, mixed>>  $resetTimes
      */
-    protected function calculateWindowEnd(Carbon $startTime, Carbon $eventEndTime, int $windowSize, Collection $resetTimes): Carbon
+    protected function calculateWindowEnd(Carbon $startTime, Carbon $eventStartTime, Carbon $eventEndTime, int $windowSize, Collection $resetTimes): Carbon
     {
-        $naturalWindowEnd = min($startTime->copy()->addMinutes($windowSize), $eventEndTime);
+        $minutesFromEventStart = (int) $eventStartTime->diffInMinutes($startTime);
+        $nextBoundaryMinutes = $minutesFromEventStart - ($minutesFromEventStart % $windowSize) + $windowSize;
+        $naturalWindowEnd = $eventStartTime->copy()->addMinutes($nextBoundaryMinutes);
+
+        if ($naturalWindowEnd->greaterThan($eventEndTime)) {
+            $naturalWindowEnd = $eventEndTime;
+        }
+
         $resetWithinWindow = $this->findResetWithinWindow($startTime, $naturalWindowEnd, $resetTimes);
 
         return $resetWithinWindow && $resetWithinWindow['at'] > $startTime
@@ -250,8 +261,8 @@ class AreaAggregationService
      */
     protected function findResetWithinWindow(Carbon $startTime, Carbon $windowEnd, Collection $resetTimes): ?array
     {
-        return $resetTimes->first(function (array $reset) use ($startTime, $windowEnd) {
-            return $reset['at']->between($startTime, $windowEnd);
+        return $resetTimes->first(function (array $reset) use ($startTime, $windowEnd): bool {
+            return $reset['at']->greaterThan($startTime) && $reset['at']->lessThanOrEqualTo($windowEnd);
         });
     }
 
@@ -375,10 +386,78 @@ class AreaAggregationService
             ->limit(3)
             ->get(['id', 'area_id', 'period_start', 'period_end', 'count']);
 
+        if (! $area->exists) {
+            return [
+                'recalculate_from' => $latestCounts->get(1)?->period_start,
+                'initial_count' => $latestCounts->has(2) ? $latestCounts->get(2)->count : 0,
+            ];
+        }
+
+        $recalculateFrom = $latestCounts->get(1)?->period_start;
+        $lateRecalculateFrom = $this->getLateArrivalRecalculateFrom($area);
+
+        if ($lateRecalculateFrom && (! $recalculateFrom || $lateRecalculateFrom->lessThan($recalculateFrom))) {
+            $recalculateFrom = $lateRecalculateFrom;
+        }
+
         return [
-            'recalculate_from' => $latestCounts->get(1)?->period_start,
-            'initial_count' => $latestCounts->has(2) ? $latestCounts->get(2)->count : 0,
+            'recalculate_from' => $recalculateFrom,
+            'initial_count' => $recalculateFrom ? $this->getInitialCountBefore($area, $recalculateFrom) : 0,
         ];
+    }
+
+    protected function getLateArrivalRecalculateFrom(Area $area): ?Carbon
+    {
+        if (! $area->data_watermark) {
+            return null;
+        }
+
+        $lateTsFrom = $this->areaIntervalCountsQuery($area)
+            ->where('interval_counts.received_at', '>', $area->data_watermark)
+            ->min('interval_counts.ts_from');
+
+        if (! $lateTsFrom) {
+            return null;
+        }
+
+        return $area->aggregatedCounts()
+            ->where('period_start', '<=', $lateTsFrom)
+            ->where('period_end', '>', $lateTsFrom)
+            ->latest('period_start')
+            ->value('period_start') ?? Date::parse($lateTsFrom);
+    }
+
+    protected function getInitialCountBefore(Area $area, Carbon $recalculateFrom): int
+    {
+        return (int) ($area->aggregatedCounts()
+            ->where('period_end', '<=', $recalculateFrom)
+            ->latest('period_end')
+            ->value('count') ?? 0);
+    }
+
+    protected function updateDataWatermark(Area $area): void
+    {
+        $watermark = $this->areaIntervalCountsQuery($area)->max('interval_counts.received_at');
+
+        if (! $watermark) {
+            return;
+        }
+
+        $area->forceFill(['data_watermark' => $watermark])->save();
+    }
+
+    protected function areaIntervalCountsQuery(Area $area): QueryBuilder
+    {
+        return DB::table('peoplecount_assignments as assignments')
+            ->join((new IntervalCount)->getTable().' as interval_counts', function (JoinClause $join): void {
+                $join->on('interval_counts.sensor_id', '=', 'assignments.sensor_id')
+                    ->whereColumn('interval_counts.ts_from', '>=', 'assignments.active_from')
+                    ->whereColumn('interval_counts.ts_from', '<', 'assignments.active_to');
+            })
+            ->where('assignments.area_id', $area->id)
+            ->where('interval_counts.ts_from', '>=', $area->event->starts_at)
+            ->where('interval_counts.ts_from', '<', $area->event->ends_at)
+            ->whereNull('assignments.deleted_at');
     }
 
     /**

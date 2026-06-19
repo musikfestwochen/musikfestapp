@@ -78,7 +78,7 @@ Intent: isolate window/reset planning while keeping current rules. Windows shoul
 
 Intent: replace per-window/per-assignment interval queries with one grouped query per window chunk. Database computes net deltas by joining chunk windows, assignments, and interval counts, applying assignment bounds and direction flips.
 
-## Cumulative applier: PHP applies resets and running counts.
+## Cumulative applier: PHP applies resets and running counts. Done.
 
 Intent: keep stateful logic in PHP because reset priority and cumulative counts are sequential. Input is planned windows plus DB net deltas; output is aggregate rows ready for writing.
 
@@ -86,7 +86,7 @@ Intent: keep stateful logic in PHP because reset priority and cumulative counts 
 
 Intent: replace per-window `updateOrCreate()` with batched writes keyed by `(area_id, period_start, period_end)`. Delete affected rows first when window boundaries can change, then upsert calculated rows.
 
-## Watermark: late-arrival support only, no dirty ranges.
+## Watermark: late-arrival support only, no dirty ranges. Done.
 
 Intent: store latest incorporated `received_at` per area and extend recalculation start when late interval data affects already-aggregated history. Config changes still use full checksum invalidation.
 
