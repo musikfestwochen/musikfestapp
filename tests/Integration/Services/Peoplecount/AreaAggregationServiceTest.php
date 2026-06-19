@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\LazyCollection;
 
 covers(AreaAggregationService::class);
 
@@ -91,9 +92,8 @@ describe('updateAggregatedCounts method', function () {
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $this->service->updateAggregatedCounts($area);
@@ -131,9 +131,8 @@ describe('updateAggregatedCounts method', function () {
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
 
         // Mock for deleteRowsWithInvalidChecksum - this verifies deleteInvalidAggregationRows is called
         $builderMock = Mockery::mock(Builder::class);
@@ -185,9 +184,8 @@ describe('updateAggregatedCounts method', function () {
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $this->service->updateAggregatedCounts($area);
@@ -327,16 +325,16 @@ describe('getWindowConfiguration method', function () {
     });
 });
 
-describe('generateWindows method', function () {
+describe('generateAggregationWindows method', function () {
     it('generates correct number of windows', function () {
-        $config = [
-            'windowSize' => 10,
-            'startTime' => Carbon::parse('2024-08-15 10:00:00'),
-            'endTime' => Carbon::parse('2024-08-15 11:00:00'),
-        ];
+        $area = Mockery::mock(Area::class);
+        $event = Mockery::mock(Event::class);
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 11:00:00'));
+        $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
         $resetTimes = collect();
 
-        $result = ($this->callProtectedMethod)('generateWindows', $config, $resetTimes);
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, null)->collect();
 
         expect($result)->toHaveCount(6); // 60 minutes / 10 minute windows = 6 windows
         expect($result->first()['start']->format('H:i'))->toBe('10:00');
@@ -455,16 +453,19 @@ describe('getResetValueAtWindowStart method', function () {
     });
 });
 
-describe('filterFutureWindows method', function () {
+describe('generateAggregationWindows future filtering', function () {
     it('filters out future windows', function () {
-        $pastWindow = ['start' => Carbon::parse('2024-08-15 12:00:00')];
-        $futureWindow = ['start' => Carbon::parse('2024-08-15 16:00:00')];
-        $windows = collect([$pastWindow, $futureWindow]);
+        $area = Mockery::mock(Area::class);
+        $event = Mockery::mock(Event::class);
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 12:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 16:10:00'));
+        $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('filterFutureWindows', $windows);
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), null)->collect();
 
-        expect($result)->toHaveCount(1);
+        expect($result)->toHaveCount(15);
         expect($result->first()['start']->format('H:i'))->toBe('12:00');
+        expect($result->last()['start']->format('H:i'))->toBe('14:20');
     });
 });
 
@@ -611,8 +612,8 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
     });
 });
 
-describe('getFilteredAggregationWindows method', function () {
-    it('filters aggregation windows correctly', function () {
+describe('getAggregationWindowChunks method', function () {
+    it('returns lazy window chunks', function () {
         $area = Mockery::mock(Area::class);
         $resetTimes = collect();
 
@@ -622,20 +623,12 @@ describe('getFilteredAggregationWindows method', function () {
         $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        // Mock aggregatedCounts relationship for filtering
-        $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
+        $result = ($this->callProtectedMethod)('getAggregationWindowChunks', $area, $resetTimes, null);
 
-        $result = ($this->callProtectedMethod)('getFilteredAggregationWindows', $area, $resetTimes);
-
-        expect($result)->toBeInstanceOf(Collection::class);
+        expect($result)->toBeInstanceOf(LazyCollection::class);
+        expect($result->first())->toBeInstanceOf(LazyCollection::class);
     });
-});
 
-describe('splitIntoAggregationWindows method', function () {
     it('splits reset times into aggregation windows', function () {
         $area = Mockery::mock(Area::class);
         $resetTimes = collect();
@@ -646,50 +639,20 @@ describe('splitIntoAggregationWindows method', function () {
         $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('splitIntoAggregationWindows', $area, $resetTimes);
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, null)->collect();
 
         expect($result)->toBeInstanceOf(Collection::class);
         expect($result)->toHaveCount(1); // 10 minute window
     });
-});
 
-describe('filterAlreadyAggregatedWindows method', function () {
-    it('returns all windows when no second-last aggregated count exists', function () {
+    it('filters windows based on recalculation start', function () {
         $area = Mockery::mock(Area::class);
-        $windows = collect([
-            ['start' => Carbon::parse('2024-08-15 10:00:00')],
-            ['start' => Carbon::parse('2024-08-15 10:10:00')],
-        ]);
+        $event = Mockery::mock(Event::class);
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 09:50:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:20:00'));
+        $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
-
-        $result = ($this->callProtectedMethod)('filterAlreadyAggregatedWindows', $area, $windows);
-
-        expect($result)->toHaveCount(2);
-    });
-
-    it('filters windows based on second-last aggregated count', function () {
-        $area = Mockery::mock(Area::class);
-        $windows = collect([
-            ['start' => Carbon::parse('2024-08-15 09:50:00')],
-            ['start' => Carbon::parse('2024-08-15 10:00:00')],
-            ['start' => Carbon::parse('2024-08-15 10:10:00')],
-        ]);
-
-        $secondLastCount = Mockery::mock(AreaAggregatedCount::class);
-        $secondLastCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-
-        $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(1)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn($secondLastCount);
-        $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
-
-        $result = ($this->callProtectedMethod)('filterAlreadyAggregatedWindows', $area, $windows);
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), Carbon::parse('2024-08-15 10:00:00'))->collect();
 
         expect($result)->toHaveCount(2); // Should filter out the first window
 
@@ -715,22 +678,15 @@ describe('calculateAggregatedCountsForWindows method', function () {
         ]);
         $checksum = 'abc123';
 
-        // Mock getInitialCountForAggregation
-        $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
-
         // Mock area service call
         $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
             ->once()
             ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 0, $checksum)
             ->andReturn(15);
 
-        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum);
+        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum, 0);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(15);
     });
 
     it('uses reset_value when provided instead of lastCount', function () {
@@ -744,22 +700,15 @@ describe('calculateAggregatedCountsForWindows method', function () {
         ]);
         $checksum = 'abc123';
 
-        // Mock getInitialCountForAggregation to return a different value
-        $relationshipMock = Mockery::mock(HasMany::class);
-        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
-        $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
-
-        // Mock area service call - should use reset_value (50) not lastCount (0)
+        // Mock area service call - should use reset_value (50) not lastCount (25)
         $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
             ->once()
             ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 50, $checksum)
             ->andReturn(15);
 
-        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum);
+        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum, 25);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(15);
     });
 
     it('uses lastCount when reset_value is null', function () {
@@ -773,61 +722,62 @@ describe('calculateAggregatedCountsForWindows method', function () {
         ]);
         $checksum = 'abc123';
 
-        // Mock getInitialCountForAggregation to return a specific value
-        $thirdLastCount = Mockery::mock(AreaAggregatedCount::class);
-        $thirdLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
-
-        $relationshipMock = Mockery::mock(HasMany::class);
-        $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn($thirdLastCount);
-        $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
-
-        // Mock area service call - should use lastCount (25) from third latest count since reset_value is null
+        // Mock area service call - should use passed lastCount (25) since reset_value is null
         $this->areaServiceMock->shouldReceive('calculateAndStoreAggregatedCount')
             ->once()
             ->with($area, Mockery::type(Carbon::class), Mockery::type(Carbon::class), 25, $checksum)
             ->andReturn(15);
 
-        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum);
+        $result = ($this->callProtectedMethod)('calculateAggregatedCountsForWindows', $area, $windows, $checksum, 25);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(15);
     });
 });
 
-describe('getInitialCountForAggregation method', function () {
-    it('returns 0 when no third last aggregated count exists', function () {
+describe('getAggregationCheckpoint method', function () {
+    it('returns default checkpoint when fewer than two existing counts exist', function () {
         $area = Mockery::mock(Area::class);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn(null);
+        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
-        $result = ($this->callProtectedMethod)('getInitialCountForAggregation', $area);
+        $result = ($this->callProtectedMethod)('getAggregationCheckpoint', $area);
 
-        expect($result)->toBe(0);
+        expect($result)->toBe([
+            'recalculate_from' => null,
+            'initial_count' => 0,
+        ]);
     });
 
-    it('returns count from third last aggregated count', function () {
+    it('returns recalculation start and initial count from existing counts', function () {
         $area = Mockery::mock(Area::class);
+        $secondLastCount = Mockery::mock(AreaAggregatedCount::class);
+        $secondLastCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+
         $thirdLastCount = Mockery::mock(AreaAggregatedCount::class);
         $thirdLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('skip')->with(2)->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('first')->andReturn($thirdLastCount);
+        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection([
+            Mockery::mock(AreaAggregatedCount::class),
+            $secondLastCount,
+            $thirdLastCount,
+        ]));
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
-        $result = ($this->callProtectedMethod)('getInitialCountForAggregation', $area);
+        $result = ($this->callProtectedMethod)('getAggregationCheckpoint', $area);
 
-        expect($result)->toBe(25);
+        expect($result['recalculate_from']->format('H:i'))->toBe('10:00');
+        expect($result['initial_count'])->toBe(25);
     });
 });
 

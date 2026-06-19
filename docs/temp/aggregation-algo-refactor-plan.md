@@ -70,7 +70,7 @@ Intent: prepare schema for fast range reads, idempotent bulk writes, late-arriva
 
 Intent: make latest-wins duplicate policy permanent at write time. Aggregation should read normal interval rows without query-time dedupe.
 
-## Planner: generate windows chunkably, preserve reset behavior.
+## Planner: generate windows chunkably, preserve reset behavior. Done.
 
 Intent: isolate window/reset planning while keeping current rules. Windows should be generated per area and processed in bounded chunks so 1-minute granularity over long events stays within the `1024MB` worker memory limit.
 

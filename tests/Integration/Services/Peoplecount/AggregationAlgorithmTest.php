@@ -50,6 +50,28 @@ describe('window construction', function () {
         $lastWindow = $setup['area']->refresh()->aggregatedCounts()->latest('period_end')->first();
         expect($lastWindow->period_end->format('H:i:s'))->toBe('10:35:00');
     });
+
+    it('carries cumulative count across window chunks', function () {
+        $eventStart = Carbon::parse('2025-08-02 00:00:00')->utc();
+        $chunkBoundary = $eventStart->copy()->addMinutes(1440);
+
+        $setup = setupAggregationScenario([
+            'event_start' => $eventStart,
+            'event_end' => $eventStart->copy()->addMinutes(1442),
+            'granularity_minutes' => 1,
+            'now' => $eventStart->copy()->addMinutes(1445),
+            'sensors' => [['direction_flipped' => false]],
+            'interval_counts' => [
+                ['sensor' => 0, 'ts_from' => $eventStart, 'ts_to' => $eventStart->copy()->addMinute(), 'count_in' => 5, 'count_out' => 0],
+                ['sensor' => 0, 'ts_from' => $chunkBoundary, 'ts_to' => $chunkBoundary->copy()->addMinute(), 'count_in' => 2, 'count_out' => 0],
+            ],
+        ]);
+
+        AggregateAreaCounts::dispatch();
+
+        assertWindowCount($setup['area'], '2025-08-02 23:59:00', '2025-08-03 00:00:00', 5);
+        assertWindowCount($setup['area'], '2025-08-03 00:00:00', '2025-08-03 00:01:00', 7);
+    });
 });
 
 describe('interval inclusion', function () {

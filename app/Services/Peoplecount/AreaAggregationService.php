@@ -16,9 +16,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\LazyCollection;
 
 class AreaAggregationService
 {
+    private const int WINDOW_CHUNK_SIZE = 1440;
+
     public function __construct(
         protected AreaService $areaService
     ) {}
@@ -35,8 +38,12 @@ class AreaAggregationService
         }
 
         $resetTimes = $this->getPastResetTimes($area);
-        $aggregationWindows = $this->getFilteredAggregationWindows($area, $resetTimes);
-        $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum);
+        $checkpoint = $this->getAggregationCheckpoint($area);
+        $lastCount = $checkpoint['initial_count'];
+
+        foreach ($this->getAggregationWindowChunks($area, $resetTimes, $checkpoint['recalculate_from']) as $aggregationWindows) {
+            $lastCount = $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum, $lastCount);
+        }
     }
 
     /**
@@ -144,34 +151,6 @@ class AreaAggregationService
     }
 
     /**
-     * Get aggregation windows filtered by time and existing aggregations.
-     *
-     * @param  Collection<int, array<string, mixed>>  $resetTimes
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function getFilteredAggregationWindows(Area $area, Collection $resetTimes): Collection
-    {
-        $aggregationWindows = $this->splitIntoAggregationWindows($area, $resetTimes);
-        $aggregationWindows = $this->filterFutureWindows($aggregationWindows);
-
-        return $this->filterAlreadyAggregatedWindows($area, $aggregationWindows);
-    }
-
-    /**
-     * Split the reset times into aggregation windows.
-     *
-     * @param  Collection<int, array<string, mixed>>  $resetTimes
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function splitIntoAggregationWindows(Area $area, Collection $resetTimes): Collection
-    {
-        $windowConfig = $this->getWindowConfiguration($area);
-        $sortedResetTimes = $resetTimes->sortBy('at');
-
-        return $this->generateWindows($windowConfig, $sortedResetTimes);
-    }
-
-    /**
      * Get window configuration for aggregation.
      *
      * @return array<string, mixed>
@@ -179,31 +158,49 @@ class AreaAggregationService
     protected function getWindowConfiguration(Area $area): array
     {
         return [
-            'windowSize' => config('peoplecount.aggregation.granularity_minutes'),
+            'windowSize' => (int) config('peoplecount.aggregation.granularity_minutes'),
             'startTime' => $area->event->starts_at,
             'endTime' => $area->event->ends_at,
         ];
     }
 
     /**
-     * Generate aggregation windows based on configuration and reset times.
-     *
-     * @param  array<string, mixed>  $config
-     * @param  Collection<int, array<string, mixed>>  $sortedResetTimes
-     * @return Collection<int, array<string, mixed>>
+     * @param  Collection<int, array<string, mixed>>  $resetTimes
+     * @return LazyCollection<int, LazyCollection<int, array<string, mixed>>>
      */
-    protected function generateWindows(array $config, Collection $sortedResetTimes): Collection
+    protected function getAggregationWindowChunks(Area $area, Collection $resetTimes, ?Carbon $recalculateFrom): LazyCollection
     {
-        $windows = collect();
-        $currentTime = $config['startTime'];
+        return $this->generateAggregationWindows($area, $resetTimes, $recalculateFrom)
+            ->chunk(self::WINDOW_CHUNK_SIZE);
+    }
 
-        while ($currentTime < $config['endTime']) {
-            $window = $this->createWindow($currentTime, $config, $sortedResetTimes);
-            $windows->push($window);
-            $currentTime = $window['end'];
-        }
+    /**
+     * @param  Collection<int, array<string, mixed>>  $resetTimes
+     * @return LazyCollection<int, array<string, mixed>>
+     */
+    protected function generateAggregationWindows(Area $area, Collection $resetTimes, ?Carbon $recalculateFrom): LazyCollection
+    {
+        $windowConfig = $this->getWindowConfiguration($area);
+        $sortedResetTimes = $resetTimes->sortBy('at');
 
-        return $windows;
+        return LazyCollection::make(function () use ($windowConfig, $sortedResetTimes, $recalculateFrom) {
+            $currentTime = $windowConfig['startTime'];
+
+            while ($currentTime < $windowConfig['endTime']) {
+                $window = $this->createWindow($currentTime, $windowConfig, $sortedResetTimes);
+                $currentTime = $window['end'];
+
+                if (! $window['start']->isPast()) {
+                    continue;
+                }
+
+                if ($recalculateFrom && $window['start']->lessThan($recalculateFrom)) {
+                    continue;
+                }
+
+                yield $window;
+            }
+        });
     }
 
     /**
@@ -268,46 +265,12 @@ class AreaAggregationService
     }
 
     /**
-     * Filter out windows that are in the future.
-     *
-     * @param  Collection<int, array<string, mixed>>  $aggregationWindows
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function filterFutureWindows(Collection $aggregationWindows): Collection
-    {
-        return $aggregationWindows->filter(function (array $window) {
-            return $window['start']->isPast();
-        });
-    }
-
-    /**
-     * Filter out windows that are already aggregated.
-     *
-     * @param  Collection<int, array<string, mixed>>  $aggregationWindows
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function filterAlreadyAggregatedWindows(Area $area, Collection $aggregationWindows): Collection
-    {
-        $secondLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(1)->first();
-
-        if (! $secondLastAggregatedCount) {
-            return $aggregationWindows;
-        }
-
-        return $aggregationWindows->filter(function (array $window) use ($secondLastAggregatedCount) {
-            return $window['start']->greaterThanOrEqualTo($secondLastAggregatedCount->period_start);
-        });
-    }
-
-    /**
      * Calculate and store aggregated counts for all windows.
      *
-     * @param  Collection<int, array<string, mixed>>  $aggregationWindows
+     * @param  iterable<int, array<string, mixed>>  $aggregationWindows
      */
-    protected function calculateAggregatedCountsForWindows(Area $area, Collection $aggregationWindows, string $areaConfigChecksum): void
+    protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount): int
     {
-        $lastCount = $this->getInitialCountForAggregation($area);
-
         foreach ($aggregationWindows as $window) {
             $lastCount = $this->areaService->calculateAndStoreAggregatedCount(
                 $area,
@@ -317,16 +280,24 @@ class AreaAggregationService
                 $areaConfigChecksum
             );
         }
+
+        return $lastCount;
     }
 
     /**
-     * Get the initial count value for aggregation calculations.
+     * @return array{recalculate_from: Carbon|null, initial_count: int}
      */
-    protected function getInitialCountForAggregation(Area $area): int
+    protected function getAggregationCheckpoint(Area $area): array
     {
-        $thirdLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(2)->first();
+        $latestCounts = $area->aggregatedCounts()
+            ->latest('period_end')
+            ->limit(3)
+            ->get(['id', 'area_id', 'period_start', 'period_end', 'count']);
 
-        return $thirdLastAggregatedCount ? $thirdLastAggregatedCount->count : 0;
+        return [
+            'recalculate_from' => $latestCounts->get(1)?->period_start,
+            'initial_count' => $latestCounts->has(2) ? $latestCounts->get(2)->count : 0,
+        ];
     }
 
     /**
