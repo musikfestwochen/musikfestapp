@@ -1,7 +1,10 @@
 <?php
 
 use App\Jobs\AggregateAreaCounts;
+use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\IntervalCount;
+use App\Services\Peoplecount\AreaAggregationService;
+use App\Services\Peoplecount\AreaService;
 use Illuminate\Support\Carbon;
 
 dataset('granularities', [
@@ -436,6 +439,49 @@ describe('multiple sensors', function () {
     })->with('granularities');
 });
 
+describe('incremental aggregation', function () {
+    it('does not recalculate already aggregated windows when no new data arrived', function () {
+        $setup = setupAggregationScenario([
+            'event_start' => Carbon::parse('2025-08-02 10:00:00')->utc(),
+            'event_end' => Carbon::parse('2025-08-02 11:00:00')->utc(),
+            'granularity_minutes' => 10,
+            'now' => Carbon::parse('2025-08-02 10:35:00'),
+            'sensors' => [['direction_flipped' => false]],
+            'interval_counts' => [
+                ['sensor' => 0, 'ts_from' => '2025-08-02 10:00:00', 'ts_to' => '2025-08-02 10:05:00', 'count_in' => 3, 'count_out' => 1],
+                ['sensor' => 0, 'ts_from' => '2025-08-02 10:10:00', 'ts_to' => '2025-08-02 10:15:00', 'count_in' => 2, 'count_out' => 0],
+            ],
+        ]);
+
+        $service = new class(resolve(AreaService::class)) extends AreaAggregationService
+        {
+            /** @var list<list<string>> */
+            public array $windowStartsByRun = [];
+
+            /**
+             * @param  iterable<int, array<string, mixed>>  $aggregationWindows
+             */
+            protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount, ?Carbon $runWatermark = null): int
+            {
+                $windows = collect($aggregationWindows)->values();
+
+                $this->windowStartsByRun[] = $windows
+                    ->map(fn (array $window): string => $window['start']->format('H:i'))
+                    ->all();
+
+                return parent::calculateAggregatedCountsForWindows($area, $windows, $areaConfigChecksum, $lastCount, $runWatermark);
+            }
+        };
+
+        $service->updateAggregatedCounts($setup['area']);
+        $service->windowStartsByRun = [];
+
+        $service->updateAggregatedCounts($setup['area']);
+
+        expect($service->windowStartsByRun)->toBe([['10:30']]);
+    });
+});
+
 describe('late-arriving data', function () {
     it('recalculates affected windows when data arrives late', function () {
         $setup = setupAggregationScenario([
@@ -488,6 +534,62 @@ describe('late-arriving data', function () {
         expect($area->data_watermark)->not->toBeNull();
     });
 
+    it('does not advance watermark past interval counts received while aggregation is running', function () {
+        $setup = setupAggregationScenario([
+            'event_start' => Carbon::parse('2025-08-02 10:00:00')->utc(),
+            'event_end' => Carbon::parse('2025-08-02 10:40:00')->utc(),
+            'granularity_minutes' => 10,
+            'now' => Carbon::parse('2025-08-02 10:35:00'),
+            'sensors' => [['direction_flipped' => false]],
+            'interval_counts' => [
+                ['sensor' => 0, 'ts_from' => '2025-08-02 10:00:00', 'ts_to' => '2025-08-02 10:05:00', 'count_in' => 3, 'count_out' => 1],
+            ],
+        ]);
+
+        $service = new class(resolve(AreaService::class), $setup) extends AreaAggregationService
+        {
+            private bool $inserted = false;
+
+            /**
+             * @param  iterable<int, array<string, mixed>>  $aggregationWindows
+             */
+            protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount, ?Carbon $runWatermark = null): int
+            {
+                $result = parent::calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum, $lastCount, $runWatermark);
+
+                if (! $this->inserted) {
+                    IntervalCount::query()->upsert([[
+                        'sensor_id' => $this->setup['sensors'][0]->id,
+                        'ts_from' => Carbon::parse('2025-08-02 10:00:00')->utc(),
+                        'ts_to' => Carbon::parse('2025-08-02 10:05:00')->utc(),
+                        'count_in' => 10,
+                        'count_out' => 1,
+                        'received_at' => Carbon::parse('2025-08-02 10:25:00')->utc(),
+                    ]], ['sensor_id', 'ts_from', 'ts_to'], ['count_in', 'count_out', 'received_at']);
+
+                    $this->inserted = true;
+                }
+
+                return $result;
+            }
+
+            public function __construct(AreaService $areaService, private array $setup)
+            {
+                parent::__construct($areaService);
+            }
+        };
+
+        $service->updateAggregatedCounts($setup['area']);
+
+        expect($setup['area']->refresh()->data_watermark->eq(Carbon::parse('2025-08-02 10:05:00')->utc()))->toBeTrue();
+        assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 2);
+
+        AggregateAreaCounts::dispatch();
+
+        assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 9);
+        expect($setup['area']->refresh()->data_watermark->eq(Carbon::parse('2025-08-02 10:25:00')->utc()))->toBeTrue();
+    });
+
     it('extends recalculation range to earliest affected window', function () {
         $setup = setupAggregationScenario([
             'event_start' => Carbon::parse('2025-08-02 10:00:00')->utc(),
@@ -520,5 +622,43 @@ describe('late-arriving data', function () {
 
         assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 9);
         assertWindowCount($setup['area'], '2025-08-02 10:10:00', '2025-08-02 10:20:00', 11);
+    });
+
+    it('recalculates very late arrivals across window chunks', function () {
+        $eventStart = Carbon::parse('2025-08-02 00:00:00')->utc();
+        $chunkBoundary = $eventStart->copy()->addMinutes(1440);
+        $eventEnd = $eventStart->copy()->addMinutes(1502);
+
+        $setup = setupAggregationScenario([
+            'event_start' => $eventStart,
+            'event_end' => $eventEnd,
+            'granularity_minutes' => 1,
+            'now' => $eventEnd->copy()->addMinute(),
+            'sensors' => [['direction_flipped' => false]],
+            'interval_counts' => [
+                ['sensor' => 0, 'ts_from' => $eventStart, 'ts_to' => $eventStart->copy()->addMinute(), 'count_in' => 2, 'count_out' => 1],
+                ['sensor' => 0, 'ts_from' => $chunkBoundary, 'ts_to' => $chunkBoundary->copy()->addMinute(), 'count_in' => 3, 'count_out' => 1],
+            ],
+        ]);
+
+        AggregateAreaCounts::dispatch();
+
+        assertWindowCount($setup['area'], '2025-08-02 00:00:00', '2025-08-02 00:01:00', 1);
+        assertWindowCount($setup['area'], '2025-08-03 00:00:00', '2025-08-03 00:01:00', 3);
+
+        IntervalCount::query()->upsert([[
+            'sensor_id' => $setup['sensors'][0]->id,
+            'ts_from' => $eventStart,
+            'ts_to' => $eventStart->copy()->addMinute(),
+            'count_in' => 6,
+            'count_out' => 1,
+            'received_at' => $eventEnd->copy()->addMinutes(10),
+        ]], ['sensor_id', 'ts_from', 'ts_to'], ['count_in', 'count_out', 'received_at']);
+
+        Carbon::setTestNow($eventEnd->copy()->addMinutes(11));
+        AggregateAreaCounts::dispatch();
+
+        assertWindowCount($setup['area'], '2025-08-02 00:00:00', '2025-08-02 00:01:00', 5);
+        assertWindowCount($setup['area'], '2025-08-03 00:00:00', '2025-08-03 00:01:00', 7);
     });
 });

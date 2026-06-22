@@ -54,7 +54,7 @@ Processing shape is:
 6. run one grouped net query for the chunk
 7. apply cumulative state in PHP
 8. bulk upsert aggregate rows
-9. update area `data_watermark` after successful aggregation
+9. update area `data_watermark` to the pre-run snapshot watermark after successful aggregation
 
 This keeps memory controlled by chunk size. Interval rows are not loaded as models. The largest in-memory structures are planned windows, assignment/reset metadata, grouped net deltas, and one write batch.
 
@@ -86,9 +86,13 @@ Intent: keep stateful logic in PHP because reset priority and cumulative counts 
 
 Intent: replace per-window `updateOrCreate()` with batched writes keyed by `(area_id, period_start, period_end)`. Delete affected rows first when window boundaries can change, then upsert calculated rows.
 
-## Watermark: late-arrival support only, no dirty ranges. Done.
+## Watermark: late-arrival support only, no dirty ranges. Done; snapshot hardening added.
 
 Intent: store latest incorporated `received_at` per area and extend recalculation start when late interval data affects already-aggregated history. Config changes still use full checksum invalidation.
+
+Checkpoint behavior uses latest-two aggregate rows: the latest row is recalculated as the live tail, and the previous row provides the initial cumulative count. Late arrivals detected by `received_at > data_watermark` extend recalculation further back when needed.
+
+Watermark updates use a pre-run max `received_at` snapshot. Interval counts received while aggregation is running are excluded from the current pass and remain above the stored watermark so the next pass catches them.
 
 ## Benchmark: prove query count no longer scales with interval rows.
 

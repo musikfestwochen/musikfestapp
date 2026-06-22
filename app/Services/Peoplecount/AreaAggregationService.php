@@ -44,15 +44,16 @@ class AreaAggregationService
             return;
         }
 
+        $runWatermark = $this->getCurrentDataWatermark($area);
         $resetTimes = $this->getPastResetTimes($area);
-        $checkpoint = $this->getAggregationCheckpoint($area);
+        $checkpoint = $this->getAggregationCheckpoint($area, $runWatermark);
         $lastCount = $checkpoint['initial_count'];
 
         foreach ($this->getAggregationWindowChunks($area, $resetTimes, $checkpoint['recalculate_from']) as $aggregationWindows) {
-            $lastCount = $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum, $lastCount);
+            $lastCount = $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum, $lastCount, $runWatermark);
         }
 
-        $this->updateDataWatermark($area);
+        $this->updateDataWatermark($area, $runWatermark);
     }
 
     /**
@@ -285,10 +286,10 @@ class AreaAggregationService
      *
      * @param  iterable<int, array<string, mixed>>  $aggregationWindows
      */
-    protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount): int
+    protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount, ?Carbon $runWatermark = null): int
     {
         $windows = collect($aggregationWindows)->values();
-        $netCounts = $this->calculateNetCountsForWindows($area, $windows);
+        $netCounts = $this->calculateNetCountsForWindows($area, $windows, $runWatermark);
         $aggregatedRows = collect();
         $binaryChecksum = hex2bin($areaConfigChecksum);
 
@@ -315,7 +316,7 @@ class AreaAggregationService
      * @param  Collection<int, array<string, mixed>>  $windows
      * @return Collection<int, int>
      */
-    protected function calculateNetCountsForWindows(Area $area, Collection $windows): Collection
+    protected function calculateNetCountsForWindows(Area $area, Collection $windows, ?Carbon $runWatermark = null): Collection
     {
         if ($windows->isEmpty()) {
             return collect();
@@ -330,12 +331,16 @@ class AreaAggregationService
                     ->whereColumn('assignments.active_from', '<=', 'windows.period_end')
                     ->whereColumn('assignments.active_to', '>=', 'windows.period_start');
             })
-            ->leftJoin('peoplecount_interval_counts as interval_counts', function (JoinClause $join): void {
+            ->leftJoin('peoplecount_interval_counts as interval_counts', function (JoinClause $join) use ($runWatermark): void {
                 $join->on('interval_counts.sensor_id', '=', 'assignments.sensor_id')
                     ->whereColumn('interval_counts.ts_from', '>=', 'windows.period_start')
                     ->whereColumn('interval_counts.ts_from', '<', 'windows.period_end')
                     ->whereColumn('interval_counts.ts_from', '>=', 'assignments.active_from')
                     ->whereColumn('interval_counts.ts_from', '<', 'assignments.active_to');
+
+                if ($runWatermark instanceof Carbon) {
+                    $join->where('interval_counts.received_at', '<=', $runWatermark);
+                }
             })
             ->select('windows.window_index')
             ->selectRaw('COALESCE(SUM(CASE WHEN assignments.direction_flipped = 1 THEN CAST(interval_counts.count_out AS SIGNED) - CAST(interval_counts.count_in AS SIGNED) ELSE CAST(interval_counts.count_in AS SIGNED) - CAST(interval_counts.count_out AS SIGNED) END), 0) as net_count')
@@ -379,41 +384,38 @@ class AreaAggregationService
     /**
      * @return array{recalculate_from: Carbon|null, initial_count: int}
      */
-    protected function getAggregationCheckpoint(Area $area): array
+    protected function getAggregationCheckpoint(Area $area, ?Carbon $runWatermark = null): array
     {
         $latestCounts = $area->aggregatedCounts()
             ->latest('period_end')
-            ->limit(3)
+            ->limit(2)
             ->get(['id', 'area_id', 'period_start', 'period_end', 'count']);
 
-        if (! $area->exists) {
-            return [
-                'recalculate_from' => $latestCounts->get(1)?->period_start,
-                'initial_count' => $latestCounts->has(2) ? $latestCounts->get(2)->count : 0,
-            ];
-        }
-
-        $recalculateFrom = $latestCounts->get(1)?->period_start;
-        $lateRecalculateFrom = $this->getLateArrivalRecalculateFrom($area);
+        $previousCount = $latestCounts->get(1);
+        $recalculateFrom = $latestCounts->get(0)?->period_start;
+        $initialCount = $previousCount ? $previousCount->count : 0;
+        $lateRecalculateFrom = $area->exists ? $this->getLateArrivalRecalculateFrom($area, $runWatermark) : null;
 
         if ($lateRecalculateFrom && (! $recalculateFrom || $lateRecalculateFrom->lessThan($recalculateFrom))) {
             $recalculateFrom = $lateRecalculateFrom;
+            $initialCount = $this->getInitialCountBefore($area, $recalculateFrom);
         }
 
         return [
             'recalculate_from' => $recalculateFrom,
-            'initial_count' => $recalculateFrom ? $this->getInitialCountBefore($area, $recalculateFrom) : 0,
+            'initial_count' => $initialCount,
         ];
     }
 
-    protected function getLateArrivalRecalculateFrom(Area $area): ?Carbon
+    protected function getLateArrivalRecalculateFrom(Area $area, ?Carbon $runWatermark): ?Carbon
     {
-        if (! $area->data_watermark) {
+        if (! $area->data_watermark || ! $runWatermark) {
             return null;
         }
 
         $lateTsFrom = $this->areaIntervalCountsQuery($area)
             ->where('interval_counts.received_at', '>', $area->data_watermark)
+            ->where('interval_counts.received_at', '<=', $runWatermark)
             ->min('interval_counts.ts_from');
 
         if (! $lateTsFrom) {
@@ -435,11 +437,18 @@ class AreaAggregationService
             ->value('count') ?? 0);
     }
 
-    protected function updateDataWatermark(Area $area): void
+    protected function getCurrentDataWatermark(Area $area): ?Carbon
     {
         $watermark = $this->areaIntervalCountsQuery($area)->max('interval_counts.received_at');
 
-        if (! $watermark) {
+        return $watermark ? Date::parse($watermark) : null;
+    }
+
+    protected function updateDataWatermark(Area $area, ?Carbon $runWatermark): void
+    {
+        $watermark = $runWatermark;
+
+        if (! $watermark instanceof Carbon) {
             return;
         }
 

@@ -93,7 +93,7 @@ describe('updateAggregatedCounts method', function () {
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -133,7 +133,7 @@ describe('updateAggregatedCounts method', function () {
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
 
         // Mock for deleteRowsWithInvalidChecksum - this verifies deleteInvalidAggregationRows is called
@@ -176,7 +176,7 @@ describe('updateAggregatedCounts method', function () {
         // Mock aggregatedCounts relationship for filtering and calculations
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
@@ -799,7 +799,7 @@ describe('getAggregationCheckpoint method', function () {
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection);
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
@@ -814,27 +814,26 @@ describe('getAggregationCheckpoint method', function () {
 
     it('returns recalculation start and initial count from existing counts', function () {
         $area = Mockery::mock(Area::class);
-        $secondLastCount = Mockery::mock(AreaAggregatedCount::class);
-        $secondLastCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $latestCount = Mockery::mock(AreaAggregatedCount::class);
+        $latestCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
 
-        $thirdLastCount = Mockery::mock(AreaAggregatedCount::class);
-        $thirdLastCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
+        $previousCount = Mockery::mock(AreaAggregatedCount::class);
+        $previousCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock->shouldReceive('latest')->with('period_end')->andReturn($relationshipMock);
-        $relationshipMock->shouldReceive('limit')->with(3)->andReturn($relationshipMock);
+        $relationshipMock->shouldReceive('limit')->with(2)->andReturn($relationshipMock);
         $relationshipMock->shouldReceive('get')->with(['id', 'area_id', 'period_start', 'period_end', 'count'])->andReturn(new EloquentCollection([
-            Mockery::mock(AreaAggregatedCount::class),
-            $secondLastCount,
-            $thirdLastCount,
+            $latestCount,
+            $previousCount,
         ]));
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $result = ($this->callProtectedMethod)('getAggregationCheckpoint', $area);
 
-        expect($result['recalculate_from']->format('H:i'))->toBe('10:00');
+        expect($result['recalculate_from']->format('H:i'))->toBe('10:10');
         expect($result['initial_count'])->toBe(25);
     });
 });
