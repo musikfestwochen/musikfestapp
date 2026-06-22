@@ -6,6 +6,7 @@ use App\Models\Peoplecount\IntervalCount;
 use App\Services\Peoplecount\AreaAggregationService;
 use App\Services\Peoplecount\AreaService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 dataset('granularities', [
     '5min' => 5,
@@ -479,6 +480,49 @@ describe('incremental aggregation', function () {
         $service->updateAggregatedCounts($setup['area']);
 
         expect($service->windowStartsByRun)->toBe([['10:30']]);
+    });
+
+    it('aggregates an interval volume exceeding the streamed page boundary without corruption', function () {
+        // INTERVAL_ROW_PAGE_SIZE is 10000; seed just over one page to prove
+        // lazyById paging and per-window accumulation stay correct across pages.
+        $start = Carbon::parse('2025-08-02 00:00:00')->utc();
+        $intervalCount = 10_050;
+        $eventEnd = $start->copy()->addMinutes($intervalCount);
+
+        $setup = setupAggregationScenario([
+            'event_start' => $start,
+            'event_end' => $eventEnd,
+            'granularity_minutes' => 1,
+            'now' => $eventEnd->copy()->addMinute(),
+            'sensors' => [['direction_flipped' => false]],
+            'interval_counts' => [],
+        ]);
+
+        $sensorId = $setup['sensors'][0]->id;
+        $rows = [];
+        for ($i = 0; $i < $intervalCount; $i++) {
+            $tsFrom = $start->copy()->addMinutes($i);
+            $rows[] = [
+                'sensor_id' => $sensorId,
+                'ts_from' => $tsFrom->toDateTimeString(),
+                'ts_to' => $tsFrom->copy()->addMinute()->toDateTimeString(),
+                'count_in' => 1,
+                'count_out' => 0,
+                'received_at' => $tsFrom->toDateTimeString(),
+            ];
+        }
+
+        foreach (array_chunk($rows, 500) as $batch) {
+            DB::table((new IntervalCount)->getTable())->insert($batch);
+        }
+
+        AggregateAreaCounts::dispatch();
+
+        $counts = $setup['area']->refresh()->aggregatedCounts()->orderBy('period_start')->get();
+
+        expect($counts->count())->toBe($intervalCount);
+        expect($counts->first()->count)->toBe(1);
+        expect($counts->last()->count)->toBe($intervalCount);
     });
 });
 

@@ -5,6 +5,8 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
+use App\Models\Peoplecount\IntervalCount;
+use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\AreaAggregationService;
 use App\Services\Peoplecount\AreaService;
 use Illuminate\Database\Eloquent\Builder;
@@ -72,6 +74,7 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock assignments collection with data
         $assignment = Mockery::mock(Assignment::class);
+        $assignment->shouldReceive('getAttribute')->with('sensor_id')->andReturn(999_999);
         $assignments = new EloquentCollection([$assignment]);
         $area->shouldReceive('getAttribute')->with('assignments')->andReturn($assignments);
 
@@ -109,6 +112,7 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock assignments collection with data
         $assignment = Mockery::mock(Assignment::class);
+        $assignment->shouldReceive('getAttribute')->with('sensor_id')->andReturn(999_999);
         $assignments = new EloquentCollection([$assignment]);
         $area->shouldReceive('getAttribute')->with('assignments')->andReturn($assignments);
 
@@ -156,6 +160,7 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock assignments collection with data
         $assignment = Mockery::mock(Assignment::class);
+        $assignment->shouldReceive('getAttribute')->with('sensor_id')->andReturn(999_999);
         $assignments = new EloquentCollection([$assignment]);
         $area->shouldReceive('getAttribute')->with('assignments')->andReturn($assignments);
 
@@ -666,6 +671,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
     it('calculates and stores aggregated counts for windows', function () {
         $area = Mockery::mock(Area::class);
         $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
+        $area->shouldReceive('getAttribute')->with('assignments')->andReturn(new EloquentCollection);
         $windows = collect([
             [
                 'start' => Carbon::parse('2024-08-15 10:00:00'),
@@ -683,6 +689,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
     it('uses reset_value when provided instead of lastCount', function () {
         $area = Mockery::mock(Area::class);
         $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
+        $area->shouldReceive('getAttribute')->with('assignments')->andReturn(new EloquentCollection);
         $windows = collect([
             [
                 'start' => Carbon::parse('2024-08-15 10:00:00'),
@@ -700,6 +707,7 @@ describe('calculateAggregatedCountsForWindows method', function () {
     it('uses lastCount when reset_value is null', function () {
         $area = Mockery::mock(Area::class);
         $area->shouldReceive('getAttribute')->with('id')->andReturn(Area::factory()->create()->id);
+        $area->shouldReceive('getAttribute')->with('assignments')->andReturn(new EloquentCollection);
         $windows = collect([
             [
                 'start' => Carbon::parse('2024-08-15 10:00:00'),
@@ -749,6 +757,63 @@ describe('calculateNetCountsForWindows method', function () {
 
         expect($result)->toBeInstanceOf(Collection::class);
         expect($result)->toBeEmpty();
+    });
+
+    it('ignores interval rows that do not fall into a planned window', function () {
+        $event = Event::factory()->create([
+            'starts_at' => Carbon::parse('2024-08-15 10:00:00')->utc(),
+            'ends_at' => Carbon::parse('2024-08-15 10:30:00')->utc(),
+        ]);
+        $area = Area::factory()->create(['event_id' => $event->id]);
+        $sensor = Sensor::factory()->create(['organization_id' => $event->organization_id]);
+
+        Assignment::factory()->create([
+            'event_id' => $event->id,
+            'area_id' => $area->id,
+            'sensor_id' => $sensor->id,
+            'active_from' => Carbon::parse('2024-08-15 10:00:00')->utc(),
+            'active_to' => Carbon::parse('2024-08-15 10:30:00')->utc(),
+            'direction_flipped' => false,
+        ]);
+
+        IntervalCount::factory()->create([
+            'sensor_id' => $sensor->id,
+            'ts_from' => Carbon::parse('2024-08-15 10:15:00')->utc(),
+            'ts_to' => Carbon::parse('2024-08-15 10:20:00')->utc(),
+            'count_in' => 10,
+            'count_out' => 2,
+            'received_at' => Carbon::parse('2024-08-15 10:20:00')->utc(),
+        ]);
+
+        $area->load('assignments');
+
+        $result = ($this->callProtectedMethod)('calculateNetCountsForWindows', $area, collect([
+            [
+                'start' => Carbon::parse('2024-08-15 10:00:00')->utc(),
+                'end' => Carbon::parse('2024-08-15 10:10:00')->utc(),
+                'reset_value' => null,
+            ],
+            [
+                'start' => Carbon::parse('2024-08-15 10:20:00')->utc(),
+                'end' => Carbon::parse('2024-08-15 10:30:00')->utc(),
+                'reset_value' => null,
+            ],
+        ]), Carbon::parse('2024-08-15 10:30:00')->utc());
+
+        expect($result->all())->toBe([0, 0]);
+    });
+});
+
+describe('findWindowIndexForInterval method', function () {
+    it('returns null when the interval starts before the first planned window', function () {
+        $lookup = [
+            'starts' => [Carbon::parse('2024-08-15 10:00:00')->utc()],
+            'ends' => [Carbon::parse('2024-08-15 10:10:00')->utc()],
+        ];
+
+        $result = ($this->callProtectedMethod)('findWindowIndexForInterval', Carbon::parse('2024-08-15 09:59:00')->utc(), $lookup);
+
+        expect($result)->toBeNull();
     });
 });
 

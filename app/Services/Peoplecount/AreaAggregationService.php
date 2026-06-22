@@ -7,6 +7,7 @@ namespace App\Services\Peoplecount;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
+use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\IntervalCount;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,7 +28,7 @@ class AreaAggregationService
 {
     private const int WINDOW_CHUNK_SIZE = 1440;
 
-    private const string TEMP_WINDOW_TABLE = 'temp_peoplecount_aggregation_windows';
+    private const int INTERVAL_ROW_PAGE_SIZE = 10_000;
 
     public function __construct(
         protected AreaService $areaService
@@ -313,6 +314,15 @@ class AreaAggregationService
     }
 
     /**
+     * Compute per-window net deltas for one chunk of planned windows.
+     *
+     * Replaces the previous temp-window-table grouped SQL join with a streamed
+     * scan over interval_counts for the chunk range. The database does one
+     * indexed range scan per chunk; PHP matches each row to its containing
+     * window (binary search over sorted windows) and its active assignments
+     * already loaded on the area. Memory stays bounded by the page size and
+     * the planned window count, never by the total interval row count.
+     *
      * @param  Collection<int, array<string, mixed>>  $windows
      * @return Collection<int, int>
      */
@@ -322,47 +332,154 @@ class AreaAggregationService
             return collect();
         }
 
-        $this->replaceTemporaryWindows($windows);
+        $windowLookup = $this->buildWindowLookup($windows);
+        $assignmentsBySensor = $this->buildAssignmentsBySensor($area);
 
-        return DB::table(self::TEMP_WINDOW_TABLE.' as windows')
-            ->leftJoin('peoplecount_assignments as assignments', function (JoinClause $join) use ($area): void {
-                $join->where('assignments.area_id', $area->id)
-                    ->whereNull('assignments.deleted_at')
-                    ->whereColumn('assignments.active_from', '<=', 'windows.period_end')
-                    ->whereColumn('assignments.active_to', '>=', 'windows.period_start');
-            })
-            ->leftJoin('peoplecount_interval_counts as interval_counts', function (JoinClause $join) use ($runWatermark): void {
-                $join->on('interval_counts.sensor_id', '=', 'assignments.sensor_id')
-                    ->whereColumn('interval_counts.ts_from', '>=', 'windows.period_start')
-                    ->whereColumn('interval_counts.ts_from', '<', 'windows.period_end')
-                    ->whereColumn('interval_counts.ts_from', '>=', 'assignments.active_from')
-                    ->whereColumn('interval_counts.ts_from', '<', 'assignments.active_to');
+        /** @var array<int, int> $netCounts */
+        $netCounts = array_fill(0, $windows->count(), 0);
 
-                if ($runWatermark instanceof Carbon) {
-                    $join->where('interval_counts.received_at', '<=', $runWatermark);
+        if ($assignmentsBySensor->isEmpty()) {
+            return collect($netCounts);
+        }
+
+        $chunkBounds = $this->getChunkBounds($windows);
+
+        foreach ($this->intervalCountsForChunkQuery($chunkBounds, $assignmentsBySensor->keys(), $runWatermark)->lazyById(self::INTERVAL_ROW_PAGE_SIZE, 'id') as $row) {
+            $tsFrom = Date::parse($row->ts_from);
+            $windowIndex = $this->findWindowIndexForInterval($tsFrom, $windowLookup);
+
+            if ($windowIndex === null) {
+                continue;
+            }
+
+            /** @var Collection<int, Assignment> $assignments */
+            $assignments = $assignmentsBySensor->get($row->sensor_id, collect());
+
+            foreach ($assignments as $assignment) {
+                if (! $this->intervalWithinAssignment($tsFrom, $assignment)) {
+                    continue;
                 }
-            })
-            ->select('windows.window_index')
-            ->selectRaw('COALESCE(SUM(CASE WHEN assignments.direction_flipped = 1 THEN CAST(interval_counts.count_out AS SIGNED) - CAST(interval_counts.count_in AS SIGNED) ELSE CAST(interval_counts.count_in AS SIGNED) - CAST(interval_counts.count_out AS SIGNED) END), 0) as net_count')
-            ->groupBy('windows.window_index')
-            ->orderBy('windows.window_index')
-            ->get()
-            ->mapWithKeys(fn (object $row): array => [(int) $row->window_index => (int) $row->net_count]);
+
+                $netCounts[$windowIndex] += $assignment->direction_flipped
+                    ? (int) $row->count_out - (int) $row->count_in
+                    : (int) $row->count_in - (int) $row->count_out;
+            }
+        }
+
+        return collect($netCounts);
+    }
+
+    /**
+     * Build an ordered window lookup for binary search by interval start time.
+     *
+     * @param  Collection<int, array<string, mixed>>  $windows
+     * @return array{starts: array<int, Carbon>, ends: array<int, Carbon>}
+     */
+    protected function buildWindowLookup(Collection $windows): array
+    {
+        return [
+            'starts' => $windows->map(fn (array $window): Carbon => $window['start'])->values()->all(),
+            'ends' => $windows->map(fn (array $window): Carbon => $window['end'])->values()->all(),
+        ];
+    }
+
+    /**
+     * Group assignments by sensor_id so each interval row can find its
+     * potentially active assignments with one collection lookup.
+     *
+     * @return Collection<int, Collection<int, Assignment>>
+     */
+    protected function buildAssignmentsBySensor(Area $area): Collection
+    {
+        /** @var Collection<int, Collection<int, Assignment>> $bySensor */
+        $bySensor = collect();
+
+        foreach ($area->assignments as $assignment) {
+            $sensorId = $assignment->sensor_id;
+            $group = $bySensor->get($sensorId, collect());
+            $group->push($assignment);
+            $bySensor->put($sensorId, $group);
+        }
+
+        return $bySensor;
+    }
+
+    /**
+     * Find the index of the window containing an interval's ts_from.
+     *
+     * Windows are sorted by start time and contiguous, so binary search for
+     * the rightmost window whose start <= ts_from, then verify ts_from < end.
+     *
+     * @param  array{starts: array<int, Carbon>, ends: array<int, Carbon>}  $lookup
+     */
+    protected function findWindowIndexForInterval(Carbon $tsFrom, array $lookup): ?int
+    {
+        $starts = $lookup['starts'];
+        $ends = $lookup['ends'];
+
+        $lo = 0;
+        $hi = count($starts) - 1;
+        $candidate = null;
+
+        while ($lo <= $hi) {
+            $mid = (int) floor(($lo + $hi) / 2);
+
+            if ($starts[$mid]->lessThanOrEqualTo($tsFrom)) {
+                $candidate = $mid;
+                $lo = $mid + 1;
+            } else {
+                $hi = $mid - 1;
+            }
+        }
+
+        if ($candidate === null) {
+            return null;
+        }
+
+        return $tsFrom->lessThan($ends[$candidate]) ? $candidate : null;
+    }
+
+    /**
+     * Determine whether an interval's ts_from falls within an assignment's
+     * active range. Bound semantics match the previous SQL join exactly:
+     * active_from <= ts_from < active_to.
+     */
+    protected function intervalWithinAssignment(Carbon $tsFrom, Assignment $assignment): bool
+    {
+        return $tsFrom->greaterThanOrEqualTo($assignment->active_from)
+            && $tsFrom->lessThan($assignment->active_to);
     }
 
     /**
      * @param  Collection<int, array<string, mixed>>  $windows
+     * @return array{start: Carbon, end: Carbon}
      */
-    protected function replaceTemporaryWindows(Collection $windows): void
+    protected function getChunkBounds(Collection $windows): array
     {
-        DB::statement('CREATE TEMPORARY TABLE IF NOT EXISTS '.self::TEMP_WINDOW_TABLE.' (window_index INTEGER PRIMARY KEY, period_start DATETIME NOT NULL, period_end DATETIME NOT NULL)');
-        DB::table(self::TEMP_WINDOW_TABLE)->delete();
+        return [
+            'start' => $windows->first()['start'],
+            'end' => $windows->last()['end'],
+        ];
+    }
 
-        DB::table(self::TEMP_WINDOW_TABLE)->insert($windows->map(fn (array $window, int $index): array => [
-            'window_index' => $index,
-            'period_start' => $window['start']->toDateTimeString(),
-            'period_end' => $window['end']->toDateTimeString(),
-        ])->all());
+    /**
+     * Build the streamed interval_counts query for one chunk.
+     *
+     * Selects only the columns needed for per-window net computation. Orders
+     * by id so lazyById can page safely without offset drift.
+     *
+     * @param  array{start: Carbon, end: Carbon}  $chunkBounds
+     * @param  Collection<int, int>  $sensorIds
+     */
+    protected function intervalCountsForChunkQuery(array $chunkBounds, Collection $sensorIds, ?Carbon $runWatermark): QueryBuilder
+    {
+        return DB::table((new IntervalCount)->getTable())
+            ->select(['id', 'sensor_id', 'ts_from', 'count_in', 'count_out', 'received_at'])
+            ->whereIn('sensor_id', $sensorIds->all())
+            ->where('ts_from', '>=', $chunkBounds['start'])
+            ->where('ts_from', '<', $chunkBounds['end'])
+            ->when($runWatermark instanceof Carbon, fn (QueryBuilder $query): QueryBuilder => $query->where('received_at', '<=', $runWatermark))
+            ->orderBy('id');
     }
 
     /**
