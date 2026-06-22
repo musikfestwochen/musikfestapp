@@ -43,7 +43,8 @@
             "algo",
             "tty",
             "pcntl",
-            "stdout"
+            "stdout",
+            "xdebug"
         ],
         "paths": []
     }

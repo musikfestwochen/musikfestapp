@@ -54,6 +54,7 @@ use function Laravel\Prompts\warning;
         {--db=sqlite : Database: sqlite, mariadb}
         {--mariadb=docker : MariaDB source: docker, external}
         {--output=both : Output format: json, table, both}
+        {--allow-xdebug : Allow benchmark to run while Xdebug is enabled}
     ')]
 class BenchmarkAggregationCommand extends Command
 {
@@ -128,6 +129,12 @@ class BenchmarkAggregationCommand extends Command
         $options = $this->resolveOptions($wizardMode);
 
         if (! $this->validateOptions($options['scenario'], $options['iterations'], $options['db'], $options['mariadb'], $options['output'])) {
+
+            return self::FAILURE;
+        }
+
+        if ($this->xdebugShouldBlockBenchmark() && ! (bool) $this->option('allow-xdebug')) {
+            error('Xdebug is enabled. Re-run with XDEBUG_MODE=off for consistent benchmark results, or pass --allow-xdebug when profiling intentionally.');
 
             return self::FAILURE;
         }
@@ -290,7 +297,12 @@ class BenchmarkAggregationCommand extends Command
 
     protected function hasExplicitOptions(): bool
     {
-        return $this->input->hasParameterOption(['--scenario', '--iterations', '--db', '--mariadb', '--output']);
+        return $this->input->hasParameterOption(['--scenario', '--iterations', '--db', '--mariadb', '--output', '--allow-xdebug']);
+    }
+
+    protected function xdebugShouldBlockBenchmark(): bool
+    {
+        return extension_loaded('xdebug') && strtolower((string) getenv('XDEBUG_MODE')) !== 'off';
     }
 
     protected function validateOptions(string $scenarioName, int $iterations, string $dbConnection, string $mariadbSource, string $outputFormat): bool
