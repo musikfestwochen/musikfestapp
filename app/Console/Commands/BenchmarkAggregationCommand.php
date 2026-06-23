@@ -193,7 +193,7 @@ class BenchmarkAggregationCommand extends Command
     /**
      * Run a task with spinner in TTY, plain log lines in non-interactive CI.
      *
-     * ponytail: Spinner::spin() ignores Prompt::shouldFallback() and only
+     * Note: Spinner::spin() ignores Prompt::shouldFallback() and only
      * checks pcntl_fork availability, so GH Actions (which has PCNTL) floods
      * the log with animation frames. InputInterface::isInteractive() reflects
      * the --no-interaction flag, not TTY status, so it returns true in CI
