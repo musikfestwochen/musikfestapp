@@ -39,7 +39,12 @@
             "ds",
             "datepicker",
             "stylesheets",
-            "unarchive"
+            "unarchive",
+            "algo",
+            "tty",
+            "pcntl",
+            "stdout",
+            "xdebug"
         ],
         "paths": []
     }

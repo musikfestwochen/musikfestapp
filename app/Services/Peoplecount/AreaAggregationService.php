@@ -7,18 +7,29 @@ namespace App\Services\Peoplecount;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
+use App\Models\Peoplecount\Assignment;
+use App\Models\Peoplecount\IntervalCount;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\LazyCollection;
+use RuntimeException;
 
 class AreaAggregationService
 {
+    private const int WINDOW_CHUNK_SIZE = 1440;
+
+    private const int INTERVAL_ROW_PAGE_SIZE = 10_000;
+
     public function __construct(
         protected AreaService $areaService
     ) {}
@@ -34,9 +45,16 @@ class AreaAggregationService
             return;
         }
 
+        $runWatermark = $this->getCurrentDataWatermark($area);
         $resetTimes = $this->getPastResetTimes($area);
-        $aggregationWindows = $this->getFilteredAggregationWindows($area, $resetTimes);
-        $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum);
+        $checkpoint = $this->getAggregationCheckpoint($area, $runWatermark);
+        $lastCount = $checkpoint['initial_count'];
+
+        foreach ($this->getAggregationWindowChunks($area, $resetTimes, $checkpoint['recalculate_from']) as $aggregationWindows) {
+            $lastCount = $this->calculateAggregatedCountsForWindows($area, $aggregationWindows, $areaConfigChecksum, $lastCount, $runWatermark);
+        }
+
+        $this->updateDataWatermark($area, $runWatermark);
     }
 
     /**
@@ -144,34 +162,6 @@ class AreaAggregationService
     }
 
     /**
-     * Get aggregation windows filtered by time and existing aggregations.
-     *
-     * @param  Collection<int, array<string, mixed>>  $resetTimes
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function getFilteredAggregationWindows(Area $area, Collection $resetTimes): Collection
-    {
-        $aggregationWindows = $this->splitIntoAggregationWindows($area, $resetTimes);
-        $aggregationWindows = $this->filterFutureWindows($aggregationWindows);
-
-        return $this->filterAlreadyAggregatedWindows($area, $aggregationWindows);
-    }
-
-    /**
-     * Split the reset times into aggregation windows.
-     *
-     * @param  Collection<int, array<string, mixed>>  $resetTimes
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function splitIntoAggregationWindows(Area $area, Collection $resetTimes): Collection
-    {
-        $windowConfig = $this->getWindowConfiguration($area);
-        $sortedResetTimes = $resetTimes->sortBy('at');
-
-        return $this->generateWindows($windowConfig, $sortedResetTimes);
-    }
-
-    /**
      * Get window configuration for aggregation.
      *
      * @return array<string, mixed>
@@ -179,31 +169,49 @@ class AreaAggregationService
     protected function getWindowConfiguration(Area $area): array
     {
         return [
-            'windowSize' => config('peoplecount.aggregation.granularity_minutes'),
+            'windowSize' => (int) config('peoplecount.aggregation.granularity_minutes'),
             'startTime' => $area->event->starts_at,
             'endTime' => $area->event->ends_at,
         ];
     }
 
     /**
-     * Generate aggregation windows based on configuration and reset times.
-     *
-     * @param  array<string, mixed>  $config
-     * @param  Collection<int, array<string, mixed>>  $sortedResetTimes
-     * @return Collection<int, array<string, mixed>>
+     * @param  Collection<int, array<string, mixed>>  $resetTimes
+     * @return LazyCollection<int, LazyCollection<int, array<string, mixed>>>
      */
-    protected function generateWindows(array $config, Collection $sortedResetTimes): Collection
+    protected function getAggregationWindowChunks(Area $area, Collection $resetTimes, ?Carbon $recalculateFrom): LazyCollection
     {
-        $windows = collect();
-        $currentTime = $config['startTime'];
+        return $this->generateAggregationWindows($area, $resetTimes, $recalculateFrom)
+            ->chunk(self::WINDOW_CHUNK_SIZE);
+    }
 
-        while ($currentTime < $config['endTime']) {
-            $window = $this->createWindow($currentTime, $config, $sortedResetTimes);
-            $windows->push($window);
-            $currentTime = $window['end'];
-        }
+    /**
+     * @param  Collection<int, array<string, mixed>>  $resetTimes
+     * @return LazyCollection<int, array<string, mixed>>
+     */
+    protected function generateAggregationWindows(Area $area, Collection $resetTimes, ?Carbon $recalculateFrom): LazyCollection
+    {
+        $windowConfig = $this->getWindowConfiguration($area);
+        $sortedResetTimes = $resetTimes->sortBy('at');
 
-        return $windows;
+        return LazyCollection::make(function () use ($windowConfig, $sortedResetTimes, $recalculateFrom) {
+            $currentTime = $windowConfig['startTime'];
+
+            while ($currentTime < $windowConfig['endTime']) {
+                $window = $this->createWindow($currentTime, $windowConfig, $sortedResetTimes);
+                $currentTime = $window['end'];
+
+                if (! $window['start']->isPast()) {
+                    continue;
+                }
+
+                if ($recalculateFrom && $window['start']->lessThan($recalculateFrom)) {
+                    continue;
+                }
+
+                yield $window;
+            }
+        });
     }
 
     /**
@@ -215,7 +223,7 @@ class AreaAggregationService
      */
     protected function createWindow(Carbon $startTime, array $config, Collection $resetTimes): array
     {
-        $windowEnd = $this->calculateWindowEnd($startTime, $config['endTime'], $config['windowSize'], $resetTimes);
+        $windowEnd = $this->calculateWindowEnd($startTime, $config['startTime'], $config['endTime'], $config['windowSize'], $resetTimes);
         $resetValue = $this->getResetValueAtWindowStart($startTime, $resetTimes);
 
         return [
@@ -230,9 +238,16 @@ class AreaAggregationService
      *
      * @param  Collection<int, array<string, mixed>>  $resetTimes
      */
-    protected function calculateWindowEnd(Carbon $startTime, Carbon $eventEndTime, int $windowSize, Collection $resetTimes): Carbon
+    protected function calculateWindowEnd(Carbon $startTime, Carbon $eventStartTime, Carbon $eventEndTime, int $windowSize, Collection $resetTimes): Carbon
     {
-        $naturalWindowEnd = min($startTime->copy()->addMinutes($windowSize), $eventEndTime);
+        $minutesFromEventStart = (int) $eventStartTime->diffInMinutes($startTime);
+        $nextBoundaryMinutes = $minutesFromEventStart - ($minutesFromEventStart % $windowSize) + $windowSize;
+        $naturalWindowEnd = $eventStartTime->copy()->addMinutes($nextBoundaryMinutes);
+
+        if ($naturalWindowEnd->greaterThan($eventEndTime)) {
+            $naturalWindowEnd = $eventEndTime;
+        }
+
         $resetWithinWindow = $this->findResetWithinWindow($startTime, $naturalWindowEnd, $resetTimes);
 
         return $resetWithinWindow && $resetWithinWindow['at'] > $startTime
@@ -248,8 +263,8 @@ class AreaAggregationService
      */
     protected function findResetWithinWindow(Carbon $startTime, Carbon $windowEnd, Collection $resetTimes): ?array
     {
-        return $resetTimes->first(function (array $reset) use ($startTime, $windowEnd) {
-            return $reset['at']->between($startTime, $windowEnd);
+        return $resetTimes->first(function (array $reset) use ($startTime, $windowEnd): bool {
+            return $reset['at']->greaterThan($startTime) && $reset['at']->lessThanOrEqualTo($windowEnd);
         });
     }
 
@@ -268,65 +283,307 @@ class AreaAggregationService
     }
 
     /**
-     * Filter out windows that are in the future.
-     *
-     * @param  Collection<int, array<string, mixed>>  $aggregationWindows
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function filterFutureWindows(Collection $aggregationWindows): Collection
-    {
-        return $aggregationWindows->filter(function (array $window) {
-            return $window['start']->isPast();
-        });
-    }
-
-    /**
-     * Filter out windows that are already aggregated.
-     *
-     * @param  Collection<int, array<string, mixed>>  $aggregationWindows
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function filterAlreadyAggregatedWindows(Area $area, Collection $aggregationWindows): Collection
-    {
-        $secondLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(1)->first();
-
-        if (! $secondLastAggregatedCount) {
-            return $aggregationWindows;
-        }
-
-        return $aggregationWindows->filter(function (array $window) use ($secondLastAggregatedCount) {
-            return $window['start']->greaterThanOrEqualTo($secondLastAggregatedCount->period_start);
-        });
-    }
-
-    /**
      * Calculate and store aggregated counts for all windows.
      *
-     * @param  Collection<int, array<string, mixed>>  $aggregationWindows
+     * @param  iterable<int, array<string, mixed>>  $aggregationWindows
      */
-    protected function calculateAggregatedCountsForWindows(Area $area, Collection $aggregationWindows, string $areaConfigChecksum): void
+    protected function calculateAggregatedCountsForWindows(Area $area, iterable $aggregationWindows, string $areaConfigChecksum, int $lastCount, ?Carbon $runWatermark = null): int
     {
-        $lastCount = $this->getInitialCountForAggregation($area);
+        $windows = collect($aggregationWindows)->values();
+        $netCounts = $this->calculateNetCountsForWindows($area, $windows, $runWatermark);
+        $aggregatedRows = collect();
+        $binaryChecksum = hex2bin($areaConfigChecksum);
 
-        foreach ($aggregationWindows as $window) {
-            $lastCount = $this->areaService->calculateAndStoreAggregatedCount(
-                $area,
-                $window['start'],
-                $window['end'],
-                $window['reset_value'] ?? $lastCount,
-                $areaConfigChecksum
-            );
+        throw_if($binaryChecksum === false, RuntimeException::class, 'Area config checksum must be valid hexadecimal.');
+
+        foreach ($windows as $index => $window) {
+            $lastCount = ($window['reset_value'] ?? $lastCount) + ($netCounts->get($index, 0));
+
+            $aggregatedRows->push([
+                'area_id' => $area->id,
+                'period_start' => $window['start']->toDateTimeString(),
+                'period_end' => $window['end']->toDateTimeString(),
+                'count' => $lastCount,
+                'checksum' => $binaryChecksum,
+            ]);
         }
+
+        $this->writeAggregatedCounts($aggregatedRows);
+
+        return $lastCount;
     }
 
     /**
-     * Get the initial count value for aggregation calculations.
+     * Compute per-window net deltas for one chunk of planned windows.
+     *
+     * Replaces the previous temp-window-table grouped SQL join with a streamed
+     * scan over interval_counts for the chunk range. The database does one
+     * indexed range scan per chunk; PHP matches each row to its containing
+     * window (binary search over sorted windows) and its active assignments
+     * already loaded on the area. Memory stays bounded by the page size and
+     * the planned window count, never by the total interval row count.
+     *
+     * @param  Collection<int, array<string, mixed>>  $windows
+     * @return Collection<int, int>
      */
-    protected function getInitialCountForAggregation(Area $area): int
+    protected function calculateNetCountsForWindows(Area $area, Collection $windows, ?Carbon $runWatermark = null): Collection
     {
-        $thirdLastAggregatedCount = $area->aggregatedCounts()->latest('period_end')->skip(2)->first();
+        if ($windows->isEmpty()) {
+            return collect();
+        }
 
-        return $thirdLastAggregatedCount ? $thirdLastAggregatedCount->count : 0;
+        $windowLookup = $this->buildWindowLookup($windows);
+        $assignmentsBySensor = $this->buildAssignmentsBySensor($area);
+
+        /** @var array<int, int> $netCounts */
+        $netCounts = array_fill(0, $windows->count(), 0);
+
+        if ($assignmentsBySensor->isEmpty()) {
+            return collect($netCounts);
+        }
+
+        $chunkBounds = $this->getChunkBounds($windows);
+
+        foreach ($this->intervalCountsForChunkQuery($chunkBounds, $assignmentsBySensor->keys(), $runWatermark)->lazyById(self::INTERVAL_ROW_PAGE_SIZE, 'id') as $row) {
+            $tsFrom = Date::parse($row->ts_from);
+            $windowIndex = $this->findWindowIndexForInterval($tsFrom, $windowLookup);
+
+            if ($windowIndex === null) {
+                continue;
+            }
+
+            /** @var Collection<int, Assignment> $assignments */
+            $assignments = $assignmentsBySensor->get($row->sensor_id, collect());
+
+            foreach ($assignments as $assignment) {
+                if (! $this->intervalWithinAssignment($tsFrom, $assignment)) {
+                    continue;
+                }
+
+                $netCounts[$windowIndex] += $assignment->direction_flipped
+                    ? (int) $row->count_out - (int) $row->count_in
+                    : (int) $row->count_in - (int) $row->count_out;
+            }
+        }
+
+        return collect($netCounts);
+    }
+
+    /**
+     * Build an ordered window lookup for binary search by interval start time.
+     *
+     * @param  Collection<int, array<string, mixed>>  $windows
+     * @return array{starts: array<int, Carbon>, ends: array<int, Carbon>}
+     */
+    protected function buildWindowLookup(Collection $windows): array
+    {
+        return [
+            'starts' => $windows->map(fn (array $window): Carbon => $window['start'])->values()->all(),
+            'ends' => $windows->map(fn (array $window): Carbon => $window['end'])->values()->all(),
+        ];
+    }
+
+    /**
+     * Group assignments by sensor_id so each interval row can find its
+     * potentially active assignments with one collection lookup.
+     *
+     * @return Collection<int, Collection<int, Assignment>>
+     */
+    protected function buildAssignmentsBySensor(Area $area): Collection
+    {
+        /** @var Collection<int, Collection<int, Assignment>> $bySensor */
+        $bySensor = collect();
+
+        foreach ($area->assignments as $assignment) {
+            $sensorId = $assignment->sensor_id;
+            $group = $bySensor->get($sensorId, collect());
+            $group->push($assignment);
+            $bySensor->put($sensorId, $group);
+        }
+
+        return $bySensor;
+    }
+
+    /**
+     * Find the index of the window containing an interval's ts_from.
+     *
+     * Windows are sorted by start time and contiguous, so binary search for
+     * the rightmost window whose start <= ts_from, then verify ts_from < end.
+     *
+     * @param  array{starts: array<int, Carbon>, ends: array<int, Carbon>}  $lookup
+     */
+    protected function findWindowIndexForInterval(Carbon $tsFrom, array $lookup): ?int
+    {
+        $starts = $lookup['starts'];
+        $ends = $lookup['ends'];
+
+        $lo = 0;
+        $hi = count($starts) - 1;
+        $candidate = null;
+
+        while ($lo <= $hi) {
+            $mid = (int) floor(($lo + $hi) / 2);
+
+            if ($starts[$mid]->lessThanOrEqualTo($tsFrom)) {
+                $candidate = $mid;
+                $lo = $mid + 1;
+            } else {
+                $hi = $mid - 1;
+            }
+        }
+
+        if ($candidate === null) {
+            return null;
+        }
+
+        return $tsFrom->lessThan($ends[$candidate]) ? $candidate : null;
+    }
+
+    /**
+     * Determine whether an interval's ts_from falls within an assignment's
+     * active range. Bound semantics match the previous SQL join exactly:
+     * active_from <= ts_from < active_to.
+     */
+    protected function intervalWithinAssignment(Carbon $tsFrom, Assignment $assignment): bool
+    {
+        return $tsFrom->greaterThanOrEqualTo($assignment->active_from)
+            && $tsFrom->lessThan($assignment->active_to);
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $windows
+     * @return array{start: Carbon, end: Carbon}
+     */
+    protected function getChunkBounds(Collection $windows): array
+    {
+        return [
+            'start' => $windows->first()['start'],
+            'end' => $windows->last()['end'],
+        ];
+    }
+
+    /**
+     * Build the streamed interval_counts query for one chunk.
+     *
+     * Selects only the columns needed for per-window net computation. Orders
+     * by id so lazyById can page safely without offset drift.
+     *
+     * @param  array{start: Carbon, end: Carbon}  $chunkBounds
+     * @param  Collection<int, int>  $sensorIds
+     */
+    protected function intervalCountsForChunkQuery(array $chunkBounds, Collection $sensorIds, ?Carbon $runWatermark): QueryBuilder
+    {
+        return DB::table((new IntervalCount)->getTable())
+            ->select(['id', 'sensor_id', 'ts_from', 'count_in', 'count_out', 'received_at'])
+            ->whereIn('sensor_id', $sensorIds->all())
+            ->where('ts_from', '>=', $chunkBounds['start'])
+            ->where('ts_from', '<', $chunkBounds['end'])
+            ->when($runWatermark instanceof Carbon, fn (QueryBuilder $query): QueryBuilder => $query->where('received_at', '<=', $runWatermark))
+            ->orderBy('id');
+    }
+
+    /**
+     * @param  Collection<int, array{area_id: int, period_start: string, period_end: string, count: int, checksum: string}>  $rows
+     */
+    protected function writeAggregatedCounts(Collection $rows): void
+    {
+        if ($rows->isEmpty()) {
+            return;
+        }
+
+        AreaAggregatedCount::query()->upsert(
+            $rows->all(),
+            ['area_id', 'period_start', 'period_end'],
+            ['count', 'checksum']
+        );
+    }
+
+    /**
+     * @return array{recalculate_from: Carbon|null, initial_count: int}
+     */
+    protected function getAggregationCheckpoint(Area $area, ?Carbon $runWatermark = null): array
+    {
+        $latestCounts = $area->aggregatedCounts()
+            ->latest('period_end')
+            ->limit(2)
+            ->get(['id', 'area_id', 'period_start', 'period_end', 'count']);
+
+        $previousCount = $latestCounts->get(1);
+        $recalculateFrom = $latestCounts->get(0)?->period_start;
+        $initialCount = $previousCount ? $previousCount->count : 0;
+        $lateRecalculateFrom = $area->exists ? $this->getLateArrivalRecalculateFrom($area, $runWatermark) : null;
+
+        if ($lateRecalculateFrom && (! $recalculateFrom || $lateRecalculateFrom->lessThan($recalculateFrom))) {
+            $recalculateFrom = $lateRecalculateFrom;
+            $initialCount = $this->getInitialCountBefore($area, $recalculateFrom);
+        }
+
+        return [
+            'recalculate_from' => $recalculateFrom,
+            'initial_count' => $initialCount,
+        ];
+    }
+
+    protected function getLateArrivalRecalculateFrom(Area $area, ?Carbon $runWatermark): ?Carbon
+    {
+        if (! $area->data_watermark || ! $runWatermark) {
+            return null;
+        }
+
+        $lateTsFrom = $this->areaIntervalCountsQuery($area)
+            ->where('interval_counts.received_at', '>', $area->data_watermark)
+            ->where('interval_counts.received_at', '<=', $runWatermark)
+            ->min('interval_counts.ts_from');
+
+        if (! $lateTsFrom) {
+            return null;
+        }
+
+        return $area->aggregatedCounts()
+            ->where('period_start', '<=', $lateTsFrom)
+            ->where('period_end', '>', $lateTsFrom)
+            ->latest('period_start')
+            ->value('period_start') ?? Date::parse($lateTsFrom);
+    }
+
+    protected function getInitialCountBefore(Area $area, Carbon $recalculateFrom): int
+    {
+        return (int) ($area->aggregatedCounts()
+            ->where('period_end', '<=', $recalculateFrom)
+            ->latest('period_end')
+            ->value('count') ?? 0);
+    }
+
+    protected function getCurrentDataWatermark(Area $area): ?Carbon
+    {
+        $watermark = $this->areaIntervalCountsQuery($area)->max('interval_counts.received_at');
+
+        return $watermark ? Date::parse($watermark) : null;
+    }
+
+    protected function updateDataWatermark(Area $area, ?Carbon $runWatermark): void
+    {
+        $watermark = $runWatermark;
+
+        if (! $watermark instanceof Carbon) {
+            return;
+        }
+
+        $area->forceFill(['data_watermark' => $watermark])->save();
+    }
+
+    protected function areaIntervalCountsQuery(Area $area): QueryBuilder
+    {
+        return DB::table('peoplecount_assignments as assignments')
+            ->join((new IntervalCount)->getTable().' as interval_counts', function (JoinClause $join): void {
+                $join->on('interval_counts.sensor_id', '=', 'assignments.sensor_id')
+                    ->whereColumn('interval_counts.ts_from', '>=', 'assignments.active_from')
+                    ->whereColumn('interval_counts.ts_from', '<', 'assignments.active_to');
+            })
+            ->where('assignments.area_id', $area->id)
+            ->where('interval_counts.ts_from', '>=', $area->event->starts_at)
+            ->where('interval_counts.ts_from', '<', $area->event->ends_at)
+            ->whereNull('assignments.deleted_at');
     }
 
     /**

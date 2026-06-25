@@ -265,13 +265,17 @@ for each active assignment:
         window_net += net
 ```
 
-## Duplicate Interval Count Rule
+## Duplicate Interval Count Invariant
 
-If multiple interval count rows exist for the same `(sensor_id, ts_from, ts_to)` combination, only the row with the latest `received_at` is authoritative.
+There must be at most one interval count row for each `(sensor_id, ts_from, ts_to)` combination.
 
-All other rows for that combination are superseded and must not contribute to any net calculation.
+This is enforced by a unique database key.
 
-This applies regardless of whether the duplicate carries identical or different `count_in`/`count_out` values.
+Sensor retransmissions or corrections are handled at ingest time with an upsert on `(sensor_id, ts_from, ts_to)`.
+
+On conflict, the stored row is updated with the latest ingested `count_in`, `count_out`, and `received_at` values.
+
+Aggregation therefore never performs query-time deduplication. It reads the single stored row as authoritative.
 
 ### Why latest-wins
 
@@ -282,14 +286,10 @@ This applies regardless of whether the duplicate carries identical or different 
 ### Pseudocode
 
 ```text
-for each group of intervals sharing (sensor_id, ts_from, ts_to):
-    authoritative = row with max(received_at)
-    use only authoritative in net calculation
+ingest interval:
+    upsert by (sensor_id, ts_from, ts_to)
+    update count_in, count_out, received_at on conflict
 ```
-
-### Implementation note
-
-Enforce at write time with upsert on `(sensor_id, ts_from, ts_to)`. On conflict, update `count_in`, `count_out`, `received_at`. This prevents duplicates from accumulating.
 
 ## Late-Arriving Data Rule
 
@@ -491,7 +491,7 @@ Each active assignment contributes independently.
 
 Final window net is sum of all included interval nets across all active assignments.
 
-## 9. Duplicate interval count for same sensor and time range
+## 9. Retransmitted interval count for same sensor and time range
 
 Example:
 
@@ -500,7 +500,7 @@ Example:
 
 Result:
 
-Only the row with `received_at=10:11:00` is used. Net is `3`, not `6`.
+The existing row is updated during ingest. One database row remains, with `received_at=10:11:00`. Net is `3`, not `6`.
 
 ## 10. Corrected interval count
 
@@ -511,7 +511,7 @@ Example:
 
 Result:
 
-Only the corrected row is used. Net is `6`. Original `3` is superseded.
+The existing row is updated during ingest. One database row remains, with `in=7, out=1`. Net is `6`. Original `3` is superseded.
 
 ## 11. Late-arriving data for already-stable window
 
@@ -630,5 +630,4 @@ In particular, debug count helpers may ignore:
 2. assignment active periods
 
 So they should not be treated as authoritative occupancy history.
-
 

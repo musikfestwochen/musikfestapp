@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property int $event_id
+ * @property Carbon|null $data_watermark
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -25,6 +26,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'name',
     'event_id',
+    'data_watermark',
 ])]
 #[Table(name: 'peoplecount_areas')]
 class Area extends Model
@@ -112,5 +114,15 @@ class Area extends Model
     public function aggregatedCounts(): HasMany
     {
         return $this->hasMany(AreaAggregatedCount::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'data_watermark' => 'datetime',
+        ];
     }
 }
