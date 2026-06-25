@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 dataset('granularities', [
+    '1min' => 1,
     '5min' => 5,
     '10min' => 10,
     '15min' => 15,
