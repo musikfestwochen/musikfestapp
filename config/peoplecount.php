@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Number;
+
 return [
 
     /*
@@ -24,6 +26,6 @@ return [
         | This value determines how data points are grouped together for analysis.
         |
         */
-        'granularity_minutes' => env('PEOPLECOUNT_AGGREGATION_GRANULARITY', 1),
+        'granularity_minutes' => Number::clamp((int) env('PEOPLECOUNT_AGGREGATION_GRANULARITY', 1), min: 1, max: PHP_INT_MAX),
     ],
 ];
