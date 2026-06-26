@@ -148,6 +148,23 @@ it('tests if no unwanted routes are exposed', function () {
 
         // Laravel Pulse routes
         ['method' => 'GET|HEAD', 'uri' => 'pulse'],
+
+        // Log Viewer routes
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/{view?}'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/files'],
+        ['method' => 'POST', 'uri' => 'admin/logs/api/clear-cache-all'],
+        ['method' => 'POST', 'uri' => 'admin/logs/api/delete-multiple-files'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/files/{fileIdentifier}/download'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/files/{fileIdentifier}/download/request'],
+        ['method' => 'POST', 'uri' => 'admin/logs/api/files/{fileIdentifier}/clear-cache'],
+        ['method' => 'DELETE', 'uri' => 'admin/logs/api/files/{fileIdentifier}'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/folders'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/folders/{folderIdentifier}/download'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/folders/{folderIdentifier}/download/request'],
+        ['method' => 'POST', 'uri' => 'admin/logs/api/folders/{folderIdentifier}/clear-cache'],
+        ['method' => 'DELETE', 'uri' => 'admin/logs/api/folders/{folderIdentifier}'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/hosts'],
+        ['method' => 'GET|HEAD', 'uri' => 'admin/logs/api/logs'],
     ];
 
     // Sort allowedRoutes by method and uri

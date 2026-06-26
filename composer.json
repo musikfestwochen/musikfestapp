@@ -19,6 +19,7 @@
         "laravel/tinker": "^3.0",
         "laravel/vonage-notification-channel": "^3.3",
         "markrogoyski/math-php": "^2.11",
+        "opcodesio/log-viewer": "^3.23",
         "spatie/laravel-permission": "^8.0",
         "tightenco/ziggy": "^2.4"
     },

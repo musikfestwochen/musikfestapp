@@ -48,7 +48,8 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::findOrCreate('peoplecount.widgets.most_active_sensors');
         Permission::findOrCreate('peoplecount.widgets.area_count_history');
 
-        // add admin.pulse permission
+        // add admin package permissions
+        Permission::findOrCreate('admin.logs');
         Permission::findOrCreate('admin.pulse');
 
         // update cache to know about the newly created permissions (required if using WithoutModelEvents in seeders)
@@ -60,6 +61,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $adminRole->syncPermissions([
             'admin.users.*',
             'admin.organizations.*',
+            'admin.logs',
             'admin.pulse',
             'orgmgmt.users.*',
             'peoplecount.sensors.*',
