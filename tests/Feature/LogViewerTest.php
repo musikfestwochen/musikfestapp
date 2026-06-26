@@ -4,15 +4,15 @@ use App\Models\User;
 use Spatie\Permission\Models\Permission;
 
 it('protects log viewer in production', function () {
-    config(['app.env' => 'production']);
+    app()->detectEnvironment(fn (): string => 'production');
 
     $this->actingAs(User::factory()->create())
         ->get('/admin/logs')
         ->assertForbidden();
 });
 
-it('allows pulse admins to view logs', function () {
-    config(['app.env' => 'production']);
+it('allows log admins to view logs', function () {
+    app()->detectEnvironment(fn (): string => 'production');
 
     $user = User::factory()->create();
 
