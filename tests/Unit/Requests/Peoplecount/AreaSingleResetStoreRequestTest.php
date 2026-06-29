@@ -17,6 +17,12 @@ it('has correct rules', function () {
     ]);
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'reset_value' => 'integer',
+    ]);
+});
+
 it('authorizes when user can store area resets', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.area_resets.store')->andReturn(true);

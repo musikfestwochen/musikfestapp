@@ -32,6 +32,14 @@ it('has correct rules', function () {
 
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'cooldown_minutes' => 'integer',
+        'occupancy_alert_threshold' => 'integer',
+        'recipients.*' => 'integer',
+    ]);
+});
+
 it('authorizes when user can update alerts', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.alerts.update')->andReturn(true);

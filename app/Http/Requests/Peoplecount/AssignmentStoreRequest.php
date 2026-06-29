@@ -33,4 +33,17 @@ class AssignmentStoreRequest extends FormRequest
             'active_to' => ['required', 'date', 'after:active_from'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'event_id' => 'integer',
+            'area_id' => 'integer',
+            'sensor_id' => 'integer',
+            'direction_flipped' => 'boolean',
+        ];
+    }
 }

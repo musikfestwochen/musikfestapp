@@ -26,7 +26,17 @@ class AreaStoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'event_id' => ['required', 'exists:peoplecount_events,id'],
+            'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'event_id' => 'integer',
         ];
     }
 }

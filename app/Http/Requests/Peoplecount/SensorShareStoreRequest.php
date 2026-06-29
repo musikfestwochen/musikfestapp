@@ -30,4 +30,14 @@ class SensorShareStoreRequest extends FormRequest
             'ends_at' => ['required', 'date', 'after:starts_at'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'borrower_organization_id' => 'integer',
+        ];
+    }
 }

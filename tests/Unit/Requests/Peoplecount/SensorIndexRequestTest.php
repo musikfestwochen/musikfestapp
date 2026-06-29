@@ -10,7 +10,15 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([]);
+    expect($this->request->rules())->toBe([
+        'archived' => ['nullable', 'boolean'],
+    ]);
+});
+
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'archived' => 'boolean',
+    ]);
 });
 
 it('authorizes when user can index sensors', function () {

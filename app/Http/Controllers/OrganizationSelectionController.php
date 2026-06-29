@@ -46,7 +46,7 @@ class OrganizationSelectionController extends Controller
     public function store(OrganizationSelectionRequest $request): RedirectResponse
     {
         try {
-            $organizationSlug = $this->organizationSelectionService->processOrganizationSelection($request->organization_id);
+            $organizationSlug = $this->organizationSelectionService->processOrganizationSelection($request->validated('organization_id'));
 
             return to_route('organization.dashboard', ['organization' => $organizationSlug]);
         } catch (AuthorizationException $authorizationException) {

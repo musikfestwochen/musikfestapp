@@ -81,9 +81,15 @@ it('rejects invalid organization_id types', function () {
 });
 
 it('has required methods', function () {
-    // Test that the request class has the required methods
     expect(method_exists($this->request, 'rules'))->toBeTrue();
     expect(method_exists($this->request, 'authorize'))->toBeTrue();
+    expect(method_exists($this->request, 'casts'))->toBeTrue();
+});
+
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'organization_id' => 'integer',
+    ]);
 });
 
 it('extends FormRequest', function () {

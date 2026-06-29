@@ -25,7 +25,17 @@ class SensorIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'archived' => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'archived' => 'boolean',
         ];
     }
 }

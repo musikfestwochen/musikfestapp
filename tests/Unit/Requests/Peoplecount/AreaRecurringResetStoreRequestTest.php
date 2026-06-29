@@ -33,6 +33,12 @@ it('has correct rules', function () {
     expect($actualRules['reset_time'][2])->toBeInstanceOf(Unique::class);
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'reset_value' => 'integer',
+    ]);
+});
+
 it('validates valid time formats', function () {
     $validTimes = [
         '08:00',

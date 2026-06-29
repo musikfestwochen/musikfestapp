@@ -24,4 +24,14 @@ class AppearanceUpdateRequest extends FormRequest
             'eastereggs_activated' => ['required', 'boolean'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'eastereggs_activated' => 'boolean',
+        ];
+    }
 }

@@ -31,4 +31,16 @@ class AlertStoreRequest extends FormRequest
             'recipients.*' => ['integer', 'exists:users,id'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'cooldown_minutes' => 'integer',
+            'occupancy_alert_threshold' => 'integer',
+            'recipients.*' => 'integer',
+        ];
+    }
 }

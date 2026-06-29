@@ -30,6 +30,15 @@ it('has correct rules', function () {
     expect($rules['active_to'])->toBe(['required', 'date', 'after:active_from']);
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'event_id' => 'integer',
+        'area_id' => 'integer',
+        'sensor_id' => 'integer',
+        'direction_flipped' => 'boolean',
+    ]);
+});
+
 it('authorizes when user can update assignments', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.assignments.update')->andReturn(true);

@@ -12,7 +12,13 @@ beforeEach(function () {
 it('has correct rules', function () {
     expect($this->request->rules())->toBe([
         'name' => ['required', 'string', 'max:255'],
-        'event_id' => ['required', 'exists:peoplecount_events,id'],
+        'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
+    ]);
+});
+
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'event_id' => 'integer',
     ]);
 });
 

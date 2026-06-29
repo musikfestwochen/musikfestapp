@@ -31,6 +31,14 @@ it('has correct rules', function () {
         ->and($rules['channel'][1])->toBeInstanceOf(Enum::class);
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'cooldown_minutes' => 'integer',
+        'occupancy_alert_threshold' => 'integer',
+        'recipients.*' => 'integer',
+    ]);
+});
+
 it('authorizes when user can store alerts', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.alerts.store')->andReturn(true);

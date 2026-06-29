@@ -14,6 +14,12 @@ it('has correct rules', function () {
     ]);
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'eastereggs_activated' => 'boolean',
+    ]);
+});
+
 it('authorizes when user is authenticated', function () {
     Auth::shouldReceive('check')->andReturn(true);
 

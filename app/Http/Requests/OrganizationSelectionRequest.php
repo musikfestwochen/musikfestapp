@@ -29,11 +29,22 @@ class OrganizationSelectionRequest extends FormRequest
         return [
             'organization_id' => [
                 'required',
+                'integer',
                 Rule::in(array_merge(
                     Organization::query()->pluck('id')->toArray(),
                     [GLOBAL_ORG_ID]
                 )),
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'organization_id' => 'integer',
         ];
     }
 }

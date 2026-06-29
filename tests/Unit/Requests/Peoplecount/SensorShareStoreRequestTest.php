@@ -17,6 +17,12 @@ it('has correct rules', function () {
     ]);
 });
 
+it('has correct casts', function () {
+    expect($this->request->casts())->toBe([
+        'borrower_organization_id' => 'integer',
+    ]);
+});
+
 it('authorizes when user can update sensors', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.sensors.update')->andReturn(true);

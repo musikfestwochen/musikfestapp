@@ -18,7 +18,7 @@ class AppearanceController extends Controller
         $user = $request->user();
 
         $user->update([
-            'eastereggs_activated' => (bool) $request->boolean('eastereggs_activated'),
+            'eastereggs_activated' => $request->validated('eastereggs_activated'),
         ]);
 
         return back()->with('status', 'Appearance settings updated.');

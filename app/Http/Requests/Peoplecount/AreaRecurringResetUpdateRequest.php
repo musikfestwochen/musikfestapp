@@ -39,4 +39,14 @@ class AreaRecurringResetUpdateRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function casts(): array
+    {
+        return [
+            'reset_value' => 'integer',
+        ];
+    }
 }
