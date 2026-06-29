@@ -65,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
             return $user->can('admin.pulse');
         });
 
+        Gate::define('viewLogViewer', function (User $user) {
+            return $user->can('admin.logs');
+        });
+
         // Register event listeners directly using the Event facade
         Event::listen(
             RoleAttachedEvent::class,

@@ -1,4 +1,4 @@
-import { Building2Icon, FolderGit2Icon, LayoutGrid, TelescopeIcon, UnplugIcon, Users2Icon } from 'lucide-vue-next';
+import { Building2Icon, FileTextIcon, FolderGit2Icon, LayoutGrid, TelescopeIcon, UnplugIcon, Users2Icon } from 'lucide-vue-next';
 
 export const adminMainNavItems = [
     {
@@ -11,6 +11,12 @@ export const adminMainNavItems = [
         url: route('pulse'),
         icon: TelescopeIcon,
         permission: 'admin.pulse',
+    },
+    {
+        title: 'Logs',
+        url: route('log-viewer.index'),
+        icon: FileTextIcon,
+        permission: 'admin.logs',
     },
     {
         title: 'Users',
