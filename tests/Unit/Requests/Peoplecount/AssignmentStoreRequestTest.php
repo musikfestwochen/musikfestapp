@@ -2,7 +2,6 @@
 
 use App\Http\Requests\Peoplecount\AssignmentStoreRequest;
 use App\Models\User;
-use Illuminate\Validation\Rules\Enum;
 
 covers(AssignmentStoreRequest::class);
 

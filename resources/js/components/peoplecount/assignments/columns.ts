@@ -48,11 +48,15 @@ export function assignmentsColumns(organization: Organization): ColumnDef<People
             cell: ({ row }) => {
                 const sensor = row.original.sensor;
                 if (!sensor) return 'N/A';
-                return h('div', { class: 'text-sm' }, [
-                    sensor.name ? h('div', { class: 'font-medium' }, sensor.name) : null,
-                    h('div', { class: sensor.name ? 'text-muted-foreground text-xs' : 'font-medium' }, `${sensor.vendor} ${sensor.model}`),
-                    sensor.name ? null : h('div', { class: 'text-muted-foreground text-xs' }, sensor.serial),
-                ].filter(Boolean));
+                return h(
+                    'div',
+                    { class: 'text-sm' },
+                    [
+                        sensor.name ? h('div', { class: 'font-medium' }, sensor.name) : null,
+                        h('div', { class: sensor.name ? 'text-muted-foreground text-xs' : 'font-medium' }, `${sensor.vendor} ${sensor.model}`),
+                        sensor.name ? null : h('div', { class: 'text-muted-foreground text-xs' }, sensor.serial),
+                    ].filter(Boolean),
+                );
             },
             enableSorting: true,
             enableHiding: true,

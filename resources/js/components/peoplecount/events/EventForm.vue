@@ -4,63 +4,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Organization, PeoplecountEvent } from '@/types';
-import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
+import { datetimeLocalToUTCString, utcStringToDatetimeLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
-import { VueDatePicker, WeekStart } from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css';
 import { LoaderCircle } from 'lucide-vue-next';
-import { ref } from 'vue';
 
 const props = defineProps<{ event?: PeoplecountEvent; organization: Organization }>();
 
-// Initialize date range from existing event or null for new events
-const initialDateRange = props.event ? [getLocalDateFromUTC(props.event.starts_at), getLocalDateFromUTC(props.event.ends_at)] : null;
-
-const dateRange = ref(initialDateRange);
-
 const form = useForm({
     name: props.event?.name || '',
-    starts_at: props.event?.starts_at || '',
-    ends_at: props.event?.ends_at || '',
+    starts_at: utcStringToDatetimeLocal(props.event?.starts_at),
+    ends_at: utcStringToDatetimeLocal(props.event?.ends_at),
 });
 
-// Computed property to handle date range changes
-const handleDateRangeChange = (range: [Date, Date] | null) => {
-    dateRange.value = range;
-    if (range && range.length === 2) {
-        form.starts_at = getUTCStringFromLocal(range[0]);
-        form.ends_at = getUTCStringFromLocal(range[1]);
-    } else {
-        form.starts_at = '';
-        form.ends_at = '';
-    }
-};
+const hasValidDateRange = () => Boolean(form.starts_at && form.ends_at && form.starts_at < form.ends_at);
+
+const submitForm = () =>
+    form.transform((data) => ({
+        ...data,
+        starts_at: datetimeLocalToUTCString(data.starts_at),
+        ends_at: datetimeLocalToUTCString(data.ends_at),
+    }));
 
 const submit = () => {
     if (props.event && props.organization) {
-        form.put(
+        submitForm().put(
             route('peoplecount.events.update', {
                 event: props.event.id,
                 organization: props.organization.slug,
             }),
         );
     } else if (props.organization) {
-        form.post(route('peoplecount.events.store', { organization: props.organization.slug }));
+        submitForm().post(route('peoplecount.events.store', { organization: props.organization.slug }));
     }
-};
-
-// Date picker configuration
-const datePickerConfig = {
-    range: true,
-    enableTimePicker: true,
-    format: 'dd/MM/yyyy HH:mm',
-    previewFormat: 'dd/MM/yyyy HH:mm',
-    placeholder: 'Select event date and time range',
-    autoApply: true,
-    closeOnAutoApply: true,
-    weekStart: WeekStart.Monday,
-    utc: false, // We handle UTC conversion manually
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 };
 </script>
 
@@ -69,46 +44,34 @@ const datePickerConfig = {
         <div class="grid max-w-xl gap-6">
             <div class="grid gap-2">
                 <Label for="name">Event Name</Label>
-                <Input id="name" v-model="form.name" :tabindex="1" autocomplete="on" autofocus placeholder="Event Name" required type="text" />
+                <Input id="name" v-model="form.name" :tabindex="1" autofocus placeholder="Event Name" required type="text" />
                 <InputError :message="form.errors.name" />
             </div>
 
-            <div class="grid gap-2">
-                <Label for="dateRange">Event Date & Time Range</Label>
-                <VueDatePicker
-                    id="dateRange"
-                    v-model="dateRange"
-                    :tabindex="2"
-                    class="dp-custom-input"
-                    v-bind="datePickerConfig"
-                    @update:model-value="handleDateRangeChange"
-                />
-                <InputError :message="form.errors.starts_at" />
-                <InputError :message="form.errors.ends_at" />
-                <p class="text-muted-foreground text-sm">Select the start and end date/time for your event. Times are in your local timezone.</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="starts_at">Starts at</Label>
+                    <Input id="starts_at" v-model="form.starts_at" :tabindex="2" required type="datetime-local" />
+                    <InputError :message="form.errors.starts_at" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="ends_at">Ends at</Label>
+                    <Input id="ends_at" v-model="form.ends_at" :tabindex="3" required type="datetime-local" />
+                    <InputError :message="form.errors.ends_at" />
+                </div>
+                <p class="text-muted-foreground text-sm sm:col-span-2">
+                    Select the start and end date/time for your event. Times are in your local timezone.
+                </p>
+                <p v-if="form.starts_at && form.ends_at && form.starts_at >= form.ends_at" class="text-destructive text-sm sm:col-span-2">
+                    End must be after start.
+                </p>
             </div>
 
-            <Button :disabled="form.processing || !dateRange" class="mt-2 w-full" tabindex="3" type="submit">
+            <Button :disabled="form.processing || !hasValidDateRange()" class="mt-2 w-full" tabindex="4" type="submit">
                 <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                 <span v-else>{{ props.event ? 'Update Event' : 'Create Event' }}</span>
             </Button>
         </div>
     </form>
 </template>
-
-<style scoped>
-@reference '../../../../css/app.css';
-
-/* Custom styling for the date picker to match the design system */
-:deep(.dp--input) {
-    @apply border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
-}
-
-:deep(.dp--input-wrap) {
-    @apply w-full;
-}
-
-:deep(.dp--main) {
-    @apply font-sans;
-}
-</style>
