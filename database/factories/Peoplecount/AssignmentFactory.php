@@ -34,6 +34,7 @@ class AssignmentFactory extends Factory
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => Sensor::query()->inRandomOrder()->first()->id ?? Sensor::factory()->create()->id,
+            'label' => fake()->boolean() ? fake()->words(3, true) : null,
             'direction_flipped' => fake()->boolean(),
             'active_from' => $activeFrom,
             'active_to' => $activeTo,

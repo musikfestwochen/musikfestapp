@@ -11,6 +11,17 @@ import TokenCell from './TokenCell.vue';
 export function sensorsColumns(organization: Organization): ColumnDef<PeoplecountSensor>[] {
     return [
         {
+            accessorKey: 'name',
+            header: ({ column }) =>
+                h(DataTableColumnHeader, {
+                    column,
+                    title: 'Name',
+                }),
+            cell: ({ row }) => h('div', { class: 'font-medium' }, row.getValue('name') || '—'),
+            enableSorting: true,
+            enableHiding: true,
+        },
+        {
             accessorKey: 'vendor',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {

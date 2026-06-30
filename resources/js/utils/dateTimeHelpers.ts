@@ -95,6 +95,32 @@ export function getLocalDateFromUTC(utcString?: string): Date | null {
 }
 
 /**
+ * Convert UTC date/time strings to datetime-local input values.
+ */
+export function utcStringToDatetimeLocal(utcString?: string): string {
+    if (!utcString) return '';
+
+    const date = new Date(utcString);
+
+    if (Number.isNaN(date.getTime())) return '';
+
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+/**
+ * Convert datetime-local input values to UTC ISO strings for backend storage.
+ */
+export function datetimeLocalToUTCString(datetimeLocal: string): string {
+    if (!datetimeLocal) return '';
+
+    const date = new Date(datetimeLocal);
+
+    if (Number.isNaN(date.getTime())) return '';
+
+    return date.toISOString();
+}
+
+/**
  * Get the user's current timezone
  */
 export function getUserTimezone(): string {
@@ -297,6 +323,20 @@ export class DateTimeHelper {
      */
     static getLocalDateFromUTC(utcString?: string): Date | null {
         return getLocalDateFromUTC(utcString);
+    }
+
+    /**
+     * Convert UTC date/time strings to datetime-local input values.
+     */
+    static utcStringToDatetimeLocal(utcString?: string): string {
+        return utcStringToDatetimeLocal(utcString);
+    }
+
+    /**
+     * Convert datetime-local input values to UTC ISO strings for backend storage.
+     */
+    static datetimeLocalToUTCString(datetimeLocal: string): string {
+        return datetimeLocalToUTCString(datetimeLocal);
     }
 
     /**

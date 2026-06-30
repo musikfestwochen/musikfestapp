@@ -54,7 +54,7 @@ class SensorActivityService
                     'assignments' => function (Relation $q) use ($now) {
                         $q->where('active_from', '<=', $now)
                             ->where('active_to', '>=', $now)
-                            ->with(['sensor:id,serial,vendor,model']);
+                            ->with(['sensor:id,serial,vendor,model,name']);
                     },
                 ])
                 ->get(['id', 'name', 'event_id']);
@@ -115,6 +115,8 @@ class SensorActivityService
                         'serial' => $sensor->serial,
                         'vendor' => $sensor->vendor,
                         'model' => $sensor->model,
+                        'name' => $sensor->name,
+                        'label' => $assignment->label,
                         'sums' => $sums,
                     ];
                 }

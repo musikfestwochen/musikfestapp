@@ -16,7 +16,7 @@ const props = defineProps<{
 
 const form = useForm({
     name: props.area?.name || '',
-    event_id: props.area?.event_id || '',
+    event_id: props.area?.event_id.toString() || '',
 });
 
 const submit = () => {
@@ -38,7 +38,7 @@ const submit = () => {
         <div class="grid max-w-xl gap-6">
             <div class="grid gap-2">
                 <Label for="name">Area Name</Label>
-                <Input id="name" v-model="form.name" :tabindex="1" autocomplete="on" autofocus placeholder="Area Name" required type="text" />
+                <Input id="name" v-model="form.name" :tabindex="1" autofocus placeholder="Area Name" required type="text" />
                 <InputError :message="form.errors.name" />
             </div>
 
