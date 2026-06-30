@@ -66,6 +66,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     <div v-if="assignment.sensor" class="bg-card rounded-lg border p-6">
                         <h3 class="text-lg font-semibold">Sensor</h3>
                         <div class="mt-2 space-y-2">
+                            <p v-if="assignment.sensor.name"><span class="font-medium">Name:</span> {{ assignment.sensor.name }}</p>
                             <p><span class="font-medium">Vendor:</span> {{ assignment.sensor.vendor }}</p>
                             <p><span class="font-medium">Model:</span> {{ assignment.sensor.model }}</p>
                             <p><span class="font-medium">Serial:</span> {{ assignment.sensor.serial }}</p>
@@ -76,6 +77,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     <div class="bg-card rounded-lg border p-6">
                         <h3 class="text-lg font-semibold">Configuration</h3>
                         <div class="mt-2 space-y-2">
+                            <p v-if="assignment.label"><span class="font-medium">Label:</span> {{ assignment.label }}</p>
                             <p>
                                 <span class="font-medium">Direction:</span>
                                 <span :class="assignment.direction_flipped ? 'text-orange-600' : 'text-green-600'">

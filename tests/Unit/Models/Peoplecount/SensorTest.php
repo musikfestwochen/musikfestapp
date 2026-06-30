@@ -12,6 +12,7 @@ it('has correct fillable attributes', function () {
         'vendor',
         'model',
         'serial',
+        'name',
         'api_token',
         'organization_id',
         'archived_at',

@@ -16,6 +16,7 @@ interface SensorItem {
     serial: string;
     vendor: string;
     model: string;
+    name: string | null;
     latest_ts: string | null;
     interval_counts: IntervalCountItem[];
 }
@@ -169,7 +170,7 @@ const lastUpdatedTime = computed(() => {
                         <ul class="grid grid-cols-2 gap-2 text-sm">
                             <li v-for="s in data.suspicious" :key="s.id" class="p-2">
                                 <div class="flex items-center justify-between">
-                                    <div class="truncate">{{ s.vendor }} {{ s.model }} · {{ s.serial }}</div>
+                                    <div class="truncate">{{ s.name || `${s.vendor} ${s.model}` }} · {{ s.serial }}</div>
                                     <div class="text-muted-foreground text-xs">
                                         {{ s.latest_ts ? new Date(s.latest_ts).toLocaleTimeString() : 'N/A' }}
                                     </div>
@@ -188,7 +189,7 @@ const lastUpdatedTime = computed(() => {
                         <ul class="grid grid-cols-2 gap-2 text-sm">
                             <li v-for="s in data.unhealthy" :key="s.id" class="p-2">
                                 <div class="flex items-center justify-between">
-                                    <div class="truncate">{{ s.vendor }} {{ s.model }} · {{ s.serial }}</div>
+                                    <div class="truncate">{{ s.name || `${s.vendor} ${s.model}` }} · {{ s.serial }}</div>
                                     <div class="text-muted-foreground text-xs">
                                         {{ s.latest_ts ? new Date(s.latest_ts).toLocaleTimeString() : 'N/A' }}
                                     </div>

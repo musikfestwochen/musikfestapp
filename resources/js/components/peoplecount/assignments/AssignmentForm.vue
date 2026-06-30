@@ -3,6 +3,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
 import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
@@ -30,6 +31,7 @@ const form = useForm({
     event_id: props.assignment?.event_id || '',
     area_id: props.assignment?.area_id || '',
     sensor_id: props.assignment?.sensor_id || '',
+    label: props.assignment?.label || '',
     direction_flipped: props.assignment?.direction_flipped || false,
     active_from: props.assignment?.active_from || '',
     active_to: props.assignment?.active_to || '',
@@ -132,7 +134,7 @@ const datePickerConfig = {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem v-for="sensor in sensors" :key="sensor.id" :value="sensor.id.toString()">
-                            {{ sensor.vendor }} {{ sensor.model }} ({{ sensor.serial }})
+                            {{ sensor.name ? `${sensor.name} (${sensor.vendor} ${sensor.model})` : `${sensor.vendor} ${sensor.model} (${sensor.serial})` }}
                             <span v-if="sensor.organization && sensor.organization_id !== props.organization.id">
                                 · shared by {{ sensor.organization.name }}</span
                             >
@@ -143,8 +145,15 @@ const datePickerConfig = {
             </div>
 
             <div class="grid gap-2">
+                <Label for="label">Label</Label>
+                <Input id="label" v-model="form.label" :tabindex="4" autocomplete="off" placeholder="e.g. Entrance Tent A" type="text" />
+                <InputError :message="form.errors.label" />
+                <p class="text-muted-foreground text-sm">Optional. A description for this sensor deployment at this location.</p>
+            </div>
+
+            <div class="grid gap-2">
                 <div class="flex items-center space-x-2">
-                    <Checkbox id="direction_flipped" v-model:checked="form.direction_flipped" :tabindex="4" />
+                    <Checkbox id="direction_flipped" v-model:checked="form.direction_flipped" :tabindex="5" />
                     <Label for="direction_flipped">Direction Flipped</Label>
                 </div>
                 <p class="text-muted-foreground text-sm">Toggle this if the sensor's counting direction should be reversed (in/out becomes out/in)</p>
@@ -156,7 +165,7 @@ const datePickerConfig = {
                 <VueDatePicker
                     id="dateRange"
                     v-model="dateRange"
-                    :tabindex="5"
+                    :tabindex="6"
                     v-bind="datePickerConfig"
                     @update:model-value="handleDateRangeChange"
                 />

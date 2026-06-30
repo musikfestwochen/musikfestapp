@@ -75,6 +75,7 @@ export interface PeoplecountSensor {
     vendor: string;
     model: string;
     serial: string;
+    name?: string | null;
     organization_id: number;
     archived_at?: string | null;
     api_token?: string | null; // Plaintext API token, nullable
@@ -145,6 +146,7 @@ export interface PeoplecountAssignment {
     area_id: number;
     sensor_id: number;
     sensor_share_id?: number | null;
+    label?: string | null;
     direction_flipped: boolean;
     active_from: string; // ISO 8601 date-time string (UTC)
     active_to: string; // ISO 8601 date-time string (UTC)

@@ -11,19 +11,28 @@ const props = defineProps<{
     showSensorName?: boolean; // If true, shows sensor as title, area as subtitle
 }>();
 
+const getSensorDisplay = () => {
+    const sensor = props.assignment.sensor;
+    if (!sensor) return 'Unknown Sensor';
+    return sensor.name || `${sensor.vendor} ${sensor.model}`;
+};
+
 const getTitle = () => {
     if (props.showAreaName) {
         return props.assignment.area?.name || 'Unknown Area';
     }
     if (props.showSensorName) {
-        return `${props.assignment.sensor?.vendor} ${props.assignment.sensor?.model}`;
+        return getSensorDisplay();
     }
-    return `${props.assignment.sensor?.vendor} ${props.assignment.sensor?.model}`;
+    return props.assignment.label || getSensorDisplay();
 };
 
 const getSubtitle = () => {
     if (props.showAreaName) {
-        return `${props.assignment.sensor?.vendor} ${props.assignment.sensor?.model}`;
+        return props.assignment.label || getSensorDisplay();
+    }
+    if (props.showSensorName) {
+        return props.assignment.label || null;
     }
     return null;
 };
