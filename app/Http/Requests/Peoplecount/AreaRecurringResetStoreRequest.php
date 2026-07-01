@@ -40,12 +40,20 @@ class AreaRecurringResetStoreRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array{reset_value: int, reset_time: string, timezone: string, notes?: string|null}
      */
-    public function casts(): array
+    public function payload(): array
     {
-        return [
-            'reset_value' => 'integer',
+        $payload = [
+            'reset_value' => $this->integer('reset_value'),
+            'reset_time' => $this->string('reset_time')->toString(),
+            'timezone' => $this->string('timezone')->toString(),
         ];
+
+        if ($this->has('notes')) {
+            $payload['notes'] = $this->filled('notes') ? $this->string('notes')->toString() : null;
+        }
+
+        return $payload;
     }
 }

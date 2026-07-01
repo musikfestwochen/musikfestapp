@@ -30,7 +30,7 @@ class SensorController extends Controller
      */
     public function index(SensorIndexRequest $request, Organization $organization): Response
     {
-        $showArchived = $request->validated('archived') ?? false;
+        $showArchived = $request->showArchived();
 
         return Inertia::render('peoplecount/Sensors', [
             'sensors' => $this->sensorService->getSensors($showArchived),

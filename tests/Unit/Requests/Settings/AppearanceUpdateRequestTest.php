@@ -14,10 +14,12 @@ it('has correct rules', function () {
     ]);
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'eastereggs_activated' => 'boolean',
-    ]);
+it('returns typed easter eggs flag', function () {
+    expect($this->request->eastereggsActivated())->toBeFalse();
+
+    $this->request->merge(['eastereggs_activated' => '1']);
+
+    expect($this->request->eastereggsActivated())->toBeTrue();
 });
 
 it('authorizes when user is authenticated', function () {

@@ -15,10 +15,12 @@ it('has correct rules', function () {
     ]);
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'archived' => 'boolean',
-    ]);
+it('returns typed archived filter value', function () {
+    expect($this->request->showArchived())->toBeFalse();
+
+    $this->request->merge(['archived' => '1']);
+
+    expect($this->request->showArchived())->toBeTrue();
 });
 
 it('authorizes when user can index sensors', function () {

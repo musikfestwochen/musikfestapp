@@ -47,7 +47,7 @@ class AlertController extends Controller
      */
     public function store(AlertStoreRequest $request, Organization $organization, Area $area): RedirectResponse
     {
-        $this->alertService->storeAreaAlert($organization, $area, $request->validated());
+        $this->alertService->storeAreaAlert($organization, $area, $request->payload());
 
         return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
@@ -93,7 +93,7 @@ class AlertController extends Controller
      */
     public function update(AlertUpdateRequest $request, Organization $organization, Area $area, Alert $alert): RedirectResponse
     {
-        $this->alertService->updateAreaAlert($organization, $area, $alert, $request->validated());
+        $this->alertService->updateAreaAlert($organization, $area, $alert, $request->payload());
 
         return to_route('peoplecount.areas.edit', [
             'organization' => $organization,

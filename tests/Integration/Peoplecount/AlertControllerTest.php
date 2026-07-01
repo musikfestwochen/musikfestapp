@@ -68,9 +68,9 @@ it('can store a new alert with recipients and redirects back to area edit', func
     $payload = [
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Email->value,
-        'cooldown_minutes' => 60,
-        'occupancy_alert_threshold' => 123,
-        'recipients' => [$u1->id, $u2->id],
+        'cooldown_minutes' => '60',
+        'occupancy_alert_threshold' => '123',
+        'recipients' => [(string) $u1->id, (string) $u2->id],
     ];
 
     $response = $this->actingAs($admin)
@@ -189,9 +189,9 @@ it('can update an existing alert including recipients', function () {
     $payload = [
         'type' => AlertType::OccupancyAlert->value,
         'channel' => AlertChannel::Vonage->value,
-        'cooldown_minutes' => 600,
-        'occupancy_alert_threshold' => 500,
-        'recipients' => [$u2->id],
+        'cooldown_minutes' => '600',
+        'occupancy_alert_threshold' => '500',
+        'recipients' => [(string) $u2->id],
     ];
 
     $this->actingAs($admin)

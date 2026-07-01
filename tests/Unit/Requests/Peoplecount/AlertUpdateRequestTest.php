@@ -32,11 +32,31 @@ it('has correct rules', function () {
 
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'cooldown_minutes' => 'integer',
-        'occupancy_alert_threshold' => 'integer',
-        'recipients.*' => 'integer',
+it('returns typed payload values', function () {
+    $data = [
+        'type' => 'occupancy_alert',
+        'channel' => 'email',
+        'cooldown_minutes' => '30',
+        'occupancy_alert_threshold' => '100',
+        'recipients' => ['1', '2'],
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'type' => ['required', 'string'],
+        'channel' => ['required', 'string'],
+        'cooldown_minutes' => ['required', 'integer'],
+        'occupancy_alert_threshold' => ['required', 'integer'],
+        'recipients' => ['nullable', 'array'],
+        'recipients.*' => ['integer'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'type' => 'occupancy_alert',
+        'channel' => 'email',
+        'cooldown_minutes' => 30,
+        'occupancy_alert_threshold' => 100,
+        'recipients' => [1, 2],
     ]);
 });
 

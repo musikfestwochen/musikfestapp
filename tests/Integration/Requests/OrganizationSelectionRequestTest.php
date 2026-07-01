@@ -83,13 +83,18 @@ it('rejects invalid organization_id types', function () {
 it('has required methods', function () {
     expect(method_exists($this->request, 'rules'))->toBeTrue();
     expect(method_exists($this->request, 'authorize'))->toBeTrue();
-    expect(method_exists($this->request, 'casts'))->toBeTrue();
+    expect(method_exists($this->request, 'organizationId'))->toBeTrue();
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'organization_id' => 'integer',
-    ]);
+it('returns typed organization id', function () {
+    $data = ['organization_id' => '42'];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'organization_id' => ['required', 'integer'],
+    ]));
+
+    expect($this->request->organizationId())->toBe(42);
 });
 
 it('extends FormRequest', function () {

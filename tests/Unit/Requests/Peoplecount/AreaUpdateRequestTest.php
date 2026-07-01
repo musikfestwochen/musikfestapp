@@ -16,9 +16,18 @@ it('has correct rules', function () {
     ]);
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'event_id' => 'integer',
+it('returns typed payload values', function () {
+    $data = ['name' => 'Main Gate', 'event_id' => '42'];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'name' => ['required', 'string'],
+        'event_id' => ['required', 'integer'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'name' => 'Main Gate',
+        'event_id' => 42,
     ]);
 });
 

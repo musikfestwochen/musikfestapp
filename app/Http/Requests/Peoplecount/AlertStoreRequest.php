@@ -33,14 +33,23 @@ class AlertStoreRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
-    public function casts(): array
+    public function payload(): array
     {
-        return [
-            'cooldown_minutes' => 'integer',
-            'occupancy_alert_threshold' => 'integer',
-            'recipients.*' => 'integer',
+        $payload = [
+            ...$this->validated(),
+            'cooldown_minutes' => $this->integer('cooldown_minutes'),
         ];
+
+        if (array_key_exists('occupancy_alert_threshold', $payload) && $payload['occupancy_alert_threshold'] !== null) {
+            $payload['occupancy_alert_threshold'] = $this->integer('occupancy_alert_threshold');
+        }
+
+        if (array_key_exists('recipients', $payload) && is_array($payload['recipients'])) {
+            $payload['recipients'] = array_map('intval', $payload['recipients']);
+        }
+
+        return $payload;
     }
 }

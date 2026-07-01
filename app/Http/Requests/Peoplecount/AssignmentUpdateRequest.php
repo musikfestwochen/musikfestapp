@@ -36,15 +36,18 @@ class AssignmentUpdateRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array{event_id: int, area_id: int, sensor_id: int, label: string|null, direction_flipped: bool, active_from: string, active_to: string}
      */
-    public function casts(): array
+    public function payload(): array
     {
         return [
-            'event_id' => 'integer',
-            'area_id' => 'integer',
-            'sensor_id' => 'integer',
-            'direction_flipped' => 'boolean',
+            'event_id' => $this->integer('event_id'),
+            'area_id' => $this->integer('area_id'),
+            'sensor_id' => $this->integer('sensor_id'),
+            'label' => $this->filled('label') ? $this->string('label')->toString() : null,
+            'direction_flipped' => $this->boolean('direction_flipped'),
+            'active_from' => $this->string('active_from')->toString(),
+            'active_to' => $this->string('active_to')->toString(),
         ];
     }
 }

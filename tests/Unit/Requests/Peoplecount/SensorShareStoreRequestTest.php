@@ -17,9 +17,24 @@ it('has correct rules', function () {
     ]);
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'borrower_organization_id' => 'integer',
+it('returns typed payload values', function () {
+    $data = [
+        'borrower_organization_id' => '42',
+        'starts_at' => '2026-01-01 10:00:00',
+        'ends_at' => '2026-01-01 11:00:00',
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'borrower_organization_id' => ['required', 'integer'],
+        'starts_at' => ['required', 'date'],
+        'ends_at' => ['required', 'date'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'borrower_organization_id' => 42,
+        'starts_at' => '2026-01-01 10:00:00',
+        'ends_at' => '2026-01-01 11:00:00',
     ]);
 });
 

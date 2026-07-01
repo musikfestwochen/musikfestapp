@@ -25,13 +25,8 @@ class AppearanceUpdateRequest extends FormRequest
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function casts(): array
+    public function eastereggsActivated(): bool
     {
-        return [
-            'eastereggs_activated' => 'boolean',
-        ];
+        return $this->boolean('eastereggs_activated');
     }
 }

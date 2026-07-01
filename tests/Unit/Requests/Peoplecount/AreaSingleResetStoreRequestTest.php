@@ -17,9 +17,24 @@ it('has correct rules', function () {
     ]);
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'reset_value' => 'integer',
+it('returns typed payload values', function () {
+    $data = [
+        'reset_value' => '12',
+        'effective_at' => '2026-01-01 10:00:00',
+        'notes' => 'Manual correction',
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'reset_value' => ['required', 'integer'],
+        'effective_at' => ['required', 'date'],
+        'notes' => ['nullable', 'string'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'reset_value' => 12,
+        'effective_at' => '2026-01-01 10:00:00',
+        'notes' => 'Manual correction',
     ]);
 });
 

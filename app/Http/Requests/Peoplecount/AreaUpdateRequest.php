@@ -31,12 +31,13 @@ class AreaUpdateRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array{name: string, event_id: int}
      */
-    public function casts(): array
+    public function payload(): array
     {
         return [
-            'event_id' => 'integer',
+            'name' => $this->string('name')->toString(),
+            'event_id' => $this->integer('event_id'),
         ];
     }
 }

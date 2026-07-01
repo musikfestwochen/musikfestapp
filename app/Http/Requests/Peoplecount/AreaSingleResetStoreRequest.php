@@ -32,12 +32,19 @@ class AreaSingleResetStoreRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array{reset_value: int, effective_at: string, notes?: string|null}
      */
-    public function casts(): array
+    public function payload(): array
     {
-        return [
-            'reset_value' => 'integer',
+        $payload = [
+            'reset_value' => $this->integer('reset_value'),
+            'effective_at' => $this->string('effective_at')->toString(),
         ];
+
+        if ($this->has('notes')) {
+            $payload['notes'] = $this->filled('notes') ? $this->string('notes')->toString() : null;
+        }
+
+        return $payload;
     }
 }

@@ -31,12 +31,36 @@ it('has correct rules', function () {
 
 });
 
-it('has correct casts', function () {
-    expect($this->request->casts())->toBe([
-        'event_id' => 'integer',
-        'area_id' => 'integer',
-        'sensor_id' => 'integer',
-        'direction_flipped' => 'boolean',
+it('returns typed payload values', function () {
+    $data = [
+        'event_id' => '1',
+        'area_id' => '2',
+        'sensor_id' => '3',
+        'label' => null,
+        'direction_flipped' => '0',
+        'active_from' => '2026-01-01 10:00:00',
+        'active_to' => '2026-01-01 11:00:00',
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'event_id' => ['required', 'integer'],
+        'area_id' => ['required', 'integer'],
+        'sensor_id' => ['required', 'integer'],
+        'label' => ['nullable', 'string'],
+        'direction_flipped' => ['required', 'boolean'],
+        'active_from' => ['required', 'date'],
+        'active_to' => ['required', 'date'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'event_id' => 1,
+        'area_id' => 2,
+        'sensor_id' => 3,
+        'label' => null,
+        'direction_flipped' => false,
+        'active_from' => '2026-01-01 10:00:00',
+        'active_to' => '2026-01-01 11:00:00',
     ]);
 });
 

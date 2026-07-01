@@ -50,7 +50,7 @@ class AreaController extends Controller
      */
     public function store(AreaStoreRequest $request, Organization $organization): RedirectResponse
     {
-        $area = $this->areaService->create($request->validated());
+        $area = $this->areaService->create($request->payload());
 
         return to_route('peoplecount.areas.index', [
             'organization' => $organization,
@@ -124,7 +124,7 @@ class AreaController extends Controller
      */
     public function update(AreaUpdateRequest $request, Organization $organization, Area $area): RedirectResponse
     {
-        $area = $this->areaService->update($area, $request->validated());
+        $area = $this->areaService->update($area, $request->payload());
 
         return to_route('peoplecount.areas.index', [
             'organization' => $organization,

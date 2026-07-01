@@ -66,10 +66,10 @@ it('can create an assignment for an organization', function () {
     $sensor = Sensor::factory()->for($org)->create();
 
     $assignmentData = [
-        'event_id' => $event->id,
-        'area_id' => $area->id,
-        'sensor_id' => $sensor->id,
-        'direction_flipped' => false,
+        'event_id' => (string) $event->id,
+        'area_id' => (string) $area->id,
+        'sensor_id' => (string) $sensor->id,
+        'direction_flipped' => '0',
         'active_from' => now()->subDays(2)->toDateTimeString(),
         'active_to' => now()->addDays(2)->toDateTimeString(),
     ];
@@ -174,10 +174,10 @@ it('can update an assignment for an organization', function () {
 
     $response = $this->actingAs($admin)
         ->put(route('peoplecount.assignments.update', ['organization' => $org->slug, 'assignment' => $assignment->id]), [
-            'event_id' => $event->id,
-            'area_id' => $area->id,
-            'sensor_id' => $sensor->id,
-            'direction_flipped' => $newDirection,
+            'event_id' => (string) $event->id,
+            'area_id' => (string) $area->id,
+            'sensor_id' => (string) $sensor->id,
+            'direction_flipped' => '1',
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ]);

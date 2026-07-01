@@ -23,7 +23,7 @@ it('stores a sensor share', function () {
             'organization' => $owner->slug,
             'sensor' => $sensor->id,
         ]), [
-            'borrower_organization_id' => $borrower->id,
+            'borrower_organization_id' => (string) $borrower->id,
             'starts_at' => '2026-08-01 09:00:00',
             'ends_at' => '2026-08-01 18:00:00',
         ])
@@ -72,7 +72,7 @@ it('updates a sensor share', function () {
             'sensor' => $sensor->id,
             'share' => $share->id,
         ]), [
-            'borrower_organization_id' => $newBorrower->id,
+            'borrower_organization_id' => (string) $newBorrower->id,
             'starts_at' => '2026-08-01 08:00:00',
             'ends_at' => '2026-08-01 19:00:00',
         ])

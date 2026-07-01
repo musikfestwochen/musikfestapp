@@ -38,13 +38,8 @@ class OrganizationSelectionRequest extends FormRequest
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function casts(): array
+    public function organizationId(): int
     {
-        return [
-            'organization_id' => 'integer',
-        ];
+        return $this->integer('organization_id');
     }
 }
