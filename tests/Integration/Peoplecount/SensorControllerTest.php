@@ -37,6 +37,22 @@ it('can list sensors for an organization', function () {
         );
 });
 
+it('can list archived sensors using string query values', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    Sensor::factory()->for($org)->create();
+    $archivedSensor = Sensor::factory()->for($org)->create(['archived_at' => now()]);
+
+    $this->actingAs($admin)
+        ->get(route('peoplecount.sensors.index', ['organization' => $org->slug, 'archived' => '1']))
+        ->assertInertia(fn ($page) => $page
+            ->component('peoplecount/Sensors')
+            ->has('sensors', 1)
+            ->where('sensors.0.id', $archivedSensor->id)
+            ->where('showArchived', true)
+        );
+});
+
 it('shows the create sensor form for an organization', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();

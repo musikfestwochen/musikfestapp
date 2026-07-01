@@ -14,7 +14,7 @@ describe('AppearanceController', function () {
         $this->actingAs($user);
 
         $response = $this->patch(route('appearance.update'), [
-            'eastereggs_activated' => false,
+            'eastereggs_activated' => '0',
         ]);
 
         $response->assertRedirect();

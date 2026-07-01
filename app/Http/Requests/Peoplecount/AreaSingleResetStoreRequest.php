@@ -30,4 +30,21 @@ class AreaSingleResetStoreRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    /**
+     * @return array{reset_value: int, effective_at: string, notes?: string|null}
+     */
+    public function payload(): array
+    {
+        $payload = [
+            'reset_value' => $this->integer('reset_value'),
+            'effective_at' => $this->string('effective_at')->toString(),
+        ];
+
+        if ($this->has('notes')) {
+            $payload['notes'] = $this->filled('notes') ? $this->string('notes')->toString() : null;
+        }
+
+        return $payload;
+    }
 }

@@ -40,12 +40,9 @@ class EventController extends Controller
      */
     public function store(EventStoreRequest $request, Organization $organization): RedirectResponse
     {
-        $event = $this->eventService->create([
-            'name' => $request->input('name'),
-            'organization_id' => $organization->id,
-            'starts_at' => $request->input('starts_at'),
-            'ends_at' => $request->input('ends_at'),
-        ]);
+        $event = $this->eventService->create(
+            array_merge($request->validated(), ['organization_id' => $organization->id])
+        );
 
         return to_route('peoplecount.events.index', [
             'organization' => $organization,
@@ -98,11 +95,7 @@ class EventController extends Controller
      */
     public function update(EventUpdateRequest $request, Organization $organization, Event $event): RedirectResponse
     {
-        $event = $this->eventService->update($event, [
-            'name' => $request->input('name'),
-            'starts_at' => $request->input('starts_at'),
-            'ends_at' => $request->input('ends_at'),
-        ]);
+        $event = $this->eventService->update($event, $request->validated());
 
         return to_route('peoplecount.events.index', [
             'organization' => $organization,

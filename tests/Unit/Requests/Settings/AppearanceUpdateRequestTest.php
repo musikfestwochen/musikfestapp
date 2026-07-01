@@ -14,6 +14,14 @@ it('has correct rules', function () {
     ]);
 });
 
+it('returns typed easter eggs flag', function () {
+    expect($this->request->eastereggsActivated())->toBeFalse();
+
+    $this->request->merge(['eastereggs_activated' => '1']);
+
+    expect($this->request->eastereggsActivated())->toBeTrue();
+});
+
 it('authorizes when user is authenticated', function () {
     Auth::shouldReceive('check')->andReturn(true);
 

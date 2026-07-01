@@ -37,11 +37,7 @@ class AreaSingleResetController extends Controller
      */
     public function store(AreaSingleResetStoreRequest $request, Organization $organization, Area $area): RedirectResponse
     {
-        $this->areaResetService->createSingleReset($area, [
-            'reset_value' => $request->input('reset_value'),
-            'effective_at' => $request->input('effective_at'),
-            'notes' => $request->input('notes'),
-        ]);
+        $this->areaResetService->createSingleReset($area, $request->payload());
 
         return to_route('peoplecount.areas.edit', [
             'organization' => $organization,

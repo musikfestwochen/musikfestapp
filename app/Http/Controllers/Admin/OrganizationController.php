@@ -39,7 +39,7 @@ class OrganizationController extends Controller
      */
     public function store(OrganizationStoreRequest $request): RedirectResponse
     {
-        $organization = Organization::query()->create($request->all());
+        $organization = Organization::query()->create($request->validated());
 
         return to_route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' created successfully.');
     }
@@ -83,7 +83,7 @@ class OrganizationController extends Controller
      */
     public function update(OrganizationUpdateRequest $request, Organization $organization): RedirectResponse
     {
-        $organization->update($request->all());
+        $organization->update($request->validated());
 
         return to_route('admin.organizations.index')->with('status', 'Organization '.$organization->name.' updated successfully.');
     }

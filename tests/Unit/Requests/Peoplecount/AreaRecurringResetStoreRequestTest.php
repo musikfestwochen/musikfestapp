@@ -33,6 +33,30 @@ it('has correct rules', function () {
     expect($actualRules['reset_time'][2])->toBeInstanceOf(Unique::class);
 });
 
+it('returns typed payload values', function () {
+    $data = [
+        'reset_value' => '12',
+        'reset_time' => '10:00',
+        'timezone' => 'Europe/Berlin',
+        'notes' => null,
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'reset_value' => ['required', 'integer'],
+        'reset_time' => ['required', 'date_format:H:i'],
+        'timezone' => ['required', 'string'],
+        'notes' => ['nullable', 'string'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'reset_value' => 12,
+        'reset_time' => '10:00',
+        'timezone' => 'Europe/Berlin',
+        'notes' => null,
+    ]);
+});
+
 it('validates valid time formats', function () {
     $validTimes = [
         '08:00',

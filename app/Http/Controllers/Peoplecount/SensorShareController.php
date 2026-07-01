@@ -24,9 +24,7 @@ class SensorShareController extends Controller
         try {
             $this->sensorShareService->create([
                 'sensor_id' => $sensor->id,
-                'borrower_organization_id' => $request->validated('borrower_organization_id'),
-                'starts_at' => $request->validated('starts_at'),
-                'ends_at' => $request->validated('ends_at'),
+                ...$request->payload(),
             ]);
         } catch (ValidationException $validationException) {
             return back()->withErrors($validationException->errors())->withInput();
@@ -43,11 +41,7 @@ class SensorShareController extends Controller
         abort_if($share->sensor_id !== $sensor->id, 404);
 
         try {
-            $this->sensorShareService->update($share, [
-                'borrower_organization_id' => $request->validated('borrower_organization_id'),
-                'starts_at' => $request->validated('starts_at'),
-                'ends_at' => $request->validated('ends_at'),
-            ]);
+            $this->sensorShareService->update($share, $request->payload());
         } catch (ValidationException $validationException) {
             return back()->withErrors($validationException->errors())->withInput();
         }

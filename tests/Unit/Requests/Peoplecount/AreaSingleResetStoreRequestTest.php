@@ -17,6 +17,27 @@ it('has correct rules', function () {
     ]);
 });
 
+it('returns typed payload values', function () {
+    $data = [
+        'reset_value' => '12',
+        'effective_at' => '2026-01-01 10:00:00',
+        'notes' => 'Manual correction',
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'reset_value' => ['required', 'integer'],
+        'effective_at' => ['required', 'date'],
+        'notes' => ['nullable', 'string'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'reset_value' => 12,
+        'effective_at' => '2026-01-01 10:00:00',
+        'notes' => 'Manual correction',
+    ]);
+});
+
 it('authorizes when user can store area resets', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.area_resets.store')->andReturn(true);

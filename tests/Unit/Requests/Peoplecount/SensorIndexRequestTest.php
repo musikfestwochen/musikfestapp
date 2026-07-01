@@ -10,7 +10,17 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([]);
+    expect($this->request->rules())->toBe([
+        'archived' => ['nullable', 'boolean'],
+    ]);
+});
+
+it('returns typed archived filter value', function () {
+    expect($this->request->showArchived())->toBeFalse();
+
+    $this->request->merge(['archived' => '1']);
+
+    expect($this->request->showArchived())->toBeTrue();
 });
 
 it('authorizes when user can index sensors', function () {

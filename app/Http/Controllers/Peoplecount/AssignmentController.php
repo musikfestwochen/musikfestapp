@@ -46,15 +46,7 @@ class AssignmentController extends Controller
     public function store(AssignmentStoreRequest $request, Organization $organization): RedirectResponse
     {
         try {
-            $this->assignmentService->create([
-                'event_id' => $request->validated('event_id'),
-                'area_id' => $request->validated('area_id'),
-                'sensor_id' => $request->validated('sensor_id'),
-                'label' => $request->validated('label'),
-                'direction_flipped' => $request->validated('direction_flipped'),
-                'active_from' => $request->validated('active_from'),
-                'active_to' => $request->validated('active_to'),
-            ]);
+            $this->assignmentService->create($request->payload());
 
             return to_route('peoplecount.assignments.index', [
                 'organization' => $organization,
@@ -120,15 +112,7 @@ class AssignmentController extends Controller
     public function update(AssignmentUpdateRequest $request, Organization $organization, Assignment $assignment): RedirectResponse
     {
         try {
-            $this->assignmentService->update($assignment, [
-                'event_id' => $request->validated('event_id'),
-                'area_id' => $request->validated('area_id'),
-                'sensor_id' => $request->validated('sensor_id'),
-                'label' => $request->validated('label'),
-                'direction_flipped' => $request->validated('direction_flipped'),
-                'active_from' => $request->validated('active_from'),
-                'active_to' => $request->validated('active_to'),
-            ]);
+            $this->assignmentService->update($assignment, $request->payload());
 
             return to_route('peoplecount.assignments.index', [
                 'organization' => $organization,

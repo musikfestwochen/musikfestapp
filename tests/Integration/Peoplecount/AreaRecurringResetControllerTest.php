@@ -49,7 +49,7 @@ it('can create an area recurring reset', function () {
         'event_id' => $event->id,
     ]);
     $resetData = [
-        'reset_value' => 50,
+        'reset_value' => '50',
         'reset_time' => '08:00',
         'timezone' => 'Europe/Zurich',
         'notes' => 'Daily recurring reset for testing',
@@ -173,7 +173,7 @@ it('can update an area recurring reset', function () {
     ]);
 
     $updateData = [
-        'reset_value' => 75,
+        'reset_value' => '75',
         'reset_time' => '14:30',
         'timezone' => 'America/New_York',
         'notes' => 'Updated notes',

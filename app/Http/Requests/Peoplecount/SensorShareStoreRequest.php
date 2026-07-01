@@ -30,4 +30,16 @@ class SensorShareStoreRequest extends FormRequest
             'ends_at' => ['required', 'date', 'after:starts_at'],
         ];
     }
+
+    /**
+     * @return array{borrower_organization_id: int, starts_at: string, ends_at: string}
+     */
+    public function payload(): array
+    {
+        return [
+            'borrower_organization_id' => $this->integer('borrower_organization_id'),
+            'starts_at' => $this->string('starts_at')->toString(),
+            'ends_at' => $this->string('ends_at')->toString(),
+        ];
+    }
 }

@@ -34,4 +34,20 @@ class AssignmentUpdateRequest extends FormRequest
             'active_to' => ['required', 'date', 'after:active_from'],
         ];
     }
+
+    /**
+     * @return array{event_id: int, area_id: int, sensor_id: int, label: string|null, direction_flipped: bool, active_from: string, active_to: string}
+     */
+    public function payload(): array
+    {
+        return [
+            'event_id' => $this->integer('event_id'),
+            'area_id' => $this->integer('area_id'),
+            'sensor_id' => $this->integer('sensor_id'),
+            'label' => $this->filled('label') ? $this->string('label')->toString() : null,
+            'direction_flipped' => $this->boolean('direction_flipped'),
+            'active_from' => $this->string('active_from')->toString(),
+            'active_to' => $this->string('active_to')->toString(),
+        ];
+    }
 }

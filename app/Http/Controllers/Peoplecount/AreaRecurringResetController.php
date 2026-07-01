@@ -44,12 +44,7 @@ class AreaRecurringResetController extends Controller
      */
     public function store(AreaRecurringResetStoreRequest $request, Organization $organization, Area $area): RedirectResponse
     {
-        $this->areaResetService->createRecurringReset($area, [
-            'reset_value' => $request->input('reset_value'),
-            'reset_time' => $request->input('reset_time'),
-            'timezone' => $request->input('timezone'),
-            'notes' => $request->input('notes'),
-        ]);
+        $this->areaResetService->createRecurringReset($area, $request->payload());
 
         return to_route('peoplecount.areas.edit', [
             'organization' => $organization,
@@ -92,12 +87,7 @@ class AreaRecurringResetController extends Controller
      */
     public function update(AreaRecurringResetUpdateRequest $request, Organization $organization, Area $area, AreaRecurringReset $recurringReset): RedirectResponse
     {
-        $this->areaResetService->updateRecurringReset($recurringReset, [
-            'reset_value' => $request->input('reset_value'),
-            'reset_time' => $request->input('reset_time'),
-            'timezone' => $request->input('timezone'),
-            'notes' => $request->input('notes'),
-        ]);
+        $this->areaResetService->updateRecurringReset($recurringReset, $request->payload());
 
         return to_route('peoplecount.areas.recurring-resets.show', [
             'organization' => $organization,

@@ -39,4 +39,22 @@ class AreaRecurringResetUpdateRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    /**
+     * @return array{reset_value: int, reset_time: string, timezone: string, notes?: string|null}
+     */
+    public function payload(): array
+    {
+        $payload = [
+            'reset_value' => $this->integer('reset_value'),
+            'reset_time' => $this->string('reset_time')->toString(),
+            'timezone' => $this->string('timezone')->toString(),
+        ];
+
+        if ($this->has('notes')) {
+            $payload['notes'] = $this->filled('notes') ? $this->string('notes')->toString() : null;
+        }
+
+        return $payload;
+    }
 }

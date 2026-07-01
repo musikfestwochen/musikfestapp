@@ -31,6 +31,34 @@ it('has correct rules', function () {
         ->and($rules['channel'][1])->toBeInstanceOf(Enum::class);
 });
 
+it('returns typed payload values', function () {
+    $data = [
+        'type' => 'occupancy_alert',
+        'channel' => 'email',
+        'cooldown_minutes' => '30',
+        'occupancy_alert_threshold' => '100',
+        'recipients' => ['1', '2'],
+    ];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'type' => ['required', 'string'],
+        'channel' => ['required', 'string'],
+        'cooldown_minutes' => ['required', 'integer'],
+        'occupancy_alert_threshold' => ['required', 'integer'],
+        'recipients' => ['nullable', 'array'],
+        'recipients.*' => ['integer'],
+    ]));
+
+    expect($this->request->payload())->toBe([
+        'type' => 'occupancy_alert',
+        'channel' => 'email',
+        'cooldown_minutes' => 30,
+        'occupancy_alert_threshold' => 100,
+        'recipients' => [1, 2],
+    ]);
+});
+
 it('authorizes when user can store alerts', function () {
     $user = Mockery::mock(User::class);
     $user->shouldReceive('can')->with('peoplecount.alerts.store')->andReturn(true);

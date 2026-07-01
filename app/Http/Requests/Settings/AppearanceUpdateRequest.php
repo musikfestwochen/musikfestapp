@@ -24,4 +24,9 @@ class AppearanceUpdateRequest extends FormRequest
             'eastereggs_activated' => ['required', 'boolean'],
         ];
     }
+
+    public function eastereggsActivated(): bool
+    {
+        return $this->boolean('eastereggs_activated');
+    }
 }

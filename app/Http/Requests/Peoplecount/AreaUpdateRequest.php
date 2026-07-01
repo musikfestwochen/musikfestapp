@@ -26,7 +26,18 @@ class AreaUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'event_id' => ['required', 'exists:peoplecount_events,id'],
+            'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
+        ];
+    }
+
+    /**
+     * @return array{name: string, event_id: int}
+     */
+    public function payload(): array
+    {
+        return [
+            'name' => $this->string('name')->toString(),
+            'event_id' => $this->integer('event_id'),
         ];
     }
 }

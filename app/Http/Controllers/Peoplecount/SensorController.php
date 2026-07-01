@@ -30,10 +30,12 @@ class SensorController extends Controller
      */
     public function index(SensorIndexRequest $request, Organization $organization): Response
     {
+        $showArchived = $request->showArchived();
+
         return Inertia::render('peoplecount/Sensors', [
-            'sensors' => $this->sensorService->getSensors($request->boolean('archived')),
+            'sensors' => $this->sensorService->getSensors($showArchived),
             'organization' => $organization,
-            'showArchived' => $request->boolean('archived'),
+            'showArchived' => $showArchived,
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -43,13 +45,9 @@ class SensorController extends Controller
      */
     public function store(SensorStoreRequest $request, Organization $organization): RedirectResponse
     {
-        $sensor = $this->sensorService->createWithToken([
-            'vendor' => $request->input('vendor'),
-            'model' => $request->input('model'),
-            'serial' => $request->input('serial'),
-            'name' => $request->input('name'),
-            'organization_id' => $organization->id,
-        ]);
+        $sensor = $this->sensorService->createWithToken(
+            array_merge($request->validated(), ['organization_id' => $organization->id])
+        );
 
         $displayName = $sensor->name ?? ($sensor->vendor.' '.$sensor->model.' '.$sensor->serial);
 

@@ -81,9 +81,20 @@ it('rejects invalid organization_id types', function () {
 });
 
 it('has required methods', function () {
-    // Test that the request class has the required methods
     expect(method_exists($this->request, 'rules'))->toBeTrue();
     expect(method_exists($this->request, 'authorize'))->toBeTrue();
+    expect(method_exists($this->request, 'organizationId'))->toBeTrue();
+});
+
+it('returns typed organization id', function () {
+    $data = ['organization_id' => '42'];
+
+    $this->request->merge($data);
+    $this->request->setValidator(validator($data, [
+        'organization_id' => ['required', 'integer'],
+    ]));
+
+    expect($this->request->organizationId())->toBe(42);
 });
 
 it('extends FormRequest', function () {

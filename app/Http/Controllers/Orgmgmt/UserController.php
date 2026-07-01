@@ -41,10 +41,9 @@ class UserController extends Controller
      */
     public function store(UserStoreRequest $request, Organization $organization): RedirectResponse
     {
-        // create user a random password
-        $request->merge(['password' => Str::random()]);
-
-        $user = User::query()->create($request->all());
+        $user = User::query()->create(
+            array_merge($request->validated(), ['password' => Str::random()])
+        );
 
         // attach user to organization
         $user->organizations()->attach($organization->id);
@@ -100,7 +99,7 @@ class UserController extends Controller
      */
     public function update(UserUpdateRequest $request, Organization $organization, User $user): RedirectResponse
     {
-        $user->update($request->all());
+        $user->update($request->validated());
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
