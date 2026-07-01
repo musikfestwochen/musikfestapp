@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $area_id
  * @property int $sensor_id
  * @property int|null $sensor_share_id
+ * @property string|null $label
  * @property bool $direction_flipped
  * @property Carbon $active_from
  * @property Carbon $active_to
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
     'area_id',
     'sensor_id',
     'sensor_share_id',
+    'label',
     'direction_flipped',
     'active_from',
     'active_to',

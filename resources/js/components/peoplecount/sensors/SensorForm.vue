@@ -13,6 +13,7 @@ const form = useForm({
     vendor: props.sensor?.vendor || '',
     model: props.sensor?.model || '',
     serial: props.sensor?.serial || '',
+    name: props.sensor?.name || '',
 });
 
 const submit = () => {
@@ -47,6 +48,13 @@ const submit = () => {
                 <Label for="serial">Serial Number</Label>
                 <Input id="serial" v-model="form.serial" :tabindex="3" autocomplete="off" placeholder="Sensor Serial Number" required type="text" />
                 <InputError :message="form.errors.serial" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="name">Name</Label>
+                <Input id="name" v-model="form.name" :tabindex="4" autocomplete="off" placeholder="e.g. Main Entrance Counter" type="text" />
+                <InputError :message="form.errors.name" />
+                <p class="text-muted-foreground text-sm">Optional. A human-readable name for this sensor.</p>
             </div>
 
             <Button :disabled="form.processing" class="mt-2 w-full" tabindex="5" type="submit">

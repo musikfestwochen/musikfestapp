@@ -15,19 +15,20 @@ it('has correct rules', function () {
     expect($rules)->toHaveKey('event_id')
         ->and($rules)->toHaveKey('area_id')
         ->and($rules)->toHaveKey('sensor_id')
+        ->and($rules)->toHaveKey('label')
         ->and($rules)->toHaveKey('direction_flipped')
         ->and($rules)->toHaveKey('active_from')
-        ->and($rules)->toHaveKey('active_to');
-
-    expect($rules['event_id'])->toBe(['required', 'integer', 'exists:peoplecount_events,id']);
-    expect($rules['area_id'])->toBe(['required', 'integer', 'exists:peoplecount_areas,id']);
-    expect($rules['sensor_id'])->toBe(['required', 'integer', 'exists:peoplecount_sensors,id']);
+        ->and($rules)->toHaveKey('active_to')
+        ->and($rules['event_id'])->toBe(['required', 'integer', 'exists:peoplecount_events,id'])
+        ->and($rules['area_id'])->toBe(['required', 'integer', 'exists:peoplecount_areas,id'])
+        ->and($rules['sensor_id'])->toBe(['required', 'integer', 'exists:peoplecount_sensors,id'])
+        ->and($rules['label'])->toBe(['nullable', 'string', 'max:255'])
+        ->and($rules['direction_flipped'])->toBe(['required', 'boolean'])
+        ->and($rules['active_from'])->toBe(['required', 'date', 'before:active_to'])
+        ->and($rules['active_to'])->toBe(['required', 'date', 'after:active_from']);
 
     // The direction_flipped field uses a boolean validation rule to ensure the value is true or false
-    expect($rules['direction_flipped'])->toBe(['required', 'boolean']);
 
-    expect($rules['active_from'])->toBe(['required', 'date', 'before:active_to']);
-    expect($rules['active_to'])->toBe(['required', 'date', 'after:active_from']);
 });
 
 it('has correct casts', function () {

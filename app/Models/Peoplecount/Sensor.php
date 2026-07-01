@@ -21,6 +21,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $vendor
  * @property string $model
  * @property string $serial
+ * @property string|null $name
  * @property int $organization_id
  * @property string|null $api_token
  * @property Carbon|null $archived_at
@@ -29,6 +30,7 @@ use Laravel\Sanctum\HasApiTokens;
     'vendor',
     'model',
     'serial',
+    'name',
     'organization_id',
     'archived_at',
     'api_token', // TODO: Storing token in plaintext, revisit if API becomes sensitive

@@ -120,7 +120,7 @@ class SensorService
             // Load sensors that are currently assigned within the organization's events
             $sensors = Sensor::query()
                 ->whereIn('id', $assignedSensorIds)
-                ->get(['id', 'vendor', 'model', 'serial']);
+                ->get(['id', 'vendor', 'model', 'serial', 'name']);
 
             $healthy = [];
             $suspicious = [];
@@ -146,6 +146,7 @@ class SensorService
                     'serial' => $sensor->serial,
                     'vendor' => $sensor->vendor,
                     'model' => $sensor->model,
+                    'name' => $sensor->name,
                     'latest_ts' => $latest ? $latest->ts_to->toIso8601String() : null,
                     'interval_counts' => $counts->map(function (IntervalCount $c): array {
                         return [

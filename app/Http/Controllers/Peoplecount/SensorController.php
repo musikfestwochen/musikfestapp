@@ -49,10 +49,12 @@ class SensorController extends Controller
             array_merge($request->validated(), ['organization_id' => $organization->id])
         );
 
+        $displayName = $sensor->name ?? ($sensor->vendor.' '.$sensor->model.' '.$sensor->serial);
+
         return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
         ])
-            ->with('status', 'Sensor created successfully ('.$sensor->vendor.' '.$sensor->model.' '.$sensor->serial.').');
+            ->with('status', 'Sensor created successfully ('.$displayName.').');
     }
 
     /**
@@ -117,10 +119,12 @@ class SensorController extends Controller
 
         $sensor->update($request->validated());
 
+        $displayName = $sensor->name ?? ($sensor->vendor.' '.$sensor->model.' '.$sensor->serial);
+
         return to_route('peoplecount.sensors.index', [
             'organization' => $organization,
         ])
-            ->with('status', 'Sensor updated successfully ('.$sensor->vendor.' '.$sensor->model.' '.$sensor->serial.').');
+            ->with('status', 'Sensor updated successfully ('.$displayName.').');
 
     }
 
@@ -131,7 +135,7 @@ class SensorController extends Controller
      */
     public function destroy(SensorDestroyRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
     {
-        $name = $sensor->vendor.' '.$sensor->model.' '.$sensor->serial;
+        $name = $sensor->name ?? ($sensor->vendor.' '.$sensor->model.' '.$sensor->serial);
 
         try {
             $this->sensorService->delete($sensor);

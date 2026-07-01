@@ -18,6 +18,7 @@ it('has correct fillable attributes', function () {
         'area_id',
         'sensor_id',
         'sensor_share_id',
+        'label',
         'direction_flipped',
         'active_from',
         'active_to',

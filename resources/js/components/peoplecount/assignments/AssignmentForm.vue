@@ -3,14 +3,13 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
-import { getLocalDateFromUTC, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
+import { datetimeLocalToUTCString, utcStringToDatetimeLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
-import { VueDatePicker, WeekStart } from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css';
 import { LoaderCircle } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 
 const props = defineProps<{
     assignment?: PeoplecountAssignment;
@@ -19,20 +18,14 @@ const props = defineProps<{
     sensors: PeoplecountSensor[];
 }>();
 
-// Initialize date range from existing assignment or null for new assignments
-const initialDateRange = props.assignment
-    ? [getLocalDateFromUTC(props.assignment.active_from), getLocalDateFromUTC(props.assignment.active_to)]
-    : null;
-
-const dateRange = ref(initialDateRange);
-
 const form = useForm({
-    event_id: props.assignment?.event_id || '',
-    area_id: props.assignment?.area_id || '',
-    sensor_id: props.assignment?.sensor_id || '',
+    event_id: props.assignment?.event_id.toString() || '',
+    area_id: props.assignment?.area_id.toString() || '',
+    sensor_id: props.assignment?.sensor_id.toString() || '',
+    label: props.assignment?.label || '',
     direction_flipped: props.assignment?.direction_flipped || false,
-    active_from: props.assignment?.active_from || '',
-    active_to: props.assignment?.active_to || '',
+    active_from: utcStringToDatetimeLocal(props.assignment?.active_from),
+    active_to: utcStringToDatetimeLocal(props.assignment?.active_to),
 });
 
 // Get areas from selected event
@@ -50,43 +43,32 @@ watch(
     },
 );
 
-// Handle date range changes
-const handleDateRangeChange = (range: [Date, Date] | null) => {
-    dateRange.value = range;
-    if (range && range.length === 2) {
-        form.active_from = getUTCStringFromLocal(range[0]);
-        form.active_to = getUTCStringFromLocal(range[1]);
-    } else {
-        form.active_from = '';
-        form.active_to = '';
-    }
-};
+const selectedEvent = computed(() => props.events.find((event) => event.id === parseInt(form.event_id.toString())));
+
+const eventStartsAt = computed(() => utcStringToDatetimeLocal(selectedEvent.value?.starts_at));
+const eventEndsAt = computed(() => utcStringToDatetimeLocal(selectedEvent.value?.ends_at));
+
+const hasValidDateRange = () => Boolean(form.active_from && form.active_to && form.active_from < form.active_to);
+const isWithinEventRange = () => !selectedEvent.value || (form.active_from >= eventStartsAt.value && form.active_to <= eventEndsAt.value);
+
+const submitForm = () =>
+    form.transform((data) => ({
+        ...data,
+        active_from: datetimeLocalToUTCString(data.active_from),
+        active_to: datetimeLocalToUTCString(data.active_to),
+    }));
 
 const submit = () => {
     if (props.assignment && props.organization) {
-        form.put(
+        submitForm().put(
             route('peoplecount.assignments.update', {
                 assignment: props.assignment.id,
                 organization: props.organization.slug,
             }),
         );
     } else if (props.organization) {
-        form.post(route('peoplecount.assignments.store', { organization: props.organization.slug }));
+        submitForm().post(route('peoplecount.assignments.store', { organization: props.organization.slug }));
     }
-};
-
-// Date picker configuration
-const datePickerConfig = {
-    range: true,
-    enableTimePicker: true,
-    format: 'dd/MM/yyyy HH:mm',
-    previewFormat: 'dd/MM/yyyy HH:mm',
-    placeholder: 'Select active date and time range',
-    autoApply: true,
-    closeOnAutoApply: true,
-    weekStart: WeekStart.Monday,
-    utc: false, // We handle UTC conversion manually
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 };
 </script>
 
@@ -132,7 +114,11 @@ const datePickerConfig = {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem v-for="sensor in sensors" :key="sensor.id" :value="sensor.id.toString()">
-                            {{ sensor.vendor }} {{ sensor.model }} ({{ sensor.serial }})
+                            {{
+                                sensor.name
+                                    ? `${sensor.name} (${sensor.vendor} ${sensor.model})`
+                                    : `${sensor.vendor} ${sensor.model} (${sensor.serial})`
+                            }}
                             <span v-if="sensor.organization && sensor.organization_id !== props.organization.id">
                                 · shared by {{ sensor.organization.name }}</span
                             >
@@ -143,29 +129,49 @@ const datePickerConfig = {
             </div>
 
             <div class="grid gap-2">
+                <Label for="label">Label</Label>
+                <Input id="label" v-model="form.label" :tabindex="4" placeholder="e.g. Entrance Tent A" type="text" />
+                <InputError :message="form.errors.label" />
+                <p class="text-muted-foreground text-sm">Optional. A description for this sensor deployment at this location.</p>
+            </div>
+
+            <div class="grid gap-2">
                 <div class="flex items-center space-x-2">
-                    <Checkbox id="direction_flipped" v-model:checked="form.direction_flipped" :tabindex="4" />
+                    <Checkbox id="direction_flipped" v-model:checked="form.direction_flipped" :tabindex="5" />
                     <Label for="direction_flipped">Direction Flipped</Label>
                 </div>
                 <p class="text-muted-foreground text-sm">Toggle this if the sensor's counting direction should be reversed (in/out becomes out/in)</p>
                 <InputError :message="form.errors.direction_flipped" />
             </div>
 
-            <div class="grid gap-2">
-                <Label for="dateRange">Active Date & Time Range</Label>
-                <VueDatePicker
-                    id="dateRange"
-                    v-model="dateRange"
-                    :tabindex="5"
-                    v-bind="datePickerConfig"
-                    @update:model-value="handleDateRangeChange"
-                />
-                <InputError :message="form.errors.active_from" />
-                <InputError :message="form.errors.active_to" />
-                <p class="text-muted-foreground text-sm">Select when this assignment should be active. Times are in your local timezone.</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="active_from">Active from</Label>
+                    <Input id="active_from" v-model="form.active_from" :tabindex="6" required type="datetime-local" />
+                    <InputError :message="form.errors.active_from" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="active_to">Active to</Label>
+                    <Input id="active_to" v-model="form.active_to" :tabindex="7" required type="datetime-local" />
+                    <InputError :message="form.errors.active_to" />
+                </div>
+                <p class="text-muted-foreground text-sm sm:col-span-2">
+                    Select when this assignment should be active. Times are in your local timezone.
+                </p>
+                <p v-if="form.active_from && form.active_to && form.active_from >= form.active_to" class="text-destructive text-sm sm:col-span-2">
+                    Active to must be after active from.
+                </p>
+                <p v-if="selectedEvent && hasValidDateRange() && !isWithinEventRange()" class="text-destructive text-sm sm:col-span-2">
+                    Assignment must be within the selected event: {{ eventStartsAt }} to {{ eventEndsAt }}.
+                </p>
             </div>
 
-            <Button :disabled="form.processing || !dateRange || !form.event_id || !form.area_id || !form.sensor_id" class="mt-2 w-full" type="submit">
+            <Button
+                :disabled="form.processing || !hasValidDateRange() || !isWithinEventRange() || !form.event_id || !form.area_id || !form.sensor_id"
+                class="mt-2 w-full"
+                type="submit"
+            >
                 <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                 <span v-else>{{ props.assignment ? 'Update Assignment' : 'Create Assignment' }}</span>
             </Button>

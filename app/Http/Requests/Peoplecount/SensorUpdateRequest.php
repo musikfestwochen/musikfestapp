@@ -28,6 +28,7 @@ class SensorUpdateRequest extends FormRequest
             'vendor' => ['required', 'string', 'max:255'],
             'model' => ['required', 'string', 'max:255'],
             'serial' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     combineDateAndTime,
     convertTimezone,
     dailyResetToText,
     DateTimeHelper,
+    datetimeLocalToUTCString,
     formatDateForInput,
     formatDateInTimezone,
     formatLocalDateTime,
@@ -18,6 +19,7 @@ import {
     isFuture,
     isPast,
     isToday,
+    utcStringToDatetimeLocal,
     validateResetTime,
 } from '../dateTimeHelpers';
 
@@ -105,6 +107,16 @@ describe('DateTimeHelper Class', () => {
             it('should return null for empty string', () => {
                 const localDate = DateTimeHelper.getLocalDateFromUTC('');
                 expect(localDate).toBeNull();
+            });
+        });
+
+        describe('datetime-local conversions', () => {
+            it('round trips UTC strings through datetime-local values', () => {
+                const utcString = '2024-07-25T12:30:00.000Z';
+                const localValue = DateTimeHelper.utcStringToDatetimeLocal(utcString);
+
+                expect(localValue).toMatch(/^2024-07-25T\d{2}:30$/);
+                expect(DateTimeHelper.datetimeLocalToUTCString(localValue)).toBe(utcString);
             });
         });
 
@@ -209,6 +221,23 @@ describe('Standalone Utility Functions', () => {
         it('should handle undefined input', () => {
             const localDate = getLocalDateFromUTC(undefined);
             expect(localDate).toBeNull();
+        });
+    });
+
+    describe('datetime-local conversions', () => {
+        it('round trips UTC strings through datetime-local values', () => {
+            const utcString = '2024-07-25T12:30:00.000Z';
+            const localValue = utcStringToDatetimeLocal(utcString);
+
+            expect(localValue).toMatch(/^2024-07-25T\d{2}:30$/);
+            expect(datetimeLocalToUTCString(localValue)).toBe(utcString);
+        });
+
+        it('returns empty strings for missing or invalid values', () => {
+            expect(utcStringToDatetimeLocal()).toBe('');
+            expect(utcStringToDatetimeLocal('not-a-date')).toBe('');
+            expect(datetimeLocalToUTCString('')).toBe('');
+            expect(datetimeLocalToUTCString('not-a-date')).toBe('');
         });
     });
 });
@@ -331,6 +360,10 @@ describe('Timezone Functions', () => {
 });
 
 describe('Date Utility Functions', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     describe('formatDateForInput', () => {
         it('should format date for HTML input', () => {
             const date = new Date('2024-07-25T12:00:00Z');
@@ -359,51 +392,21 @@ describe('Date Utility Functions', () => {
 
     describe('isToday', () => {
         it('should return true for today', () => {
-            // Use a fixed date instead of new Date() to avoid time-dependent tests
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
             const today = new Date('2024-07-25T12:00:00Z');
-            // Mock the current date to match our test date
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
 
             expect(isToday(today)).toBe(true);
-
-            // Restore original Date
-            global.Date = originalDate;
         });
 
         it('should return false for yesterday', () => {
-            // Use fixed dates instead of new Date() to avoid time-dependent tests
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
             const yesterday = new Date('2024-07-24T12:00:00Z');
-            // Mock the current date to be one day later
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
 
             expect(isToday(yesterday)).toBe(false);
-
-            // Restore original Date
-            global.Date = originalDate;
         });
     });
 
@@ -433,128 +436,53 @@ describe('Date Utility Functions', () => {
 
     describe('getRelativeTime', () => {
         it('should return "now" for current time', () => {
-            // Use fixed date instead of new Date() to avoid time-dependent tests
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
             const now = new Date('2024-07-25T12:00:00Z');
-            // Mock the current date to match our test date
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
 
             const relative = getRelativeTime(now);
             expect(relative).toBe('now');
-
-            // Restore original Date
-            global.Date = originalDate;
         });
 
         it('should return minutes ago for recent past', () => {
-            // Use fixed dates instead of new Date() to avoid time-dependent tests
-            const fiveMinutesAgo = new Date('2024-07-25T11:55:00Z'); // 5 minutes before 12:00
-            // Mock the current date to be 5 minutes later
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+            const fiveMinutesAgo = new Date('2024-07-25T11:55:00Z');
 
             const relative = getRelativeTime(fiveMinutesAgo);
             expect(relative).toBe('5 minutes ago');
-
-            // Restore original Date
-            global.Date = originalDate;
         });
 
         it('should return "in X minutes" for near future', () => {
-            // Use fixed dates instead of new Date() to avoid time-dependent tests
-            const fiveMinutesLater = new Date('2024-07-25T12:05:00Z'); // 5 minutes after 12:00
-            // Mock the current date to be 5 minutes earlier
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+            const fiveMinutesLater = new Date('2024-07-25T12:05:00Z');
 
             const relative = getRelativeTime(fiveMinutesLater);
             expect(relative).toBe('in 5 minutes');
-
-            // Restore original Date
-            global.Date = originalDate;
         });
 
         it('should return hours for longer periods', () => {
-            // Use fixed dates instead of new Date() to avoid time-dependent tests
-            const twoHoursAgo = new Date('2024-07-25T10:00:00Z'); // 2 hours before 12:00
-            // Mock the current date to be 2 hours later
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+            const twoHoursAgo = new Date('2024-07-25T10:00:00Z');
 
             const relative = getRelativeTime(twoHoursAgo);
             expect(relative).toBe('2 hours ago');
-
-            // Restore original Date
-            global.Date = originalDate;
         });
 
         it('should return days for very long periods', () => {
-            // Use fixed dates instead of new Date() to avoid time-dependent tests
-            const threeDaysAgo = new Date('2024-07-22T12:00:00Z'); // 3 days before 2024-07-25
-            // Mock the current date to be 3 days later
-            const originalDate = Date;
-            global.Date = class extends Date {
-                constructor(...args: any[]) {
-                    if (args.length === 0) {
-                        super('2024-07-25T12:00:00Z');
-                    } else {
-                        super(...args);
-                    }
-                }
-                static now() {
-                    return new originalDate('2024-07-25T12:00:00Z').getTime();
-                }
-            } as any;
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+            const threeDaysAgo = new Date('2024-07-22T12:00:00Z');
 
             const relative = getRelativeTime(threeDaysAgo);
             expect(relative).toBe('3 days ago');
-
-            // Restore original Date
-            global.Date = originalDate;
         });
     });
 });

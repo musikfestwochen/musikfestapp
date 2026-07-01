@@ -17,6 +17,8 @@ interface SensorItem {
     serial: string;
     vendor: string;
     model: string;
+    name: string | null;
+    label: string | null;
     sums: Record<'10m' | '30m' | '1h' | '2h', SensorSums>;
 }
 
@@ -161,7 +163,7 @@ watch(
                     <ul v-else class="divide-y px-3 pb-3 text-sm">
                         <li v-for="s in sortedAreas[0].sensors" :key="s.id" class="py-2">
                             <div class="flex flex-col">
-                                <div class="truncate">{{ s.vendor }} {{ s.model }}</div>
+                                <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
                                 <div class="mt-1 flex gap-3 text-xs">
                                     <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
                                     <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
@@ -189,7 +191,7 @@ watch(
                             <ul v-else class="divide-y px-3 pb-3 text-sm">
                                 <li v-for="s in area.sensors" :key="s.id" class="py-2">
                                     <div class="flex flex-col">
-                                        <div class="truncate">{{ s.vendor }} {{ s.model }}</div>
+                                        <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
                                         <div class="mt-1 flex gap-3 text-xs">
                                             <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
                                             <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>

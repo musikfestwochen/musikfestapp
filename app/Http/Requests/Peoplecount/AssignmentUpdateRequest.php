@@ -28,6 +28,7 @@ class AssignmentUpdateRequest extends FormRequest
             'event_id' => ['required', 'integer', 'exists:peoplecount_events,id'],
             'area_id' => ['required', 'integer', 'exists:peoplecount_areas,id'],
             'sensor_id' => ['required', 'integer', 'exists:peoplecount_sensors,id'],
+            'label' => ['nullable', 'string', 'max:255'],
             'direction_flipped' => ['required', 'boolean'],
             'active_from' => ['required', 'date', 'before:active_to'],
             'active_to' => ['required', 'date', 'after:active_from'],
