@@ -1,9 +1,12 @@
 <?php
 
 use App\Jobs\AggregateAreaCounts;
+use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaAggregatedCount;
 use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Assignment;
+use App\Services\Peoplecount\AreaAggregationService;
 use Illuminate\Support\Carbon;
 
 it('correctly calculates the total event numbers', function () {
@@ -113,6 +116,55 @@ it('correctly calculates the total event numbers with different aggregation gran
     // assert
     expect($area->aggregatedCounts()->latest('period_end')->first()->count)->toBe($expectedCount);
 })->with([1, 5, 10, 15, 30, 60, 180, 24 * 60 + 10]);
+
+it('rebuilds from event start when aggregates are empty even with stale watermark', function () {
+    $eventStart = Carbon::parse('2025-08-02 10:00:00')->utc();
+    $setup = setupAggregationScenario([
+        'granularity_minutes' => 10,
+        'event_start' => $eventStart,
+        'event_end' => $eventStart->copy()->addHour(),
+        'now' => $eventStart->copy()->addMinutes(31),
+        'interval_counts' => [
+            ['ts_from' => $eventStart, 'ts_to' => $eventStart->copy()->addMinutes(10), 'count_in' => 5, 'received_at' => $eventStart->copy()->addMinutes(10)],
+            ['ts_from' => $eventStart->copy()->addMinutes(20), 'ts_to' => $eventStart->copy()->addMinutes(30), 'count_in' => 3, 'received_at' => $eventStart->copy()->addMinutes(30)],
+        ],
+    ]);
+
+    $setup['area']->forceFill(['data_watermark' => $eventStart->copy()->addMinutes(15)])->save();
+
+    AggregateAreaCounts::dispatch();
+
+    assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 5);
+    assertWindowCount($setup['area'], '2025-08-02 10:20:00', '2025-08-02 10:30:00', 8);
+});
+
+it('clears data watermark when invalid aggregate rows are deleted', function () {
+    $eventStart = Carbon::parse('2025-08-02 10:00:00')->utc();
+    $setup = setupAggregationScenario([
+        'event_start' => $eventStart,
+        'event_end' => $eventStart->copy()->addHour(),
+    ]);
+
+    $setup['area']->forceFill(['data_watermark' => $eventStart->copy()->addMinutes(15)])->save();
+    AreaAggregatedCount::factory()->create([
+        'area_id' => $setup['area']->id,
+        'period_start' => $eventStart,
+        'period_end' => $eventStart->copy()->addMinutes(10),
+        'checksum' => str_repeat('0', 64),
+    ]);
+
+    $deleteInvalidRows = Closure::bind(
+        function (AreaAggregationService $service, Area $area, string $checksum): void {
+            $service->deleteInvalidAggregationRows($area, $checksum);
+        },
+        null,
+        AreaAggregationService::class,
+    );
+
+    $deleteInvalidRows(app(AreaAggregationService::class), $setup['area']->refresh(), str_repeat('1', 64));
+
+    expect($setup['area']->refresh()->data_watermark)->toBeNull();
+});
 
 it('correctly aggregates with single reset at start', function ($offset) {
     // arrange
