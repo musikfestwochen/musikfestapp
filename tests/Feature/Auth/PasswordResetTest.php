@@ -53,7 +53,9 @@ it('can reset password with valid token', function () {
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('home', absolute: false));
+
+        $this->assertAuthenticatedAs($user);
 
         return true;
     });

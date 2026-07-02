@@ -76,8 +76,8 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
         }
     } while (!foundUser);
     if (foundUser) {
-        console.log('Found created user, clicking action button...');
-        await page.locator(`tr:has-text(\"${userName}\")`).getByRole('button').nth(3).click();
+        console.log('Found created user, clicking edit action...');
+        await page.locator(`tr:has-text(\"${userName}\")`).getByRole('button', { name: 'Edit' }).first().click();
     } else {
         console.log('Created user not found in user table.');
     }
@@ -124,8 +124,8 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
         }
     } while (!foundOrg);
     if (foundOrg) {
-        console.log('Found created organization, clicking action button...');
-        await page.locator(`tr:has-text(\"${orgName}\")`).getByRole('button').nth(3).click();
+        console.log('Found created organization, clicking edit action...');
+        await page.locator(`tr:has-text(\"${orgName}\")`).getByRole('button', { name: 'Edit' }).first().click();
     } else {
         console.log('Created organization not found in organization table.');
     }

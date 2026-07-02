@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
@@ -13,12 +14,13 @@ const props = defineProps<{
 }>();
 
 const columns = recurringResetColumns(props.organization, props.area);
+const { can } = usePermissions();
 </script>
 
 <template>
     <DataTable :columns="columns" :data="resets" filter-column="notes" search-placeholder="Search recurring resets...">
         <template #actions>
-            <Button as-child size="sm" variant="default">
+            <Button v-if="can('peoplecount.area_resets.create')" as-child size="sm" variant="default">
                 <Link
                     :href="
                         route('peoplecount.areas.recurring-resets.create', {

@@ -1,3 +1,4 @@
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountAssignment } from '@/types';
@@ -165,6 +166,8 @@ export function assignmentsColumns(organization: Organization): ColumnDef<People
                 const { can } = usePermissions();
                 const canEdit = can('peoplecount.assignments.edit');
                 const canDelete = can('peoplecount.assignments.destroy');
+                const assignmentName =
+                    assignment.label || `${assignment.area?.name || 'area'} / ${assignment.sensor?.name || assignment.sensor?.serial || 'sensor'}`;
 
                 return h(
                     'div',
@@ -191,26 +194,17 @@ export function assignmentsColumns(organization: Organization): ColumnDef<People
                                     ),
                             ),
                         canDelete &&
-                            h(
-                                Link,
-                                {
-                                    href: route('peoplecount.assignments.destroy', {
-                                        organization: organization.slug,
-                                        assignment: assignment.id,
-                                    }),
-                                    method: 'delete',
-                                    as: 'button',
-                                },
-                                () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'destructive',
-                                            size: 'sm',
-                                        },
-                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                    ),
-                            ),
+                            h(ConfirmActionButton, {
+                                href: route('peoplecount.assignments.destroy', {
+                                    organization: organization.slug,
+                                    assignment: assignment.id,
+                                }),
+                                label: 'Delete',
+                                title: `Delete assignment ${assignmentName}?`,
+                                description: 'This assignment will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete assignment',
+                                icon: Trash2,
+                            }),
                     ].filter(Boolean),
                 );
             },

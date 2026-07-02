@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import Heading from '@/components/Heading.vue';
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import InputError from '@/components/InputError.vue';
 import MeasurementCard from '@/components/peoplecount/cards/MeasurementCard.vue';
 import SensorForm from '@/components/peoplecount/sensors/SensorForm.vue';
@@ -252,7 +253,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                                 >
                                     Delete
                                 </Button>
-                                <Link
+                                <ConfirmActionButton
                                     v-else
                                     :href="
                                         route('peoplecount.sensors.shares.destroy', {
@@ -261,12 +262,11 @@ const breadcrumbItems: BreadcrumbItem[] = [
                                             share: share.id,
                                         })
                                     "
-                                    as="button"
-                                    method="delete"
-                                    preserve-scroll
-                                >
-                                    <Button size="sm" variant="destructive">Delete</Button>
-                                </Link>
+                                    label="Delete"
+                                    title="Delete share?"
+                                    description="This sensor share will be permanently deleted. This cannot be undone."
+                                    confirm-label="Delete share"
+                                />
                             </div>
                         </div>
                     </div>

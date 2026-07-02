@@ -8,7 +8,7 @@ import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { useStorage } from '@vueuse/core';
 import axios from 'axios';
-import { ChartColumnIncreasing, ChartSpline, ToggleLeft, ToggleRight } from 'lucide-vue-next';
+import { ChartColumnIncreasing, ChartSpline } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 interface DataPoint {
@@ -38,6 +38,7 @@ const error = ref<string | null>(null);
 const timeRange = ref('1h');
 const chartStyle = useStorage<'spline' | 'step'>('peoplecount.area-count-history.chart-style', 'spline');
 const hiddenAreaIds = ref<Set<number>>(new Set());
+const lastUpdated = ref<Date | null>(null);
 let refreshInterval: number | null = null;
 
 function toggleChartStyle(): void {
@@ -56,6 +57,17 @@ function toggleAreaVisibility(id: number): void {
 
 function isAreaVisible(id: number): boolean {
     return !hiddenAreaIds.value.has(id);
+}
+
+function toggleLegendArea(id: number, event: MouseEvent): void {
+    if (event.shiftKey) {
+        toggleAreaVisibility(id);
+        return;
+    }
+
+    const visibleIds = series.value.filter((area) => isAreaVisible(area.id)).map((area) => area.id);
+    hiddenAreaIds.value =
+        visibleIds.length === 1 && visibleIds[0] === id ? new Set() : new Set(series.value.map((area) => area.id).filter((areaId) => areaId !== id));
 }
 
 const LINE_DASH_PATTERNS: (number[] | undefined)[] = [undefined, [6, 3], [2, 3], [10, 4, 2, 4], [10, 4]];
@@ -121,6 +133,7 @@ const chartData = computed<ChartDataPoint[]>(() => {
 const hasData = computed(() => chartData.value.length > 0);
 const areaColors = computed(() => series.value.map((_, index) => AREA_COLORS[index % AREA_COLORS.length]));
 const areaAccessors = computed(() => series.value.map((area) => (d: ChartDataPoint) => (d[`area_${area.id}`] ?? undefined) as number | undefined));
+const lastUpdatedTime = computed(() => lastUpdated.value?.toLocaleTimeString() ?? 'N/A');
 
 function formatTickDate(d: number): string {
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -132,6 +145,7 @@ async function fetchHistory() {
         const params = getTimeParams();
         const response = await axios.get(`/${props.organization.slug}/peoplecount/area-count-history`, { params });
         series.value = response.data;
+        lastUpdated.value = new Date();
     } catch (err) {
         error.value = 'Failed to load area count history';
         console.error(err);
@@ -158,7 +172,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Card class="col-span-full min-w-0">
+    <Card class="col-span-full flex h-full min-w-0 flex-col">
         <CardHeader class="flex flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:space-y-0">
             <CardTitle>Area Count History</CardTitle>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -185,7 +199,7 @@ onBeforeUnmount(() => {
                 </Select>
             </div>
         </CardHeader>
-        <CardContent class="min-w-0">
+        <CardContent class="flex min-w-0 flex-1 flex-col">
             <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">
                 {{ error }}
             </div>
@@ -198,7 +212,7 @@ onBeforeUnmount(() => {
                 No data available for the selected time range.
             </div>
 
-            <template v-else>
+            <div v-else class="flex flex-1 flex-col">
                 <ChartContainer :config="chartConfig" class="h-[280px] w-full min-w-0 sm:h-[350px]">
                     <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 32 }">
                         <template v-for="(area, index) in series" :key="`line-${area.id}`">
@@ -239,18 +253,15 @@ onBeforeUnmount(() => {
                     </VisXYContainer>
                 </ChartContainer>
                 <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                    <div v-for="(area, index) in series" :key="`legend-${area.id}`" class="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            class="h-7 w-7"
-                            :aria-label="`Toggle ${area.name}`"
-                            :title="`Toggle ${area.name}`"
-                            @click="toggleAreaVisibility(area.id)"
-                        >
-                            <ToggleRight v-if="isAreaVisible(area.id)" class="h-5 w-5" />
-                            <ToggleLeft v-else class="text-muted-foreground h-5 w-5" />
-                        </Button>
+                    <button
+                        v-for="(area, index) in series"
+                        :key="`legend-${area.id}`"
+                        type="button"
+                        class="hover:bg-accent flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-left"
+                        :aria-label="`Show only ${area.name}. Shift-click to toggle visibility.`"
+                        :title="`${area.name} (${area.event_name})`"
+                        @click="toggleLegendArea(area.id, $event)"
+                    >
                         <svg :width="24" :height="8" :class="{ 'opacity-40': !isAreaVisible(area.id) }">
                             <line
                                 x1="0"
@@ -262,12 +273,13 @@ onBeforeUnmount(() => {
                                 :stroke-dasharray="lineDashForIndex(index)?.join(',') ?? 'none'"
                             />
                         </svg>
-                        <span :class="{ 'text-muted-foreground line-through': !isAreaVisible(area.id) }" :title="`${area.name} (${area.event_name})`">
+                        <span :class="{ 'text-muted-foreground line-through': !isAreaVisible(area.id) }">
                             {{ shortenName(area.name) }}
                         </span>
-                    </div>
+                    </button>
                 </div>
-            </template>
+                <div class="text-muted-foreground mt-auto border-t pt-3 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
+            </div>
         </CardContent>
     </Card>
 </template>

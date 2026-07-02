@@ -129,11 +129,11 @@ const lastUpdatedTime = computed(() => {
 </style>
 
 <template>
-    <Card :class="{ 'stale-card': !isRecent, 'widget-card': true }">
+    <Card :class="{ 'stale-card': !isRecent, 'widget-card': true }" class="flex h-full flex-col">
         <CardHeader>
             <CardTitle>Peoplecount Sensor Health</CardTitle>
         </CardHeader>
-        <CardContent class="p-6">
+        <CardContent class="flex flex-1 flex-col p-6">
             <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">{{ error }}</div>
 
             <div v-if="loading && !data">
@@ -144,7 +144,7 @@ const lastUpdatedTime = computed(() => {
                 <div class="text-muted-foreground py-8 text-center">No sensor data</div>
             </div>
 
-            <div v-else>
+            <div v-else class="flex flex-1 flex-col">
                 <div v-if="data.total === 0" class="flex items-center justify-between p-2">
                     <div class="flex items-center">
                         <span class="mr-2">No active sensors</span>
@@ -203,7 +203,7 @@ const lastUpdatedTime = computed(() => {
                 <div class="text-muted-foreground mt-2 text-center text-xs">
                     Healthy: {{ data.healthy.length }} • Suspicious: {{ data.suspicious.length }} • Unhealthy: {{ data.unhealthy.length }}
                 </div>
-                <div class="text-muted-foreground mt-2 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
+                <div class="text-muted-foreground mt-auto border-t pt-3 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
         </CardContent>
     </Card>

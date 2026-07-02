@@ -15,6 +15,8 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => 'confirm-password'],
         ['method' => 'POST', 'uri' => 'confirm-password'],
         ['method' => 'GET|HEAD', 'uri' => 'admin/dashboard'],
+        ['method' => 'PATCH', 'uri' => 'admin/peoplecount-aggregations'],
+        ['method' => 'DELETE', 'uri' => 'admin/peoplecount-aggregations'],
         ['method' => 'POST', 'uri' => 'email/verification-notification'],
         ['method' => 'GET|HEAD', 'uri' => 'forgot-password'],
         ['method' => 'POST', 'uri' => 'forgot-password'],

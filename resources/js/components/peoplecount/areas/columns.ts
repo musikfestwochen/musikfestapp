@@ -1,3 +1,4 @@
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea } from '@/types';
@@ -85,26 +86,17 @@ export function areasColumns(organization: Organization): ColumnDef<PeoplecountA
                                     ),
                             ),
                         canDelete &&
-                            h(
-                                Link,
-                                {
-                                    href: route('peoplecount.areas.destroy', {
-                                        organization: organization.slug,
-                                        area: area.id,
-                                    }),
-                                    method: 'delete',
-                                    as: 'button',
-                                },
-                                () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'destructive',
-                                            size: 'sm',
-                                        },
-                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                    ),
-                            ),
+                            h(ConfirmActionButton, {
+                                href: route('peoplecount.areas.destroy', {
+                                    organization: organization.slug,
+                                    area: area.id,
+                                }),
+                                label: 'Delete',
+                                title: `Delete area ${area.name}?`,
+                                description: 'This area will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete area',
+                                icon: Trash2,
+                            }),
                     ].filter(Boolean),
                 );
             },

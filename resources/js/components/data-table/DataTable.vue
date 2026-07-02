@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="TData, TValue">
 import type { ColumnDef, ColumnFiltersState, SortingState, VisibilityState } from '@tanstack/vue-table';
 import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable } from '@tanstack/vue-table';
+import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +14,7 @@ const props = defineProps<{
     data: TData[];
     filterColumn?: string;
     searchPlaceholder?: string;
+    rowHref?: (row: TData) => string | null | undefined;
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -50,6 +52,18 @@ const table = useVueTable({
         },
     },
 });
+
+function openRow(row: TData, event: MouseEvent | KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    if (!props.rowHref || target.closest('a, button, input, select, textarea, [role="button"], [data-row-action]')) {
+        return;
+    }
+
+    const href = props.rowHref(row);
+    if (href) {
+        router.visit(href);
+    }
+}
 </script>
 
 <template>
@@ -71,7 +85,16 @@ const table = useVueTable({
                 </TableHeader>
                 <TableBody>
                     <template v-if="table.getRowModel().rows?.length">
-                        <TableRow v-for="row in table.getRowModel().rows" :key="row.id" :data-state="row.getIsSelected() ? 'selected' : undefined">
+                        <TableRow
+                            v-for="row in table.getRowModel().rows"
+                            :key="row.id"
+                            :class="rowHref ? 'cursor-pointer' : undefined"
+                            :data-state="row.getIsSelected() ? 'selected' : undefined"
+                            :tabindex="rowHref ? 0 : undefined"
+                            @click="openRow(row.original, $event)"
+                            @keydown.enter="openRow(row.original, $event)"
+                            @keydown.space.prevent="openRow(row.original, $event)"
+                        >
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                             </TableCell>
