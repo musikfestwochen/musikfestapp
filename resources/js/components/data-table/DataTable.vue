@@ -53,7 +53,7 @@ const table = useVueTable({
     },
 });
 
-function openRow(row: TData, event: MouseEvent): void {
+function openRow(row: TData, event: MouseEvent | KeyboardEvent): void {
     const target = event.target as HTMLElement;
     if (!props.rowHref || target.closest('a, button, input, select, textarea, [role="button"], [data-row-action]')) {
         return;
@@ -90,7 +90,10 @@ function openRow(row: TData, event: MouseEvent): void {
                             :key="row.id"
                             :class="rowHref ? 'cursor-pointer' : undefined"
                             :data-state="row.getIsSelected() ? 'selected' : undefined"
+                            :tabindex="rowHref ? 0 : undefined"
                             @click="openRow(row.original, $event)"
+                            @keydown.enter="openRow(row.original, $event)"
+                            @keydown.space.prevent="openRow(row.original, $event)"
                         >
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
