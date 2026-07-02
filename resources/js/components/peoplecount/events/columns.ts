@@ -1,3 +1,4 @@
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountEvent } from '@/types';
@@ -122,26 +123,17 @@ export function eventsColumns(organization: Organization): ColumnDef<Peoplecount
                                     ),
                             ),
                         canDelete &&
-                            h(
-                                Link,
-                                {
-                                    href: route('peoplecount.events.destroy', {
-                                        organization: organization.slug,
-                                        event: event.id,
-                                    }),
-                                    method: 'delete',
-                                    as: 'button',
-                                },
-                                () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'destructive',
-                                            size: 'sm',
-                                        },
-                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                    ),
-                            ),
+                            h(ConfirmActionButton, {
+                                href: route('peoplecount.events.destroy', {
+                                    organization: organization.slug,
+                                    event: event.id,
+                                }),
+                                label: 'Delete',
+                                title: `Delete event ${event.name}?`,
+                                description: 'This event will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete event',
+                                icon: Trash2,
+                            }),
                     ].filter(Boolean),
                 );
             },

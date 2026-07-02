@@ -25,7 +25,7 @@ const submit = (organizationId: number) => {
 </script>
 
 <template>
-    <Head title="Select Organization" />
+    <Head title="Musikfestapp" />
 
     <AuthLayout :class="{ 'cursor-wait': form.processing }" description="Please select an organization to continue" title="Select Organization">
         <InputError :message="form.errors.organization_id" class="mt-2" />
@@ -52,7 +52,7 @@ const submit = (organizationId: number) => {
             </div>
 
             <div class="mt-8 text-center">
-                <TextLink :href="route('logout')" as="button" class="mx-auto block text-sm" method="post">Log out</TextLink>
+                <TextLink :href="route('logout')" as="button" class="mx-auto block cursor-pointer text-sm" method="post">Log out</TextLink>
             </div>
         </div>
     </AuthLayout>

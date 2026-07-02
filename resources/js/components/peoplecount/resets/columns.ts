@@ -1,3 +1,4 @@
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
@@ -78,27 +79,18 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
                     { class: 'flex items-center gap-2' },
                     [
                         canDelete &&
-                            h(
-                                Link,
-                                {
-                                    href: route('peoplecount.areas.single-resets.destroy', {
-                                        organization: organization.slug,
-                                        area: area.id,
-                                        single_reset: reset.id,
-                                    }),
-                                    method: 'delete',
-                                    as: 'button',
-                                },
-                                () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'destructive',
-                                            size: 'sm',
-                                        },
-                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                    ),
-                            ),
+                            h(ConfirmActionButton, {
+                                href: route('peoplecount.areas.single-resets.destroy', {
+                                    organization: organization.slug,
+                                    area: area.id,
+                                    single_reset: reset.id,
+                                }),
+                                label: 'Delete',
+                                title: `Delete reset for ${area.name}?`,
+                                description: 'This reset will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete reset',
+                                icon: Trash2,
+                            }),
                     ].filter(Boolean),
                 );
             },
@@ -226,27 +218,18 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                                     ),
                             ),
                         canDelete &&
-                            h(
-                                Link,
-                                {
-                                    href: route('peoplecount.areas.recurring-resets.destroy', {
-                                        organization: organization.slug,
-                                        area: area.id,
-                                        recurring_reset: reset.id,
-                                    }),
-                                    method: 'delete',
-                                    as: 'button',
-                                },
-                                () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'destructive',
-                                            size: 'sm',
-                                        },
-                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                    ),
-                            ),
+                            h(ConfirmActionButton, {
+                                href: route('peoplecount.areas.recurring-resets.destroy', {
+                                    organization: organization.slug,
+                                    area: area.id,
+                                    recurring_reset: reset.id,
+                                }),
+                                label: 'Delete',
+                                title: `Delete recurring reset for ${area.name}?`,
+                                description: 'This recurring reset will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete recurring reset',
+                                icon: Trash2,
+                            }),
                     ].filter(Boolean),
                 );
             },

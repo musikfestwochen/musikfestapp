@@ -29,7 +29,7 @@ const handleCopyClick = async () => {
 </script>
 
 <template>
-    <div class="relative w-full max-w-xs items-center">
+    <div class="relative w-full max-w-xs items-center" data-row-action>
         <Input :model-value="props.token || ''" autocomplete="off" class="pr-10" placeholder="No token" readonly type="text" />
         <span class="absolute inset-y-0 inset-e-0 flex cursor-pointer items-center justify-center px-2" @click="handleCopyClick">
             <Copy class="text-muted-foreground size-5" />

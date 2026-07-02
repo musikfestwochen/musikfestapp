@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import type { ToastProps } from '.';
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 5000;
 
 export type StringOrVNode =
     | string
@@ -80,6 +80,7 @@ function dispatch(action: Action) {
     switch (action.type) {
         case actionTypes.ADD_TOAST:
             state.value.toasts = [action.toast, ...state.value.toasts].slice(0, TOAST_LIMIT);
+            addToRemoveQueue(action.toast.id);
             break;
 
         case actionTypes.UPDATE_TOAST:

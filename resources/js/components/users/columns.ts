@@ -1,3 +1,4 @@
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Badge } from '@/components/ui/badge/index';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
@@ -98,28 +99,19 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                                     ),
                             ),
                         canDelete &&
-                            h(
-                                Link,
-                                {
-                                    href: organization
-                                        ? route('orgmgmt.users.destroy', {
-                                              organization: organization.slug,
-                                              user: user.id,
-                                          })
-                                        : route('admin.users.destroy', { user: user.id }),
-                                    method: 'delete',
-                                    as: 'button',
-                                },
-                                () =>
-                                    h(
-                                        Button,
-                                        {
-                                            variant: 'destructive',
-                                            size: 'sm',
-                                        },
-                                        () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                    ),
-                            ),
+                            h(ConfirmActionButton, {
+                                href: organization
+                                    ? route('orgmgmt.users.destroy', {
+                                          organization: organization.slug,
+                                          user: user.id,
+                                      })
+                                    : route('admin.users.destroy', { user: user.id }),
+                                label: 'Delete',
+                                title: `Delete user ${user.name}?`,
+                                description: 'This user will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete user',
+                                icon: Trash2,
+                            }),
                     ].filter(Boolean),
                 );
             },

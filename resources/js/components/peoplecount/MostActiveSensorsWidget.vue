@@ -104,7 +104,7 @@ watch(
 </style>
 
 <template>
-    <Card class="widget-card">
+    <Card class="widget-card flex h-full flex-col">
         <CardHeader>
             <div class="flex items-center justify-between">
                 <CardTitle>Most Active Sensors</CardTitle>
@@ -140,7 +140,7 @@ watch(
                 </div>
             </div>
         </CardHeader>
-        <CardContent class="p-6">
+        <CardContent class="flex flex-1 flex-col p-6">
             <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">{{ error }}</div>
 
             <div v-if="loading && !data.length">
@@ -149,7 +149,7 @@ watch(
 
             <div v-else-if="!data.length" class="text-muted-foreground py-8 text-center">No active areas or sensors.</div>
 
-            <div v-else class="space-y-4">
+            <div v-else class="flex flex-1 flex-col space-y-4">
                 <!-- Single area: show expanded content without collapsible -->
                 <div v-if="sortedAreas.length === 1" class="rounded border">
                     <div class="mb-2 flex items-center justify-between p-3">
@@ -204,7 +204,7 @@ watch(
                     </AccordionItem>
                 </Accordion>
 
-                <div class="text-muted-foreground mt-2 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
+                <div class="text-muted-foreground mt-auto border-t pt-3 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
         </CardContent>
     </Card>

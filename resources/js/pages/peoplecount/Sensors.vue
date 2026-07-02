@@ -38,15 +38,13 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <div class="flex items-start justify-between gap-4">
-                <Heading description="See all your sensors and manage their API tokens" title="Sensors" />
-
+            <Heading description="See all your sensors and manage their API tokens" title="Sensors">
                 <Button as-child size="sm" variant="outline">
                     <Link :href="route('peoplecount.sensors.index', { organization: props.organization.slug, archived: !props.showArchived })">
                         {{ props.showArchived ? 'Show Active' : 'Show Archived' }}
                     </Link>
                 </Button>
-            </div>
+            </Heading>
 
             <div class="mt-4">
                 <SensorsTable :organization="props.organization" :sensors="sensors" />

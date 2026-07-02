@@ -1,3 +1,4 @@
+import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization } from '@/types';
@@ -80,23 +81,14 @@ export const organizationsColumns: ColumnDef<Organization>[] = [
                                 ),
                         ),
                     canDelete &&
-                        h(
-                            Link,
-                            {
-                                href: route('admin.organizations.destroy', { id: organization.id }),
-                                method: 'delete',
-                                as: 'button',
-                            },
-                            () =>
-                                h(
-                                    Button,
-                                    {
-                                        variant: 'destructive',
-                                        size: 'sm',
-                                    },
-                                    () => [h(Trash2, { class: 'w-4 h-4 mr-1' }), 'Delete'],
-                                ),
-                        ),
+                        h(ConfirmActionButton, {
+                            href: route('admin.organizations.destroy', { id: organization.id }),
+                            label: 'Delete',
+                            title: `Delete organization ${organization.name}?`,
+                            description: 'This organization will be permanently deleted. This cannot be undone.',
+                            confirmLabel: 'Delete organization',
+                            icon: Trash2,
+                        }),
                 ].filter(Boolean),
             );
         },

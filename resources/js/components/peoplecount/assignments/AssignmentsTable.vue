@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountAssignment } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
@@ -12,12 +13,24 @@ const props = defineProps<{
 }>();
 
 const columns = assignmentsColumns(props.organization);
+const { can } = usePermissions();
 </script>
 
 <template>
-    <DataTable :columns="columns" :data="assignments" filter-column="event" search-placeholder="Search assignments...">
+    <DataTable
+        :columns="columns"
+        :data="assignments"
+        :row-href="
+            (assignment) =>
+                can('peoplecount.assignments.edit')
+                    ? route('peoplecount.assignments.edit', { organization: props.organization.slug, assignment: assignment.id })
+                    : null
+        "
+        filter-column="event"
+        search-placeholder="Search assignments..."
+    >
         <template #actions>
-            <Button as-child size="sm" variant="default">
+            <Button v-if="can('peoplecount.assignments.create')" as-child size="sm" variant="default">
                 <Link :href="route('peoplecount.assignments.create', { organization: props.organization.slug })">
                     <Plus class="mr-1 h-4 w-4" />
                     Create Assignment

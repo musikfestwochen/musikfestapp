@@ -140,11 +140,11 @@ const lastUpdatedTime = computed(() => {
 </style>
 
 <template>
-    <Card :class="{ 'stale-card pulse': isDataStale, 'counts-widget': true }">
+    <Card :class="{ 'stale-card pulse': isDataStale, 'counts-widget': true }" class="flex h-full flex-col">
         <CardHeader>
             <CardTitle>Active Area Counts</CardTitle>
         </CardHeader>
-        <CardContent class="counts-widget-content">
+        <CardContent class="counts-widget-content flex flex-1 flex-col">
             <!-- Show error message as a banner if there's an error -->
             <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">
                 {{ error }}
@@ -156,80 +156,82 @@ const lastUpdatedTime = computed(() => {
 
             <div v-else-if="!areaCounts.length" class="text-muted-foreground py-8 text-center">No active areas found.</div>
 
-            <div v-else class="space-y-6">
-                <div v-for="area in areaCounts" :key="area.id" class="area-item border-b pb-4">
-                    <div class="mb-2 text-center">
-                        <div class="text-lg font-medium">{{ area.name }}</div>
-                        <div class="text-muted-foreground text-sm">{{ area.event_name }}</div>
-                    </div>
-                    <div class="count-display">{{ area.count }}</div>
+            <div v-else class="flex flex-1 flex-col">
+                <div class="divide-y">
+                    <div v-for="area in areaCounts" :key="area.id" class="area-item py-4 first:pt-0 last:pb-0">
+                        <div class="mb-2 text-center">
+                            <div class="text-lg font-medium">{{ area.name }}</div>
+                            <div class="text-muted-foreground text-sm">{{ area.event_name }}</div>
+                        </div>
+                        <div class="count-display">{{ area.count }}</div>
 
-                    <!-- Net change display -->
-                    <div
-                        v-if="area.net_change !== null"
-                        :class="{
-                            'text-green-600': area.net_change > 0,
-                            'text-red-600': area.net_change < 0,
-                            'text-gray-500': area.net_change === 0,
-                        }"
-                        class="net-change"
-                    >
-                        <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
-                        <span v-else>{{ area.net_change }}</span>
-                        <span class="text-muted-foreground ml-1 text-xs">({{ area.net_change_time_ago }})</span>
-                    </div>
-                    <div v-else class="text-xs text-gray-500">No net change data</div>
+                        <!-- Net change display -->
+                        <div
+                            v-if="area.net_change !== null"
+                            :class="{
+                                'text-green-600': area.net_change > 0,
+                                'text-red-600': area.net_change < 0,
+                                'text-gray-500': area.net_change === 0,
+                            }"
+                            class="net-change"
+                        >
+                            <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
+                            <span v-else>{{ area.net_change }}</span>
+                            <span class="text-muted-foreground ml-1 text-xs">({{ area.net_change_time_ago }})</span>
+                        </div>
+                        <div v-else class="text-xs text-gray-500">No net change data</div>
 
-                    <!-- Debug counts collapsible section -->
-                    <div v-if="canViewDebugCounts" class="mt-4 w-full">
-                        <Collapsible>
-                            <CollapsibleTrigger
-                                class="text-muted-foreground hover:text-foreground flex w-full items-center justify-center text-xs transition-colors"
-                            >
-                                <span>Debug Counts</span>
-                                <svg class="ml-1 h-3 w-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                </svg>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent class="mt-2">
-                                <div class="grid grid-cols-3 gap-2 text-xs">
-                                    <div class="rounded bg-green-50 p-2 text-center">
-                                        <div class="font-medium text-green-700">In</div>
-                                        <div class="text-green-600">{{ area.debug_counts.in }}</div>
+                        <!-- Debug counts collapsible section -->
+                        <div v-if="canViewDebugCounts" class="mt-4 w-full">
+                            <Collapsible>
+                                <CollapsibleTrigger
+                                    class="text-muted-foreground hover:text-foreground flex w-full items-center justify-center text-xs transition-colors"
+                                >
+                                    <span>Debug Counts</span>
+                                    <svg class="ml-1 h-3 w-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    </svg>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent class="mt-2">
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <div class="rounded bg-green-50 p-2 text-center">
+                                            <div class="font-medium text-green-700">In</div>
+                                            <div class="text-green-600">{{ area.debug_counts.in }}</div>
+                                        </div>
+                                        <div class="rounded bg-red-50 p-2 text-center">
+                                            <div class="font-medium text-red-700">Out</div>
+                                            <div class="text-red-600">{{ area.debug_counts.out }}</div>
+                                        </div>
+                                        <div class="rounded bg-blue-50 p-2 text-center">
+                                            <div class="font-medium text-blue-700">Net</div>
+                                            <div class="text-blue-600">{{ area.debug_counts.net }}</div>
+                                        </div>
                                     </div>
-                                    <div class="rounded bg-red-50 p-2 text-center">
-                                        <div class="font-medium text-red-700">Out</div>
-                                        <div class="text-red-600">{{ area.debug_counts.out }}</div>
+                                    <div v-if="area.debug_counts.last_reset_type" class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                        <div class="rounded bg-gray-50 p-2">
+                                            <div class="font-medium text-gray-700">Last reset</div>
+                                            <div class="text-gray-600 capitalize">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
+                                        </div>
+                                        <div class="rounded bg-gray-50 p-2">
+                                            <div class="font-medium text-gray-700">At</div>
+                                            <div class="text-gray-600">{{ formatDate(area.debug_counts.last_reset_at || null) }}</div>
+                                        </div>
+                                        <div class="rounded bg-gray-50 p-2">
+                                            <div class="font-medium text-gray-700">Reset value</div>
+                                            <div class="text-gray-600">{{ area.debug_counts.last_reset_value }}</div>
+                                        </div>
+                                        <div class="rounded bg-gray-50 p-2">
+                                            <div class="font-medium text-gray-700">Net + reset</div>
+                                            <div class="text-gray-600">{{ area.debug_counts.net_plus_reset }}</div>
+                                        </div>
                                     </div>
-                                    <div class="rounded bg-blue-50 p-2 text-center">
-                                        <div class="font-medium text-blue-700">Net</div>
-                                        <div class="text-blue-600">{{ area.debug_counts.net }}</div>
-                                    </div>
-                                </div>
-                                <div v-if="area.debug_counts.last_reset_type" class="mt-3 grid grid-cols-2 gap-2 text-xs">
-                                    <div class="rounded bg-gray-50 p-2">
-                                        <div class="font-medium text-gray-700">Last reset</div>
-                                        <div class="text-gray-600 capitalize">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
-                                    </div>
-                                    <div class="rounded bg-gray-50 p-2">
-                                        <div class="font-medium text-gray-700">At</div>
-                                        <div class="text-gray-600">{{ formatDate(area.debug_counts.last_reset_at || null) }}</div>
-                                    </div>
-                                    <div class="rounded bg-gray-50 p-2">
-                                        <div class="font-medium text-gray-700">Reset value</div>
-                                        <div class="text-gray-600">{{ area.debug_counts.last_reset_value }}</div>
-                                    </div>
-                                    <div class="rounded bg-gray-50 p-2">
-                                        <div class="font-medium text-gray-700">Net + reset</div>
-                                        <div class="text-gray-600">{{ area.debug_counts.net_plus_reset }}</div>
-                                    </div>
-                                </div>
-                            </CollapsibleContent>
-                        </Collapsible>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </div>
                     </div>
                 </div>
 
-                <div class="text-muted-foreground mt-4 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
+                <div class="text-muted-foreground mt-auto border-t pt-3 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
         </CardContent>
     </Card>
