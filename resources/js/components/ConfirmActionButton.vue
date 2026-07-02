@@ -17,7 +17,7 @@ import type { Component } from 'vue';
 const props = withDefaults(
     defineProps<{
         href: string;
-        method?: 'delete' | 'post';
+        method?: 'delete' | 'patch' | 'post';
         label: string;
         title: string;
         description: string;

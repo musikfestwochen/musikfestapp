@@ -25,6 +25,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $modules = [
             'admin.users',
             'admin.organizations',
+            'admin.peoplecount_aggregations',
             'orgmgmt.users',
             'peoplecount.sensors',
             'peoplecount.events',
@@ -61,6 +62,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $adminRole->syncPermissions([
             'admin.users.*',
             'admin.organizations.*',
+            'admin.peoplecount_aggregations.*',
             'admin.logs',
             'admin.pulse',
             'orgmgmt.users.*',
