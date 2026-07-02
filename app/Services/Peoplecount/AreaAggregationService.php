@@ -89,18 +89,23 @@ class AreaAggregationService
             return;
         }
 
-        $this->deleteRowsWithInvalidChecksum($area, $areaConfigChecksum);
-        $this->deleteRowsWithInvalidWindowSize($area);
+        if ($this->deleteRowsWithInvalidChecksum($area, $areaConfigChecksum) > 0) {
+            $area->forceFill(['data_watermark' => null])->save();
+        }
+
+        if ($this->deleteRowsWithInvalidWindowSize($area) > 0) {
+            $area->forceFill(['data_watermark' => null])->save();
+        }
     }
 
     /**
      * Delete aggregated counts that have a different checksum.
      */
-    protected function deleteRowsWithInvalidChecksum(Area $area, string $areaConfigChecksum): void
+    protected function deleteRowsWithInvalidChecksum(Area $area, string $areaConfigChecksum): int
     {
         $binaryChecksum = hex2bin($areaConfigChecksum);
 
-        $area->aggregatedCounts()
+        return $area->aggregatedCounts()
             ->where('checksum', '!=', $binaryChecksum)
             ->delete();
     }
@@ -108,19 +113,21 @@ class AreaAggregationService
     /**
      * Delete all aggregated counts if the median window size differs from config.
      */
-    protected function deleteRowsWithInvalidWindowSize(Area $area): void
+    protected function deleteRowsWithInvalidWindowSize(Area $area): int
     {
         $counts = $area->aggregatedCounts;
         if ($counts->isEmpty()) {
-            return;
+            return 0;
         }
 
         $configWindowSize = (float) config('peoplecount.aggregation.granularity_minutes');
         $medianWindowSize = $this->calculateMedianWindowSize($counts);
 
         if ($medianWindowSize !== $configWindowSize) {
-            $area->aggregatedCounts()->get()->each->delete();
+            return $area->aggregatedCounts()->delete();
         }
+
+        return 0;
     }
 
     /**
@@ -179,7 +186,7 @@ class AreaAggregationService
      * @param  Collection<int, array<string, mixed>>  $resetTimes
      * @return LazyCollection<int, LazyCollection<int, array<string, mixed>>>
      */
-    protected function getAggregationWindowChunks(Area $area, Collection $resetTimes, ?Carbon $recalculateFrom): LazyCollection
+    protected function getAggregationWindowChunks(Area $area, Collection $resetTimes, Carbon $recalculateFrom): LazyCollection
     {
         return $this->generateAggregationWindows($area, $resetTimes, $recalculateFrom)
             ->chunk(self::WINDOW_CHUNK_SIZE);
@@ -189,7 +196,7 @@ class AreaAggregationService
      * @param  Collection<int, array<string, mixed>>  $resetTimes
      * @return LazyCollection<int, array<string, mixed>>
      */
-    protected function generateAggregationWindows(Area $area, Collection $resetTimes, ?Carbon $recalculateFrom): LazyCollection
+    protected function generateAggregationWindows(Area $area, Collection $resetTimes, Carbon $recalculateFrom): LazyCollection
     {
         $windowConfig = $this->getWindowConfiguration($area);
         $sortedResetTimes = $resetTimes->sortBy('at');
@@ -205,7 +212,7 @@ class AreaAggregationService
                     continue;
                 }
 
-                if ($recalculateFrom && $window['start']->lessThan($recalculateFrom)) {
+                if ($window['start']->lessThan($recalculateFrom)) {
                     continue;
                 }
 
@@ -499,7 +506,7 @@ class AreaAggregationService
     }
 
     /**
-     * @return array{recalculate_from: Carbon|null, initial_count: int}
+     * @return array{recalculate_from: Carbon, initial_count: int}
      */
     protected function getAggregationCheckpoint(Area $area, ?Carbon $runWatermark = null): array
     {
@@ -509,11 +516,11 @@ class AreaAggregationService
             ->get(['id', 'area_id', 'period_start', 'period_end', 'count']);
 
         $previousCount = $latestCounts->get(1);
-        $recalculateFrom = $latestCounts->get(0)?->period_start;
+        $recalculateFrom = $latestCounts->get(0)->period_start ?? $area->event->starts_at;
         $initialCount = $previousCount ? $previousCount->count : 0;
         $lateRecalculateFrom = $area->exists ? $this->getLateArrivalRecalculateFrom($area, $runWatermark) : null;
 
-        if ($lateRecalculateFrom && (! $recalculateFrom || $lateRecalculateFrom->lessThan($recalculateFrom))) {
+        if ($lateRecalculateFrom && $lateRecalculateFrom->lessThan($recalculateFrom)) {
             $recalculateFrom = $lateRecalculateFrom;
             $initialCount = $this->getInitialCountBefore($area, $recalculateFrom);
         }

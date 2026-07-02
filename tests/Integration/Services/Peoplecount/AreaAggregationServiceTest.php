@@ -142,10 +142,12 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock for deleteRowsWithInvalidChecksum - this verifies deleteInvalidAggregationRows is called
         $builderMock = Mockery::mock(Builder::class);
-        $builderMock->shouldReceive('delete')->once(); // This expectation will fail if deleteInvalidAggregationRows is not called
+        $builderMock->shouldReceive('delete')->once()->andReturn(1); // This expectation will fail if deleteInvalidAggregationRows is not called
         $relationshipMock->shouldReceive('where')->with('checksum', '!=', hex2bin('abc123'))->andReturn($builderMock);
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
+        $area->shouldReceive('forceFill')->once()->with(['data_watermark' => null])->andReturnSelf();
+        $area->shouldReceive('save')->once()->andReturnTrue();
 
         $this->service->updateAggregatedCounts($area);
 
@@ -331,7 +333,7 @@ describe('generateAggregationWindows method', function () {
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
         $resetTimes = collect();
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, null)->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, Carbon::parse('2024-08-15 10:00:00'))->collect();
 
         expect($result)->toHaveCount(6); // 60 minutes / 10 minute windows = 6 windows
         expect($result->first()['start']->format('H:i'))->toBe('10:00');
@@ -462,7 +464,7 @@ describe('generateAggregationWindows future filtering', function () {
         $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 16:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), null)->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), Carbon::parse('2024-08-15 12:00:00'))->collect();
 
         expect($result)->toHaveCount(15);
         expect($result->first()['start']->format('H:i'))->toBe('12:00');
@@ -489,7 +491,7 @@ describe('deleteInvalidAggregationRows method', function () {
 
         // Mock for deleteRowsWithInvalidChecksum - first call
         $builderMock1 = Mockery::mock(Builder::class);
-        $builderMock1->shouldReceive('delete')->once();
+        $builderMock1->shouldReceive('delete')->once()->andReturn(1);
 
         $relationshipMock1 = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock1->shouldReceive('where')->with('checksum', '!=', hex2bin('abc123'))->andReturn($builderMock1);
@@ -500,6 +502,8 @@ describe('deleteInvalidAggregationRows method', function () {
         // No get() expectation needed since median matches config and delete won't be called
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock1, $relationshipMock2);
+        $area->shouldReceive('forceFill')->once()->with(['data_watermark' => null])->andReturnSelf();
+        $area->shouldReceive('save')->once()->andReturnTrue();
 
         // Mock for deleteRowsWithInvalidWindowSize - median matches config
         $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
@@ -518,25 +522,21 @@ describe('deleteInvalidAggregationRows method', function () {
 
         // Mock for deleteRowsWithInvalidChecksum - first call
         $builderMock1 = Mockery::mock(Builder::class);
-        $builderMock1->shouldReceive('delete')->once();
+        $builderMock1->shouldReceive('delete')->once()->andReturn(1);
 
         $relationshipMock1 = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
         $relationshipMock1->shouldReceive('where')->with('checksum', '!=', hex2bin('abc123'))->andReturn($builderMock1);
 
-        // Mock for deleteRowsWithInvalidWindowSize - second call (median differs from config, so get()->each->delete())
-        // Create a real collection with the mock model so each->delete() works properly
-        $realCollection = new EloquentCollection([$count]);
-
         $relationshipMock2 = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock2->shouldReceive('get')->once()->andReturn($realCollection);
+        $relationshipMock2->shouldReceive('delete')->once()->andReturn(1);
 
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock1, $relationshipMock2);
+        $area->shouldReceive('forceFill')->twice()->with(['data_watermark' => null])->andReturnSelf();
+        $area->shouldReceive('save')->twice()->andReturnTrue();
 
         // Mock for deleteRowsWithInvalidWindowSize - median differs from config (15 minutes vs 10)
         $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
         $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
-        $count->shouldReceive('delete')->once();
-
         $result = ($this->callProtectedMethod)('deleteInvalidAggregationRows', $area, 'abc123');
 
         expect($result)->toBeNull();
@@ -550,12 +550,12 @@ describe('deleteRowsWithInvalidChecksum method', function () {
         $builderMock = Mockery::mock(Builder::class);
 
         $relationshipMock->shouldReceive('where')->with('checksum', '!=', hex2bin('abc123'))->andReturn($builderMock);
-        $builderMock->shouldReceive('delete')->once();
+        $builderMock->shouldReceive('delete')->once()->andReturn(1);
         $area->shouldReceive('aggregatedCounts')->andReturn($relationshipMock);
 
         $result = ($this->callProtectedMethod)('deleteRowsWithInvalidChecksum', $area, 'abc123');
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(1);
     });
 });
 
@@ -567,7 +567,7 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
 
         $result = ($this->callProtectedMethod)('deleteRowsWithInvalidWindowSize', $area);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(0);
     });
 
     it('deletes all counts when median window size differs from config', function () {
@@ -577,21 +577,16 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
         $count = Mockery::mock(AreaAggregatedCount::class);
         $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
         $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
-        $count->shouldReceive('delete')->once();
         $counts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($counts);
 
-        // Mock relationship for get()->each->delete() pattern
-        // Create a real collection with the mock model so each->delete() works properly
-        $realCollection = new EloquentCollection([$count]);
-
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
-        $relationshipMock->shouldReceive('get')->once()->andReturn($realCollection);
+        $relationshipMock->shouldReceive('delete')->once()->andReturn(1);
         $area->shouldReceive('aggregatedCounts')->once()->andReturn($relationshipMock);
 
         $result = ($this->callProtectedMethod)('deleteRowsWithInvalidWindowSize', $area);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(1);
     });
 
     it('does not delete when median window size matches config', function () {
@@ -609,7 +604,7 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
 
         $result = ($this->callProtectedMethod)('deleteRowsWithInvalidWindowSize', $area);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe(0);
     });
 });
 
@@ -624,7 +619,7 @@ describe('getAggregationWindowChunks method', function () {
         $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('getAggregationWindowChunks', $area, $resetTimes, null);
+        $result = ($this->callProtectedMethod)('getAggregationWindowChunks', $area, $resetTimes, Carbon::parse('2024-08-15 10:00:00'));
 
         expect($result)->toBeInstanceOf(LazyCollection::class);
         expect($result->first())->toBeInstanceOf(LazyCollection::class);
@@ -640,7 +635,7 @@ describe('getAggregationWindowChunks method', function () {
         $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, null)->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, Carbon::parse('2024-08-15 10:00:00'))->collect();
 
         expect($result)->toBeInstanceOf(Collection::class);
         expect($result)->toHaveCount(1); // 10 minute window
@@ -860,6 +855,9 @@ describe('writeAggregatedCounts method', function () {
 describe('getAggregationCheckpoint method', function () {
     it('returns default checkpoint when fewer than two existing counts exist', function () {
         $area = Mockery::mock(Area::class);
+        $event = Mockery::mock(Event::class);
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
@@ -871,19 +869,18 @@ describe('getAggregationCheckpoint method', function () {
 
         $result = ($this->callProtectedMethod)('getAggregationCheckpoint', $area);
 
-        expect($result)->toBe([
-            'recalculate_from' => null,
-            'initial_count' => 0,
-        ]);
+        expect($result['recalculate_from']->format('H:i'))->toBe('10:00');
+        expect($result['initial_count'])->toBe(0);
     });
 
     it('returns recalculation start and initial count from existing counts', function () {
         $area = Mockery::mock(Area::class);
-        $latestCount = Mockery::mock(AreaAggregatedCount::class);
-        $latestCount->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
-
-        $previousCount = Mockery::mock(AreaAggregatedCount::class);
-        $previousCount->shouldReceive('getAttribute')->with('count')->andReturn(25);
+        $latestCount = new AreaAggregatedCount([
+            'period_start' => Carbon::parse('2024-08-15 10:10:00'),
+        ]);
+        $previousCount = new AreaAggregatedCount([
+            'count' => 25,
+        ]);
 
         // Create a proper HasMany relationship mock that can handle method chaining
         $relationshipMock = Mockery::mock(HasMany::class)->shouldIgnoreMissing();
