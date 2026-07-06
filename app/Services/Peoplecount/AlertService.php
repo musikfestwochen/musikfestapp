@@ -45,7 +45,7 @@ class AlertService
 
         $now = now();
         // 1. Event ongoing check already enforced by AreaService, but keep here for safety
-        if (! ($event->starts_at <= $now && $now < $event->ends_at)) {
+        if ($event->starts_at > $now || $now >= $event->ends_at) {
             return;
         }
 
