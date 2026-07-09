@@ -69,8 +69,8 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                 const user = row.original;
                 // Use the can function from usePermissions composable
                 const { can } = usePermissions();
-                const canEdit = can('admin.users.edit') || can('orgmgmt.users.edit');
-                const canDelete = can('admin.users.destroy') || can('orgmgmt.users.destroy');
+                const canEdit = organization ? can('orgmgmt.users.edit') : can('admin.users.edit');
+                const canDelete = organization ? can('orgmgmt.users.destroy') : can('admin.users.destroy');
 
                 return h(
                     'div',
@@ -108,8 +108,10 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                                     : route('admin.users.destroy', { user: user.id }),
                                 label: 'Delete',
                                 title: `Delete user ${user.name}?`,
-                                description: 'This user will be permanently deleted. This cannot be undone.',
-                                confirmLabel: 'Delete user',
+                                description: organization
+                                    ? 'This user will be removed from the organization. If this is their only organization, their account will be deleted.'
+                                    : 'This user will be permanently deleted. This cannot be undone.',
+                                confirmLabel: organization ? 'Remove user' : 'Delete user',
                                 icon: Trash2,
                             }),
                     ].filter(Boolean),

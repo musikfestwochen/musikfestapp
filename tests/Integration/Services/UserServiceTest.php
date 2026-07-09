@@ -5,6 +5,8 @@ use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -218,4 +220,79 @@ it('ignores permissions org context when explicit organization is provided', fun
     expect($result->pluck('id')->toArray())->toContain($userInA->id)
         ->and($result->pluck('id')->toArray())->not->toContain($userInB->id)
         ->and($result->count())->toBe(1);
+});
+
+describe('removeFromOrganization', function () {
+    it('deletes a user who only belongs to the organization', function () {
+        $organization = Organization::factory()->create();
+        $user = User::factory()->create();
+        $user->organizations()->attach($organization->id);
+
+        $deleted = $this->service->removeFromOrganization($user, $organization);
+
+        expect($deleted)->toBeTrue();
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    });
+
+    it('detaches a user who belongs to other organizations', function () {
+        $organization = Organization::factory()->create();
+        $otherOrganization = Organization::factory()->create();
+        $user = User::factory()->create();
+        $user->organizations()->attach([$organization->id, $otherOrganization->id]);
+
+        $deleted = $this->service->removeFromOrganization($user, $organization);
+
+        expect($deleted)->toBeFalse();
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('organization_user', ['organization_id' => $organization->id, 'user_id' => $user->id]);
+        $this->assertDatabaseHas('organization_user', ['organization_id' => $otherOrganization->id, 'user_id' => $user->id]);
+    });
+
+    it('removes only the current organization roles and direct permissions when detaching', function () {
+        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+
+        $organization = Organization::factory()->create();
+        $otherOrganization = Organization::factory()->create();
+        $user = User::factory()->create();
+        $user->organizations()->attach([$organization->id, $otherOrganization->id]);
+        $viewerRole = Role::findByName('PeopleCountViewer');
+        $adminRole = Role::findByName('OrganizationAdmin');
+        $sensorPermission = Permission::findOrCreate('peoplecount.sensors.index');
+        $eventPermission = Permission::findOrCreate('peoplecount.events.index');
+
+        setPermissionsOrgId($organization->id);
+        $user->assignRole($viewerRole);
+        $user->givePermissionTo($sensorPermission);
+
+        setPermissionsOrgId($otherOrganization->id);
+        $user->assignRole($adminRole);
+        $user->givePermissionTo($eventPermission);
+
+        $this->service->removeFromOrganization($user, $organization);
+
+        $this->assertDatabaseMissing('model_has_roles', [
+            'organization_id' => $organization->id,
+            'role_id' => $viewerRole->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+        $this->assertDatabaseMissing('model_has_permissions', [
+            'organization_id' => $organization->id,
+            'permission_id' => $sensorPermission->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+        $this->assertDatabaseHas('model_has_roles', [
+            'organization_id' => $otherOrganization->id,
+            'role_id' => $adminRole->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+        $this->assertDatabaseHas('model_has_permissions', [
+            'organization_id' => $otherOrganization->id,
+            'permission_id' => $eventPermission->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+    });
 });

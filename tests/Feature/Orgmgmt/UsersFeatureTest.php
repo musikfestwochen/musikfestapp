@@ -3,6 +3,8 @@
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -107,6 +109,71 @@ it('can delete a user for an organization', function () {
         ->delete(route('orgmgmt.users.destroy', ['organization' => $org->slug, 'user' => $user->id]));
     $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
     $this->assertDatabaseMissing('users', ['id' => $user->id, 'email' => 'delete-me@example.com']);
+});
+
+it('detaches an organization user who belongs to another organization', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+    $user = User::factory()->create();
+    $user->organizations()->attach([$org->id, $otherOrg->id]);
+
+    $response = $this->actingAs($admin)
+        ->delete(route('orgmgmt.users.destroy', ['organization' => $org->slug, 'user' => $user->id]));
+
+    $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+    $this->assertDatabaseHas('users', ['id' => $user->id]);
+    $this->assertDatabaseMissing('organization_user', ['organization_id' => $org->id, 'user_id' => $user->id]);
+    $this->assertDatabaseHas('organization_user', ['organization_id' => $otherOrg->id, 'user_id' => $user->id]);
+});
+
+it('removes only current organization access when detaching an organization user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+    $user = User::factory()->create();
+    $user->organizations()->attach([$org->id, $otherOrg->id]);
+    $viewerRole = Role::findByName('PeopleCountViewer');
+    $adminRole = Role::findByName('OrganizationAdmin');
+    $sensorPermission = Permission::findOrCreate('peoplecount.sensors.index');
+    $eventPermission = Permission::findOrCreate('peoplecount.events.index');
+
+    setPermissionsOrgId($org->id);
+    $user->assignRole($viewerRole);
+    $user->givePermissionTo($sensorPermission);
+
+    setPermissionsOrgId($otherOrg->id);
+    $user->assignRole($adminRole);
+    $user->givePermissionTo($eventPermission);
+
+    $this->actingAs($admin)
+        ->delete(route('orgmgmt.users.destroy', ['organization' => $org->slug, 'user' => $user->id]))
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $this->assertDatabaseMissing('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $viewerRole->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+    $this->assertDatabaseMissing('model_has_permissions', [
+        'organization_id' => $org->id,
+        'permission_id' => $sensorPermission->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $otherOrg->id,
+        'role_id' => $adminRole->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+    $this->assertDatabaseHas('model_has_permissions', [
+        'organization_id' => $otherOrg->id,
+        'permission_id' => $eventPermission->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
 });
 
 it('forbids non-admins from accessing orgmgmt users index', function () {

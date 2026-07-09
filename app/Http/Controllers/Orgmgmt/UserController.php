@@ -110,19 +110,15 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  UserDestroyRequest  $request  Required for authorization, even if not explicitly used in method body
-     *
-     * @todo: Do not delete user if they belong to an organization, then only remove the organization association.
      */
     public function destroy(UserDestroyRequest $request, Organization $organization, User $user): RedirectResponse
     {
-        // save user name for redirect message
         $name = $user->name;
 
-        // delete user
-        $user->delete();
+        resolve(UserService::class)->removeFromOrganization($user, $organization);
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
-        ])->with('status', 'User '.$name.' deleted successfully.');
+        ])->with('status', 'User '.$name.' removed successfully.');
     }
 }

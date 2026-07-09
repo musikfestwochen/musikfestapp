@@ -49,4 +49,41 @@ class UserService
 
         return $query->get();
     }
+
+    /**
+     * Remove a user from an organization.
+     *
+     * @return bool True when the user was deleted, false when only detached.
+     */
+    public function removeFromOrganization(User $user, Organization $organization): bool
+    {
+        $organizationCount = $user->organizations()->count();
+
+        $this->removeOrganizationAccess($user, $organization);
+
+        if ($organizationCount === 1) {
+            $user->delete();
+
+            return true;
+        }
+
+        $user->organizations()->detach($organization->id);
+
+        return false;
+    }
+
+    protected function removeOrganizationAccess(User $user, Organization $organization): void
+    {
+        $previousOrganizationId = getPermissionsOrgId();
+
+        try {
+            setPermissionsOrgId($organization->id);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+            $user->syncRoles([]);
+            $user->syncPermissions([]);
+        } finally {
+            setPermissionsOrgId($previousOrganizationId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+        }
+    }
 }
