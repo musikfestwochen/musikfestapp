@@ -125,3 +125,58 @@ it('forbids deleting your own user via orgmgmt', function () {
         ->delete(route('orgmgmt.users.destroy', ['organization' => $org->slug, 'user' => $user->id]));
     $response->assertForbidden();
 });
+
+it('does not expose users from other organizations through orgmgmt show', function () {
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $outsider = User::factory()->create();
+    $otherOrg->users()->attach($outsider->id);
+
+    $this->actingAs($admin)
+        ->get(route('orgmgmt.users.show', ['organization' => $org->slug, 'user' => $outsider->id]))
+        ->assertNotFound();
+});
+
+it('does not expose users from other organizations through orgmgmt edit', function () {
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $outsider = User::factory()->create();
+    $otherOrg->users()->attach($outsider->id);
+
+    $this->actingAs($admin)
+        ->get(route('orgmgmt.users.edit', ['organization' => $org->slug, 'user' => $outsider->id]))
+        ->assertNotFound();
+});
+
+it('does not update users from other organizations through orgmgmt', function () {
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $outsider = User::factory()->create(['name' => 'Original Name']);
+    $otherOrg->users()->attach($outsider->id);
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $outsider->id]), [
+            'name' => 'Changed Name',
+            'email' => $outsider->email,
+        ])
+        ->assertNotFound();
+
+    $this->assertDatabaseHas('users', ['id' => $outsider->id, 'name' => 'Original Name']);
+});
+
+it('does not delete users from other organizations through orgmgmt', function () {
+    $org = Organization::factory()->create();
+    $otherOrg = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $outsider = User::factory()->create();
+    $otherOrg->users()->attach($outsider->id);
+
+    $this->actingAs($admin)
+        ->delete(route('orgmgmt.users.destroy', ['organization' => $org->slug, 'user' => $outsider->id]))
+        ->assertNotFound();
+
+    $this->assertDatabaseHas('users', ['id' => $outsider->id]);
+});
