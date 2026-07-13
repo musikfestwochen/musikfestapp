@@ -30,6 +30,8 @@ const props = withDefaults(
     }>(),
     {
         method: 'delete',
+        icon: undefined,
+        only: undefined,
         variant: 'destructive',
         preserveScroll: true,
         preserveState: false,
