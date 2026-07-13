@@ -20,6 +20,25 @@ beforeEach(function () {
     $this->service = new UserService;
 });
 
+describe('availableOrganizationRoles', function () {
+    it('skips missing organization roles', function () {
+        Role::query()->create([
+            'name' => 'PeopleCountViewer',
+            'guard_name' => 'web',
+            'display_name' => 'People count viewer',
+            'description' => 'Can view people-count dashboards and data for this organization.',
+        ]);
+
+        expect($this->service->availableOrganizationRoles())->toBe([
+            [
+                'name' => 'PeopleCountViewer',
+                'display_name' => 'People count viewer',
+                'description' => 'Can view people-count dashboards and data for this organization.',
+            ],
+        ]);
+    });
+});
+
 describe('getUsers', function () {
     it('returns users', function () {
         setPermissionsOrgId(GLOBAL_ORG_ID);

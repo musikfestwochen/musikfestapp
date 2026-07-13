@@ -52,6 +52,12 @@ export interface User {
     area_single_resets?: PeoplecountAreaSingleReset[]; // Optional, for related area single resets created by this user
 }
 
+export interface RoleOption {
+    name: string;
+    display_name: string | null;
+    description: string | null;
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;
 
 export interface Organization {

@@ -10,9 +10,43 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class UserService
 {
+    /**
+     * @return array<int, array{name: string, display_name: string|null, description: string|null}>
+     */
+    public function availableOrganizationRoles(): array
+    {
+        $roleNames = ['PeopleCountViewer', 'OrganizationAdmin'];
+        $roles = Role::query()
+            ->whereIn('name', $roleNames)
+            ->get(['name', 'display_name', 'description'])
+            ->keyBy('name');
+
+        $availableRoles = [];
+
+        foreach ($roleNames as $roleName) {
+            $role = $roles->get($roleName);
+
+            if (! $role instanceof Role) {
+                continue;
+            }
+
+            $displayName = $role->getAttribute('display_name');
+            $description = $role->getAttribute('description');
+
+            $availableRoles[] = [
+                'name' => $roleName,
+                'display_name' => is_string($displayName) ? $displayName : null,
+                'description' => is_string($description) ? $description : null,
+            ];
+        }
+
+        return $availableRoles;
+    }
+
     /**
      * Fetch users. When an Organization is provided, limit to that org. Optionally select specific columns.
      * Otherwise, fall back to current permissions org context.
@@ -109,6 +143,24 @@ class UserService
             setPermissionsOrgId($organization->id);
             $user->unsetRelation('roles')->unsetRelation('permissions');
             $user->syncRoles($roleNames);
+        } finally {
+            setPermissionsOrgId($previousOrganizationId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getOrganizationRoleNames(User $user, Organization $organization): array
+    {
+        $previousOrganizationId = getPermissionsOrgId();
+
+        try {
+            setPermissionsOrgId($organization->id);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+
+            return $user->getRoleNames()->values()->all();
         } finally {
             setPermissionsOrgId($previousOrganizationId);
             $user->unsetRelation('roles')->unsetRelation('permissions');

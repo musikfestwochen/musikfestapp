@@ -49,10 +49,12 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(UserCreateRequest $request, Organization $organization): Response
+    public function create(UserCreateRequest $request, UserService $userService, Organization $organization): Response
     {
         return Inertia::render('orgmgmt/NewUser', [
             'organization' => $organization,
+            'availableRoles' => $userService->availableOrganizationRoles(),
+            'selectedRoles' => ['PeopleCountViewer'],
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -75,11 +77,13 @@ class UserController extends Controller
      *
      * @param  UserEditRequest  $request  Required for authorization, even if not explicitly used in method body
      */
-    public function edit(UserEditRequest $request, Organization $organization, User $user): Response
+    public function edit(UserEditRequest $request, UserService $userService, Organization $organization, User $user): Response
     {
         return Inertia::render('orgmgmt/EditUser', [
             'organization' => $organization,
             'user' => $user,
+            'availableRoles' => $userService->availableOrganizationRoles(),
+            'selectedRoles' => $userService->getOrganizationRoleNames($user, $organization),
         ]);
     }
 

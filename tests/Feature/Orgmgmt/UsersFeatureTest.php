@@ -36,6 +36,13 @@ it('shows the create user form for an organization', function () {
         ->assertInertia(fn ($page) => $page
             ->component('orgmgmt/NewUser')
             ->where('organization.id', $org->id)
+            ->where('availableRoles.0.name', 'PeopleCountViewer')
+            ->where('availableRoles.0.display_name', 'People count viewer')
+            ->where('availableRoles.0.description', 'Can view people-count dashboards and data for this organization.')
+            ->where('availableRoles.1.name', 'OrganizationAdmin')
+            ->where('availableRoles.1.display_name', 'Organization administrator')
+            ->where('availableRoles.1.description', 'Can manage users and people-count setup for this organization.')
+            ->where('selectedRoles', ['PeopleCountViewer'])
         );
 });
 
@@ -44,6 +51,8 @@ it('shows the edit user form for an organization user', function () {
     $org = Organization::factory()->create();
     $user = User::factory()->create();
     $org->users()->attach($user->id);
+    setPermissionsOrgId($org->id);
+    $user->assignRole('OrganizationAdmin');
 
     $this->actingAs($admin)
         ->get(route('orgmgmt.users.edit', ['organization' => $org->slug, 'user' => $user->id]))
@@ -51,6 +60,9 @@ it('shows the edit user form for an organization user', function () {
             ->component('orgmgmt/EditUser')
             ->where('organization.id', $org->id)
             ->where('user.id', $user->id)
+            ->where('availableRoles.0.name', 'PeopleCountViewer')
+            ->where('availableRoles.1.name', 'OrganizationAdmin')
+            ->where('selectedRoles', ['OrganizationAdmin'])
         );
 });
 
