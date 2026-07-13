@@ -26,14 +26,14 @@ describe('availableOrganizationRoles', function () {
             'name' => 'PeopleCountViewer',
             'guard_name' => 'web',
             'display_name' => 'People count viewer',
-            'description' => 'Can view people-count dashboards and data for this organization.',
+            'description' => 'Can view people-count dashboards and data.',
         ]);
 
         expect($this->service->availableOrganizationRoles())->toBe([
             [
                 'name' => 'PeopleCountViewer',
                 'display_name' => 'People count viewer',
-                'description' => 'Can view people-count dashboards and data for this organization.',
+                'description' => 'Can view people-count dashboards and data.',
             ],
         ]);
     });

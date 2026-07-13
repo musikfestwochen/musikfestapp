@@ -11,7 +11,7 @@ it('seeds and updates role metadata', function () {
     $this->assertDatabaseHas('roles', [
         'name' => 'PeopleCountViewer',
         'display_name' => 'People count viewer',
-        'description' => 'Can view people-count dashboards and data for this organization.',
+        'description' => 'Can view people-count dashboards and data.',
     ]);
 
     Role::query()
@@ -26,6 +26,6 @@ it('seeds and updates role metadata', function () {
     $this->assertDatabaseHas('roles', [
         'name' => 'PeopleCountViewer',
         'display_name' => 'People count viewer',
-        'description' => 'Can view people-count dashboards and data for this organization.',
+        'description' => 'Can view people-count dashboards and data.',
     ]);
 });

@@ -38,10 +38,10 @@ it('shows the create user form for an organization', function () {
             ->where('organization.id', $org->id)
             ->where('availableRoles.0.name', 'PeopleCountViewer')
             ->where('availableRoles.0.display_name', 'People count viewer')
-            ->where('availableRoles.0.description', 'Can view people-count dashboards and data for this organization.')
+            ->where('availableRoles.0.description', 'Can view people-count dashboards and data.')
             ->where('availableRoles.1.name', 'OrganizationAdmin')
             ->where('availableRoles.1.display_name', 'Organization administrator')
-            ->where('availableRoles.1.description', 'Can manage users and people-count setup for this organization.')
+            ->where('availableRoles.1.description', 'Has all organization level permissions over all modules.')
             ->where('selectedRoles', ['PeopleCountViewer'])
         );
 });

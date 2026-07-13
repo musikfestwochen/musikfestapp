@@ -32,7 +32,7 @@ use Illuminate\Validation\Rule;
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.($this->route('user')->id ?? '')],
             'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'.($this->route('user')->id ?? '')],
             'roles' => ['sometimes', 'array', 'list', 'min:1', $this->notUpdatingOwnRoles()],
-            'roles.*' => ['string', 'distinct', Rule::notIn(['SuperAdmin', 'Admin']), Rule::exists('roles', 'name')],
+            'roles.*' => ['string', 'distinct', Rule::in(['PeopleCountViewer', 'OrganizationAdmin'])],
         ];
     }
 

@@ -20,7 +20,7 @@ const props = defineProps<{
 const page = usePage<SharedData>();
 
 const editingSelf = computed(() => props.user?.id === page.props.auth.user.id);
-const showRoleField = computed(() => props.organization && !editingSelf.value);
+const showRoleField = computed(() => Boolean(props.organization) && !editingSelf.value);
 
 type UserFormData = {
     name: string;
@@ -74,19 +74,19 @@ const submit = () => {
         <div class="grid max-w-80 gap-6">
             <div class="grid gap-2">
                 <Label for="name">Name</Label>
-                <Input id="name" v-model="form.name" :tabindex="1" autocomplete="name" autofocus placeholder="Full name" required type="text" />
+                <Input id="name" v-model="form.name" :tabindex="1" autofocus placeholder="Full name" required type="text" />
                 <InputError :message="form.errors.name" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="email">Email address</Label>
-                <Input id="email" v-model="form.email" :tabindex="2" autocomplete="email" placeholder="email@example.com" required type="email" />
+                <Input id="email" v-model="form.email" :tabindex="2" placeholder="email@example.com" required type="email" />
                 <InputError :message="form.errors.email" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="phone">Phone number</Label>
-                <Input id="phone" v-model="form.phone" :tabindex="3" autocomplete="tel" placeholder="+41 79 123 45 67" type="tel" />
+                <Input id="phone" v-model="form.phone" :tabindex="3" placeholder="+41 79 123 45 67" type="tel" />
                 <InputError :message="form.errors.phone" />
             </div>
 
@@ -100,7 +100,7 @@ const submit = () => {
                     >
                         <Checkbox
                             :checked="form.organization_ids.includes(availableOrganization.id)"
-                            @update:checked="(checked) => toggleOrganization(availableOrganization.id, checked === true)"
+                            @update:checked="(checked) => toggleOrganization(availableOrganization.id, checked)"
                         />
                         <span>{{ availableOrganization.name }}</span>
                     </label>
@@ -112,7 +112,7 @@ const submit = () => {
                 <Label>Roles</Label>
                 <div class="grid gap-3 rounded-md border p-3">
                     <label v-for="role in props.availableRoles" :key="role.name" class="flex items-start gap-3 text-sm">
-                        <Checkbox :checked="form.roles.includes(role.name)" @update:checked="(checked) => toggleRole(role.name, checked === true)" />
+                        <Checkbox :checked="form.roles.includes(role.name)" @update:checked="(checked) => toggleRole(role.name, checked)" />
                         <span class="grid gap-1 leading-none">
                             <span class="font-medium">{{ role.display_name || role.name }}</span>
                             <span v-if="role.description" class="text-muted-foreground leading-snug">{{ role.description }}</span>
