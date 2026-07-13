@@ -296,3 +296,48 @@ describe('removeFromOrganization', function () {
         ]);
     });
 });
+
+describe('syncOrganizations', function () {
+    it('syncs user organizations without deleting the user', function () {
+        $oldOrganization = Organization::factory()->create();
+        $newOrganization = Organization::factory()->create();
+        $user = User::factory()->create();
+        $user->organizations()->attach($oldOrganization->id);
+
+        $this->service->syncOrganizations($user, [$newOrganization->id]);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('organization_user', ['organization_id' => $oldOrganization->id, 'user_id' => $user->id]);
+        $this->assertDatabaseHas('organization_user', ['organization_id' => $newOrganization->id, 'user_id' => $user->id]);
+    });
+
+    it('removes access for detached organizations', function () {
+        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+
+        $oldOrganization = Organization::factory()->create();
+        $newOrganization = Organization::factory()->create();
+        $user = User::factory()->create();
+        $user->organizations()->attach($oldOrganization->id);
+        $role = Role::findByName('PeopleCountViewer');
+        $permission = Permission::findOrCreate('peoplecount.sensors.index');
+
+        setPermissionsOrgId($oldOrganization->id);
+        $user->assignRole($role);
+        $user->givePermissionTo($permission);
+
+        $this->service->syncOrganizations($user, [$newOrganization->id]);
+
+        $this->assertDatabaseMissing('model_has_roles', [
+            'organization_id' => $oldOrganization->id,
+            'role_id' => $role->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+        $this->assertDatabaseMissing('model_has_permissions', [
+            'organization_id' => $oldOrganization->id,
+            'permission_id' => $permission->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+    });
+});

@@ -30,6 +30,8 @@ use Illuminate\Foundation\Http\FormRequest;
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.($this->route('user')->id ?? '')],
             'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'.($this->route('user')->id ?? '')],
+            'organization_ids' => ['sometimes', 'array'],
+            'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
     }
 }

@@ -61,6 +61,21 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
             enableSorting: true,
             enableHiding: true,
         },
+        ...(!organization
+            ? [
+                  {
+                      accessorKey: 'organizations_count',
+                      header: ({ column }) =>
+                          h(DataTableColumnHeader, {
+                              column,
+                              title: 'Organizations',
+                          }),
+                      cell: ({ row }) => h('div', {}, row.getValue('organizations_count') ?? 0),
+                      enableSorting: true,
+                      enableHiding: true,
+                  } satisfies ColumnDef<User>,
+              ]
+            : []),
         {
             id: 'actions',
             header: 'Actions',

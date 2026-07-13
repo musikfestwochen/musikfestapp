@@ -51,6 +51,29 @@ class UserService
     }
 
     /**
+     * @return Collection<int, User>
+     */
+    public function getUsersWithOrganizationCount(): Collection
+    {
+        return User::query()->withCount('organizations')->get();
+    }
+
+    /**
+     * @param  array<int, int>  $organizationIds
+     */
+    public function syncOrganizations(User $user, array $organizationIds): void
+    {
+        $currentOrganizationIds = $user->organizations()->pluck('organizations.id')->all();
+        $removedOrganizationIds = array_diff($currentOrganizationIds, $organizationIds);
+
+        foreach ($removedOrganizationIds as $organizationId) {
+            $this->removeOrganizationAccess($user, Organization::query()->whereKey($organizationId)->firstOrFail());
+        }
+
+        $user->organizations()->sync($organizationIds);
+    }
+
+    /**
      * Remove a user from an organization.
      *
      * @return bool True when the user was deleted, false when only detached.

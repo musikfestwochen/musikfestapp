@@ -2,10 +2,10 @@
 import Heading from '@/components/Heading.vue';
 import UserForm from '@/components/users/UserForm.vue';
 import Layout from '@/layouts/admin/Layout.vue';
-import { BreadcrumbItem, User } from '@/types';
+import { BreadcrumbItem, Organization, User } from '@/types';
 import { Head } from '@inertiajs/vue3';
 
-const props = defineProps<{ user: User }>();
+const props = defineProps<{ user: User; organizations: Organization[] }>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -25,7 +25,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
 
         <div class="px-4 py-6">
             <Heading description="Edit user details" title="Edit User" />
-            <UserForm :user="props.user" />
+            <UserForm :organizations="props.organizations" :user="props.user" />
         </div>
     </Layout>
 </template>
