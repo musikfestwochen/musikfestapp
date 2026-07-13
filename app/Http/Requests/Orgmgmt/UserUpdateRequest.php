@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Orgmgmt;
 
 use AllowDynamicProperties;
+use App\Models\User;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,6 +35,19 @@ use Illuminate\Validation\Rule;
             'roles' => ['sometimes', 'array', 'list', 'min:1', $this->notUpdatingOwnRoles()],
             'roles.*' => ['string', 'distinct', Rule::in(['PeopleCountViewer', 'OrganizationAdmin'])],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! array_key_exists('phone', $this->all())) {
+            return;
+        }
+
+        $phone = $this->input('phone');
+
+        if (is_string($phone) || $phone === null) {
+            $this->merge(['phone' => User::normalizePhone($phone)]);
+        }
     }
 
     protected function notUpdatingOwnRoles(): Closure

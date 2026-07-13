@@ -395,6 +395,22 @@ it('can update a user for an organization', function () {
     $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => $newName, 'phone' => '+41790000000']);
 });
 
+it('rejects duplicate formatted phone when updating an organization user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    User::factory()->create(['phone' => '+41790000000']);
+    $user = User::factory()->create();
+    $org->users()->attach($user->id);
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $user->id]), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => '+41 79 000 00 00',
+        ])
+        ->assertSessionHasErrors('phone');
+});
+
 it('can delete a user for an organization', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();

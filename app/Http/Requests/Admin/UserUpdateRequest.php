@@ -34,4 +34,17 @@ use Illuminate\Foundation\Http\FormRequest;
             'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        if (! array_key_exists('phone', $this->all())) {
+            return;
+        }
+
+        $phone = $this->input('phone');
+
+        if (is_string($phone) || $phone === null) {
+            $this->merge(['phone' => User::normalizePhone($phone)]);
+        }
+    }
 }

@@ -224,6 +224,20 @@ it('updates a user with phone', function () {
     ]);
 });
 
+it('rejects duplicate formatted phone when updating a user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    User::factory()->create(['phone' => '+41790000000']);
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.update', $user), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => '+41 79 000 00 00',
+        ])
+        ->assertSessionHasErrors('phone');
+});
+
 it('syncs organizations when updating a user', function () {
     $admin = User::factory()->globalAdmin()->create();
     $oldOrganization = Organization::factory()->create();
