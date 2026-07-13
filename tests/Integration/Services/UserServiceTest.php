@@ -358,6 +358,29 @@ describe('createOrAttachToOrganization', function () {
         $this->assertDatabaseHas('organization_user', ['organization_id' => $organization->id, 'user_id' => $user->id]);
     });
 
+    it('syncs roles when creating or attaching a user', function () {
+        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+
+        $organization = Organization::factory()->create();
+        $viewerRole = Role::findByName('PeopleCountViewer');
+        $adminRole = Role::findByName('OrganizationAdmin');
+
+        $user = $this->service->createOrAttachToOrganization($organization, [
+            'name' => 'Role User',
+            'email' => 'role-user@example.com',
+            'phone' => null,
+        ], ['PeopleCountViewer', 'OrganizationAdmin']);
+
+        foreach ([$viewerRole, $adminRole] as $role) {
+            $this->assertDatabaseHas('model_has_roles', [
+                'organization_id' => $organization->id,
+                'role_id' => $role->id,
+                'model_id' => $user->id,
+                'model_type' => User::class,
+            ]);
+        }
+    });
+
     it('attaches an existing user by email without updating them', function () {
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 

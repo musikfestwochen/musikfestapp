@@ -57,7 +57,7 @@ it('shows the edit user form for an organization user', function () {
 it('redirects show to edit for an organization user', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
-    $user = User::factory()->create();
+    $user = User::factory()->create(['phone' => '+41790000000']);
     $org->users()->attach($user->id);
 
     $response = $this->actingAs($admin)
@@ -162,6 +162,197 @@ it('assigns the default viewer role when attaching an existing user', function (
     ]);
 });
 
+it('assigns multiple roles when creating an organization user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $viewerRole = Role::findByName('PeopleCountViewer');
+    $adminRole = Role::findByName('OrganizationAdmin');
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => 'Role User',
+            'email' => 'role-user@example.com',
+            'roles' => ['PeopleCountViewer', 'OrganizationAdmin'],
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $user = User::query()->where('email', 'role-user@example.com')->firstOrFail();
+
+    foreach ([$viewerRole, $adminRole] as $role) {
+        $this->assertDatabaseHas('model_has_roles', [
+            'organization_id' => $org->id,
+            'role_id' => $role->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+    }
+
+    $this->assertDatabaseMissing('model_has_permissions', [
+        'organization_id' => $org->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+});
+
+it('rejects global roles when creating an organization user', function (string $role): void {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => 'Global Role User',
+            'email' => 'global-role-user@example.com',
+            'roles' => [$role],
+        ])
+        ->assertSessionHasErrors('roles.0');
+})->with(['SuperAdmin', 'Admin']);
+
+it('prevents organization admins from changing their own roles when creating by their email', function () {
+    $org = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $adminRole = Role::findByName('OrganizationAdmin');
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'roles' => ['PeopleCountViewer'],
+        ])
+        ->assertSessionHasErrors('roles');
+
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $adminRole->id,
+        'model_id' => $admin->id,
+        'model_type' => User::class,
+    ]);
+});
+
+it('syncs multiple roles when updating an organization user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $user = User::factory()->create();
+    $org->users()->attach($user->id);
+    $viewerRole = Role::findByName('PeopleCountViewer');
+    $adminRole = Role::findByName('OrganizationAdmin');
+
+    setPermissionsOrgId($org->id);
+    $user->assignRole($viewerRole);
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $user->id]), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => ['PeopleCountViewer', 'OrganizationAdmin'],
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    foreach ([$viewerRole, $adminRole] as $role) {
+        $this->assertDatabaseHas('model_has_roles', [
+            'organization_id' => $org->id,
+            'role_id' => $role->id,
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+    }
+});
+
+it('rejects global roles when updating an organization user', function (string $role): void {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $user = User::factory()->create();
+    $org->users()->attach($user->id);
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $user->id]), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => [$role],
+        ])
+        ->assertSessionHasErrors('roles.0');
+})->with(['SuperAdmin', 'Admin']);
+
+it('allows organization admins to assign organization admin to another user', function () {
+    $org = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $user = User::factory()->create();
+    $org->users()->attach($user->id);
+    $viewerRole = Role::findByName('PeopleCountViewer');
+    $adminRole = Role::findByName('OrganizationAdmin');
+
+    setPermissionsOrgId($org->id);
+    $user->assignRole($viewerRole);
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $user->id]), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => ['PeopleCountViewer', 'OrganizationAdmin'],
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $adminRole->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+});
+
+it('allows organization admins to remove organization admin from another user', function () {
+    $org = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $user = User::factory()->create();
+    $org->users()->attach($user->id);
+    $viewerRole = Role::findByName('PeopleCountViewer');
+    $adminRole = Role::findByName('OrganizationAdmin');
+
+    setPermissionsOrgId($org->id);
+    $user->assignRole([$viewerRole, $adminRole]);
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $user->id]), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => ['PeopleCountViewer'],
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $viewerRole->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+    $this->assertDatabaseMissing('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $adminRole->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+});
+
+it('prevents organization admins from changing their own roles', function () {
+    $org = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($org)->create();
+    $adminRole = Role::findByName('OrganizationAdmin');
+
+    $this->actingAs($admin)
+        ->put(route('orgmgmt.users.update', ['organization' => $org->slug, 'user' => $admin->id]), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'roles' => ['PeopleCountViewer'],
+        ])
+        ->assertSessionHasErrors('roles');
+
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $adminRole->id,
+        'model_id' => $admin->id,
+        'model_type' => User::class,
+    ]);
+});
+
 it('rejects a new organization user with another users phone number', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -179,7 +370,7 @@ it('rejects a new organization user with another users phone number', function (
 it('can update a user for an organization', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
-    $user = User::factory()->create();
+    $user = User::factory()->create(['phone' => '+41790000000']);
     $org->users()->attach($user->id);
     $newName = 'Updated Name';
 
@@ -189,7 +380,7 @@ it('can update a user for an organization', function () {
             'email' => $user->email,
         ]);
     $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
-    $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => $newName]);
+    $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => $newName, 'phone' => '+41790000000']);
 });
 
 it('can delete a user for an organization', function () {

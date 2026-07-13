@@ -8,6 +8,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UserStoreRequest extends FormRequest
 {
@@ -30,7 +31,18 @@ class UserStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20', $this->uniquePhoneForEmailUser()],
+            'roles' => ['sometimes', 'array', 'list', 'min:1', $this->notChangingOwnRoles()],
+            'roles.*' => ['string', 'distinct', Rule::notIn(['SuperAdmin', 'Admin']), Rule::exists('roles', 'name')],
         ];
+    }
+
+    protected function notChangingOwnRoles(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if ($this->user()?->email === $this->string('email')->toString()) {
+                $fail('You cannot change your own roles.');
+            }
+        };
     }
 
     protected function prepareForValidation(): void
@@ -77,5 +89,19 @@ class UserStoreRequest extends FormRequest
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function roleNames(): array
+    {
+        $roles = $this->validated('roles');
+
+        if (! is_array($roles)) {
+            return ['PeopleCountViewer'];
+        }
+
+        return array_values(array_filter($roles, is_string(...)));
     }
 }

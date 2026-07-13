@@ -38,7 +38,7 @@ class UserController extends Controller
      */
     public function store(UserStoreRequest $request, UserService $userService, Organization $organization): RedirectResponse
     {
-        $user = $userService->createOrAttachToOrganization($organization, $request->payload());
+        $user = $userService->createOrAttachToOrganization($organization, $request->payload(), $request->roleNames());
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
@@ -86,9 +86,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UserUpdateRequest $request, Organization $organization, User $user): RedirectResponse
+    public function update(UserUpdateRequest $request, UserService $userService, Organization $organization, User $user): RedirectResponse
     {
-        $user->update($request->validated());
+        $userService->updateForOrganization($organization, $user, $request->payload(), $request->roleNames());
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,

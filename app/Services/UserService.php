@@ -61,13 +61,12 @@ class UserService
     }
 
     /**
-     * Create a user or attach an existing user to an organization.
-     *
      * @param  array{name: string, email: string, phone?: string|null}  $data
+     * @param  array<int, string>  $roleNames
      */
-    public function createOrAttachToOrganization(Organization $organization, array $data): User
+    public function createOrAttachToOrganization(Organization $organization, array $data, array $roleNames = ['PeopleCountViewer']): User
     {
-        return DB::transaction(function () use ($organization, $data): User {
+        return DB::transaction(function () use ($organization, $data, $roleNames): User {
             $user = User::query()->firstOrCreate(
                 ['email' => $data['email']],
                 [
@@ -78,10 +77,42 @@ class UserService
             );
 
             $user->organizations()->syncWithoutDetaching([$organization->id]);
-            $this->assignDefaultOrganizationRole($user, $organization);
+            $this->syncOrganizationRoles($user, $organization, $roleNames);
 
             return $user;
         });
+    }
+
+    /**
+     * @param  array{name: string, email: string, phone?: string|null}  $data
+     * @param  array<int, string>|null  $roleNames
+     */
+    public function updateForOrganization(Organization $organization, User $user, array $data, ?array $roleNames): void
+    {
+        DB::transaction(function () use ($organization, $user, $data, $roleNames): void {
+            $user->update($data);
+
+            if ($roleNames !== null) {
+                $this->syncOrganizationRoles($user, $organization, $roleNames);
+            }
+        });
+    }
+
+    /**
+     * @param  array<int, string>  $roleNames
+     */
+    public function syncOrganizationRoles(User $user, Organization $organization, array $roleNames): void
+    {
+        $previousOrganizationId = getPermissionsOrgId();
+
+        try {
+            setPermissionsOrgId($organization->id);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+            $user->syncRoles($roleNames);
+        } finally {
+            setPermissionsOrgId($previousOrganizationId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+        }
     }
 
     /**
@@ -130,20 +161,6 @@ class UserService
             $user->unsetRelation('roles')->unsetRelation('permissions');
             $user->syncRoles([]);
             $user->syncPermissions([]);
-        } finally {
-            setPermissionsOrgId($previousOrganizationId);
-            $user->unsetRelation('roles')->unsetRelation('permissions');
-        }
-    }
-
-    protected function assignDefaultOrganizationRole(User $user, Organization $organization): void
-    {
-        $previousOrganizationId = getPermissionsOrgId();
-
-        try {
-            setPermissionsOrgId($organization->id);
-            $user->unsetRelation('roles')->unsetRelation('permissions');
-            $user->assignRole('PeopleCountViewer');
         } finally {
             setPermissionsOrgId($previousOrganizationId);
             $user->unsetRelation('roles')->unsetRelation('permissions');

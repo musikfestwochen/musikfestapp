@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Requests\Orgmgmt\UserStoreRequest;
+use App\Models\User;
 
 covers(UserStoreRequest::class);
 
@@ -16,7 +17,14 @@ it('has correct rules', function () {
         ->and($rules['phone'][0])->toBe('nullable')
         ->and($rules['phone'][1])->toBe('string')
         ->and($rules['phone'][2])->toBe('max:20')
-        ->and($rules['phone'][3])->toBeInstanceOf(Closure::class);
+        ->and($rules['phone'][3])->toBeInstanceOf(Closure::class)
+        ->and($rules['roles'][0])->toBe('sometimes')
+        ->and($rules['roles'][1])->toBe('array')
+        ->and($rules['roles'][2])->toBe('list')
+        ->and($rules['roles'][3])->toBe('min:1')
+        ->and($rules['roles'][4])->toBeInstanceOf(Closure::class)
+        ->and($rules['roles.*'][0])->toBe('string')
+        ->and($rules['roles.*'][1])->toBe('distinct');
 });
 
 it('skips phone uniqueness validation when the phone is blank', function () {
