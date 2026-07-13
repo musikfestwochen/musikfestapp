@@ -87,14 +87,18 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function phone(): Attribute
     {
         return Attribute::make(set: function (?string $value): array {
-            $cleaned = $value !== null ? trim($value) : null;
-            if (in_array($cleaned, [null, '', '0'], true)) {
-                return ['phone' => null];
-            }
-
-            $cleaned = preg_replace('/[\s\-()\.]+/', '', $cleaned);
-
-            return ['phone' => $cleaned];
+            return ['phone' => self::normalizePhone($value)];
         });
+    }
+
+    public static function normalizePhone(?string $value): ?string
+    {
+        $cleaned = $value !== null ? trim($value) : null;
+
+        if (in_array($cleaned, [null, '', '0'], true)) {
+            return null;
+        }
+
+        return preg_replace('/[\s\-()\.]+/', '', $cleaned);
     }
 }

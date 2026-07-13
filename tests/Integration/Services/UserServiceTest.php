@@ -341,3 +341,41 @@ describe('syncOrganizations', function () {
         ]);
     });
 });
+
+describe('createOrAttachToOrganization', function () {
+    it('creates a new user and attaches them to the organization', function () {
+        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+
+        $organization = Organization::factory()->create();
+
+        $user = $this->service->createOrAttachToOrganization($organization, [
+            'name' => 'New User',
+            'email' => 'new-user@example.com',
+            'phone' => null,
+        ]);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'email' => 'new-user@example.com']);
+        $this->assertDatabaseHas('organization_user', ['organization_id' => $organization->id, 'user_id' => $user->id]);
+    });
+
+    it('attaches an existing user by email without updating them', function () {
+        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+
+        $organization = Organization::factory()->create();
+        $user = User::factory()->create([
+            'name' => 'Existing User',
+            'email' => 'existing-user@example.com',
+            'phone' => '+41790000000',
+        ]);
+
+        $result = $this->service->createOrAttachToOrganization($organization, [
+            'name' => 'Updated User',
+            'email' => 'existing-user@example.com',
+            'phone' => '+41 79 222 22 22',
+        ]);
+
+        expect($result->is($user))->toBeTrue();
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Existing User', 'phone' => '+41790000000']);
+        $this->assertDatabaseHas('organization_user', ['organization_id' => $organization->id, 'user_id' => $user->id]);
+    });
+});

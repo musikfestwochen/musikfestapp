@@ -8,6 +8,8 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -59,6 +61,30 @@ class UserService
     }
 
     /**
+     * Create a user or attach an existing user to an organization.
+     *
+     * @param  array{name: string, email: string, phone?: string|null}  $data
+     */
+    public function createOrAttachToOrganization(Organization $organization, array $data): User
+    {
+        return DB::transaction(function () use ($organization, $data): User {
+            $user = User::query()->firstOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'phone' => $data['phone'] ?? null,
+                    'password' => Str::random(),
+                ],
+            );
+
+            $user->organizations()->syncWithoutDetaching([$organization->id]);
+            $this->assignDefaultOrganizationRole($user, $organization);
+
+            return $user;
+        });
+    }
+
+    /**
      * @param  array<int, int>  $organizationIds
      */
     public function syncOrganizations(User $user, array $organizationIds): void
@@ -104,6 +130,20 @@ class UserService
             $user->unsetRelation('roles')->unsetRelation('permissions');
             $user->syncRoles([]);
             $user->syncPermissions([]);
+        } finally {
+            setPermissionsOrgId($previousOrganizationId);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+        }
+    }
+
+    protected function assignDefaultOrganizationRole(User $user, Organization $organization): void
+    {
+        $previousOrganizationId = getPermissionsOrgId();
+
+        try {
+            setPermissionsOrgId($organization->id);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
+            $user->assignRole('PeopleCountViewer');
         } finally {
             setPermissionsOrgId($previousOrganizationId);
             $user->unsetRelation('roles')->unsetRelation('permissions');

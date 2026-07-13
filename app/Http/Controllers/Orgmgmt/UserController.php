@@ -16,7 +16,6 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,10 +24,8 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(UserIndexRequest $request, Organization $organization): Response
+    public function index(UserIndexRequest $request, UserService $userService, Organization $organization): Response
     {
-        $userService = resolve(UserService::class);
-
         return Inertia::render('orgmgmt/Users', [
             'organization' => $organization,
             'users' => $userService->getUsers(),
@@ -39,22 +36,14 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(UserStoreRequest $request, Organization $organization): RedirectResponse
+    public function store(UserStoreRequest $request, UserService $userService, Organization $organization): RedirectResponse
     {
-        $user = User::query()->create(
-            array_merge($request->validated(), ['password' => Str::random()])
-        );
-
-        // attach user to organization
-        $user->organizations()->attach($organization->id);
-
-        // Give User default role
-        $user->assignRole('PeopleCountViewer');
+        $user = $userService->createOrAttachToOrganization($organization, $request->payload());
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
         ])
-            ->with('status', 'User '.$user->name.' created successfully.');
+            ->with('status', 'User '.$user->name.' added successfully.');
     }
 
     /**
@@ -111,11 +100,11 @@ class UserController extends Controller
      *
      * @param  UserDestroyRequest  $request  Required for authorization, even if not explicitly used in method body
      */
-    public function destroy(UserDestroyRequest $request, Organization $organization, User $user): RedirectResponse
+    public function destroy(UserDestroyRequest $request, UserService $userService, Organization $organization, User $user): RedirectResponse
     {
         $name = $user->name;
 
-        resolve(UserService::class)->removeFromOrganization($user, $organization);
+        $userService->removeFromOrganization($user, $organization);
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,

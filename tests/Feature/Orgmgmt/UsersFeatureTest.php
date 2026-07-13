@@ -81,6 +81,99 @@ it('can create a user for an organization', function () {
         ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), $userData);
     $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
     $this->assertDatabaseHas('users', ['email' => $userData['email']]);
+    $this->assertDatabaseHas('organization_user', ['organization_id' => $org->id, 'user_id' => User::query()->where('email', $userData['email'])->firstOrFail()->id]);
+});
+
+it('attaches an existing user when creating by email for an organization without updating them', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $existingUser = User::factory()->create([
+        'name' => 'Existing Name',
+        'email' => 'existing@example.com',
+        'phone' => '+41790000000',
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => 'Updated Existing',
+            'email' => 'existing@example.com',
+            'phone' => '+41 79 111 11 11',
+        ]);
+
+    $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+    expect(User::query()->where('email', 'existing@example.com')->count())->toBe(1);
+    $this->assertDatabaseHas('users', [
+        'id' => $existingUser->id,
+        'name' => 'Existing Name',
+        'phone' => '+41790000000',
+    ]);
+    $this->assertDatabaseHas('organization_user', ['organization_id' => $org->id, 'user_id' => $existingUser->id]);
+});
+
+it('attaches an unverified existing user when creating by email for an organization', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $existingUser = User::factory()->unverified()->create(['email' => 'unverified@example.com']);
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => $existingUser->name,
+            'email' => $existingUser->email,
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $this->assertDatabaseHas('organization_user', ['organization_id' => $org->id, 'user_id' => $existingUser->id]);
+});
+
+it('idempotently attaches an existing organization user when creating by email', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $existingUser = User::factory()->create(['email' => 'member@example.com']);
+    $existingUser->organizations()->attach($org->id);
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => $existingUser->name,
+            'email' => $existingUser->email,
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    expect($existingUser->organizations()->whereKey($org->id)->count())->toBe(1);
+});
+
+it('assigns the default viewer role when attaching an existing user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $existingUser = User::factory()->create(['email' => 'viewer@example.com']);
+    $viewerRole = Role::findByName('PeopleCountViewer');
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => $existingUser->name,
+            'email' => $existingUser->email,
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $viewerRole->id,
+        'model_id' => $existingUser->id,
+        'model_type' => User::class,
+    ]);
+});
+
+it('rejects a new organization user with another users phone number', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    User::factory()->create(['phone' => '+41790000000']);
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => 'Duplicate Phone',
+            'email' => 'new@example.com',
+            'phone' => '+41 79 000 00 00',
+        ])
+        ->assertSessionHasErrors('phone');
 });
 
 it('can update a user for an organization', function () {

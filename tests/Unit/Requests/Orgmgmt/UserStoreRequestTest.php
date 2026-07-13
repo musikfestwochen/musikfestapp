@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Requests\Orgmgmt\UserStoreRequest;
-use App\Models\User;
 
 covers(UserStoreRequest::class);
 
@@ -10,11 +9,25 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-        'phone' => ['nullable', 'string', 'max:20', 'unique:users'],
-    ]);
+    $rules = $this->request->rules();
+
+    expect($rules['name'])->toBe(['required', 'string', 'max:255'])
+        ->and($rules['email'])->toBe(['required', 'string', 'email', 'max:255'])
+        ->and($rules['phone'][0])->toBe('nullable')
+        ->and($rules['phone'][1])->toBe('string')
+        ->and($rules['phone'][2])->toBe('max:20')
+        ->and($rules['phone'][3])->toBeInstanceOf(Closure::class);
+});
+
+it('skips phone uniqueness validation when the phone is blank', function () {
+    $rules = $this->request->rules();
+    $messages = [];
+
+    $rules['phone'][3]('phone', '', function (string $message) use (&$messages): void {
+        $messages[] = $message;
+    });
+
+    expect($messages)->toBe([]);
 });
 
 it('authorizes when user can store users', function () {
