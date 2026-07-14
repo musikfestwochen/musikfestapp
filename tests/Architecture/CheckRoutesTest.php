@@ -23,8 +23,6 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => 'login'],
         ['method' => 'POST', 'uri' => 'login'],
         ['method' => 'POST', 'uri' => 'logout'],
-        ['method' => 'GET|HEAD', 'uri' => 'register'],
-        ['method' => 'POST', 'uri' => 'register'],
         ['method' => 'POST', 'uri' => 'reset-password'],
         ['method' => 'GET|HEAD', 'uri' => 'reset-password/{token}'],
         ['method' => 'GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS', 'uri' => 'settings'],
