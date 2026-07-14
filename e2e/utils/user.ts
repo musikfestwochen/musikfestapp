@@ -30,23 +30,6 @@ export function generateTestUser(namePrefix?: string): TestUser {
 }
 
 /**
- * Fill out the registration form
- */
-export async function fillRegistrationForm(page: Page, user: TestUser): Promise<void> {
-    await page.getByLabel(/name/i).fill(user.name);
-    await page.getByLabel(/email/i).fill(user.email);
-    await page.getByLabel(/^password$/i).fill(user.password);
-    await page.getByLabel(/confirm password/i).fill(user.password);
-}
-
-/**
- * Submit the registration form
- */
-export async function submitRegistrationForm(page: Page): Promise<void> {
-    await page.getByRole('button', { name: /create account/i }).click();
-}
-
-/**
  * Verify that user is logged in
  * This checks for common indicators that a user is authenticated
  */
@@ -54,7 +37,6 @@ export async function verifyUserIsLoggedIn(page: Page, user?: TestUser): Promise
     // The user should not be on auth-related pages
     await expect(page).not.toHaveURL(/\/verify-email$/);
     await expect(page).not.toHaveURL(/\/login$/);
-    await expect(page).not.toHaveURL(/\/register$/);
 
     // Wait for the page to fully load (important for Inertia.js apps)
     await page.waitForLoadState('networkidle');
@@ -123,14 +105,6 @@ export async function verifyUserIsLoggedIn(page: Page, user?: TestUser): Promise
 }
 
 /**
- * Navigate to the registration page
- */
-export async function navigateToRegistration(page: Page): Promise<void> {
-    await page.goto('/register');
-    await expect(page).toHaveURL(/\/register$/);
-}
-
-/**
  * Fill out and submit the login form
  */
 export async function loginUser(page: Page, email: string, password: string): Promise<void> {
@@ -171,49 +145,4 @@ export async function logoutUser(page: Page): Promise<void> {
 
     // Verify we're logged out
     await expect(page).toHaveURL(/\/login$|\/$/);
-}
-
-/**
- * Create a user programmatically for testing
- * This creates a user through the registration endpoint and bypasses email verification
- */
-export async function createVerifiedUser(page: Page, user?: TestUser): Promise<TestUser> {
-    const testUser = user || generateTestUser();
-
-    // Start from the login page to get the CSRF token in a clean state
-    await page.goto('/login');
-    await page.waitForLoadState('networkidle');
-
-    // Extract the CSRF token from the meta tag
-    const csrfToken = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-
-    if (!csrfToken) {
-        throw new Error('Could not find CSRF token on login page');
-    }
-
-    // Use the browser's request context to make API calls with CSRF token
-    const response = await page.request.post('/register', {
-        data: {
-            name: testUser.name,
-            email: testUser.email,
-            password: testUser.password,
-            password_confirmation: testUser.password,
-            _token: csrfToken,
-        },
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-        },
-    });
-
-    if (!response.ok()) {
-        throw new Error(`Failed to create user: ${response.status()} ${await response.text()}`);
-    }
-
-    // If the app requires email verification, we might need to verify the user
-    // For now, let's assume the registration creates an unverified user
-    // and we need to mark them as verified through direct database manipulation
-    // This would typically be done through an API endpoint or artisan command
-
-    console.log(`✅ Created test user: ${testUser.email}`);
-    return testUser;
 }

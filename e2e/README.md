@@ -23,7 +23,6 @@ npx playwright test --project=mobile-safari
 npx playwright test --project=tablet
 
 # Run a specific test file on a specific device
-npx playwright test e2e/logged_out/register.spec.ts --project=mobile-chrome
 ```
 
 ## 📝 Best Practices
