@@ -47,7 +47,15 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    organizations?: Organization[];
+    organizations_count?: number;
     area_single_resets?: PeoplecountAreaSingleReset[]; // Optional, for related area single resets created by this user
+}
+
+export interface RoleOption {
+    name: string;
+    display_name: string | null;
+    description: string | null;
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;

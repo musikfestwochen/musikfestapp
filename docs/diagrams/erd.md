@@ -7,7 +7,7 @@ Do not edit diagram block manually. Run `composer docs:erd`.
 <!-- mermaid-erd-start -->
 ```mermaid
 ---
-title: 22 tables · 158 columns
+title: 22 tables · 160 columns
 ---
 erDiagram
     model_has_permissions["model_has_permissions (4)"] {
@@ -192,13 +192,15 @@ erDiagram
         integer permission_id PK, FK
         integer role_id PK, FK
     }
-    roles["roles (6)"] {
+    roles["roles (8)"] {
         integer id PK
         integer organization_id "nullable"
         varchar name
         varchar guard_name
         datetime created_at "nullable"
         datetime updated_at "nullable"
+        varchar display_name "nullable"
+        text description "nullable"
     }
     users["users (10)"] {
         integer id PK

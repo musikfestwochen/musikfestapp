@@ -30,6 +30,21 @@ use Illuminate\Foundation\Http\FormRequest;
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.($this->route('user')->id ?? '')],
             'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'.($this->route('user')->id ?? '')],
+            'organization_ids' => ['sometimes', 'array'],
+            'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! array_key_exists('phone', $this->all())) {
+            return;
+        }
+
+        $phone = $this->input('phone');
+
+        if (is_string($phone) || $phone === null) {
+            $this->merge(['phone' => User::normalizePhone($phone)]);
+        }
     }
 }

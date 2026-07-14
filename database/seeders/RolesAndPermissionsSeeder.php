@@ -19,7 +19,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        Role::query()->firstOrCreate(['name' => 'SuperAdmin']);
+        $this->role('SuperAdmin', 'Super administrator', 'Can access and manage everything across all organizations.');
 
         // create permissions
         $modules = [
@@ -58,7 +58,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Create roles and assign created permissions
 
-        $adminRole = Role::query()->firstOrCreate(['name' => 'Admin']);
+        $adminRole = $this->role('Admin', 'Global administrator', 'Can manage users and organizations globally.');
         $adminRole->syncPermissions([
             'admin.users.*',
             'admin.organizations.*',
@@ -78,7 +78,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.area_count_history',
         ]);
 
-        $orgAdminRole = Role::query()->firstOrCreate(['name' => 'OrganizationAdmin']);
+        $orgAdminRole = $this->role('OrganizationAdmin', 'Organization administrator', 'Has all organization level permissions over all modules.');
         $orgAdminRole->syncPermissions([
             'orgmgmt.users.*',
             'peoplecount.sensors.*',
@@ -93,7 +93,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.area_count_history',
         ]);
 
-        $peoplecountViewerRole = Role::query()->firstOrCreate(['name' => 'PeopleCountViewer']);
+        $peoplecountViewerRole = $this->role('PeopleCountViewer', 'People count viewer', 'Can view people-count dashboards and data.');
         $peoplecountViewerRole->syncPermissions([
             'peoplecount.areas.index',
             'peoplecount.areas.show',
@@ -104,5 +104,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.most_active_sensors',
             'peoplecount.widgets.area_count_history',
         ]);
+    }
+
+    private function role(string $name, string $displayName, string $description): Role
+    {
+        return Role::query()->updateOrCreate(
+            ['name' => $name, 'guard_name' => 'web'],
+            ['display_name' => $displayName, 'description' => $description],
+        );
     }
 }

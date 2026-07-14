@@ -10,11 +10,32 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-        'phone' => ['nullable', 'string', 'max:20', 'unique:users'],
-    ]);
+    $rules = $this->request->rules();
+
+    expect($rules['name'])->toBe(['required', 'string', 'max:255'])
+        ->and($rules['email'])->toBe(['required', 'string', 'email', 'max:255'])
+        ->and($rules['phone'][0])->toBe('nullable')
+        ->and($rules['phone'][1])->toBe('string')
+        ->and($rules['phone'][2])->toBe('max:20')
+        ->and($rules['phone'][3])->toBeInstanceOf(Closure::class)
+        ->and($rules['roles'][0])->toBe('sometimes')
+        ->and($rules['roles'][1])->toBe('array')
+        ->and($rules['roles'][2])->toBe('list')
+        ->and($rules['roles'][3])->toBe('min:1')
+        ->and($rules['roles'][4])->toBeInstanceOf(Closure::class)
+        ->and($rules['roles.*'][0])->toBe('string')
+        ->and($rules['roles.*'][1])->toBe('distinct');
+});
+
+it('skips phone uniqueness validation when the phone is blank', function () {
+    $rules = $this->request->rules();
+    $messages = [];
+
+    $rules['phone'][3]('phone', '', function (string $message) use (&$messages): void {
+        $messages[] = $message;
+    });
+
+    expect($messages)->toBe([]);
 });
 
 it('authorizes when user can store users', function () {

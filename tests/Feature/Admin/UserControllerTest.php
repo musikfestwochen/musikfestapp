@@ -31,6 +31,20 @@ it('shows the user index page with all users', function () {
         );
 });
 
+it('shows organization counts on the user index page', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $organizations = Organization::factory()->count(2)->create();
+    $user = User::factory()->create();
+    $user->organizations()->attach($organizations->pluck('id'));
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.index'))
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->component('admin/Users')
+            ->where('users.0.organizations_count', 0)
+            ->where('users.1.organizations_count', 2)
+        );
+});
+
 it('doesnt show the user index page to non-admin users', function () {
     $user = User::factory()->create();
 
@@ -145,6 +159,20 @@ it('shows the edit user page', function () {
         );
 });
 
+it('passes organizations to the edit user page', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create();
+    $user->organizations()->attach($organization->id);
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.edit', $user))
+        ->assertInertia(fn (AssertableInertia $page): AssertableJson => $page->component('admin/EditUser')
+            ->where('organizations.0.id', $organization->id)
+            ->where('user.organizations.0.id', $organization->id)
+        );
+});
+
 it('updates a user successfully', function () {
     $admin = User::factory()->globalAdmin()->create();
     $user = User::factory()->create();
@@ -194,6 +222,56 @@ it('updates a user with phone', function () {
         'email' => 'updated2@example.com',
         'phone' => '+41791234567',
     ]);
+});
+
+it('rejects duplicate formatted phone when updating a user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    User::factory()->create(['phone' => '+41790000000']);
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.update', $user), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => '+41 79 000 00 00',
+        ])
+        ->assertSessionHasErrors('phone');
+});
+
+it('syncs organizations when updating a user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $oldOrganization = Organization::factory()->create();
+    $newOrganization = Organization::factory()->create();
+    $user = User::factory()->create();
+    $user->organizations()->attach($oldOrganization->id);
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'organization_ids' => [$newOrganization->id],
+    ]);
+
+    $this->assertDatabaseMissing('organization_user', [
+        'organization_id' => $oldOrganization->id,
+        'user_id' => $user->id,
+    ]);
+    $this->assertDatabaseHas('organization_user', [
+        'organization_id' => $newOrganization->id,
+        'user_id' => $user->id,
+    ]);
+});
+
+it('rejects unknown organizations when updating a user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.update', $user), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'organization_ids' => [999999],
+        ])
+        ->assertSessionHasErrors('organization_ids.0');
 });
 
 it('fails to update without name', function () {

@@ -16,7 +16,6 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,10 +24,8 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(UserIndexRequest $request, Organization $organization): Response
+    public function index(UserIndexRequest $request, UserService $userService, Organization $organization): Response
     {
-        $userService = resolve(UserService::class);
-
         return Inertia::render('orgmgmt/Users', [
             'organization' => $organization,
             'users' => $userService->getUsers(),
@@ -39,31 +36,25 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(UserStoreRequest $request, Organization $organization): RedirectResponse
+    public function store(UserStoreRequest $request, UserService $userService, Organization $organization): RedirectResponse
     {
-        $user = User::query()->create(
-            array_merge($request->validated(), ['password' => Str::random()])
-        );
-
-        // attach user to organization
-        $user->organizations()->attach($organization->id);
-
-        // Give User default role
-        $user->assignRole('PeopleCountViewer');
+        $user = $userService->createOrAttachToOrganization($organization, $request->payload(), $request->roleNames());
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
         ])
-            ->with('status', 'User '.$user->name.' created successfully.');
+            ->with('status', 'User '.$user->name.' added successfully.');
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(UserCreateRequest $request, Organization $organization): Response
+    public function create(UserCreateRequest $request, UserService $userService, Organization $organization): Response
     {
         return Inertia::render('orgmgmt/NewUser', [
             'organization' => $organization,
+            'availableRoles' => $userService->availableOrganizationRoles(),
+            'selectedRoles' => ['PeopleCountViewer'],
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -86,20 +77,22 @@ class UserController extends Controller
      *
      * @param  UserEditRequest  $request  Required for authorization, even if not explicitly used in method body
      */
-    public function edit(UserEditRequest $request, Organization $organization, User $user): Response
+    public function edit(UserEditRequest $request, UserService $userService, Organization $organization, User $user): Response
     {
         return Inertia::render('orgmgmt/EditUser', [
             'organization' => $organization,
             'user' => $user,
+            'availableRoles' => $userService->availableOrganizationRoles(),
+            'selectedRoles' => $userService->getOrganizationRoleNames($user, $organization),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UserUpdateRequest $request, Organization $organization, User $user): RedirectResponse
+    public function update(UserUpdateRequest $request, UserService $userService, Organization $organization, User $user): RedirectResponse
     {
-        $user->update($request->validated());
+        $userService->updateForOrganization($organization, $user, $request->payload(), $request->roleNames());
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
@@ -110,19 +103,15 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  UserDestroyRequest  $request  Required for authorization, even if not explicitly used in method body
-     *
-     * @todo: Do not delete user if they belong to an organization, then only remove the organization association.
      */
-    public function destroy(UserDestroyRequest $request, Organization $organization, User $user): RedirectResponse
+    public function destroy(UserDestroyRequest $request, UserService $userService, Organization $organization, User $user): RedirectResponse
     {
-        // save user name for redirect message
         $name = $user->name;
 
-        // delete user
-        $user->delete();
+        $userService->removeFromOrganization($user, $organization);
 
         return to_route('orgmgmt.users.index', [
             'organization' => $organization,
-        ])->with('status', 'User '.$name.' deleted successfully.');
+        ])->with('status', 'User '.$name.' removed successfully.');
     }
 }

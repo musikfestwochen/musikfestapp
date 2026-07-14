@@ -9,7 +9,9 @@ interface Props {
     breadcrumbs?: BreadcrumbItemType[];
 }
 
-const { breadcrumbs } = defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+    breadcrumbs: () => [],
+});
 
 // Get organization from the page props
 const page = usePage();

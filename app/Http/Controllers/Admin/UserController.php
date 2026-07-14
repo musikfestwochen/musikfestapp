@@ -13,6 +13,7 @@ use App\Http\Requests\Admin\UserShowRequest;
 use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\User;
+use App\Services\OrganizationService;
 use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
@@ -29,7 +30,7 @@ class UserController extends Controller
         $userService = resolve(UserService::class);
 
         return Inertia::render('admin/Users', [
-            'users' => $userService->getUsers(),
+            'users' => $userService->getUsersWithOrganizationCount(),
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -73,8 +74,11 @@ class UserController extends Controller
      */
     public function edit(UserEditRequest $request, User $user): Response
     {
+        $organizationService = resolve(OrganizationService::class);
+
         return Inertia::render('admin/EditUser', [
-            'user' => $user,
+            'organizations' => $organizationService->getOrganizations(),
+            'user' => $user->load('organizations:id'),
         ]);
     }
 
@@ -83,7 +87,13 @@ class UserController extends Controller
      */
     public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
-        $user->update($request->validated());
+        $validated = $request->validated();
+
+        $user->update(collect($validated)->except('organization_ids')->all());
+
+        if (array_key_exists('organization_ids', $validated)) {
+            resolve(UserService::class)->syncOrganizations($user, $validated['organization_ids']);
+        }
 
         return to_route('admin.users.index')->with('status', 'User '.$user->name.' updated successfully.');
     }

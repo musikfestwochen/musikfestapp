@@ -43,11 +43,18 @@ it('has correct rules with user ID', function () {
         };
     });
 
-    expect($request->rules())->toBe([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,123'],
-        'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,123'],
-    ]);
+    $rules = $request->rules();
+
+    expect($rules['name'])->toBe(['required', 'string', 'max:255'])
+        ->and($rules['email'])->toBe(['required', 'string', 'email', 'max:255', 'unique:users,email,123'])
+        ->and($rules['phone'])->toBe(['nullable', 'string', 'max:20', 'unique:users,phone,123'])
+        ->and($rules['roles'][0])->toBe('sometimes')
+        ->and($rules['roles'][1])->toBe('array')
+        ->and($rules['roles'][2])->toBe('list')
+        ->and($rules['roles'][3])->toBe('min:1')
+        ->and($rules['roles'][4])->toBeInstanceOf(Closure::class)
+        ->and($rules['roles.*'][0])->toBe('string')
+        ->and($rules['roles.*'][1])->toBe('distinct');
 });
 
 it('has correct rules with null user', function () {
@@ -63,9 +70,10 @@ it('has correct rules with null user', function () {
         };
     });
 
-    expect($request->rules())->toBe([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'],
-        'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'],
-    ]);
+    $rules = $request->rules();
+
+    expect($rules['name'])->toBe(['required', 'string', 'max:255'])
+        ->and($rules['email'])->toBe(['required', 'string', 'email', 'max:255', 'unique:users,email,'])
+        ->and($rules['phone'])->toBe(['nullable', 'string', 'max:20', 'unique:users,phone,'])
+        ->and($rules['roles'][4])->toBeInstanceOf(Closure::class);
 });

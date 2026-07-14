@@ -18,7 +18,12 @@ vi.mock('@inertiajs/vue3', () => ({
 }));
 
 const InputStub = defineComponent({
-    props: ['modelValue'],
+    props: {
+        modelValue: {
+            type: [String, Number],
+            default: '',
+        },
+    },
     emits: ['update:modelValue'],
     setup(props, { attrs, emit }) {
         return () =>

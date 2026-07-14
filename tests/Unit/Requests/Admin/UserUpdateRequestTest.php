@@ -46,6 +46,8 @@ it('has correct rules with user ID', function () {
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,123'],
         'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,123'],
+        'organization_ids' => ['sometimes', 'array'],
+        'organization_ids.*' => ['integer', 'exists:organizations,id'],
     ]);
 });
 
@@ -66,5 +68,7 @@ it('has correct rules with null user', function () {
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'],
         'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'],
+        'organization_ids' => ['sometimes', 'array'],
+        'organization_ids.*' => ['integer', 'exists:organizations,id'],
     ]);
 });
