@@ -1,14 +1,10 @@
 <?php
 
-use App\Http\Controllers\Peoplecount\IntervalCountController;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\IntervalCountService;
 use App\Services\Peoplecount\SensorService;
-use Illuminate\Support\Facades\Route;
 
 it('calls IntervalCountService with authenticated sensor and payload', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create();
     $payload = ['some' => 'data'];
 
@@ -35,8 +31,6 @@ it('calls IntervalCountService with authenticated sensor and payload', function 
 });
 
 it('returns 200 when no records are processed', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create();
     $payload = ['some' => 'data'];
 
@@ -62,8 +56,6 @@ it('returns 200 when no records are processed', function () {
 });
 
 it('returns 400 when service throws exception', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create();
     $payload = ['invalid' => 'data'];
 
@@ -87,8 +79,6 @@ it('returns 400 when service throws exception', function () {
 });
 
 it('returns 400 when service throws validation exception', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create();
     $payload = ['malformed' => 'data'];
 
@@ -111,8 +101,6 @@ it('returns 400 when service throws validation exception', function () {
 });
 
 it('returns 401 when no authentication token provided', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $payload = ['some' => 'data'];
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload)
@@ -124,8 +112,6 @@ it('returns 401 when no authentication token provided', function () {
 });
 
 it('returns 401 when invalid authentication token provided', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $payload = ['some' => 'data'];
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
@@ -134,8 +120,6 @@ it('returns 401 when invalid authentication token provided', function () {
 });
 
 it('returns 401 when expired token provided', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create();
     $payload = ['some' => 'data'];
 
@@ -149,8 +133,6 @@ it('returns 401 when expired token provided', function () {
 });
 
 it('processes real axis data successfully', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-TEST-001',
@@ -198,8 +180,6 @@ it('processes real axis data successfully', function () {
 });
 
 it('processes empty axis data successfully', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-TEST-002',
@@ -232,8 +212,6 @@ it('processes empty axis data successfully', function () {
 });
 
 it('handles malformed axis data gracefully', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-TEST-003',
@@ -262,8 +240,6 @@ it('handles malformed axis data gracefully', function () {
 });
 
 it('handles sensor serial mismatch gracefully', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-TEST-004',
@@ -292,8 +268,6 @@ it('handles sensor serial mismatch gracefully', function () {
 });
 
 it('handles unsupported sensor vendor gracefully', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Unknown',
         'serial' => 'UNKNOWN-001',
@@ -313,8 +287,6 @@ it('handles unsupported sensor vendor gracefully', function () {
 });
 
 it('accepts empty request body', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create();
 
     $mock = Mockery::mock(IntervalCountService::class);
@@ -338,8 +310,6 @@ it('accepts empty request body', function () {
 });
 
 it('processes multiple measurements in single request', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-MULTI-001',
@@ -402,8 +372,6 @@ it('processes multiple measurements in single request', function () {
 });
 
 it('idempotently updates a replayed interval', function () {
-    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
-
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-REPLAY-001',
