@@ -26,8 +26,9 @@ it('calls IntervalCountService with authenticated sensor and payload', function 
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
-    ])->assertStatus(201) // 201 Created
-        ->assertJson([
+    ])->assertCreated()
+        ->assertHeader('Content-Type', 'application/json')
+        ->assertExactJson([
             'message' => 'Interval count data processed successfully.',
             'count' => 2,
         ]);
@@ -53,8 +54,9 @@ it('returns 200 when no records are processed', function () {
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
-    ])->assertStatus(200) // 200 OK
-        ->assertJson([
+    ])->assertOk()
+        ->assertHeader('Content-Type', 'application/json')
+        ->assertExactJson([
             'message' => 'No interval count data to process.',
         ]);
 });
@@ -76,8 +78,9 @@ it('returns 400 when service throws exception', function () {
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
-    ])->assertStatus(400)
-        ->assertJson([
+    ])->assertBadRequest()
+        ->assertHeader('Content-Type', 'application/json')
+        ->assertExactJson([
             'error' => 'Processing failed',
             'message' => 'Unsupported sensor vendor: Unknown',
         ]);
@@ -113,7 +116,11 @@ it('returns 401 when no authentication token provided', function () {
     $payload = ['some' => 'data'];
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload)
-        ->assertStatus(401);
+        ->assertUnauthorized()
+        ->assertHeader('Content-Type', 'application/json')
+        ->assertExactJson([
+            'message' => 'Unauthenticated.',
+        ]);
 });
 
 it('returns 401 when invalid authentication token provided', function () {
@@ -391,6 +398,57 @@ it('processes multiple measurements in single request', function () {
         'sensor_id' => $sensor->id,
         'count_in' => 7,
         'count_out' => 12,
+    ]);
+});
+
+it('idempotently updates a replayed interval', function () {
+    Route::post(route('peoplecount.interval-count.store'), [IntervalCountController::class, 'store']);
+
+    $sensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'AXIS-REPLAY-001',
+    ]);
+    $payload = [
+        'apiName' => 'Axis Retail Data',
+        'apiVersion' => '0.4',
+        'sensor' => [
+            'serial' => $sensor->serial,
+        ],
+        'data' => [
+            'measurements' => [[
+                'kind' => 'people-counts',
+                'utcFrom' => '2026-07-17T11:59:00Z',
+                'utcTo' => '2026-07-17T12:00:00Z',
+                'items' => [
+                    ['direction' => 'in', 'count' => 5],
+                    ['direction' => 'out', 'count' => 3],
+                ],
+            ]],
+        ],
+    ];
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+    $headers = ['Authorization' => 'Bearer '.$token];
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, $headers)
+        ->assertCreated();
+
+    $payload['data']['measurements'][0]['items'] = [
+        ['direction' => 'in', 'count' => 8],
+        ['direction' => 'out', 'count' => 2],
+    ];
+
+    $this->postJson(route('peoplecount.interval-count.store'), $payload, $headers)
+        ->assertCreated()
+        ->assertExactJson([
+            'message' => 'Interval count data processed successfully.',
+            'count' => 1,
+        ]);
+
+    $this->assertDatabaseCount('peoplecount_interval_counts', 1);
+    $this->assertDatabaseHas('peoplecount_interval_counts', [
+        'sensor_id' => $sensor->id,
+        'count_in' => 8,
+        'count_out' => 2,
     ]);
 });
 
