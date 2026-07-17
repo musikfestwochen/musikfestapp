@@ -14,10 +14,11 @@ From repository root:
 
 ```bash
 uv sync --frozen
+uv run openapi-spec-validator docs/api/openapi.yaml
 uv run mkdocs build --strict
 ```
 
-`--strict` fails build on documentation warnings.
+OpenAPI validation checks specification structure and local references. `--strict` fails build on documentation warnings.
 
 ## Regenerate ER Diagram
 

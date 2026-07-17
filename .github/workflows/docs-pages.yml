@@ -68,7 +68,9 @@ jobs:
           fi
 
       - name: Build docs site
-        run: uv run mkdocs build --strict
+        run: |
+          uv run openapi-spec-validator docs/api/openapi.yaml
+          uv run mkdocs build --strict
 
   build:
     if: github.event_name == 'push'
@@ -84,7 +86,9 @@ jobs:
         uses: ./.github/actions/docs-prepare
 
       - name: Build docs site
-        run: uv run mkdocs build --strict
+        run: |
+          uv run openapi-spec-validator docs/api/openapi.yaml
+          uv run mkdocs build --strict
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
