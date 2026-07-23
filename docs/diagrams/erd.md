@@ -207,7 +207,7 @@ erDiagram
         integer organization_id FK
         varchar manufacturer
         varchar model
-        varchar serial
+        varchar identifier
         varchar name "nullable"
         varchar location "nullable"
         integer stale_after_seconds "default: '300'"
