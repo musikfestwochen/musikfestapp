@@ -34,11 +34,11 @@ class SensorStoreRequest extends FormRequest
         return [
             'manufacturer' => ['required', 'string', $this->manufacturerRule()],
             'model' => ['required', 'string', Rule::enum(SensorType::class)],
-            'serial' => [
+            'identifier' => [
                 'required',
                 'string',
-                'max:255',
-                Rule::unique('stage_safety_sensors', 'serial')
+                'regex:/\A[0-9A-F]{6}\z/',
+                Rule::unique('stage_safety_sensors', 'identifier')
                     ->where('organization_id', $organization instanceof Organization ? $organization->id : null)
                     ->where('manufacturer', $this->input('manufacturer')),
             ],

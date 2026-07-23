@@ -19,23 +19,23 @@ it('persists a supported Stage Safety sensor with defaults', function () {
         ->and($sensor->organization)->toBeInstanceOf(Organization::class);
 });
 
-it('prevents duplicate manufacturer and serial identities within an organization', function () {
+it('prevents duplicate manufacturer and device ID identities within an organization', function () {
     $organization = Organization::factory()->create();
     $sensor = Sensor::factory()->for($organization)->create();
 
     expect(fn () => Sensor::factory()->for($organization)->create([
         'manufacturer' => $sensor->manufacturer,
         'model' => $sensor->model,
-        'serial' => $sensor->serial,
+        'identifier' => $sensor->identifier,
     ]))->toThrow(QueryException::class);
 });
 
-it('allows the same manufacturer and serial identity in different organizations', function () {
+it('allows the same manufacturer and device ID identity in different organizations', function () {
     $sensor = Sensor::factory()->create();
     $otherSensor = Sensor::factory()->create([
         'manufacturer' => $sensor->manufacturer,
         'model' => $sensor->model,
-        'serial' => $sensor->serial,
+        'identifier' => $sensor->identifier,
     ]);
 
     expect($otherSensor->organization_id)->not->toBe($sensor->organization_id);

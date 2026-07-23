@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignIdFor(Organization::class)->constrained()->cascadeOnDelete();
             $table->string('manufacturer');
             $table->string('model');
-            $table->string('serial');
+            $table->string('identifier');
             $table->string('name')->nullable();
             $table->string('location')->nullable();
             $table->unsignedInteger('stale_after_seconds')->default(300);
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(
-                ['organization_id', 'manufacturer', 'serial'],
+                ['organization_id', 'manufacturer', 'identifier'],
                 'stage_safety_sensor_identity_unique',
             );
             $table->index(

@@ -18,7 +18,7 @@ it('has the expected fillable attributes and defaults', function () {
         'organization_id',
         'manufacturer',
         'model',
-        'serial',
+        'identifier',
         'name',
         'location',
         'stale_after_seconds',

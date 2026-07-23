@@ -22,7 +22,7 @@ function stageSafetySensorPayload(array $overrides = []): array
     return array_merge([
         'manufacturer' => SensorType::BroadweighBwWss->manufacturer(),
         'model' => SensorType::BroadweighBwWss->model(),
-        'serial' => 'BW-123',
+        'identifier' => 'FF1234',
         'name' => 'Main Stage Wind',
         'location' => 'Main Stage Roof',
         'stale_after_seconds' => 300,
@@ -95,13 +95,13 @@ it('creates a sensor for the route organization', function () {
     $response->assertCreated()
         ->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonPath('sensor.organization_id', $organization->id)
-        ->assertJsonPath('sensor.serial', 'BW-123')
+        ->assertJsonPath('sensor.identifier', 'FF1234')
         ->assertJsonStructure(['sensor' => ['id'], 'token']);
 
-    expect($response->json('token'))->toContain('|');
+    expect($response->json('token'))->not->toContain('|');
     $this->assertDatabaseHas('stage_safety_sensors', [
         'organization_id' => $organization->id,
-        'serial' => 'BW-123',
+        'identifier' => 'FF1234',
     ]);
 });
 
@@ -115,7 +115,7 @@ it('updates and deletes an organization sensor', function () {
             'organization' => $organization,
             'stageSafetySensor' => $sensor,
         ]), stageSafetySensorPayload([
-            'serial' => $sensor->serial,
+            'identifier' => $sensor->identifier,
             'name' => 'Updated Sensor',
         ]))
         ->assertRedirect(route('stage-safety.sensors.index', ['organization' => $organization]));

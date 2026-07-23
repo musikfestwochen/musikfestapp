@@ -34,25 +34,24 @@ it('lists active or archived sensors for the given organization', function () {
         ->and($archived->first()->is($archivedSensor))->toBeTrue();
 });
 
-it('creates a sensor and returns a full hashed Sanctum token', function () {
+it('creates a sensor and returns the token secret', function () {
     $result = $this->service->createWithToken($this->organization, [
         'organization_id' => Organization::factory()->create()->id,
         'manufacturer' => SensorType::BroadweighBwWss->manufacturer(),
         'model' => SensorType::BroadweighBwWss->model(),
-        'serial' => 'BW-123',
+        'identifier' => 'FF1234',
         'name' => 'Main Stage Wind',
     ]);
 
     $accessToken = PersonalAccessToken::findToken($result['token']);
-    [, $plainTextToken] = explode('|', $result['token'], 2);
 
     expect($result['sensor'])->toBeInstanceOf(Sensor::class)
         ->and($result['sensor']->organization_id)->toBe($this->organization->id)
-        ->and($result['token'])->toContain('|')
+        ->and($result['token'])->not->toContain('|')
         ->and($accessToken)->not->toBeNull()
         ->and($accessToken->tokenable->is($result['sensor']))->toBeTrue()
         ->and($accessToken->name)->toBe(SensorService::SENSOR_TOKEN_NAME)
-        ->and($accessToken->token)->toBe(hash('sha256', $plainTextToken));
+        ->and($accessToken->token)->toBe(hash('sha256', $result['token']));
 });
 
 it('updates sensor attributes', function () {

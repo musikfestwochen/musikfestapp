@@ -9,6 +9,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\Sensor;
+use App\Models\StageSafety\Sensor as StageSafetySensor;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -23,6 +24,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->isProduction()) {
+            return;
+        }
+
         $rolePermissionsSeeder = new RolesAndPermissionsSeeder;
         $rolePermissionsSeeder->run();
 
@@ -91,6 +96,13 @@ class DatabaseSeeder extends Seeder
         // Create two random organizations with one event each
         $org1 = Organization::factory()->create();
         $org2 = Organization::factory()->create();
+
+        foreach ([$mfw, $org1, $org2] as $organization) {
+            StageSafetySensor::factory()
+                ->for($organization)
+                ->count(random_int(3, 6))
+                ->create();
+        }
 
         $timezone = (string) config('app.timezone');
         $now = Date::now($timezone);

@@ -20,7 +20,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int $organization_id
  * @property string $manufacturer
  * @property string $model
- * @property string $serial
+ * @property string $identifier
  * @property string|null $name
  * @property string|null $location
  * @property int $stale_after_seconds
@@ -30,7 +30,7 @@ use Laravel\Sanctum\HasApiTokens;
     'organization_id',
     'manufacturer',
     'model',
-    'serial',
+    'identifier',
     'name',
     'location',
     'stale_after_seconds',

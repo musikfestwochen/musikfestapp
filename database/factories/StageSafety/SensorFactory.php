@@ -27,7 +27,7 @@ class SensorFactory extends Factory
             'organization_id' => Organization::factory(),
             'manufacturer' => $sensorType->manufacturer(),
             'model' => $sensorType->model(),
-            'serial' => fake()->unique()->bothify('BW-########'),
+            'identifier' => sprintf('%06X', fake()->unique()->numberBetween(0, 0xFFFFFF)),
             'name' => fake()->optional()->words(3, true),
             'location' => fake()->optional()->streetName(),
             'stale_after_seconds' => 300,

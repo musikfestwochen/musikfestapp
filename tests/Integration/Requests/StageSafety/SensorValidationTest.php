@@ -47,7 +47,7 @@ function validStageSafetySensorData(array $overrides = []): array
     return array_merge([
         'manufacturer' => SensorType::BroadweighBwWss->manufacturer(),
         'model' => SensorType::BroadweighBwWss->model(),
-        'serial' => 'BW-123',
+        'identifier' => 'FF1234',
         'name' => null,
         'location' => null,
         'stale_after_seconds' => 300,
@@ -84,7 +84,7 @@ it('enforces sensor identity uniqueness within an organization', function () {
     $data = validStageSafetySensorData([
         'manufacturer' => $sensor->manufacturer,
         'model' => $sensor->model,
-        'serial' => $sensor->serial,
+        'identifier' => $sensor->identifier,
     ]);
 
     $duplicate = validateStageSafetySensorRequest(new SensorStoreRequest, $organization, $data);
@@ -95,7 +95,7 @@ it('enforces sensor identity uniqueness within an organization', function () {
     );
 
     expect($duplicate->fails())->toBeTrue()
-        ->and($duplicate->errors()->has('serial'))->toBeTrue()
+        ->and($duplicate->errors()->has('identifier'))->toBeTrue()
         ->and($otherOrganization->passes())->toBeTrue();
 });
 
@@ -109,7 +109,7 @@ it('allows an existing sensor to retain its identity during update', function ()
         validStageSafetySensorData([
             'manufacturer' => $sensor->manufacturer,
             'model' => $sensor->model,
-            'serial' => $sensor->serial,
+            'identifier' => $sensor->identifier,
         ]),
         $sensor,
     );
@@ -130,6 +130,17 @@ it('rejects an invalid manufacturer and model combination during update', functi
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->get('model'))->toContain('The selected manufacturer and model combination is invalid.');
 });
+
+it('requires an uppercase six-character hexadecimal device ID', function (string $deviceId) {
+    $validator = validateStageSafetySensorRequest(
+        new SensorStoreRequest,
+        Organization::factory()->create(),
+        validStageSafetySensorData(['identifier' => $deviceId]),
+    );
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('identifier'))->toBeTrue();
+})->with(['12345', '1234567', 'ff1234', 'FG1234', '12-ABC']);
 
 it('rejects stale thresholds outside the supported range', function (int $seconds) {
     $validator = validateStageSafetySensorRequest(

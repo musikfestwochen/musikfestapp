@@ -28,6 +28,7 @@ it('regenerates a sensor token and returns it once', function () {
         ->assertJsonStructure(['token']);
 
     expect(PersonalAccessToken::findToken($oldToken))->toBeNull()
+        ->and($response->json('token'))->not->toContain('|')
         ->and(PersonalAccessToken::findToken($response->json('token')))->not->toBeNull();
 });
 

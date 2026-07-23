@@ -30,7 +30,7 @@ class SensorService
             )
             ->withExists(['tokens as has_active_token'])
             ->orderBy('name')
-            ->orderBy('serial')
+            ->orderBy('identifier')
             ->get();
     }
 
@@ -123,7 +123,10 @@ class SensorService
 
     protected function issueToken(Sensor $sensor): string
     {
-        return $sensor->createToken(self::SENSOR_TOKEN_NAME)->plainTextToken;
+        $token = $sensor->createToken(self::SENSOR_TOKEN_NAME)->plainTextToken;
+        $parts = explode('|', $token, 2);
+
+        return $parts[1] ?? $token;
     }
 
     protected function ensureSensorIsActive(Sensor $sensor): void
