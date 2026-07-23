@@ -64,6 +64,16 @@ class Organization extends Model
     }
 
     /**
+     * The Stage Safety sensors that belong to the organization.
+     *
+     * @return HasMany<StageSafety\Sensor, $this>
+     */
+    public function stageSafetySensors(): HasMany
+    {
+        return $this->hasMany(StageSafety\Sensor::class);
+    }
+
+    /**
      * The events that belong to the organization.
      *
      * @return HasMany<Peoplecount\Event, $this>

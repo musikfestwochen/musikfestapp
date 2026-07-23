@@ -33,6 +33,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.assignments',
             'peoplecount.area_resets',
             'peoplecount.alerts',
+            'stage-safety.sensors',
         ];
 
         $actions = ['create', 'destroy', 'edit', 'index', 'show', 'store', 'update', '*'];
@@ -72,6 +73,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.assignments.*',
             'peoplecount.area_resets.*',
             'peoplecount.alerts.*',
+            'stage-safety.sensors.*',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
@@ -87,6 +89,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.assignments.*',
             'peoplecount.area_resets.*',
             'peoplecount.alerts.*',
+            'stage-safety.sensors.*',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',

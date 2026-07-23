@@ -7,7 +7,7 @@ Do not edit diagram block manually. Run `composer docs:erd`.
 <!-- mermaid-erd-start -->
 ```mermaid
 ---
-title: 22 tables · 160 columns
+title: 23 tables · 172 columns
 ---
 erDiagram
     model_has_permissions["model_has_permissions (4)"] {
@@ -202,6 +202,20 @@ erDiagram
         varchar display_name "nullable"
         text description "nullable"
     }
+    stage_safety_sensors["stage_safety_sensors (12)"] {
+        integer id PK
+        integer organization_id FK
+        varchar manufacturer
+        varchar model
+        varchar identifier
+        varchar name "nullable"
+        varchar location "nullable"
+        integer stale_after_seconds "default: '300'"
+        datetime archived_at "nullable"
+        datetime deleted_at "soft-delete, nullable"
+        datetime created_at "nullable"
+        datetime updated_at "nullable"
+    }
     users["users (10)"] {
         integer id PK
         varchar name
@@ -243,6 +257,7 @@ erDiagram
     roles ||--o{ role_has_permissions : "pivot, has many via role_id, cascade delete"
     permissions ||--o{ role_has_permissions : "pivot, has many via permission_id, cascade delete"
     organizations |o--o{ roles : "guessed has many via organization_id"
+    organizations ||--o{ stage_safety_sensors : "has many via organization_id, cascade delete"
 %% Unmapped polymorphic relations (add to config 'mermaid-erd.polymorphic_relationships'):
 %%   model_has_permissions.model (model_type + model_id)
 %%   model_has_roles.model (model_type + model_id)

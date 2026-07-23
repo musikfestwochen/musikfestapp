@@ -1,4 +1,4 @@
-import { CalendarIcon, FolderGit2Icon, LayoutGrid, LinkIcon, MapPinIcon, ProjectorIcon, Users2Icon } from 'lucide-vue-next';
+import { CalendarIcon, FolderGit2Icon, LayoutGrid, LinkIcon, MapPinIcon, ProjectorIcon, Users2Icon, WindIcon } from 'lucide-vue-next';
 
 // Function that returns nav items with the organization parameter already injected
 export const orgMainNavItems = (organization: string | number) => [
@@ -41,6 +41,13 @@ export const orgMainNavItems = (organization: string | number) => [
         route: 'peoplecount.assignments.index',
         icon: LinkIcon,
         permission: 'peoplecount.assignments.index',
+        params: { organization },
+    },
+    {
+        title: 'Stage Safety Sensors',
+        route: 'stage-safety.sensors.index',
+        icon: WindIcon,
+        permission: 'stage-safety.sensors.index',
         params: { organization },
     },
 ];

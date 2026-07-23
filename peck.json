@@ -45,7 +45,9 @@
             "tty",
             "pcntl",
             "stdout",
-            "xdebug"
+            "xdebug",
+            "broadweigh",
+            "wss"
         ],
         "paths": []
     }

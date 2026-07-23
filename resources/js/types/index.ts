@@ -76,6 +76,43 @@ export interface Organization {
     peoplecount_events?: PeoplecountEvent[]; // Optional, for related events
     peoplecount_areas?: PeoplecountArea[]; // Optional, for related areas
     peoplecount_assignments?: PeoplecountAssignment[]; // Optional, for related assignments
+    stage_safety_sensors?: StageSafetySensor[];
+}
+
+export interface StageSafetySensor {
+    id: number;
+    organization_id: number;
+    manufacturer: string;
+    model: string;
+    identifier: string;
+    name: string | null;
+    location: string | null;
+    stale_after_seconds: number;
+    archived_at: string | null;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string | null;
+    has_active_token?: boolean;
+}
+
+export interface StageSafetySensorType {
+    manufacturer: string;
+    model: string;
+    label: string;
+}
+
+export interface StageSafetySensorFormData {
+    manufacturer: string;
+    model: string;
+    identifier: string;
+    name: string | null;
+    location: string | null;
+    stale_after_seconds: number;
+}
+
+export interface StageSafetySensorCreatedResponse {
+    sensor: StageSafetySensor;
+    token: string;
 }
 
 export interface PeoplecountSensor {

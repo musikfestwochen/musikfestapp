@@ -48,6 +48,12 @@ it('has many sensors', function () {
     expect($relation)->toBeInstanceOf(HasMany::class);
 });
 
+it('has many Stage Safety sensors', function () {
+    $organization = new Organization;
+
+    expect($organization->stageSafetySensors())->toBeInstanceOf(HasMany::class);
+});
+
 it('has many lent sensor shares', function () {
     $org = new Organization;
     $relation = $org->lentSensorShares();

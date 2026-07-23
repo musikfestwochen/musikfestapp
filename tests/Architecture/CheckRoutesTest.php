@@ -79,6 +79,19 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'PUT|PATCH', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
 
+        // Stage Safety Sensor Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors'],
+        ['method' => 'POST', 'uri' => '{organization}/stage-safety/sensors'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors/create'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/edit'],
+        ['method' => 'PUT|PATCH', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}'],
+        ['method' => 'DELETE', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}'],
+        ['method' => 'POST', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/regenerate-token'],
+        ['method' => 'DELETE', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/revoke-token'],
+        ['method' => 'POST', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/archive'],
+        ['method' => 'DELETE', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/archive'],
+
         // People Count Events Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/events'],
