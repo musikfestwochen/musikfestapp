@@ -22,3 +22,4 @@ require __DIR__.'/admin.php';
 // Modules
 require __DIR__.'/orgmgmt.php'; // Organization Management
 require __DIR__.'/peoplecount.php'; // Peoplecount Module
+require __DIR__.'/stage-safety.php'; // Stage Safety Module
