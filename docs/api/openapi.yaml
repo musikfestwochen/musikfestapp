@@ -26,6 +26,11 @@ paths:
                 Submits one or more Axis people-count measurements for the sensor identified
                 by the bearer token. The payload serial must match that sensor.
 
+                The bearer token must belong to an active Peoplecount sensor. Tokens issued
+                for other sensor types, other principal types, or archived sensors are rejected
+                with `403`. Measurements are always attributed to the token-bound sensor and its
+                organization; the payload cannot select another sensor.
+
                 Measurements are upserted by sensor and interval. Replaying an interval updates
                 its receipt time and counts and still returns `201`. The response `count` is the
                 number of recognized measurements, not the number of newly inserted rows.
@@ -78,6 +83,8 @@ paths:
                                 $ref: '#/components/schemas/ProcessingFailureResponse'
                 '401':
                     $ref: '#/components/responses/Unauthenticated'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
     /stage-safety/readings:
         post:
             tags:
@@ -86,11 +93,27 @@ paths:
             operationId: submitStageSafetyReading
             description: |
                 This contract defines the integration boundary for the Raspberry Pi bridge.
-                The bearer token identifies one physical Stage Safety sensor and must have the
-                `stage-safety:readings:create` ability. The payload serial is a consistency check.
+                One request carries exactly one CRC-valid BW-WSS radio value frame. Average and
+                gust are transmitted in independent frames with independent timestamps and may be
+                submitted, lost, and retried independently.
 
-                Successful requests are idempotently upserted by sensor and observation time.
-                Wind values are normalized to metres per second by the application.
+                The bearer token identifies one physical Stage Safety sensor and carries Sanctum's
+                `*` full ability. The token must belong to an active Stage Safety sensor; other
+                principal types and archived sensors are rejected with `403`. The request body
+                carries no sensor or organization identifier; attribution always derives from the
+                authenticated token and its sensor's organization.
+
+                `observed_at` is the API client timestamp recorded when that frame was completely
+                received and CRC-validated. It is distinct from the server-side `received_at`
+                receipt time. Successful requests are idempotently upserted by authenticated
+                sensor, reading `kind`, and `observed_at`.
+
+                A gust `value` is the maximum rolling-window average observed since the preceding
+                transmission, not an instantaneous peak. An average `value` is the average wind
+                speed over the configured sample window. Unit, data-tag mapping, and aggregation
+                windows come from API client configuration and are not uniquely encoded in a
+                radio value frame. Wind values are normalized to metres per second by the
+                application.
             security:
                 - sensorToken: []
             parameters:
@@ -103,16 +126,18 @@ paths:
                             $ref: '#/components/schemas/BroadweighWindReadingRequest'
                         examples:
                             reading:
-                                summary: BW-WSS average and three-second gust
+                                summary: BW-WSS gust frame with radio diagnostics
                                 value:
                                     schema_version: 1
-                                    sensor_serial: BW12345
-                                    observed_at: '2026-07-17T12:00:00Z'
+                                    observed_at: '2026-07-23T12:00:00.123Z'
                                     payload:
-                                        average: 8.2
-                                        gust: 12.7
-                                        gust_period_seconds: 3
+                                        kind: gust
+                                        value: 2.6744547
                                         unit: m/s
+                                        window_seconds: 10
+                                        battery_low: false
+                                        rssi_dbm: -70
+                                        cv: 103
             responses:
                 '200':
                     description: Reading was processed or idempotently updated.
@@ -278,17 +303,12 @@ components:
             additionalProperties: false
             required:
                 - schema_version
-                - sensor_serial
                 - observed_at
                 - payload
             properties:
                 schema_version:
                     type: integer
                     const: 1
-                sensor_serial:
-                    type: string
-                    minLength: 1
-                    description: Must exactly match the sensor associated with the bearer token.
                 observed_at:
                     $ref: '#/components/schemas/TimestampWithTimezone'
                 payload:
@@ -297,26 +317,22 @@ components:
             type: object
             additionalProperties: false
             required:
-                - average
-                - gust
-                - gust_period_seconds
+                - kind
+                - value
                 - unit
+                - window_seconds
+                - battery_low
             properties:
-                average:
-                    type: number
-                    minimum: 0
-                    description: Average wind speed expressed in `unit`.
-                gust:
-                    type: number
-                    minimum: 0
-                    description: Peak gust speed over `gust_period_seconds`, expressed in `unit`.
-                gust_period_seconds:
-                    type: integer
+                kind:
+                    type: string
                     enum:
-                        - 1
-                        - 3
-                        - 5
-                        - 10
+                        - average
+                        - gust
+                    description: Reading kind carried by this radio value frame.
+                value:
+                    type: number
+                    minimum: 0
+                    description: Wind speed expressed in `unit`. A gust value is the maximum rolling-window average since the preceding transmission.
                 unit:
                     type: string
                     enum:
@@ -324,6 +340,22 @@ components:
                         - km/h
                         - mph
                         - fps
+                        - kn
+                    description: Unit selected in the API client configuration.
+                window_seconds:
+                    type: integer
+                    minimum: 0
+                    description: Aggregation window in seconds from the API client configuration. `0` means the value spans the period since the previous transmission.
+                battery_low:
+                    type: boolean
+                    description: Transmitter battery-low state reported with the frame.
+                rssi_dbm:
+                    type: integer
+                    description: Received signal strength in dBm. Typically around -30 (strong) to -98 (weak).
+                cv:
+                    type: integer
+                    minimum: 0
+                    description: Correlation value indicating decode quality. Typically 55 (poor) to 110 (excellent).
         StageSafetyProcessedResponse:
             type: object
             additionalProperties: false
@@ -336,8 +368,8 @@ components:
                     const: Wind readings processed successfully.
                 count:
                     type: integer
-                    const: 2
-                    description: Average and gust readings processed from the payload.
+                    const: 1
+                    description: The single reading carried by the request.
         MessageResponse:
             type: object
             additionalProperties: false
@@ -371,7 +403,7 @@ components:
                     example:
                         message: Unauthenticated.
         Forbidden:
-            description: Token lacks the required ability or the sensor is archived.
+            description: Authenticated principal is not an active sensor of the type required by this endpoint.
             content:
                 application/json:
                     schema:

@@ -23,8 +23,9 @@ class IntervalCountController extends Controller
     public function store(Request $request): JsonResponse
     {
 
-        /** @var Sensor $sensor */
         $sensor = auth('sanctum')->user();
+
+        abort_if(! $sensor instanceof Sensor || $sensor->archived_at !== null, 403);
 
         try {
             $numPersisted = resolve(IntervalCountService::class)

@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
+use App\Models\StageSafety\Sensor as StageSafetySensor;
+use App\Models\User;
 use App\Services\Peoplecount\IntervalCountService;
 use App\Services\Peoplecount\SensorService;
 
@@ -132,10 +135,48 @@ it('returns 401 when expired token provided', function () {
     ])->assertStatus(401);
 });
 
+it('rejects a Stage Safety sensor token', function () {
+    $stageSafetySensor = StageSafetySensor::factory()->create();
+    $token = $stageSafetySensor->createToken('stage-safety-sensor')->plainTextToken;
+
+    $this->postJson(route('peoplecount.interval-count.store'), ['some' => 'data'], [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertForbidden();
+
+    $this->assertDatabaseCount('peoplecount_interval_counts', 0);
+});
+
+it('rejects an authenticated web user', function () {
+    $this->actingAs(User::factory()->create())
+        ->postJson(route('peoplecount.interval-count.store'), ['some' => 'data'])
+        ->assertForbidden();
+
+    $this->assertDatabaseCount('peoplecount_interval_counts', 0);
+});
+
+it('rejects an archived Peoplecount sensor', function () {
+    $sensor = Sensor::factory()->create();
+    $token = app(SensorService::class)->createOrRegenerateToken($sensor);
+    $sensor->update(['archived_at' => now()]);
+
+    $this->postJson(route('peoplecount.interval-count.store'), ['some' => 'data'], [
+        'Authorization' => 'Bearer '.$token,
+    ])->assertForbidden();
+
+    $this->assertDatabaseCount('peoplecount_interval_counts', 0);
+});
+
 it('processes real axis data successfully', function () {
+    $organization = Organization::factory()->create();
     $sensor = Sensor::factory()->create([
         'vendor' => 'Axis',
         'serial' => 'AXIS-TEST-001',
+        'organization_id' => $organization->id,
+    ]);
+    $otherSensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => $sensor->serial,
+        'organization_id' => Organization::factory()->create()->id,
     ]);
 
     $payload = [
@@ -176,6 +217,9 @@ it('processes real axis data successfully', function () {
         'sensor_id' => $sensor->id,
         'count_in' => 5,
         'count_out' => 3,
+    ]);
+    $this->assertDatabaseMissing('peoplecount_interval_counts', [
+        'sensor_id' => $otherSensor->id,
     ]);
 });
 
@@ -244,12 +288,16 @@ it('handles sensor serial mismatch gracefully', function () {
         'vendor' => 'Axis',
         'serial' => 'AXIS-TEST-004',
     ]);
+    $otherSensor = Sensor::factory()->create([
+        'vendor' => 'Axis',
+        'serial' => 'OTHER-SENSOR',
+    ]);
 
     $payload = [
         'apiName' => 'Axis Retail Data',
         'apiVersion' => '0.4',
         'sensor' => [
-            'serial' => 'WRONG-SERIAL',
+            'serial' => $otherSensor->serial,
         ],
         'data' => [
             'measurements' => [],
@@ -263,8 +311,10 @@ it('handles sensor serial mismatch gracefully', function () {
     ])->assertStatus(400)
         ->assertJson([
             'error' => 'Processing failed',
-            'message' => 'Sensor serial mismatch: expected AXIS-TEST-004, got WRONG-SERIAL',
+            'message' => 'Sensor serial mismatch: expected AXIS-TEST-004, got OTHER-SENSOR',
         ]);
+
+    $this->assertDatabaseCount('peoplecount_interval_counts', 0);
 });
 
 it('handles unsupported sensor vendor gracefully', function () {
