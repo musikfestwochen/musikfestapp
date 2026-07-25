@@ -14,8 +14,8 @@ return new class extends Migration
             $table->string('kind', 32);
             $table->double('value');
             $table->string('unit', 16);
-            $table->timestamp('observed_at');
-            $table->timestamp('received_at');
+            $table->dateTime('observed_at');
+            $table->dateTime('received_at');
             $table->unsignedInteger('window_seconds')->nullable();
             $table->boolean('battery_low')->nullable();
             $table->smallInteger('rssi_dbm')->nullable();
