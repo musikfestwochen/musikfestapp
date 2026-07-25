@@ -9,6 +9,7 @@ use App\Models\Organization;
 use App\Models\StageSafety\Reading;
 use App\Models\StageSafety\Sensor;
 use Carbon\CarbonInterface;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -111,6 +112,43 @@ class MonitoringService
             'from' => $from->toIso8601String(),
             'to' => $to->toIso8601String(),
             'sensors' => $sensors,
+        ];
+    }
+
+    /**
+     * @return array{generated_at: string, current: array<string, mixed>, history: array<string, mixed>}
+     */
+    public function sensorMonitoring(Organization $organization, Sensor $sensor, CarbonInterface $from, CarbonInterface $to): array
+    {
+        throw_if(
+            $sensor->organization_id !== $organization->id,
+            AuthorizationException::class,
+            'You are not authorized to monitor this sensor.',
+        );
+
+        $now = Date::now();
+        $sensor->loadMissing(['latestWindAverage', 'latestWindGust']);
+        $readings = $sensor->readings()
+            ->whereBetween('observed_at', [$from, $to])
+            ->oldest('observed_at')
+            ->orderBy('kind')
+            ->get()
+            ->map(fn (Reading $reading): array => $this->historyReadingPayload($reading))
+            ->values()
+            ->all();
+
+        return [
+            'generated_at' => $now->toIso8601String(),
+            'current' => $this->currentSensorPayload($sensor, $now),
+            'history' => [
+                'generated_at' => $now->toIso8601String(),
+                'from' => $from->toIso8601String(),
+                'to' => $to->toIso8601String(),
+                'sensors' => [[
+                    'sensor' => $this->sensorPayload($sensor),
+                    'readings' => array_values($readings),
+                ]],
+            ],
         ];
     }
 

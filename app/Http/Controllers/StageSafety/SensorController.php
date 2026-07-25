@@ -49,11 +49,11 @@ class SensorController extends Controller
         return response()->json($result, 201)->header('Cache-Control', 'no-store, private');
     }
 
-    public function show(SensorShowRequest $request, Organization $organization, Sensor $stageSafetySensor): RedirectResponse
+    public function show(SensorShowRequest $request, Organization $organization, Sensor $stageSafetySensor): Response
     {
-        return to_route('stage-safety.sensors.edit', [
+        return Inertia::render('stage-safety/Sensor', [
             'organization' => $organization,
-            'stageSafetySensor' => $stageSafetySensor,
+            'sensor' => $stageSafetySensor,
         ]);
     }
 

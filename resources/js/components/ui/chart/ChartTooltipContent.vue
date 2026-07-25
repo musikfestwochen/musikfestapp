@@ -94,7 +94,7 @@ const tooltipLabel = computed(() => {
                 {{ itemConfig?.label || value }}
               </span>
             </div>
-            <span v-if="value" class="text-foreground font-mono font-medium tabular-nums">
+            <span v-if="value !== undefined && value !== null" class="text-foreground font-mono font-medium tabular-nums">
               {{ value.toLocaleString() }}
             </span>
           </div>

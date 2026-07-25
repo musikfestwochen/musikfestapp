@@ -132,7 +132,7 @@ it('updates and deletes an organization sensor', function () {
     $this->assertSoftDeleted('stage_safety_sensors', ['id' => $sensor->id]);
 });
 
-it('redirects show to edit', function () {
+it('shows the sensor monitoring page', function () {
     $organization = Organization::factory()->create();
     $admin = User::factory()->organizationAdmin($organization)->create();
     $sensor = Sensor::factory()->for($organization)->create();
@@ -142,10 +142,10 @@ it('redirects show to edit', function () {
             'organization' => $organization,
             'stageSafetySensor' => $sensor,
         ]))
-        ->assertRedirect(route('stage-safety.sensors.edit', [
-            'organization' => $organization,
-            'stageSafetySensor' => $sensor,
-        ]));
+        ->assertInertia(fn ($page) => $page
+            ->component('stage-safety/Sensor', false)
+            ->where('organization.id', $organization->id)
+            ->where('sensor.id', $sensor->id));
 });
 
 it('does not bind another organization sensor', function () {
