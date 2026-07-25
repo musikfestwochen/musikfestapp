@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Peoplecount\IntervalCountController;
+use App\Http\Controllers\StageSafety\ReadingController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('interval-count', [IntervalCountController::class, 'store'])
             ->name('interval-count.store');
     });
+
+    Route::post('stage-safety/readings', [ReadingController::class, 'store'])
+        ->middleware('throttle:stage-safety-readings')
+        ->name('stage-safety.readings.store');
 });
 
 Route::post('/webcron', function () {
