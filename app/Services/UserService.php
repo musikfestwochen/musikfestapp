@@ -19,7 +19,7 @@ class UserService
      */
     public function availableOrganizationRoles(): array
     {
-        $roleNames = ['PeopleCountViewer', 'OrganizationAdmin'];
+        $roleNames = ['PeopleCountViewer', 'StageSafetyViewer', 'OrganizationAdmin'];
         $roles = Role::query()
             ->whereIn('name', $roleNames)
             ->get(['name', 'display_name', 'description'])

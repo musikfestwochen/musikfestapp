@@ -91,6 +91,10 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/revoke-token'],
         ['method' => 'POST', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/archive'],
         ['method' => 'DELETE', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/archive'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors/{stageSafetySensor}/monitoring'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/current-wind'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensor-health'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/wind-history'],
 
         // People Count Events Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events'],

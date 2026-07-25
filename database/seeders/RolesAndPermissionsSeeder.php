@@ -49,6 +49,7 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::findOrCreate('peoplecount.widgets.sensor_health');
         Permission::findOrCreate('peoplecount.widgets.most_active_sensors');
         Permission::findOrCreate('peoplecount.widgets.area_count_history');
+        Permission::findOrCreate('stage-safety.monitoring.view');
 
         // add admin package permissions
         Permission::findOrCreate('admin.logs');
@@ -74,6 +75,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.area_resets.*',
             'peoplecount.alerts.*',
             'stage-safety.sensors.*',
+            'stage-safety.monitoring.view',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
@@ -90,6 +92,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.area_resets.*',
             'peoplecount.alerts.*',
             'stage-safety.sensors.*',
+            'stage-safety.monitoring.view',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
@@ -106,6 +109,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
             'peoplecount.widgets.area_count_history',
+        ]);
+
+        $stageSafetyViewerRole = $this->role('StageSafetyViewer', 'Stage Safety viewer', 'Can view Stage Safety monitoring data.');
+        $stageSafetyViewerRole->syncPermissions([
+            'stage-safety.sensors.index',
+            'stage-safety.sensors.show',
+            'stage-safety.monitoring.view',
         ]);
     }
 

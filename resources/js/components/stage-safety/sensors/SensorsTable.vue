@@ -14,24 +14,17 @@ const props = defineProps<{
 
 const { can } = usePermissions();
 const columns = sensorColumns(props.organization);
+const rowHref = can('stage-safety.sensors.show')
+    ? (sensor: StageSafetySensor) =>
+          route('stage-safety.sensors.show', {
+              organization: props.organization.slug,
+              stageSafetySensor: sensor.id,
+          })
+    : undefined;
 </script>
 
 <template>
-    <DataTable
-        :columns="columns"
-        :data="sensors"
-        :row-href="
-            (sensor) =>
-                can('stage-safety.sensors.edit')
-                    ? route('stage-safety.sensors.edit', {
-                          organization: organization.slug,
-                          stageSafetySensor: sensor.id,
-                      })
-                    : null
-        "
-        filter-column="name"
-        search-placeholder="Search Stage Safety sensors..."
-    >
+    <DataTable :columns="columns" :data="sensors" :row-href="rowHref" filter-column="name" search-placeholder="Search Stage Safety sensors...">
         <template #actions>
             <Button v-if="can('stage-safety.sensors.create')" as-child size="sm">
                 <Link :href="route('stage-safety.sensors.create', { organization: organization.slug })">

@@ -32,7 +32,7 @@ class UserStoreRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20', $this->uniquePhoneForEmailUser()],
             'roles' => ['sometimes', 'array', 'list', 'min:1', $this->notChangingOwnRoles()],
-            'roles.*' => ['string', 'distinct', Rule::in(['PeopleCountViewer', 'OrganizationAdmin'])],
+            'roles.*' => ['string', 'distinct', Rule::in(['PeopleCountViewer', 'StageSafetyViewer', 'OrganizationAdmin'])],
         ];
     }
 

@@ -115,6 +115,76 @@ export interface StageSafetySensorCreatedResponse {
     token: string;
 }
 
+export type StageSafetySensorHealthStatus = 'fresh' | 'stale' | 'never_seen' | 'archived';
+export type StageSafetyReadingKind = 'wind_average' | 'wind_gust';
+
+export interface StageSafetySensorSummary {
+    id: number;
+    identifier: string;
+    name: string | null;
+    location: string | null;
+    stale_after_seconds: number;
+}
+
+export interface StageSafetyHistoryReading {
+    kind: StageSafetyReadingKind;
+    value: number;
+    unit: 'm/s';
+    observed_at: string;
+    window_seconds: number | null;
+}
+
+export interface StageSafetyCurrentReading extends StageSafetyHistoryReading {
+    status: 'fresh' | 'stale';
+    received_at: string;
+    receipt_delay_seconds: number;
+}
+
+export interface StageSafetyCurrentSensor {
+    sensor: StageSafetySensorSummary;
+    status: StageSafetySensorHealthStatus;
+    latest_observed_at: string | null;
+    wind_average: StageSafetyCurrentReading | null;
+    wind_gust: StageSafetyCurrentReading | null;
+}
+
+export interface StageSafetyCurrentWindPayload {
+    generated_at: string;
+    sensors: StageSafetyCurrentSensor[];
+}
+
+export interface StageSafetyHealthSensor extends StageSafetySensorSummary {
+    status: 'fresh' | 'stale' | 'never_seen';
+    latest_observed_at: string | null;
+}
+
+export interface StageSafetySensorHealthPayload {
+    generated_at: string;
+    total: number;
+    all_fresh: boolean;
+    fresh: StageSafetyHealthSensor[];
+    stale: StageSafetyHealthSensor[];
+    never_seen: StageSafetyHealthSensor[];
+}
+
+export interface StageSafetyHistorySensor {
+    sensor: StageSafetySensorSummary;
+    readings: StageSafetyHistoryReading[];
+}
+
+export interface StageSafetyWindHistoryPayload {
+    generated_at: string;
+    from: string;
+    to: string;
+    sensors: StageSafetyHistorySensor[];
+}
+
+export interface StageSafetySensorMonitoringPayload {
+    generated_at: string;
+    current: StageSafetyCurrentSensor;
+    history: StageSafetyWindHistoryPayload;
+}
+
 export interface PeoplecountSensor {
     id: number;
     vendor: string;
