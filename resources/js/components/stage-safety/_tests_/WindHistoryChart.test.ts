@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WindHistoryChart from '../WindHistoryChart.vue';
 
 vi.mock('@unovis/vue', () => ({
-    VisXYContainer: { template: '<div><slot /></div>' },
-    VisLine: { props: ['data'], template: '<div class="series-line" :data-count="data.length" />' },
+    VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
+    VisLine: { name: 'VisLine', props: ['y', 'interpolateMissingData'], template: '<div class="series-line" />' },
     VisAxis: { template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: { template: '<div />' },
@@ -32,11 +32,11 @@ const history: StageSafetyWindHistoryPayload = {
     to: '2026-07-25T12:00:00Z',
     sensors: [
         {
-            sensor: { id: 1, identifier: 'ABC123', name: 'Main Stage', location: null, stale_after_seconds: 300 },
+            sensor: { id: 1, identifier: 'ABC123', name: 'Main Stage', location: 'Roof', stale_after_seconds: 300 },
             readings: [
                 { kind: 'wind_average', value: 5, unit: 'm/s', observed_at: '2026-07-25T11:30:00Z', window_seconds: 10 },
                 { kind: 'wind_average', value: 6, unit: 'm/s', observed_at: '2026-07-25T11:40:00Z', window_seconds: 10 },
-                { kind: 'wind_gust', value: 8, unit: 'm/s', observed_at: '2026-07-25T11:30:00Z', window_seconds: 10 },
+                { kind: 'wind_gust', value: 8, unit: 'm/s', observed_at: '2026-07-25T11:35:00Z', window_seconds: 10 },
             ],
         },
         {
@@ -61,10 +61,18 @@ describe('WindHistoryChart', () => {
             global: { stubs: chartStubs },
         });
 
-        expect(wrapper.text()).toContain('Main Stage average');
-        expect(wrapper.text()).toContain('Main Stage gust');
+        expect(wrapper.text()).toContain('Roof average');
+        expect(wrapper.text()).toContain('Roof gust');
         expect(wrapper.text()).toContain('DEF456 average');
-        expect(wrapper.findAll('.series-line').map((line) => line.attributes('data-count'))).toEqual(['2', '1', '1']);
+
+        const rows = wrapper.findComponent({ name: 'VisXYContainer' }).props('data') as Array<Record<string, number | Date | undefined>>;
+        const lines = wrapper.findAllComponents({ name: 'VisLine' });
+
+        expect(lines).toHaveLength(3);
+        expect(lines.every((line) => line.props('interpolateMissingData') === true)).toBe(true);
+        expect(lines[0].props('y')(rows[0])).toBe(18);
+        expect(lines[0].props('y')(rows[1])).toBeUndefined();
+        expect(lines[1].props('y')(rows[1])).toBe(28.8);
     });
 
     it('emits selected time range', async () => {

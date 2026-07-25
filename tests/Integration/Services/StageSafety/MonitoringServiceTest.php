@@ -38,6 +38,9 @@ it('returns every fresh sensor with independently resolved latest readings', fun
         'value' => 4.5,
         'observed_at' => now()->subMinutes(6),
         'received_at' => now()->subMinutes(6)->addSeconds(3),
+        'battery_low' => false,
+        'rssi_dbm' => -90,
+        'cv' => 70,
     ]);
     Reading::factory()->for($sensor)->create([
         'kind' => ReadingKind::WindGust,
@@ -45,6 +48,9 @@ it('returns every fresh sensor with independently resolved latest readings', fun
         'observed_at' => now()->subMinute(),
         'received_at' => now()->subMinute()->addSeconds(4),
         'window_seconds' => 10,
+        'battery_low' => true,
+        'rssi_dbm' => -65,
+        'cv' => 105,
     ]);
 
     $staleSensor = Sensor::factory()->for($organization)->create(['stale_after_seconds' => 300]);
@@ -75,7 +81,12 @@ it('returns every fresh sensor with independently resolved latest readings', fun
         ->and($payload['sensors'][0]['wind_average']['status'])->toBe('stale')
         ->and($payload['sensors'][0]['wind_average']['receipt_delay_seconds'])->toBe(3)
         ->and($payload['sensors'][0]['wind_gust']['value'])->toBe(7.25)
-        ->and($payload['sensors'][0]['wind_gust']['window_seconds'])->toBe(10);
+        ->and($payload['sensors'][0]['wind_gust']['window_seconds'])->toBe(10)
+        ->and($payload['sensors'][0]['radio_diagnostics'])->toBe([
+            'battery_low' => true,
+            'rssi_dbm' => -65,
+            'cv' => 105,
+        ]);
 });
 
 it('classifies sensor health at the stale boundary and excludes archived sensors', function () {

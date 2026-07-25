@@ -8,7 +8,7 @@ import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { useStorage } from '@vueuse/core';
 import axios from 'axios';
-import { ChartColumnIncreasing, ChartSpline } from 'lucide-vue-next';
+import { ChartColumnIncreasing, ChartSpline, Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 interface DataPoint {
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
 <template>
     <Card class="col-span-full flex h-full min-w-0 flex-col">
         <CardHeader class="flex flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:space-y-0">
-            <CardTitle>Area Count History</CardTitle>
+            <CardTitle class="flex items-center gap-2"><Users class="size-4" aria-hidden="true" /> Area Count History</CardTitle>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button
                     variant="ghost"

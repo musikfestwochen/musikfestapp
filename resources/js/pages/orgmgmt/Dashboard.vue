@@ -2,9 +2,8 @@
 import ActiveAreaCountsWidget from '@/components/peoplecount/ActiveAreaCountsWidget.vue';
 import AreaCountHistoryWidget from '@/components/peoplecount/AreaCountHistoryWidget.vue';
 import MostActiveSensorsWidget from '@/components/peoplecount/MostActiveSensorsWidget.vue';
-import SensorHealthStatusWidget from '@/components/peoplecount/SensorHealthStatusWidget.vue';
+import SensorHealthWidget from '@/components/SensorHealthWidget.vue';
 import CurrentWindWidget from '@/components/stage-safety/CurrentWindWidget.vue';
-import SensorHealthWidget from '@/components/stage-safety/SensorHealthWidget.vue';
 import WindHistoryWidget from '@/components/stage-safety/WindHistoryWidget.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
@@ -17,14 +16,9 @@ const props = defineProps<{
 }>();
 
 const { can } = usePermissions();
-const canViewPeoplecountWidgets = computed(() =>
-    [
-        'peoplecount.widgets.active_area_counts',
-        'peoplecount.widgets.sensor_health',
-        'peoplecount.widgets.most_active_sensors',
-        'peoplecount.widgets.area_count_history',
-    ].some((permission) => can(permission)),
-);
+const canViewPeoplecountHealth = computed(() => can('peoplecount.widgets.sensor_health'));
+const canViewStageSafety = computed(() => can('stage-safety.monitoring.view'));
+const canViewSensorHealth = computed(() => canViewPeoplecountHealth.value || canViewStageSafety.value);
 
 const breadcrumbs = computed((): BreadcrumbItem[] => [
     {
@@ -45,24 +39,19 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
             <div class="mb-4">
                 <h1 class="text-2xl font-bold">{{ props.organization.name }} Dashboard</h1>
             </div>
-            <section v-if="can('stage-safety.monitoring.view')" class="space-y-4">
-                <h2 class="text-lg font-semibold">Stage Safety</h2>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <CurrentWindWidget :organization="organization" />
-                    <SensorHealthWidget :organization="organization" />
-                    <WindHistoryWidget :organization="organization" />
-                </div>
-            </section>
-
-            <section v-if="canViewPeoplecountWidgets" class="space-y-4">
-                <h2 class="text-lg font-semibold">People Count</h2>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <ActiveAreaCountsWidget v-if="can('peoplecount.widgets.active_area_counts')" :organization="organization" />
-                    <SensorHealthStatusWidget v-if="can('peoplecount.widgets.sensor_health')" :organization="organization" />
-                    <MostActiveSensorsWidget v-if="can('peoplecount.widgets.most_active_sensors')" :organization="organization" />
-                    <AreaCountHistoryWidget v-if="can('peoplecount.widgets.area_count_history')" :organization="organization" />
-                </div>
-            </section>
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <ActiveAreaCountsWidget v-if="can('peoplecount.widgets.active_area_counts')" :organization="organization" />
+                <MostActiveSensorsWidget v-if="can('peoplecount.widgets.most_active_sensors')" :organization="organization" />
+                <CurrentWindWidget v-if="canViewStageSafety" :organization="organization" />
+                <SensorHealthWidget
+                    v-if="canViewSensorHealth"
+                    :organization="organization"
+                    :show-peoplecount="canViewPeoplecountHealth"
+                    :show-stage-safety="canViewStageSafety"
+                />
+                <AreaCountHistoryWidget v-if="can('peoplecount.widgets.area_count_history')" :organization="organization" />
+                <WindHistoryWidget v-if="canViewStageSafety" :organization="organization" />
+            </div>
         </div>
     </Layout>
 </template>

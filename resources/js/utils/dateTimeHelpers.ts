@@ -268,21 +268,14 @@ export function isFuture(date: Date): boolean {
  * Get relative time string (e.g., "2 hours ago", "in 3 days")
  */
 export function getRelativeTime(date: Date): string {
-    const now = new Date();
-    const diffMs = date.getTime() - now.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
-    if (Math.abs(diffMinutes) < 1) {
-        return 'now';
-    } else if (Math.abs(diffMinutes) < 60) {
-        return diffMinutes > 0 ? `in ${diffMinutes} minutes` : `${Math.abs(diffMinutes)} minutes ago`;
-    } else if (Math.abs(diffHours) < 24) {
-        return diffHours > 0 ? `in ${diffHours} hours` : `${Math.abs(diffHours)} hours ago`;
-    } else {
-        return diffDays > 0 ? `in ${diffDays} days` : `${Math.abs(diffDays)} days ago`;
-    }
+    if (Math.abs(diffSeconds) < 60) return formatter.format(diffSeconds, 'second');
+    if (Math.abs(diffSeconds) < 3600) return formatter.format(Math.round(diffSeconds / 60), 'minute');
+    if (Math.abs(diffSeconds) < 86400) return formatter.format(Math.round(diffSeconds / 3600), 'hour');
+
+    return formatter.format(Math.round(diffSeconds / 86400), 'day');
 }
 
 /**

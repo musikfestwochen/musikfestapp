@@ -3,11 +3,13 @@ import Heading from '@/components/Heading.vue';
 import CurrentWindDisplay from '@/components/stage-safety/CurrentWindDisplay.vue';
 import WindHistoryChart from '@/components/stage-safety/WindHistoryChart.vue';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePermissions } from '@/composables/usePermissions';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import type { BreadcrumbItem, Organization, StageSafetySensor, StageSafetySensorMonitoringPayload } from '@/types';
+import { stageSafetySensorName } from '@/utils/stageSafety';
 import { Head, Link, useHttp } from '@inertiajs/vue3';
 import { useIntervalFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
@@ -25,7 +27,7 @@ const error = ref<string | null>(null);
 const timeRange = ref('1h');
 let refreshQueued = false;
 
-const title = props.sensor.name || props.sensor.identifier;
+const title = stageSafetySensorName(props.sensor);
 const currentSensors = computed(() => (monitoring.value ? [monitoring.value.current] : []));
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -91,7 +93,7 @@ useIntervalFn(fetchMonitoring, 30_000, { immediateCallback: true });
         <Head :title="`${title} Monitoring`" />
 
         <div class="flex h-full flex-1 flex-col gap-6 p-4">
-            <Heading :title="title" :description="sensor.location || `${sensor.manufacturer} ${sensor.model} · ${sensor.identifier}`">
+            <Heading :title="title" :description="`${sensor.manufacturer} ${sensor.model} · ${sensor.identifier}`">
                 <Button v-if="can('stage-safety.sensors.edit')" as-child variant="outline">
                     <Link :href="route('stage-safety.sensors.edit', { organization: organization.slug, stageSafetySensor: sensor.id })">
                         Edit sensor
@@ -113,7 +115,34 @@ useIntervalFn(fetchMonitoring, 30_000, { immediateCallback: true });
                 </CardHeader>
                 <CardContent>
                     <Skeleton v-if="loading && !monitoring" class="h-52 w-full rounded-xl" />
-                    <CurrentWindDisplay v-else-if="currentSensors.length" :sensors="currentSensors" />
+                    <template v-else-if="currentSensors.length">
+                        <CurrentWindDisplay :sensors="currentSensors" />
+                        <div v-if="monitoring?.current.radio_diagnostics" class="mt-5 grid grid-cols-3 gap-2 border-t pt-4 text-center text-sm">
+                            <div>
+                                <p class="text-muted-foreground text-xs">RSSI</p>
+                                <p class="mt-1 font-medium">
+                                    {{ monitoring.current.radio_diagnostics.rssi_dbm ?? 'Unavailable'
+                                    }}<span v-if="monitoring.current.radio_diagnostics.rssi_dbm !== null"> dBm</span>
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-muted-foreground text-xs">CV</p>
+                                <p class="mt-1 font-medium">{{ monitoring.current.radio_diagnostics.cv ?? 'Unavailable' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-muted-foreground text-xs">Battery</p>
+                                <Badge class="mt-1" :variant="monitoring.current.radio_diagnostics.battery_low ? 'destructive' : 'secondary'">
+                                    {{
+                                        monitoring.current.radio_diagnostics.battery_low === null
+                                            ? 'Unknown'
+                                            : monitoring.current.radio_diagnostics.battery_low
+                                              ? 'Low'
+                                              : 'OK'
+                                    }}
+                                </Badge>
+                            </div>
+                        </div>
+                    </template>
                     <div v-else class="text-muted-foreground flex min-h-52 items-center justify-center">No monitoring data available.</div>
                 </CardContent>
             </Card>

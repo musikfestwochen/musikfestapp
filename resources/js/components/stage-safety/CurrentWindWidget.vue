@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { Organization, StageSafetyCurrentWindPayload } from '@/types';
 import { useHttp } from '@inertiajs/vue3';
 import { useIntervalFn } from '@vueuse/core';
+import { Wind } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps<{ organization: Organization }>();
@@ -30,9 +31,9 @@ useIntervalFn(fetchCurrentWind, 10_000, { immediateCallback: true });
 </script>
 
 <template>
-    <Card class="flex h-full flex-col lg:col-span-2">
+    <Card class="flex h-full flex-col">
         <CardHeader>
-            <CardTitle>Current Wind</CardTitle>
+            <CardTitle class="flex items-center gap-2"><Wind class="size-4" aria-hidden="true" /> Current Wind</CardTitle>
         </CardHeader>
         <CardContent class="flex flex-1 flex-col">
             <div
@@ -42,9 +43,8 @@ useIntervalFn(fetchCurrentWind, 10_000, { immediateCallback: true });
             >
                 {{ error }}
             </div>
-            <div v-if="loading && !data" class="grid gap-4 sm:grid-cols-2">
-                <Skeleton class="h-48 w-full rounded-xl" />
-                <Skeleton class="hidden h-48 w-full rounded-xl sm:block" />
+            <div v-if="loading && !data">
+                <Skeleton class="h-40 w-full rounded-xl" />
             </div>
             <div v-else-if="!data?.sensors.length" class="text-muted-foreground flex min-h-48 items-center justify-center text-center">
                 No sensors currently report fresh wind data.

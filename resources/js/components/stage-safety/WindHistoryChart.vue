@@ -4,9 +4,10 @@ import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { StageSafetyReadingKind, StageSafetyWindHistoryPayload } from '@/types';
-import { metersPerSecondToKilometersPerHour } from '@/utils/stageSafety';
+import { metersPerSecondToKilometersPerHour, stageSafetySensorName } from '@/utils/stageSafety';
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
+import { Wind } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface ChartDataPoint {
@@ -19,12 +20,6 @@ interface ChartSeries {
     label: string;
     color: string;
     dash?: number[];
-    data: SeriesPoint[];
-}
-
-interface SeriesPoint {
-    date: Date;
-    value: number;
 }
 
 const props = defineProps<{
@@ -52,10 +47,6 @@ const selectedRange = computed({
     set: (value: string) => emit('update:timeRange', value),
 });
 
-function sensorName(sensor: StageSafetyWindHistoryPayload['sensors'][number]['sensor']): string {
-    return sensor.name || sensor.identifier;
-}
-
 function seriesKey(sensorId: number, kind: StageSafetyReadingKind): string {
     return `sensor_${sensorId}_${kind}`;
 }
@@ -64,31 +55,21 @@ const chartSeries = computed<ChartSeries[]>(() =>
     (props.data?.sensors ?? []).flatMap((item, index) => {
         const color = SENSOR_COLORS[index % SENSOR_COLORS.length];
         const series: ChartSeries[] = [];
-        const readings = (kind: StageSafetyReadingKind): SeriesPoint[] =>
-            item.readings
-                .filter((reading) => reading.kind === kind)
-                .map((reading) => ({
-                    date: new Date(reading.observed_at),
-                    value: metersPerSecondToKilometersPerHour(reading.value),
-                }));
-        const averageReadings = readings('wind_average');
-        const gustReadings = readings('wind_gust');
+        const hasReadings = (kind: StageSafetyReadingKind): boolean => item.readings.some((reading) => reading.kind === kind);
 
-        if (averageReadings.length) {
+        if (hasReadings('wind_average')) {
             series.push({
                 key: seriesKey(item.sensor.id, 'wind_average'),
-                label: `${sensorName(item.sensor)} average`,
+                label: `${stageSafetySensorName(item.sensor)} average`,
                 color,
-                data: averageReadings,
             });
         }
-        if (gustReadings.length) {
+        if (hasReadings('wind_gust')) {
             series.push({
                 key: seriesKey(item.sensor.id, 'wind_gust'),
-                label: `${sensorName(item.sensor)} gust`,
+                label: `${stageSafetySensorName(item.sensor)} gust`,
                 color,
                 dash: [6, 3],
-                data: gustReadings,
             });
         }
 
@@ -121,13 +102,23 @@ const seriesColors = computed(() => chartSeries.value.map((series) => series.col
 function formatTickDate(value: number): string {
     return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
+
+function formatWindTick(value: number): string {
+    return value.toLocaleString([], { maximumFractionDigits: 1 });
+}
+
+function seriesValue(point: ChartDataPoint, key: string): number | undefined {
+    const value = point[key];
+
+    return typeof value === 'number' ? value : undefined;
+}
 </script>
 
 <template>
     <Card class="col-span-full flex min-w-0 flex-col">
         <CardHeader class="flex flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div>
-                <CardTitle>Wind History</CardTitle>
+                <CardTitle class="flex items-center gap-2"><Wind class="size-4" aria-hidden="true" /> Wind History</CardTitle>
                 <p class="text-muted-foreground mt-1 text-sm">Average and gust speed in km/h</p>
             </div>
             <Select v-model="selectedRange">
@@ -172,22 +163,16 @@ function formatTickDate(value: number): string {
                         <VisLine
                             v-for="series in chartSeries"
                             :key="series.key"
-                            :data="series.data"
-                            :x="(point: SeriesPoint) => point.date.getTime()"
-                            :y="(point: SeriesPoint) => point.value"
+                            :x="(point: ChartDataPoint) => point.date.getTime()"
+                            :y="(point: ChartDataPoint) => seriesValue(point, series.key)"
                             :color="series.color"
                             :curve-type="CurveType.MonotoneX"
+                            :interpolate-missing-data="true"
                             :line-width="2"
                             :line-dash-array="series.dash"
                         />
                         <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
-                        <VisAxis
-                            type="y"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :grid-line="true"
-                            :tick-format="(value: number) => Math.round(value).toString()"
-                        />
+                        <VisAxis type="y" :tick-line="false" :domain-line="false" :grid-line="true" :tick-format="formatWindTick" />
                         <ChartTooltip />
                         <ChartCrosshair
                             :template="

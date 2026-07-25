@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import axios from 'axios';
+import { Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 interface SensorSums {
@@ -107,7 +108,7 @@ watch(
     <Card class="widget-card flex h-full flex-col">
         <CardHeader>
             <div class="flex items-center justify-between">
-                <CardTitle>Most Active Sensors</CardTitle>
+                <CardTitle class="flex items-center gap-2"><Users class="size-4" aria-hidden="true" /> Most Active Sensors</CardTitle>
                 <div class="inline-flex items-center gap-1">
                     <Button
                         :class="{ 'bg-primary text-primary-foreground': selectedRange === '10m' }"
