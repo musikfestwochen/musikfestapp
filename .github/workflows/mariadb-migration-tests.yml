@@ -8,11 +8,16 @@ permissions:
 
 jobs:
   mariadb-migration-tests:
+    name: MariaDB ${{ matrix.mariadb }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mariadb: ['10.6', 'lts']
 
     services:
       mariadb:
-        image: mariadb:lts
+        image: mariadb:${{ matrix.mariadb }}
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: musikfestapp_test
@@ -57,6 +62,10 @@ jobs:
             echo "Waiting for MariaDB to be ready..."
             sleep 2
           done
+
+      # Match production's legacy behavior, where later TIMESTAMP columns may receive zero-date defaults.
+      - name: Enable Legacy Timestamp Defaults
+        run: php artisan tinker --execute='DB::statement("SET GLOBAL explicit_defaults_for_timestamp = OFF"); throw_unless((int) DB::scalar("SELECT @@GLOBAL.explicit_defaults_for_timestamp") === 0);'
 
       - name: Run Migration Tests
         run: |
