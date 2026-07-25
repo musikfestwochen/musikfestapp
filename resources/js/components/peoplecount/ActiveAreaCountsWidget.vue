@@ -4,6 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePermissions } from '@/composables/usePermissions';
 import axios from 'axios';
+import { Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 interface AreaCount {
@@ -142,7 +143,7 @@ const lastUpdatedTime = computed(() => {
 <template>
     <Card :class="{ 'stale-card pulse': isDataStale, 'counts-widget': true }" class="flex h-full flex-col">
         <CardHeader>
-            <CardTitle>Active Area Counts</CardTitle>
+            <CardTitle class="flex items-center gap-2"><Users class="size-4" aria-hidden="true" /> Active Area Counts</CardTitle>
         </CardHeader>
         <CardContent class="counts-widget-content flex flex-1 flex-col">
             <!-- Show error message as a banner if there's an error -->

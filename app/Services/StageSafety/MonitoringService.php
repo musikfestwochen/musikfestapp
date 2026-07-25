@@ -189,10 +189,17 @@ class MonitoringService
      */
     protected function currentSensorPayload(Sensor $sensor, CarbonInterface $now): array
     {
+        $latestReading = $this->latestReading($sensor);
+
         return [
             'sensor' => $this->sensorPayload($sensor),
             'status' => $this->status($sensor, $now)->value,
-            'latest_observed_at' => $this->latestObservedAt($sensor)?->toIso8601String(),
+            'latest_observed_at' => $latestReading?->observed_at->toIso8601String(),
+            'radio_diagnostics' => $latestReading instanceof Reading ? [
+                'battery_low' => $latestReading->battery_low,
+                'rssi_dbm' => $latestReading->rssi_dbm,
+                'cv' => $latestReading->cv,
+            ] : null,
             'wind_average' => $this->currentReadingPayload($sensor, $sensor->latestWindAverage, $now),
             'wind_gust' => $this->currentReadingPayload($sensor, $sensor->latestWindGust, $now),
         ];
@@ -249,20 +256,25 @@ class MonitoringService
 
     protected function latestObservedAt(Sensor $sensor): ?CarbonInterface
     {
-        $averageObservedAt = $sensor->latestWindAverage?->observed_at;
-        $gustObservedAt = $sensor->latestWindGust?->observed_at;
+        return $this->latestReading($sensor)?->observed_at;
+    }
 
-        if ($averageObservedAt === null) {
-            return $gustObservedAt;
+    protected function latestReading(Sensor $sensor): ?Reading
+    {
+        $average = $sensor->latestWindAverage;
+        $gust = $sensor->latestWindGust;
+
+        if ($average === null) {
+            return $gust;
         }
 
-        if ($gustObservedAt === null) {
-            return $averageObservedAt;
+        if ($gust === null) {
+            return $average;
         }
 
-        return $averageObservedAt->getTimestamp() >= $gustObservedAt->getTimestamp()
-            ? $averageObservedAt
-            : $gustObservedAt;
+        return $average->observed_at->getTimestamp() >= $gust->observed_at->getTimestamp()
+            ? $average
+            : $gust;
     }
 
     protected function isFresh(CarbonInterface $observedAt, Sensor $sensor, CarbonInterface $now): bool

@@ -1,8 +1,17 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CurrentWindDisplay from '../CurrentWindDisplay.vue';
 
 describe('CurrentWindDisplay', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-07-25T12:00:00Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it('renders multiple sensors in km/h and labels stale readings as last known', () => {
         const wrapper = mount(CurrentWindDisplay, {
             props: {
@@ -11,6 +20,7 @@ describe('CurrentWindDisplay', () => {
                         sensor: { id: 1, identifier: 'ABC123', name: 'Main Stage', location: 'Roof', stale_after_seconds: 300 },
                         status: 'archived',
                         latest_observed_at: '2026-07-25T11:59:00Z',
+                        radio_diagnostics: null,
                         wind_average: {
                             kind: 'wind_average',
                             value: 5,
@@ -27,6 +37,7 @@ describe('CurrentWindDisplay', () => {
                         sensor: { id: 2, identifier: 'DEF456', name: 'Town Hall', location: null, stale_after_seconds: 300 },
                         status: 'fresh',
                         latest_observed_at: '2026-07-25T11:59:30Z',
+                        radio_diagnostics: null,
                         wind_average: null,
                         wind_gust: {
                             kind: 'wind_gust',
@@ -43,11 +54,16 @@ describe('CurrentWindDisplay', () => {
             },
         });
 
-        expect(wrapper.text()).toContain('Main Stage');
+        expect(wrapper.text()).toContain('Roof');
+        expect(wrapper.text()).not.toContain('Main Stage');
         expect(wrapper.text()).toContain('Town Hall');
         expect(wrapper.text()).toContain('18');
         expect(wrapper.text()).toContain('29');
         expect(wrapper.text()).toContain('Last known average');
         expect(wrapper.text()).toContain('Last known gust');
+        expect(wrapper.text()).toContain('Observed 30 seconds ago');
+        expect(wrapper.text()).not.toMatch(/\bfresh\b/i);
+        expect(wrapper.text()).not.toContain('second period');
+        expect(wrapper.findAll('article').every((article) => !article.classes().includes('border'))).toBe(true);
     });
 });

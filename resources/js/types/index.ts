@@ -144,6 +144,11 @@ export interface StageSafetyCurrentSensor {
     sensor: StageSafetySensorSummary;
     status: StageSafetySensorHealthStatus;
     latest_observed_at: string | null;
+    radio_diagnostics: {
+        battery_low: boolean | null;
+        rssi_dbm: number | null;
+        cv: number | null;
+    } | null;
     wind_average: StageSafetyCurrentReading | null;
     wind_gust: StageSafetyCurrentReading | null;
 }

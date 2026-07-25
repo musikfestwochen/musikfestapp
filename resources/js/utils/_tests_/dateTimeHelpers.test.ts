@@ -455,6 +455,14 @@ describe('Date Utility Functions', () => {
             expect(relative).toBe('5 minutes ago');
         });
 
+        it('should return seconds for observations less than one minute old', () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+            expect(getRelativeTime(new Date('2024-07-25T11:59:32Z'))).toBe('28 seconds ago');
+            expect(getRelativeTime(new Date('2024-07-25T12:00:28Z'))).toBe('in 28 seconds');
+        });
+
         it('should return "in X minutes" for near future', () => {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
