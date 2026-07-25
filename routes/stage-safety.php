@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Http\Controllers\StageSafety\SensorArchiveController;
 use App\Http\Controllers\StageSafety\SensorController;
 use App\Http\Controllers\StageSafety\SensorTokenController;
+use App\Http\Controllers\Widgets\StageSafetyCurrentWindWidgetController;
+use App\Http\Controllers\Widgets\StageSafetySensorHealthWidgetController;
+use App\Http\Controllers\Widgets\StageSafetyWindHistoryWidgetController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(function () {
@@ -22,5 +25,12 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
             ->name('sensors.archive.store');
         Route::delete('sensors/{stageSafetySensor}/archive', [SensorArchiveController::class, 'destroy'])
             ->name('sensors.archive.destroy');
+
+        Route::get('current-wind', [StageSafetyCurrentWindWidgetController::class, 'index'])
+            ->name('current-wind.index');
+        Route::get('sensor-health', [StageSafetySensorHealthWidgetController::class, 'index'])
+            ->name('sensor-health.index');
+        Route::get('wind-history', [StageSafetyWindHistoryWidgetController::class, 'index'])
+            ->name('wind-history.index');
     });
 });

@@ -39,9 +39,12 @@ it('shows the create user form for an organization', function () {
             ->where('availableRoles.0.name', 'PeopleCountViewer')
             ->where('availableRoles.0.display_name', 'People count viewer')
             ->where('availableRoles.0.description', 'Can view people-count dashboards and data.')
-            ->where('availableRoles.1.name', 'OrganizationAdmin')
-            ->where('availableRoles.1.display_name', 'Organization administrator')
-            ->where('availableRoles.1.description', 'Has all organization level permissions over all modules.')
+            ->where('availableRoles.1.name', 'StageSafetyViewer')
+            ->where('availableRoles.1.display_name', 'Stage Safety viewer')
+            ->where('availableRoles.1.description', 'Can view Stage Safety monitoring data.')
+            ->where('availableRoles.2.name', 'OrganizationAdmin')
+            ->where('availableRoles.2.display_name', 'Organization administrator')
+            ->where('availableRoles.2.description', 'Has all organization level permissions over all modules.')
             ->where('selectedRoles', ['PeopleCountViewer'])
         );
 });
@@ -61,7 +64,8 @@ it('shows the edit user form for an organization user', function () {
             ->where('organization.id', $org->id)
             ->where('user.id', $user->id)
             ->where('availableRoles.0.name', 'PeopleCountViewer')
-            ->where('availableRoles.1.name', 'OrganizationAdmin')
+            ->where('availableRoles.1.name', 'StageSafetyViewer')
+            ->where('availableRoles.2.name', 'OrganizationAdmin')
             ->where('selectedRoles', ['OrganizationAdmin'])
         );
 });
@@ -201,6 +205,29 @@ it('assigns multiple roles when creating an organization user', function () {
 
     $this->assertDatabaseMissing('model_has_permissions', [
         'organization_id' => $org->id,
+        'model_id' => $user->id,
+        'model_type' => User::class,
+    ]);
+});
+
+it('assigns the Stage Safety viewer role to an organization user', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $viewerRole = Role::findByName('StageSafetyViewer');
+
+    $this->actingAs($admin)
+        ->post(route('orgmgmt.users.store', ['organization' => $org->slug]), [
+            'name' => 'Stage Safety User',
+            'email' => 'stage-safety@example.com',
+            'roles' => ['StageSafetyViewer'],
+        ])
+        ->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
+    $user = User::query()->where('email', 'stage-safety@example.com')->firstOrFail();
+
+    $this->assertDatabaseHas('model_has_roles', [
+        'organization_id' => $org->id,
+        'role_id' => $viewerRole->id,
         'model_id' => $user->id,
         'model_type' => User::class,
     ]);

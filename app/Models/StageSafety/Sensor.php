@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models\StageSafety;
 
+use App\Enums\StageSafety\ReadingKind;
 use App\Models\Organization;
 use Database\Factories\StageSafety\SensorFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
@@ -26,6 +29,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $location
  * @property int $stale_after_seconds
  * @property Carbon|null $archived_at
+ * @property-read Reading|null $latestWindAverage
+ * @property-read Reading|null $latestWindGust
  */
 #[Fillable([
     'organization_id',
@@ -68,6 +73,30 @@ class Sensor extends Model
     public function readings(): HasMany
     {
         return $this->hasMany(Reading::class);
+    }
+
+    /**
+     * @return HasOne<Reading, $this>
+     */
+    public function latestWindAverage(): HasOne
+    {
+        return $this->hasOne(Reading::class)
+            ->ofMany([
+                'observed_at' => 'max',
+                'id' => 'max',
+            ], fn (Builder $query): Builder => $query->where('kind', ReadingKind::WindAverage->value));
+    }
+
+    /**
+     * @return HasOne<Reading, $this>
+     */
+    public function latestWindGust(): HasOne
+    {
+        return $this->hasOne(Reading::class)
+            ->ofMany([
+                'observed_at' => 'max',
+                'id' => 'max',
+            ], fn (Builder $query): Builder => $query->where('kind', ReadingKind::WindGust->value));
     }
 
     /**
