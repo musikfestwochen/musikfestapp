@@ -272,10 +272,10 @@ export function getRelativeTime(date: Date): string {
     const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
     if (Math.abs(diffSeconds) < 60) return formatter.format(diffSeconds, 'second');
-    if (Math.abs(diffSeconds) < 3600) return formatter.format(Math.trunc(diffSeconds / 60), 'minute');
-    if (Math.abs(diffSeconds) < 86400) return formatter.format(Math.trunc(diffSeconds / 3600), 'hour');
+    if (Math.abs(diffSeconds) < 3600) return formatter.format(Math.round(diffSeconds / 60), 'minute');
+    if (Math.abs(diffSeconds) < 86400) return formatter.format(Math.round(diffSeconds / 3600), 'hour');
 
-    return formatter.format(Math.trunc(diffSeconds / 86400), 'day');
+    return formatter.format(Math.round(diffSeconds / 86400), 'day');
 }
 
 /**

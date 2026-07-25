@@ -463,6 +463,14 @@ describe('Date Utility Functions', () => {
             expect(getRelativeTime(new Date('2024-07-25T12:00:28Z'))).toBe('in 28 seconds');
         });
 
+        it('should round relative units equally for past and future dates', () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+            expect(getRelativeTime(new Date('2024-07-25T11:58:01Z'))).toBe('2 minutes ago');
+            expect(getRelativeTime(new Date('2024-07-25T12:01:59Z'))).toBe('in 2 minutes');
+        });
+
         it('should return "in X minutes" for near future', () => {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
