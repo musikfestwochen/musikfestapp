@@ -154,6 +154,7 @@ it('tests if no unwanted routes are exposed', function () {
 
         // API Routes
         ['method' => 'POST', 'uri' => 'api/peoplecount/interval-count'],
+        ['method' => 'POST', 'uri' => 'api/stage-safety/readings'],
         ['method' => 'POST', 'uri' => 'api/webcron'],
 
         // Laravel Sanctum routes

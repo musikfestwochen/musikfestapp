@@ -99,9 +99,10 @@ paths:
 
                 The bearer token identifies one physical Stage Safety sensor and carries Sanctum's
                 `*` full ability. The token must belong to an active Stage Safety sensor; other
-                principal types and archived sensors are rejected with `403`. The request body
-                carries no sensor or organization identifier; attribution always derives from the
-                authenticated token and its sensor's organization.
+                principal types and archived sensors are rejected with `403`. The request's
+                `sensor_identifier` must match the token-bound sensor as a configuration consistency
+                check. Attribution always derives from the authenticated token and its sensor's
+                organization; the identifier cannot select another sensor.
 
                 `observed_at` is the API client timestamp recorded when that frame was completely
                 received and CRC-validated. It is distinct from the server-side `received_at`
@@ -112,8 +113,8 @@ paths:
                 transmission, not an instantaneous peak. An average `value` is the average wind
                 speed over the configured sample window. Unit, data-tag mapping, and aggregation
                 windows come from API client configuration and are not uniquely encoded in a
-                radio value frame. Wind values are normalized to metres per second by the
-                application.
+                radio value frame. The gateway converts its configured source unit before sending;
+                the API accepts and stores metres per second only.
             security:
                 - sensorToken: []
             parameters:
@@ -129,9 +130,10 @@ paths:
                                 summary: BW-WSS gust frame with radio diagnostics
                                 value:
                                     schema_version: 1
-                                    observed_at: '2026-07-23T12:00:00.123Z'
+                                    sensor_identifier: ABC123
+                                    observed_at: '2026-07-23T12:00:00Z'
                                     payload:
-                                        kind: gust
+                                        kind: wind_gust
                                         value: 2.6744547
                                         unit: m/s
                                         window_seconds: 10
@@ -261,8 +263,13 @@ components:
         TimestampWithTimezone:
             type: string
             format: date-time
-            pattern: '(?:Z|[+-]\d{2}:?\d{2})$'
+            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$'
             description: RFC 3339 timestamp with `Z` or an explicit numeric UTC offset.
+        TimestampWithTimezoneSeconds:
+            type: string
+            format: date-time
+            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$'
+            description: RFC 3339 timestamp at whole-second precision with `Z` or an explicit numeric UTC offset.
         PeoplecountProcessedResponse:
             type: object
             additionalProperties: false
@@ -300,22 +307,27 @@ components:
                     type: string
         BroadweighWindReadingRequest:
             type: object
-            additionalProperties: false
+            additionalProperties: true
             required:
                 - schema_version
+                - sensor_identifier
                 - observed_at
                 - payload
             properties:
                 schema_version:
                     type: integer
                     const: 1
+                sensor_identifier:
+                    type: string
+                    pattern: '^[0-9A-F]{6}$'
+                    description: Must exactly match the identifier of the sensor bound to the bearer token. It verifies configuration but does not determine attribution.
                 observed_at:
-                    $ref: '#/components/schemas/TimestampWithTimezone'
+                    $ref: '#/components/schemas/TimestampWithTimezoneSeconds'
                 payload:
                     $ref: '#/components/schemas/BroadweighWindPayload'
         BroadweighWindPayload:
             type: object
-            additionalProperties: false
+            additionalProperties: true
             required:
                 - kind
                 - value
@@ -326,22 +338,17 @@ components:
                 kind:
                     type: string
                     enum:
-                        - average
-                        - gust
-                    description: Reading kind carried by this radio value frame.
+                        - wind_average
+                        - wind_gust
+                    description: Explicit wind reading kind carried by this radio value frame.
                 value:
                     type: number
                     minimum: 0
-                    description: Wind speed expressed in `unit`. A gust value is the maximum rolling-window average since the preceding transmission.
+                    description: Wind speed in metres per second. A gust value is the maximum rolling-window average since the preceding transmission.
                 unit:
                     type: string
-                    enum:
-                        - m/s
-                        - km/h
-                        - mph
-                        - fps
-                        - kn
-                    description: Unit selected in the API client configuration.
+                    const: m/s
+                    description: Canonical API unit. The gateway converts its configured source unit before sending.
                 window_seconds:
                     type: integer
                     minimum: 0

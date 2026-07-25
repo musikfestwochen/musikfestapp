@@ -8,6 +8,7 @@ use App\Listeners\Permissions\PermissionAttachedListener;
 use App\Listeners\Permissions\PermissionDetachedListener;
 use App\Listeners\Permissions\RoleAttachedListener;
 use App\Listeners\Permissions\RoleDetachedListener;
+use App\Models\StageSafety\Sensor as StageSafetySensor;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
 use App\Services\Peoplecount\AlertService;
@@ -18,9 +19,12 @@ use App\Services\Peoplecount\AssignmentService;
 use App\Services\Peoplecount\EventService;
 use App\Services\Peoplecount\IntervalCountService;
 use App\Services\Peoplecount\SensorService;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Events\PermissionAttachedEvent;
@@ -52,10 +56,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
         Model::automaticallyEagerLoadRelationships();
 
         URL::forceHttps(app()->isProduction());
+
+        RateLimiter::for('stage-safety-readings', function (Request $request): Limit {
+            $sensor = auth('sanctum')->user();
+            $tokenId = $sensor instanceof StageSafetySensor
+                ? $sensor->currentAccessToken()->getKey()
+                : null;
+
+            return Limit::perMinute(60)->by(
+                $tokenId === null ? 'ip:'.$request->ip() : 'token:'.$tokenId,
+            );
+        });
 
         Gate::before(function (User $user, string $ability): ?bool {
             return GlobalPermissionService::canGlobally($user, $ability);

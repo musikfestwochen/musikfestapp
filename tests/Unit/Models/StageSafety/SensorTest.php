@@ -2,6 +2,7 @@
 
 use App\Models\StageSafety\Sensor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -34,4 +35,8 @@ it('uses API tokens and soft deletes', function () {
 
 it('belongs to an organization', function () {
     expect((new Sensor)->organization())->toBeInstanceOf(BelongsTo::class);
+});
+
+it('has many readings', function () {
+    expect((new Sensor)->readings())->toBeInstanceOf(HasMany::class);
 });
