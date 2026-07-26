@@ -190,4 +190,30 @@ describe('AreaCountHistoryWidget', () => {
         expect(mocks.request.from).toBe('2025-08-04T16:08:00.000Z');
         expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
     });
+
+    it('queues a range change while a request is active', async () => {
+        let resolveFirst!: (value: typeof mockSeries) => void;
+        mocks.get
+            .mockImplementationOnce(() => {
+                mocks.request.processing = true;
+                return new Promise((resolve) => {
+                    resolveFirst = resolve;
+                });
+            })
+            .mockResolvedValue(mockSeries);
+        const wrapper = mount(AreaCountHistoryWidget, {
+            props: { organization: mockOrganization },
+            global: { stubs: globalStubs },
+        });
+
+        await wrapper.find('[data-testid="range-select"]').setValue('6h');
+        expect(mocks.get).toHaveBeenCalledOnce();
+
+        mocks.request.processing = false;
+        resolveFirst(mockSeries);
+        await flushPromises();
+
+        expect(mocks.get).toHaveBeenCalledTimes(2);
+        expect(mocks.request.from).toBe('2025-08-04T16:08:00.000Z');
+    });
 });

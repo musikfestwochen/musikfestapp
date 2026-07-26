@@ -41,6 +41,7 @@ const chartStyle = useStorage<'spline' | 'step'>('peoplecount.area-count-history
 const hiddenAreaIds = ref<Set<number>>(new Set());
 const lastUpdated = ref<Date | null>(null);
 let refreshInterval: number | null = null;
+let refreshQueued = false;
 
 function toggleChartStyle(): void {
     chartStyle.value = chartStyle.value === 'spline' ? 'step' : 'spline';
@@ -140,19 +141,36 @@ function formatTickDate(d: number): string {
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-async function fetchHistory() {
+async function fetchHistory(): Promise<void> {
+    if (request.processing) {
+        refreshQueued = true;
+        return;
+    }
+
+    const requestedRange = timeRange.value;
+
     try {
         const params = getTimeParams();
         Object.assign(request, params);
         const response = await request.get(route('peoplecount.area-count-history.index', { organization: props.organization.slug }));
-        error.value = null;
-        series.value = response;
-        lastUpdated.value = new Date();
+
+        if (requestedRange === timeRange.value) {
+            error.value = null;
+            series.value = response;
+            lastUpdated.value = new Date();
+        }
     } catch (err) {
-        error.value = 'Failed to load area count history';
-        console.error(err);
+        if (requestedRange === timeRange.value) {
+            error.value = 'Failed to load area count history';
+            console.error(err);
+        }
     } finally {
         loading.value = false;
+
+        if (refreshQueued) {
+            refreshQueued = false;
+            void fetchHistory();
+        }
     }
 }
 

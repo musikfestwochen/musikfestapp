@@ -31,6 +31,7 @@ const form = useForm<StageSafetySensorFormData>({
 });
 const tokenRequest = useHttp<Record<string, never>, { token: string }>({});
 const token = ref<string | null>(null);
+const tokenRegenerationPending = ref(false);
 const confirmDialog = useConfirmDialog();
 const { can } = usePermissions();
 
@@ -66,17 +67,21 @@ function updateForm(values: Partial<StageSafetySensorFormData>): void {
 }
 
 async function regenerateToken(): Promise<void> {
-    const confirmed = await confirmDialog.confirm({
-        title: props.sensor.has_active_token ? 'Replace sensor token?' : 'Generate sensor token?',
-        description: props.sensor.has_active_token ? 'The current API token will stop working immediately.' : 'A new API token will be shown once.',
-        confirmText: props.sensor.has_active_token ? 'Replace token' : 'Generate token',
-    });
+    if (tokenRegenerationPending.value) return;
 
-    if (!confirmed) {
-        return;
-    }
+    tokenRegenerationPending.value = true;
 
     try {
+        const confirmed = await confirmDialog.confirm({
+            title: props.sensor.has_active_token ? 'Replace sensor token?' : 'Generate sensor token?',
+            description: props.sensor.has_active_token
+                ? 'The current API token will stop working immediately.'
+                : 'A new API token will be shown once.',
+            confirmText: props.sensor.has_active_token ? 'Replace token' : 'Generate token',
+        });
+
+        if (!confirmed) return;
+
         const response = await tokenRequest.post(
             route('stage-safety.sensors.regenerate-token', {
                 organization: props.organization.slug,
@@ -86,6 +91,8 @@ async function regenerateToken(): Promise<void> {
         token.value = response.token;
     } catch {
         // useHttp retains request errors and processing state.
+    } finally {
+        tokenRegenerationPending.value = false;
     }
 }
 
@@ -129,7 +136,7 @@ function acknowledgeToken(): void {
                     </div>
 
                     <div v-if="can('stage-safety.sensors.update')" class="flex flex-wrap gap-2">
-                        <Button :disabled="tokenRequest.processing" size="sm" type="button" @click="regenerateToken">
+                        <Button :disabled="tokenRegenerationPending" size="sm" type="button" @click="regenerateToken">
                             <RotateCcw v-if="sensor.has_active_token" class="mr-1 size-4" />
                             <KeyRound v-else class="mr-1 size-4" />
                             {{ sensor.has_active_token ? 'Replace Token' : 'Generate Token' }}

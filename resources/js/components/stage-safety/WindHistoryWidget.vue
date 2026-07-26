@@ -35,7 +35,9 @@ async function fetchHistory(): Promise<void> {
             data.value = response;
         }
     } catch {
-        error.value = 'Failed to load wind history.';
+        if (requestedRange === timeRange.value) {
+            error.value = 'Failed to load wind history.';
+        }
     } finally {
         loading.value = false;
         if (refreshQueued) {

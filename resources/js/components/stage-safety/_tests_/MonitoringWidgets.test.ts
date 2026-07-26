@@ -174,4 +174,35 @@ describe('Stage Safety monitoring widgets', () => {
         expect(mocks.get).toHaveBeenCalledTimes(2);
         expect(mocks.request.from).toBe('2026-07-25T06:00:00.000Z');
     });
+
+    it('ignores an error from a stale history range', async () => {
+        let rejectFirst!: (reason: Error) => void;
+        mocks.get
+            .mockImplementationOnce(() => {
+                mocks.request.processing = true;
+                return new Promise((_, reject) => {
+                    rejectFirst = reject;
+                });
+            })
+            .mockReturnValueOnce(new Promise(() => {}));
+        const wrapper = mount(WindHistoryWidget, {
+            props: { organization },
+            global: {
+                stubs: {
+                    WindHistoryChart: {
+                        name: 'WindHistoryChart',
+                        props: ['error'],
+                        emits: ['update:timeRange'],
+                        template: '<button data-testid="range" @click="$emit(\'update:timeRange\', \'6h\')">range</button>',
+                    },
+                },
+            },
+        });
+        await wrapper.find('[data-testid="range"]').trigger('click');
+        mocks.request.processing = false;
+        rejectFirst(new Error('stale request failed'));
+        await flushPromises();
+
+        expect(wrapper.findComponent({ name: 'WindHistoryChart' }).props('error')).toBeNull();
+    });
 });

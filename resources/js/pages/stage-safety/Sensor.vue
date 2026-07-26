@@ -60,21 +60,26 @@ async function fetchMonitoring(): Promise<void> {
     Object.assign(request, timeParams());
 
     try {
-        error.value = null;
         const response = await request.get(
             route('stage-safety.sensors.monitoring.index', {
                 organization: props.organization.slug,
                 stageSafetySensor: props.sensor.id,
             }),
         );
-        if (requestedRange === timeRange.value) monitoring.value = response;
+        if (requestedRange === timeRange.value) {
+            error.value = null;
+            monitoring.value = response;
+        }
     } catch {
-        error.value = 'Failed to load sensor monitoring data.';
+        if (requestedRange === timeRange.value) {
+            error.value = 'Failed to load sensor monitoring data.';
+        }
     } finally {
-        loading.value = false;
         if (refreshQueued) {
             refreshQueued = false;
             void fetchMonitoring();
+        } else {
+            loading.value = false;
         }
     }
 }
