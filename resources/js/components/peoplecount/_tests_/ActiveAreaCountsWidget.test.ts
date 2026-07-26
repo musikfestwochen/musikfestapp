@@ -159,8 +159,8 @@ describe('ActiveAreaCountsWidget', () => {
             .find((button) => button.text().includes('Debug Counts'))!
             .trigger('click');
 
-        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-green-950/30'))).toBe(true);
-        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-red-950/30'))).toBe(true);
+        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-emerald-950/20'))).toBe(true);
+        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-rose-950/20'))).toBe(true);
         expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-blue-950/30'))).toBe(true);
     });
 

@@ -11,8 +11,8 @@ describe('WidgetNotice', () => {
 
         expect(wrapper.attributes('role')).toBe('alert');
         expect(wrapper.text()).toBe('Failed to load.');
-        expect(wrapper.classes()).toContain('bg-red-50');
-        expect(wrapper.classes()).toContain('dark:bg-red-950/30');
+        expect(wrapper.classes()).toContain('bg-rose-50/70');
+        expect(wrapper.classes()).toContain('dark:bg-rose-950/20');
     });
 
     it('renders accessible stale-data warnings', () => {

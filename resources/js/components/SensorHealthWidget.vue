@@ -87,7 +87,7 @@ function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
             <section v-if="showPeoplecount" class="pb-4 first:pt-0 last:pb-0">
                 <div class="mb-3 flex items-center justify-between gap-2">
                     <h3 class="font-medium">Peoplecount</h3>
-                    <Badge v-if="peoplecount?.all_healthy && peoplecount.total" class="bg-green-600 hover:bg-green-600">Healthy</Badge>
+                    <Badge v-if="peoplecount?.all_healthy && peoplecount.total" variant="success">Healthy</Badge>
                     <Badge v-else-if="peoplecount?.total" variant="destructive">Attention</Badge>
                 </div>
                 <WidgetNotice v-if="peoplecountError" class="mb-3" variant="error">{{ peoplecountError }}</WidgetNotice>
@@ -95,7 +95,7 @@ function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
                 <p v-else-if="peoplecount && !peoplecount.total" class="text-muted-foreground py-4 text-center text-sm">
                     No sensors currently assigned.
                 </p>
-                <div v-else-if="peoplecount?.all_healthy" class="py-4 text-center text-sm text-green-700 dark:text-green-400">
+                <div v-else-if="peoplecount?.all_healthy" class="py-4 text-center text-sm text-emerald-700 dark:text-emerald-300/80">
                     All {{ peoplecount.total }} sensors are healthy
                 </div>
                 <ul v-else-if="peoplecount" class="divide-y text-sm">
@@ -117,7 +117,7 @@ function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
             <section v-if="showStageSafety" class="pt-4 first:pt-0">
                 <div class="mb-3 flex items-center justify-between gap-2">
                     <h3 class="font-medium">Stage Safety</h3>
-                    <Badge v-if="stageSafety?.all_fresh" class="bg-green-600 hover:bg-green-600">Fresh</Badge>
+                    <Badge v-if="stageSafety?.all_fresh" variant="success">Fresh</Badge>
                     <Badge v-else-if="stageSafety?.total" variant="destructive">Attention</Badge>
                 </div>
                 <WidgetNotice v-if="stageSafetyError" class="mb-3" variant="error">{{ stageSafetyError }}</WidgetNotice>
@@ -125,7 +125,7 @@ function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
                 <p v-else-if="stageSafety && !stageSafety.total" class="text-muted-foreground py-4 text-center text-sm">
                     No active Stage Safety sensors configured.
                 </p>
-                <div v-else-if="stageSafety?.all_fresh" class="py-4 text-center text-sm text-green-700 dark:text-green-400">
+                <div v-else-if="stageSafety?.all_fresh" class="py-4 text-center text-sm text-emerald-700 dark:text-emerald-300/80">
                     All {{ stageSafety.total }} sensors report fresh data
                 </div>
                 <ul v-else-if="stageSafety" class="divide-y text-sm">

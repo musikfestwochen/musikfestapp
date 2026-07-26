@@ -8,7 +8,7 @@ const props = defineProps<{
 const role = computed(() => (props.variant === 'error' ? 'alert' : 'status'));
 const variantClass = computed(() =>
     props.variant === 'error'
-        ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
+        ? 'bg-rose-50/70 text-rose-700 dark:bg-rose-950/20 dark:text-rose-300/80'
         : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
 );
 </script>

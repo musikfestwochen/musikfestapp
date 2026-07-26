@@ -35,7 +35,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => [
 <template>
     <Head :title="`${props.organization.name} Dashboard`" />
     <Layout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 dark:[--card-foreground:0_0%_85%] dark:[--foreground:0_0%_90%]">
             <div class="mb-4">
                 <h1 class="text-2xl font-bold">{{ props.organization.name }} Dashboard</h1>
             </div>

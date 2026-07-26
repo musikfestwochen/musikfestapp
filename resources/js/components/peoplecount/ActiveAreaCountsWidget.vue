@@ -86,14 +86,14 @@ const isDataStale = computed(() => {
                         <div class="text-lg font-medium">{{ area.name }}</div>
                         <div class="text-muted-foreground text-sm">{{ area.event_name }}</div>
                     </div>
-                    <div class="count-display my-4 text-6xl leading-none font-bold">{{ area.count }}</div>
+                    <div class="count-display text-foreground my-4 text-6xl leading-none font-bold">{{ area.count }}</div>
 
                     <!-- Net change display -->
                     <div
                         v-if="area.net_change !== null"
                         :class="{
-                            'text-green-600': area.net_change > 0,
-                            'text-red-600': area.net_change < 0,
+                            'text-emerald-700 dark:text-emerald-300/80': area.net_change > 0,
+                            'text-rose-700 dark:text-rose-300/80': area.net_change < 0,
                             'text-gray-500': area.net_change === 0,
                         }"
                         class="net-change"
@@ -117,13 +117,13 @@ const isDataStale = computed(() => {
                             </CollapsibleTrigger>
                             <CollapsibleContent class="mt-2">
                                 <div class="grid grid-cols-3 gap-2 text-xs">
-                                    <div class="rounded bg-green-50 p-2 text-center dark:bg-green-950/30">
-                                        <div class="font-medium text-green-700 dark:text-green-400">In</div>
-                                        <div class="text-green-600 dark:text-green-400">{{ area.debug_counts.in }}</div>
+                                    <div class="rounded bg-emerald-50/70 p-2 text-center dark:bg-emerald-950/20">
+                                        <div class="font-medium text-emerald-700 dark:text-emerald-300/80">In</div>
+                                        <div class="text-emerald-700 dark:text-emerald-300/80">{{ area.debug_counts.in }}</div>
                                     </div>
-                                    <div class="rounded bg-red-50 p-2 text-center dark:bg-red-950/30">
-                                        <div class="font-medium text-red-700 dark:text-red-400">Out</div>
-                                        <div class="text-red-600 dark:text-red-400">{{ area.debug_counts.out }}</div>
+                                    <div class="rounded bg-rose-50/70 p-2 text-center dark:bg-rose-950/20">
+                                        <div class="font-medium text-rose-700 dark:text-rose-300/80">Out</div>
+                                        <div class="text-rose-700 dark:text-rose-300/80">{{ area.debug_counts.out }}</div>
                                     </div>
                                     <div class="rounded bg-blue-50 p-2 text-center dark:bg-blue-950/30">
                                         <div class="font-medium text-blue-700 dark:text-blue-400">Net</div>

@@ -133,8 +133,8 @@ watch(
                         <div class="flex flex-col">
                             <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
                             <div class="mt-1 flex gap-3 text-xs">
-                                <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
-                                <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
+                                <span class="text-emerald-700 dark:text-emerald-300/80">In: {{ s.sums[selectedRange].in }}</span>
+                                <span class="text-rose-700 dark:text-rose-300/80">Out: {{ s.sums[selectedRange].out }}</span>
                                 <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
                             </div>
                         </div>
@@ -161,8 +161,8 @@ watch(
                                 <div class="flex flex-col">
                                     <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
                                     <div class="mt-1 flex gap-3 text-xs">
-                                        <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
-                                        <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
+                                        <span class="text-emerald-700 dark:text-emerald-300/80">In: {{ s.sums[selectedRange].in }}</span>
+                                        <span class="text-rose-700 dark:text-rose-300/80">Out: {{ s.sums[selectedRange].out }}</span>
                                         <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
                                     </div>
                                 </div>

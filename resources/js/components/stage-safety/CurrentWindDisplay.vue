@@ -38,7 +38,7 @@ function statusVariant(status: StageSafetyCurrentSensor['status']): 'default' | 
                     </dt>
                     <dd v-if="item.wind_average" class="text-foreground text-5xl leading-none font-semibold tracking-tight tabular-nums">
                         {{ formatWindSpeed(item.wind_average.value) }}
-                        <span class="text-sm font-medium">km/h</span>
+                        <span class="text-muted-foreground text-sm font-medium">km/h</span>
                     </dd>
                     <dd v-else class="text-muted-foreground py-2 text-sm">Average unavailable</dd>
                 </div>
