@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
 import type { StageSafetyCurrentReading, StageSafetyCurrentSensor } from '@/types';
-import { getRelativeTime } from '@/utils/dateTimeHelpers';
 import { formatWindSpeed, stageSafetySensorName } from '@/utils/stageSafety';
 
 defineProps<{
@@ -9,7 +8,7 @@ defineProps<{
 }>();
 
 function readingLabel(label: string, reading: StageSafetyCurrentReading | null, sensorStatus: StageSafetyCurrentSensor['status']): string {
-    return sensorStatus === 'fresh' && reading?.status === 'fresh' ? label : `Last known ${label.toLowerCase()}`;
+    return !reading || (sensorStatus === 'fresh' && reading.status === 'fresh') ? label : `Last known ${label.toLowerCase()}`;
 }
 
 function statusVariant(status: StageSafetyCurrentSensor['status']): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -22,32 +21,36 @@ function statusVariant(status: StageSafetyCurrentSensor['status']): 'default' | 
 
 <template>
     <div class="divide-y">
-        <article v-for="item in sensors" :key="item.sensor.id" class="py-4 first:pt-0 last:pb-0">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="min-w-0 truncate font-semibold">{{ stageSafetySensorName(item.sensor) }}</h3>
+        <article v-for="item in sensors" :key="item.sensor.id" class="flex flex-col items-center py-4 text-center first:pt-0 last:pb-0">
+            <div class="flex max-w-full flex-col items-center gap-2">
+                <h3 class="max-w-full text-lg font-medium break-words">{{ stageSafetySensorName(item.sensor) }}</h3>
                 <Badge v-if="item.status !== 'fresh'" :variant="statusVariant(item.status)">{{ item.status.replace('_', ' ') }}</Badge>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 divide-x">
-                <div class="pr-3 text-center">
-                    <p class="text-primary text-3xl font-semibold tracking-tight">
-                        {{ item.wind_average ? formatWindSpeed(item.wind_average.value) : '—' }}
-                        <span v-if="item.wind_average" class="text-sm font-medium">km/h</span>
-                    </p>
-                    <p class="text-muted-foreground mt-1 text-xs">{{ readingLabel('Average', item.wind_average, item.status) }}</p>
+            <dl class="mt-4 flex flex-col items-center gap-3">
+                <div>
+                    <dt
+                        :class="
+                            readingLabel('Average', item.wind_average, item.status) === 'Average' ? 'sr-only' : 'text-muted-foreground mb-1 text-xs'
+                        "
+                    >
+                        {{ readingLabel('Average', item.wind_average, item.status) }}
+                    </dt>
+                    <dd v-if="item.wind_average" class="text-foreground text-5xl leading-none font-semibold tracking-tight tabular-nums">
+                        {{ formatWindSpeed(item.wind_average.value) }}
+                        <span class="text-muted-foreground text-sm font-medium">km/h</span>
+                    </dd>
+                    <dd v-else class="text-muted-foreground py-2 text-sm">Average unavailable</dd>
                 </div>
-                <div class="pl-3 text-center">
-                    <p class="text-2xl font-semibold tracking-tight">
-                        {{ item.wind_gust ? formatWindSpeed(item.wind_gust.value) : '—' }}
-                        <span v-if="item.wind_gust" class="text-sm font-medium">km/h</span>
-                    </p>
-                    <p class="text-muted-foreground mt-1 text-xs">{{ readingLabel('Gust', item.wind_gust, item.status) }}</p>
-                </div>
-            </div>
 
-            <p class="text-muted-foreground mt-3 text-right text-xs">
-                {{ item.latest_observed_at ? `Observed ${getRelativeTime(new Date(item.latest_observed_at))}` : 'Never observed' }}
-            </p>
+                <div v-if="item.wind_gust" class="bg-muted/40 inline-flex items-baseline gap-1.5 rounded-full border px-2.5 py-1">
+                    <dt class="text-muted-foreground text-xs">{{ readingLabel('Gust', item.wind_gust, item.status) }}</dt>
+                    <dd class="text-sm font-semibold tracking-tight tabular-nums">
+                        {{ formatWindSpeed(item.wind_gust.value) }}
+                        <span class="text-xs font-medium">km/h</span>
+                    </dd>
+                </div>
+            </dl>
         </article>
     </div>
 </template>

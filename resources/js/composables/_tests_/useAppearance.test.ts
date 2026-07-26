@@ -135,7 +135,7 @@ describe('useAppearance', () => {
         mockLocalStorage.getItem.mockReturnValueOnce(null);
         expect(useAppearance().appearance.value).toBe('system');
         mockLocalStorage.getItem.mockReturnValueOnce('dark');
-        let onMountedCallback;
+        let onMountedCallback: (() => void) | undefined;
         mockOnMounted.mockImplementation((cb) => {
             onMountedCallback = cb;
         });
@@ -154,7 +154,7 @@ describe('useAppearance', () => {
     });
 
     it('returns correct interface and calls initializeTheme on mount', () => {
-        let onMountedCallback;
+        let onMountedCallback: (() => void) | undefined;
         mockOnMounted.mockImplementation((cb) => {
             onMountedCallback = cb;
         });

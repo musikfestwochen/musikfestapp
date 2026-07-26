@@ -12,6 +12,7 @@
         "test:architecture": "vitest run resources/js/architecture.test.ts",
         "test:watch": "vitest watch",
         "test:coverage": "vitest run --coverage",
+        "typecheck": "vue-tsc --noEmit",
         "mailpit:start": "mailpit",
         "mailpit:check": "curl -f http://localhost:8025/api/v1/info || echo 'Mailpit is not running'",
         "e2e": "playwright test",

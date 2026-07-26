@@ -44,6 +44,9 @@ jobs:
         env:
           LARAVEL_BYPASS_ENV_CHECK: 1
 
+      - name: TypeScript Check
+        run: composer test:frontend:types
+
       - name: SCA Tests
         run: composer test:sca
 

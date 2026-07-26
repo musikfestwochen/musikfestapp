@@ -17,7 +17,7 @@ Because it is intentionally broad and slow, do not run the full suite after ever
 
 - `composer precommit:ai`:
   - Canonical full gate for this project.
-  - Includes Rector, typo checks, linting, static analysis, coverage, type coverage, frontend tests, and e2e tests.
+  - Includes Rector, typo checks, linting, TypeScript checks, static analysis, coverage, PHP type coverage, frontend tests, and e2e tests.
   - Uses compact or quiet flags and writes bulky coverage text output to file where appropriate.
   - Default full run for agent-driven workflows.
 
@@ -34,6 +34,10 @@ Because it is intentionally broad and slow, do not run the full suite after ever
 - `composer lint:ai`
   - Runs Pint, ESLint, and Prettier with reduced-noise output.
   - Ensures consistent formatting and frontend lint correctness.
+
+- `composer test:frontend:types`
+  - Runs `vue-tsc --noEmit` using project TypeScript configuration.
+  - Catches Vue and TypeScript errors that Vite builds and ESLint do not detect.
 
 - `composer test:sca:ai`
   - Runs PHPStan static analysis.
@@ -53,7 +57,7 @@ Because it is intentionally broad and slow, do not run the full suite after ever
 
 ## Recommended execution strategy (fast feedback first)
 
-1. During active coding, run only checks relevant to your change area (for example `composer test:sca:ai`, `npx vitest run --reporter=dot --silent=passed-only`, or `composer lint:ai`).
+1. During active coding, run only checks relevant to your change area (for example `composer test:frontend:types`, `composer test:sca:ai`, `npx vitest run --reporter=dot --silent=passed-only`, or `composer lint:ai`).
 2. After feature completion, run `composer precommit:ai` once to validate the entire gate with compact output.
 3. If `precommit:ai` fails, fix and rerun only the failed section until green.
 4. Avoid rerunning long steps (`test:e2e:ai`) unless related code changed.

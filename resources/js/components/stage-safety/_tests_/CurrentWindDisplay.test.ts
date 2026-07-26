@@ -1,18 +1,9 @@
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import CurrentWindDisplay from '../CurrentWindDisplay.vue';
 
 describe('CurrentWindDisplay', () => {
-    beforeEach(() => {
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date('2026-07-25T12:00:00Z'));
-    });
-
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
-    it('renders multiple sensors in km/h and labels stale readings as last known', () => {
+    it('emphasizes averages and only renders gust when available', () => {
         const wrapper = mount(CurrentWindDisplay, {
             props: {
                 sensors: [
@@ -61,9 +52,13 @@ describe('CurrentWindDisplay', () => {
         expect(wrapper.text()).toContain('29');
         expect(wrapper.text()).toContain('Last known average');
         expect(wrapper.text()).toContain('Last known gust');
-        expect(wrapper.text()).toContain('Observed 30 seconds ago');
+        expect(wrapper.text()).toContain('Average unavailable');
+        expect(wrapper.text()).not.toContain('Observed');
+        expect(wrapper.text()).not.toContain('—');
         expect(wrapper.text()).not.toMatch(/\bfresh\b/i);
         expect(wrapper.text()).not.toContain('second period');
+        expect(wrapper.findAll('article')[0].text()).not.toContain('Gust');
+        expect(wrapper.findAll('article')[1].text()).toContain('Last known gust');
         expect(wrapper.findAll('article').every((article) => !article.classes().includes('border'))).toBe(true);
     });
 });

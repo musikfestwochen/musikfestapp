@@ -1,11 +1,13 @@
 <script lang="ts" setup>
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
+import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
+import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 
 interface AreaCount {
     id: number;
@@ -13,7 +15,7 @@ interface AreaCount {
     event_name: string;
     count: number;
     net_change: number | null;
-    net_change_time_ago: number;
+    net_change_time_ago: string | null;
     debug_counts: {
         in: number;
         out: number;
@@ -32,209 +34,125 @@ const props = defineProps<{
 
 const { can } = usePermissions();
 
-const areaCounts = ref<AreaCount[]>([]);
 const request = useHttp<Record<string, never>, AreaCount[]>({});
-const loading = ref(true);
-const error = ref<string | null>(null);
-let refreshInterval: number | null = null;
+const {
+    data: areaCounts,
+    loading,
+    error,
+    lastUpdated,
+} = useWidgetPolling({
+    interval: 10_000,
+    load: () => request.get(route('peoplecount.area-aggregation.index', { organization: props.organization.slug })),
+    errorMessage: 'Failed to load area counts',
+});
 
 // Check if user can view debug counts
 const canViewDebugCounts = computed(() => can('peoplecount.areas.*'));
 
-const fetchAreaCounts = async () => {
-    if (request.processing) return;
-
-    try {
-        const response = await request.get(route('peoplecount.area-aggregation.index', { organization: props.organization.slug }));
-        error.value = null;
-        areaCounts.value = response;
-    } catch (err) {
-        error.value = 'Failed to load area counts';
-        console.error(err);
-        // We don't clear areaCounts here, so the last known counts will still be displayed
-    } finally {
-        loading.value = false;
+function formatDate(dateString: string | null): string {
+    if (!dateString) {
+        return 'N/A';
     }
-};
 
-onMounted(() => {
-    fetchAreaCounts();
-    // Set up auto-refresh every 10 seconds
-    refreshInterval = window.setInterval(fetchAreaCounts, 10000);
-});
-
-onBeforeUnmount(() => {
-    // Clean up interval when component is unmounted
-    if (refreshInterval !== null) {
-        clearInterval(refreshInterval);
-    }
-});
-
-const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleTimeString();
-};
+}
 
-// Check if the last update is more than one minute old
 const isDataStale = computed(() => {
-    if (!areaCounts.value.length || !areaCounts.value[0]?.last_updated) return false;
+    if (!areaCounts.value?.[0]?.last_updated) {
+        return false;
+    }
 
     const lastUpdated = new Date(areaCounts.value[0].last_updated);
-    const now = new Date();
-
-    const diffInMs = now.getTime() - lastUpdated.getTime();
-    const diffInMinutes = diffInMs / (1000 * 60);
-
-    return diffInMinutes > 1;
-});
-
-// Last server response timestamp
-const lastUpdatedTime = computed(() => {
-    return areaCounts.value.length > 0 ? formatDate(areaCounts.value[0]?.last_updated) : 'N/A';
+    return Date.now() - lastUpdated.getTime() > 60_000;
 });
 </script>
 
-<style scoped>
-.counts-widget {
-    min-height: 300px;
-    min-width: 250px;
-}
-
-.counts-widget-content {
-    padding: 1.5rem;
-}
-
-.area-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 1rem 0;
-}
-
-.count-display {
-    font-size: 4rem;
-    font-weight: 700;
-    line-height: 1;
-    margin: 1rem 0;
-}
-
-.stale-card {
-    background-color: rgba(239, 68, 68, 0.1); /* Light red background */
-    border-color: rgb(239, 68, 68); /* Red border */
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-    }
-}
-
-.pulse {
-    animation: pulse 2s infinite;
-}
-</style>
-
 <template>
-    <Card :class="{ 'stale-card pulse': isDataStale, 'counts-widget': true }" class="flex h-full flex-col">
-        <CardHeader>
-            <CardTitle class="flex items-center gap-2"><Users class="size-4" aria-hidden="true" /> Active Area Counts</CardTitle>
-        </CardHeader>
-        <CardContent class="counts-widget-content flex flex-1 flex-col">
-            <!-- Show error message as a banner if there's an error -->
-            <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">
-                {{ error }}
-            </div>
+    <WidgetShell title="Active Area Counts" :error="error" :last-updated="lastUpdated">
+        <template #icon><Users /></template>
 
-            <div v-if="loading && !areaCounts.length">
-                <Skeleton v-for="i in 2" :key="i" class="mb-4 h-24 w-full" />
-            </div>
+        <WidgetNotice v-if="isDataStale" class="mb-4" variant="warning">Data may be stale.</WidgetNotice>
 
-            <div v-else-if="!areaCounts.length" class="text-muted-foreground py-8 text-center">No active areas found.</div>
+        <div v-if="loading && !areaCounts?.length">
+            <Skeleton v-for="i in 2" :key="i" class="mb-4 h-24 w-full" />
+        </div>
 
-            <div v-else class="flex flex-1 flex-col">
-                <div class="divide-y">
-                    <div v-for="area in areaCounts" :key="area.id" class="area-item py-4 first:pt-0 last:pb-0">
-                        <div class="mb-2 text-center">
-                            <div class="text-lg font-medium">{{ area.name }}</div>
-                            <div class="text-muted-foreground text-sm">{{ area.event_name }}</div>
-                        </div>
-                        <div class="count-display">{{ area.count }}</div>
+        <div v-else-if="areaCounts && !areaCounts.length" class="text-muted-foreground py-8 text-center">No active areas found.</div>
 
-                        <!-- Net change display -->
-                        <div
-                            v-if="area.net_change !== null"
-                            :class="{
-                                'text-green-600': area.net_change > 0,
-                                'text-red-600': area.net_change < 0,
-                                'text-gray-500': area.net_change === 0,
-                            }"
-                            class="net-change"
-                        >
-                            <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
-                            <span v-else>{{ area.net_change }}</span>
-                            <span class="text-muted-foreground ml-1 text-xs">({{ area.net_change_time_ago }})</span>
-                        </div>
-                        <div v-else class="text-xs text-gray-500">No net change data</div>
+        <div v-else-if="areaCounts?.length" class="flex flex-1 flex-col">
+            <div class="divide-y">
+                <div v-for="area in areaCounts" :key="area.id" class="area-item flex flex-col items-center py-4 text-center first:pt-0 last:pb-0">
+                    <div class="mb-2 text-center">
+                        <div class="text-lg font-medium">{{ area.name }}</div>
+                        <div class="text-muted-foreground text-sm">{{ area.event_name }}</div>
+                    </div>
+                    <div class="count-display text-foreground my-4 text-6xl leading-none font-bold">{{ area.count }}</div>
 
-                        <!-- Debug counts collapsible section -->
-                        <div v-if="canViewDebugCounts" class="mt-4 w-full">
-                            <Collapsible>
-                                <CollapsibleTrigger
-                                    class="text-muted-foreground hover:text-foreground flex w-full items-center justify-center text-xs transition-colors"
-                                >
-                                    <span>Debug Counts</span>
-                                    <svg class="ml-1 h-3 w-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                    </svg>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent class="mt-2">
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
-                                        <div class="rounded bg-green-50 p-2 text-center">
-                                            <div class="font-medium text-green-700">In</div>
-                                            <div class="text-green-600">{{ area.debug_counts.in }}</div>
-                                        </div>
-                                        <div class="rounded bg-red-50 p-2 text-center">
-                                            <div class="font-medium text-red-700">Out</div>
-                                            <div class="text-red-600">{{ area.debug_counts.out }}</div>
-                                        </div>
-                                        <div class="rounded bg-blue-50 p-2 text-center">
-                                            <div class="font-medium text-blue-700">Net</div>
-                                            <div class="text-blue-600">{{ area.debug_counts.net }}</div>
-                                        </div>
+                    <!-- Net change display -->
+                    <div
+                        v-if="area.net_change !== null"
+                        :class="{
+                            'text-emerald-700 dark:text-emerald-300/80': area.net_change > 0,
+                            'text-rose-700 dark:text-rose-300/80': area.net_change < 0,
+                            'text-gray-500': area.net_change === 0,
+                        }"
+                        class="net-change"
+                    >
+                        <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
+                        <span v-else>{{ area.net_change }}</span>
+                        <span class="text-muted-foreground ml-1 text-xs">({{ area.net_change_time_ago }})</span>
+                    </div>
+                    <div v-else class="text-xs text-gray-500">No net change data</div>
+
+                    <!-- Debug counts collapsible section -->
+                    <div v-if="canViewDebugCounts" class="mt-4 w-full">
+                        <Collapsible>
+                            <CollapsibleTrigger
+                                class="text-muted-foreground hover:text-foreground flex w-full items-center justify-center text-xs transition-colors"
+                            >
+                                <span>Debug Counts</span>
+                                <svg class="ml-1 h-3 w-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                </svg>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent class="mt-2">
+                                <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div class="rounded bg-emerald-50/70 p-2 text-center dark:bg-emerald-950/20">
+                                        <div class="font-medium text-emerald-700 dark:text-emerald-300/80">In</div>
+                                        <div class="text-emerald-700 dark:text-emerald-300/80">{{ area.debug_counts.in }}</div>
                                     </div>
-                                    <div v-if="area.debug_counts.last_reset_type" class="mt-3 grid grid-cols-2 gap-2 text-xs">
-                                        <div class="rounded bg-gray-50 p-2">
-                                            <div class="font-medium text-gray-700">Last reset</div>
-                                            <div class="text-gray-600 capitalize">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
-                                        </div>
-                                        <div class="rounded bg-gray-50 p-2">
-                                            <div class="font-medium text-gray-700">At</div>
-                                            <div class="text-gray-600">{{ formatDate(area.debug_counts.last_reset_at || null) }}</div>
-                                        </div>
-                                        <div class="rounded bg-gray-50 p-2">
-                                            <div class="font-medium text-gray-700">Reset value</div>
-                                            <div class="text-gray-600">{{ area.debug_counts.last_reset_value }}</div>
-                                        </div>
-                                        <div class="rounded bg-gray-50 p-2">
-                                            <div class="font-medium text-gray-700">Net + reset</div>
-                                            <div class="text-gray-600">{{ area.debug_counts.net_plus_reset }}</div>
-                                        </div>
+                                    <div class="rounded bg-rose-50/70 p-2 text-center dark:bg-rose-950/20">
+                                        <div class="font-medium text-rose-700 dark:text-rose-300/80">Out</div>
+                                        <div class="text-rose-700 dark:text-rose-300/80">{{ area.debug_counts.out }}</div>
                                     </div>
-                                </CollapsibleContent>
-                            </Collapsible>
-                        </div>
+                                    <div class="rounded bg-blue-50 p-2 text-center dark:bg-blue-950/30">
+                                        <div class="font-medium text-blue-700 dark:text-blue-400">Net</div>
+                                        <div class="text-blue-600 dark:text-blue-400">{{ area.debug_counts.net }}</div>
+                                    </div>
+                                </div>
+                                <div v-if="area.debug_counts.last_reset_type" class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                    <div class="bg-muted/50 rounded p-2">
+                                        <div class="text-foreground font-medium">Last reset</div>
+                                        <div class="text-muted-foreground capitalize">{{ area.debug_counts.last_reset_type.replace('_', ' ') }}</div>
+                                    </div>
+                                    <div class="bg-muted/50 rounded p-2">
+                                        <div class="text-foreground font-medium">At</div>
+                                        <div class="text-muted-foreground">{{ formatDate(area.debug_counts.last_reset_at || null) }}</div>
+                                    </div>
+                                    <div class="bg-muted/50 rounded p-2">
+                                        <div class="text-foreground font-medium">Reset value</div>
+                                        <div class="text-muted-foreground">{{ area.debug_counts.last_reset_value }}</div>
+                                    </div>
+                                    <div class="bg-muted/50 rounded p-2">
+                                        <div class="text-foreground font-medium">Net + reset</div>
+                                        <div class="text-muted-foreground">{{ area.debug_counts.net_plus_reset }}</div>
+                                    </div>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
                     </div>
                 </div>
-
-                <div class="text-muted-foreground mt-auto border-t pt-3 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
             </div>
-        </CardContent>
-    </Card>
+        </div>
+    </WidgetShell>
 </template>

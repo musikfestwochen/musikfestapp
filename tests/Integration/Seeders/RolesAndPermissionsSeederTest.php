@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -28,4 +29,12 @@ it('seeds and updates role metadata', function () {
         'display_name' => 'People count viewer',
         'description' => 'Can view people-count dashboards and data.',
     ]);
+});
+
+it('removes the obsolete Stage Safety sensor show permission', function () {
+    Permission::findOrCreate('stage-safety.sensors.show');
+
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+
+    $this->assertDatabaseMissing('permissions', ['name' => 'stage-safety.sensors.show']);
 });

@@ -10,7 +10,6 @@ use App\Http\Requests\StageSafety\SensorCreateRequest;
 use App\Http\Requests\StageSafety\SensorDestroyRequest;
 use App\Http\Requests\StageSafety\SensorEditRequest;
 use App\Http\Requests\StageSafety\SensorIndexRequest;
-use App\Http\Requests\StageSafety\SensorShowRequest;
 use App\Http\Requests\StageSafety\SensorStoreRequest;
 use App\Http\Requests\StageSafety\SensorUpdateRequest;
 use App\Models\Organization;
@@ -47,14 +46,6 @@ class SensorController extends Controller
         $result = $sensorService->createWithToken($organization, $request->validated());
 
         return response()->json($result, 201)->header('Cache-Control', 'no-store, private');
-    }
-
-    public function show(SensorShowRequest $request, Organization $organization, Sensor $stageSafetySensor): Response
-    {
-        return Inertia::render('stage-safety/Sensor', [
-            'organization' => $organization,
-            'sensor' => $stageSafetySensor,
-        ]);
     }
 
     public function edit(SensorEditRequest $request, Organization $organization, Sensor $stageSafetySensor, SensorService $sensorService): Response

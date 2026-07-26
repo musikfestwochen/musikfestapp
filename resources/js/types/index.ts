@@ -17,6 +17,7 @@ export interface NavItem {
     url?: string; // External URL
     icon?: LucideIcon;
     permission?: string; // Permission required to view this item
+    children?: NavItem[];
 }
 
 export interface Token {
@@ -182,12 +183,6 @@ export interface StageSafetyWindHistoryPayload {
     from: string;
     to: string;
     sensors: StageSafetyHistorySensor[];
-}
-
-export interface StageSafetySensorMonitoringPayload {
-    generated_at: string;
-    current: StageSafetyCurrentSensor;
-    history: StageSafetyWindHistoryPayload;
 }
 
 export interface PeoplecountSensor {

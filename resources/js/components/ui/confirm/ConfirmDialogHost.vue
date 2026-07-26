@@ -20,10 +20,14 @@ const description = computed(() => dialog.current.value?.description ?? '')
 const confirmText = computed(() => dialog.current.value?.confirmText ?? 'Continue')
 const cancelText = computed(() => dialog.current.value?.cancelText ?? 'Cancel')
 const isDestructive = computed(() => dialog.current.value?.variant === 'destructive')
+
+function onOpenChange(open: boolean) {
+    if (!open) queueMicrotask(dialog.onCancel)
+}
 </script>
 
 <template>
-  <AlertDialog :open="dialog.isOpen.value" @update:open="(val) => { if (!val) queueMicrotask(() => dialog.onCancel()) }">
+  <AlertDialog :open="dialog.isOpen.value" @update:open="onOpenChange">
     <AlertDialogContent :key="title + '|' + description">
       <AlertDialogHeader>
         <AlertDialogTitle>{{ title }}</AlertDialogTitle>

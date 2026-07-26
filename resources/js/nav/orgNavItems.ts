@@ -1,4 +1,4 @@
-import { CalendarIcon, FolderGit2Icon, LayoutGrid, LinkIcon, MapPinIcon, ProjectorIcon, Users2Icon, WindIcon } from 'lucide-vue-next';
+import { FolderGit2Icon, LayoutGrid, ProjectorIcon, Users2Icon, WindIcon } from 'lucide-vue-next';
 
 // Function that returns nav items with the organization parameter already injected
 export const orgMainNavItems = (organization: string | number) => [
@@ -16,39 +16,46 @@ export const orgMainNavItems = (organization: string | number) => [
         params: { organization },
     },
     {
-        title: 'Peoplecount Sensors',
-        route: 'peoplecount.sensors.index',
+        title: 'Peoplecount',
         icon: ProjectorIcon,
-        permission: 'peoplecount.sensors.index',
-        params: { organization },
+        children: [
+            {
+                title: 'Sensors',
+                route: 'peoplecount.sensors.index',
+                permission: 'peoplecount.sensors.index',
+                params: { organization },
+            },
+            {
+                title: 'Events',
+                route: 'peoplecount.events.index',
+                permission: 'peoplecount.events.index',
+                params: { organization },
+            },
+            {
+                title: 'Areas',
+                route: 'peoplecount.areas.index',
+                permission: 'peoplecount.areas.index',
+                params: { organization },
+            },
+            {
+                title: 'Assignments',
+                route: 'peoplecount.assignments.index',
+                permission: 'peoplecount.assignments.index',
+                params: { organization },
+            },
+        ],
     },
     {
-        title: 'Peoplecount Events',
-        route: 'peoplecount.events.index',
-        icon: CalendarIcon,
-        permission: 'peoplecount.events.index',
-        params: { organization },
-    },
-    {
-        title: 'Peoplecount Areas',
-        route: 'peoplecount.areas.index',
-        icon: MapPinIcon,
-        permission: 'peoplecount.areas.index',
-        params: { organization },
-    },
-    {
-        title: 'Peoplecount Assignments',
-        route: 'peoplecount.assignments.index',
-        icon: LinkIcon,
-        permission: 'peoplecount.assignments.index',
-        params: { organization },
-    },
-    {
-        title: 'Stage Safety Sensors',
-        route: 'stage-safety.sensors.index',
+        title: 'Stage Safety',
         icon: WindIcon,
-        permission: 'stage-safety.sensors.index',
-        params: { organization },
+        children: [
+            {
+                title: 'Sensors',
+                route: 'stage-safety.sensors.index',
+                permission: 'stage-safety.sensors.index',
+                params: { organization },
+            },
+        ],
     },
 ];
 

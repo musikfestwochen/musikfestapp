@@ -6,7 +6,6 @@ use App\Models\Organization;
 use App\Models\StageSafety\Reading;
 use App\Models\StageSafety\Sensor;
 use App\Services\StageSafety\MonitoringService;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 
 covers(MonitoringService::class);
@@ -192,37 +191,3 @@ it('returns bounded ordered history without archived or foreign sensors', functi
         ->and($payload['sensors'][0]['readings'][1]['value'])->toBe(8.0)
         ->and($emptySensor->exists)->toBeTrue();
 });
-
-it('returns current and bounded history for an archived sensor detail', function () {
-    $organization = Organization::factory()->create();
-    $sensor = Sensor::factory()->for($organization)->create(['archived_at' => now()]);
-
-    Reading::factory()->for($sensor)->create([
-        'kind' => ReadingKind::WindAverage,
-        'value' => 5.0,
-        'observed_at' => now()->subMinutes(20),
-        'received_at' => now()->subMinutes(20),
-    ]);
-    Reading::factory()->for($sensor)->create([
-        'kind' => ReadingKind::WindGust,
-        'value' => 10.0,
-        'observed_at' => now()->subHours(2),
-        'received_at' => now()->subHours(2),
-    ]);
-
-    $payload = $this->service->sensorMonitoring($organization, $sensor, now()->subHour(), now());
-
-    expect($payload['current']['status'])->toBe('archived')
-        ->and($payload['current']['wind_average']['value'])->toBe(5.0)
-        ->and($payload['current']['wind_gust']['value'])->toBe(10.0)
-        ->and($payload['history']['sensors'])->toHaveCount(1)
-        ->and($payload['history']['sensors'][0]['readings'])->toHaveCount(1)
-        ->and($payload['history']['sensors'][0]['readings'][0]['value'])->toBe(5.0);
-});
-
-it('rejects sensor detail from another organization', function () {
-    $organization = Organization::factory()->create();
-    $sensor = Sensor::factory()->create();
-
-    $this->service->sensorMonitoring($organization, $sensor, now()->subHour(), now());
-})->throws(AuthorizationException::class);

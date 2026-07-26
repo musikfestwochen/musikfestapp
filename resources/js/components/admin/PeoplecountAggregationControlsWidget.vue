@@ -1,19 +1,21 @@
 <script lang="ts" setup>
 import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import { usePermissions } from '@/composables/usePermissions';
-import { RefreshCw, Trash2 } from 'lucide-vue-next';
+import { Database, RefreshCw, Trash2 } from 'lucide-vue-next';
 
 const { can } = usePermissions();
 </script>
 
 <template>
-    <Card v-if="can('admin.peoplecount_aggregations.update') || can('admin.peoplecount_aggregations.destroy')" class="h-full">
-        <CardHeader>
-            <CardTitle>Peoplecount Aggregations</CardTitle>
-            <CardDescription>Update aggregated area counts outside the scheduler.</CardDescription>
-        </CardHeader>
-        <CardContent class="flex flex-wrap gap-2">
+    <WidgetShell
+        v-if="can('admin.peoplecount_aggregations.update') || can('admin.peoplecount_aggregations.destroy')"
+        title="Peoplecount Aggregations"
+        subtitle="Update aggregated area counts outside the scheduler."
+    >
+        <template #icon><Database /></template>
+
+        <div class="flex flex-wrap gap-2">
             <ConfirmActionButton
                 v-if="can('admin.peoplecount_aggregations.update')"
                 :href="route('admin.peoplecount-aggregations.update')"
@@ -35,6 +37,6 @@ const { can } = usePermissions();
                 method="delete"
                 title="Rebuild peoplecount aggregations?"
             />
-        </CardContent>
-    </Card>
+        </div>
+    </WidgetShell>
 </template>
