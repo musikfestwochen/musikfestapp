@@ -88,4 +88,37 @@ describe('Stage Safety sensor monitoring page', () => {
         expect(wrapper.text()).toContain('103');
         expect(wrapper.text()).toContain('Low');
     });
+
+    it('keeps loading and ignores stale errors while a changed range is queued', async () => {
+        let rejectFirst!: (reason: Error) => void;
+        mocks.get
+            .mockImplementationOnce(() => {
+                mocks.request.processing = true;
+                return new Promise((_, reject) => {
+                    rejectFirst = reject;
+                });
+            })
+            .mockReturnValueOnce(new Promise(() => {}));
+        const wrapper = mount(Sensor, {
+            props: { organization, sensor },
+            global: {
+                stubs: {
+                    Layout: { template: '<main><slot /></main>' },
+                    CurrentWindDisplay: true,
+                    WindHistoryChart: {
+                        emits: ['update:timeRange'],
+                        template: '<button data-testid="range" @click="$emit(\'update:timeRange\', \'6h\')">range</button>',
+                    },
+                },
+            },
+        });
+
+        await wrapper.find('[data-testid="range"]').trigger('click');
+        mocks.request.processing = false;
+        rejectFirst(new Error('stale request failed'));
+        await flushPromises();
+
+        expect(wrapper.text()).not.toContain('Failed to load sensor monitoring data');
+        expect(wrapper.find('.animate-pulse').exists()).toBe(true);
+    });
 });

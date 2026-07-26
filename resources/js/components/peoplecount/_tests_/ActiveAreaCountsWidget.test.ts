@@ -1,13 +1,15 @@
 import { flushPromises, mount } from '@vue/test-utils';
-import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ActiveAreaCountsWidget from '../ActiveAreaCountsWidget.vue';
 
-// Mock axios
-vi.mock('axios');
+const mocks = vi.hoisted(() => ({
+    get: vi.fn(),
+    request: { processing: false, get: vi.fn() },
+}));
 
 // Mock Inertia's usePage
 vi.mock('@inertiajs/vue3', () => ({
+    useHttp: () => mocks.request,
     usePage: () => ({
         props: {
             auth: {
@@ -60,6 +62,12 @@ describe('ActiveAreaCountsWidget', () => {
     beforeEach(() => {
         // Reset mocks before each test
         vi.resetAllMocks();
+        mocks.request.processing = false;
+        mocks.request.get = mocks.get;
+        vi.stubGlobal(
+            'route',
+            vi.fn((name: string) => name),
+        );
         vi.useFakeTimers();
 
         // Silence error logs from components during negative-path tests
@@ -83,8 +91,7 @@ describe('ActiveAreaCountsWidget', () => {
     });
 
     it('renders loading state initially', async () => {
-        // Mock axios.get to return a promise that doesn't resolve immediately
-        vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+        mocks.get.mockReturnValue(new Promise(() => {}));
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {
@@ -98,8 +105,7 @@ describe('ActiveAreaCountsWidget', () => {
     });
 
     it('fetches area counts on mount', async () => {
-        // Mock axios.get to return a resolved promise with mock data
-        vi.mocked(axios.get).mockResolvedValue({ data: mockAreaCounts });
+        mocks.get.mockResolvedValue(mockAreaCounts);
 
         mount(ActiveAreaCountsWidget, {
             props: {
@@ -110,13 +116,11 @@ describe('ActiveAreaCountsWidget', () => {
         // Wait for the promise to resolve
         await flushPromises();
 
-        // Check that axios.get was called with the correct URL
-        expect(axios.get).toHaveBeenCalledWith(`/${mockOrganization.slug}/peoplecount/area-aggregation`);
+        expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-aggregation.index');
     });
 
     it('displays area counts correctly', async () => {
-        // Mock axios.get to return a resolved promise with mock data
-        vi.mocked(axios.get).mockResolvedValue({ data: mockAreaCounts });
+        mocks.get.mockResolvedValue(mockAreaCounts);
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {
@@ -146,8 +150,7 @@ describe('ActiveAreaCountsWidget', () => {
     });
 
     it('displays a message when no active areas are found', async () => {
-        // Mock axios.get to return an empty array
-        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        mocks.get.mockResolvedValue([]);
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {
@@ -162,9 +165,21 @@ describe('ActiveAreaCountsWidget', () => {
         expect(wrapper.text()).toContain('No active areas found');
     });
 
+    it('keeps the empty state visible during background refresh', async () => {
+        mocks.get.mockResolvedValueOnce([]);
+        const wrapper = mount(ActiveAreaCountsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+
+        mocks.get.mockReturnValueOnce(new Promise(() => {}));
+        const refresh = vi.mocked(window.setInterval).mock.calls[0][0] as () => void;
+        refresh();
+
+        expect(wrapper.text()).toContain('No active areas found');
+        expect(wrapper.find('.animate-pulse').exists()).toBe(false);
+    });
+
     it('displays an error message when API call fails', async () => {
-        // Mock axios.get to return a rejected promise
-        vi.mocked(axios.get).mockRejectedValue(new Error('API error'));
+        mocks.get.mockRejectedValue(new Error('API error'));
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {
@@ -181,8 +196,7 @@ describe('ActiveAreaCountsWidget', () => {
     });
 
     it('sets up auto-refresh on mount and cleans up on unmount', async () => {
-        // Mock axios.get to return a resolved promise with mock data
-        vi.mocked(axios.get).mockResolvedValue({ data: mockAreaCounts });
+        mocks.get.mockResolvedValue(mockAreaCounts);
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {
@@ -209,8 +223,7 @@ describe('ActiveAreaCountsWidget', () => {
             },
         ];
 
-        // Mock axios.get to return the stale data
-        vi.mocked(axios.get).mockResolvedValue({ data: staleAreaCounts });
+        mocks.get.mockResolvedValue(staleAreaCounts);
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {
@@ -235,8 +248,7 @@ describe('ActiveAreaCountsWidget', () => {
             },
         ];
 
-        // Mock axios.get to return the fresh data
-        vi.mocked(axios.get).mockResolvedValue({ data: freshAreaCounts });
+        mocks.get.mockResolvedValue(freshAreaCounts);
 
         const wrapper = mount(ActiveAreaCountsWidget, {
             props: {

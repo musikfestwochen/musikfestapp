@@ -3,7 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import axios from 'axios';
+import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
@@ -36,6 +36,7 @@ const props = defineProps<{ organization: { id: number; slug: string; name: stri
 const loading = ref(true);
 const error = ref<string | null>(null);
 const data = ref<AreaItem[]>([]);
+const request = useHttp<Record<string, never>, AreaItem[]>({});
 const selectedRange = ref<'10m' | '30m' | '1h' | '2h'>('10m');
 let refreshInterval: number | null = null;
 
@@ -43,11 +44,12 @@ let refreshInterval: number | null = null;
 const openArea = ref<string | undefined>(undefined);
 
 const fetchData = async () => {
+    if (request.processing) return;
+
     try {
-        loading.value = true;
+        const response = await request.get(route('peoplecount.most-active-sensors.index', { organization: props.organization.slug }));
         error.value = null;
-        const response = await axios.get(`/${props.organization.slug}/peoplecount/most-active-sensors`);
-        data.value = response.data;
+        data.value = response;
     } catch (err) {
         error.value = 'Failed to load most active sensors';
         console.error(err);

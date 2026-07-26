@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePermissions } from '@/composables/usePermissions';
-import axios from 'axios';
+import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
@@ -33,6 +33,7 @@ const props = defineProps<{
 const { can } = usePermissions();
 
 const areaCounts = ref<AreaCount[]>([]);
+const request = useHttp<Record<string, never>, AreaCount[]>({});
 const loading = ref(true);
 const error = ref<string | null>(null);
 let refreshInterval: number | null = null;
@@ -41,12 +42,12 @@ let refreshInterval: number | null = null;
 const canViewDebugCounts = computed(() => can('peoplecount.areas.*'));
 
 const fetchAreaCounts = async () => {
-    try {
-        loading.value = true;
-        error.value = null;
+    if (request.processing) return;
 
-        const response = await axios.get(`/${props.organization.slug}/peoplecount/area-aggregation`);
-        areaCounts.value = response.data;
+    try {
+        const response = await request.get(route('peoplecount.area-aggregation.index', { organization: props.organization.slug }));
+        error.value = null;
+        areaCounts.value = response;
     } catch (err) {
         error.value = 'Failed to load area counts';
         console.error(err);

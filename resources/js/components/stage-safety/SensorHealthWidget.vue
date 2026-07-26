@@ -21,8 +21,9 @@ async function fetchHealth(): Promise<void> {
     if (request.processing) return;
 
     try {
+        const response = await request.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug }));
         error.value = null;
-        data.value = await request.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug }));
+        data.value = response;
     } catch {
         error.value = 'Failed to load sensor health.';
     } finally {

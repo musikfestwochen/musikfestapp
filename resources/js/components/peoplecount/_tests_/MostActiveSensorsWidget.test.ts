@@ -1,11 +1,14 @@
 import { flushPromises, mount } from '@vue/test-utils';
-import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MostActiveSensorsWidget from '../MostActiveSensorsWidget.vue';
 
-vi.mock('axios');
+const mocks = vi.hoisted(() => ({
+    get: vi.fn(),
+    request: { processing: false, get: vi.fn() },
+}));
 
 vi.mock('@inertiajs/vue3', () => ({
+    useHttp: () => mocks.request,
     usePage: () => ({
         props: {
             auth: {
@@ -31,6 +34,12 @@ describe('MostActiveSensorsWidget', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        mocks.request.processing = false;
+        mocks.request.get = mocks.get;
+        vi.stubGlobal(
+            'route',
+            vi.fn((name: string) => name),
+        );
         // Silence error logs from components during negative-path tests
         vi.spyOn(console, 'error').mockImplementation(() => {});
         vi.spyOn(window, 'setInterval').mockImplementation(() => 123 as unknown as number);
@@ -42,23 +51,36 @@ describe('MostActiveSensorsWidget', () => {
     });
 
     it('renders loading state initially', async () => {
-        vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+        mocks.get.mockReturnValue(new Promise(() => {}));
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         expect(wrapper.findAll('.h-24')).toHaveLength(2);
     });
 
     it('fetches data with correct URL', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [baseArea()] });
+        mocks.get.mockResolvedValue([baseArea()]);
         mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
-        expect(axios.get).toHaveBeenCalledWith(`/${mockOrganization.slug}/peoplecount/most-active-sensors`);
+        expect(mocks.get).toHaveBeenCalledWith('peoplecount.most-active-sensors.index');
     });
 
     it('shows empty state when no data', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        mocks.get.mockResolvedValue([]);
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.text()).toContain('No active areas or sensors.');
+    });
+
+    it('keeps the empty state visible during background refresh', async () => {
+        mocks.get.mockResolvedValueOnce([]);
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+
+        mocks.get.mockReturnValueOnce(new Promise(() => {}));
+        const refresh = vi.mocked(window.setInterval).mock.calls[0][0] as () => void;
+        refresh();
+
+        expect(wrapper.text()).toContain('No active areas or sensors.');
+        expect(wrapper.find('.animate-pulse').exists()).toBe(false);
     });
 
     it('sorts sensors by selected range total desc and toggles on click', async () => {
@@ -90,7 +112,7 @@ describe('MostActiveSensorsWidget', () => {
                 },
             ],
         });
-        vi.mocked(axios.get).mockResolvedValue({ data: [area] });
+        mocks.get.mockResolvedValue([area]);
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
 
@@ -118,7 +140,7 @@ describe('MostActiveSensorsWidget', () => {
     });
 
     it('shows error banner when API fails', async () => {
-        vi.mocked(axios.get).mockRejectedValue(new Error('boom'));
+        mocks.get.mockRejectedValue(new Error('boom'));
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.find('.text-red-500').exists()).toBe(true);
@@ -126,7 +148,7 @@ describe('MostActiveSensorsWidget', () => {
     });
 
     it('sets up and cleans up auto-refresh', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [baseArea()] });
+        mocks.get.mockResolvedValue([baseArea()]);
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(window.setInterval).toHaveBeenCalledWith(expect.any(Function), 10000);

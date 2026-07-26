@@ -52,8 +52,9 @@ async function fetchPeoplecount(): Promise<void> {
     if (!props.showPeoplecount || peoplecountRequest.processing) return;
 
     try {
+        const response = await peoplecountRequest.get(route('peoplecount.sensor-health.index', { organization: props.organization.slug }));
         peoplecountError.value = null;
-        peoplecount.value = await peoplecountRequest.get(route('peoplecount.sensor-health.index', { organization: props.organization.slug }));
+        peoplecount.value = response;
     } catch {
         peoplecountError.value = 'Failed to load Peoplecount sensor health.';
     } finally {
@@ -65,8 +66,9 @@ async function fetchStageSafety(): Promise<void> {
     if (!props.showStageSafety || stageSafetyRequest.processing) return;
 
     try {
+        const response = await stageSafetyRequest.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug }));
         stageSafetyError.value = null;
-        stageSafety.value = await stageSafetyRequest.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug }));
+        stageSafety.value = response;
     } catch {
         stageSafetyError.value = 'Failed to load Stage Safety sensor health.';
     } finally {

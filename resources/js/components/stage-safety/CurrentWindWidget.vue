@@ -18,8 +18,9 @@ async function fetchCurrentWind(): Promise<void> {
     if (request.processing) return;
 
     try {
+        const response = await request.get(route('stage-safety.current-wind.index', { organization: props.organization.slug }));
         error.value = null;
-        data.value = await request.get(route('stage-safety.current-wind.index', { organization: props.organization.slug }));
+        data.value = response;
     } catch {
         error.value = 'Failed to load current wind.';
     } finally {

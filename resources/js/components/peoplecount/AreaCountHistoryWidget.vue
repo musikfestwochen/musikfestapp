@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
+import { useHttp } from '@inertiajs/vue3';
 import { useStorage } from '@vueuse/core';
-import axios from 'axios';
 import { ChartColumnIncreasing, ChartSpline, Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
@@ -33,6 +33,7 @@ const props = defineProps<{
 }>();
 
 const series = ref<AreaSeries[]>([]);
+const request = useHttp<{ from: string; to: string }, AreaSeries[]>({ from: '', to: '' });
 const loading = ref(true);
 const error = ref<string | null>(null);
 const timeRange = ref('1h');
@@ -40,6 +41,7 @@ const chartStyle = useStorage<'spline' | 'step'>('peoplecount.area-count-history
 const hiddenAreaIds = ref<Set<number>>(new Set());
 const lastUpdated = ref<Date | null>(null);
 let refreshInterval: number | null = null;
+let refreshQueued = false;
 
 function toggleChartStyle(): void {
     chartStyle.value = chartStyle.value === 'spline' ? 'step' : 'spline';
@@ -139,23 +141,40 @@ function formatTickDate(d: number): string {
     return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-async function fetchHistory() {
+async function fetchHistory(): Promise<void> {
+    if (request.processing) {
+        refreshQueued = true;
+        return;
+    }
+
+    const requestedRange = timeRange.value;
+
     try {
-        error.value = null;
         const params = getTimeParams();
-        const response = await axios.get(`/${props.organization.slug}/peoplecount/area-count-history`, { params });
-        series.value = response.data;
-        lastUpdated.value = new Date();
+        Object.assign(request, params);
+        const response = await request.get(route('peoplecount.area-count-history.index', { organization: props.organization.slug }));
+
+        if (requestedRange === timeRange.value) {
+            error.value = null;
+            series.value = response;
+            lastUpdated.value = new Date();
+        }
     } catch (err) {
-        error.value = 'Failed to load area count history';
-        console.error(err);
+        if (requestedRange === timeRange.value) {
+            error.value = 'Failed to load area count history';
+            console.error(err);
+        }
     } finally {
-        loading.value = false;
+        if (refreshQueued) {
+            refreshQueued = false;
+            void fetchHistory();
+        } else {
+            loading.value = false;
+        }
     }
 }
 
 watch(timeRange, () => {
-    loading.value = true;
     fetchHistory();
 });
 

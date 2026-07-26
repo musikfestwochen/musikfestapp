@@ -9,6 +9,7 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "test": "vitest run",
+        "test:architecture": "vitest run resources/js/architecture.test.ts",
         "test:watch": "vitest watch",
         "test:coverage": "vitest run --coverage",
         "mailpit:start": "mailpit",
