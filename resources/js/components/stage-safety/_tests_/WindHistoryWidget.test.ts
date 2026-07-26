@@ -1,12 +1,17 @@
 import type { StageSafetyWindHistoryPayload } from '@/types';
+import { CurveType } from '@unovis/ts';
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, onMounted, ref } from 'vue';
 import WindHistoryWidget from '../WindHistoryWidget.vue';
 
 const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     request: { get: vi.fn(), from: '', to: '' },
     useIntervalFn: vi.fn(),
+    crosshair: {
+        setData: vi.fn(),
+    },
 }));
 
 vi.mock('@inertiajs/vue3', () => ({
@@ -22,12 +27,21 @@ vi.mock('@unovis/vue', () => ({
     VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
     VisLine: {
         name: 'VisLine',
-        props: ['y', 'color', 'interpolateMissingData', 'lineDashArray'],
+        props: ['data', 'y', 'color', 'curveType', 'interpolateMissingData', 'lineDashArray'],
         template: '<div class="series-line" />',
     },
     VisAxis: { template: '<div />' },
     VisTooltip: { template: '<div />' },
-    VisCrosshair: { name: 'VisCrosshair', props: ['color'], template: '<div />' },
+    VisCrosshair: {
+        name: 'VisCrosshair',
+        props: ['color', 'template'],
+        setup: (_props: unknown, { expose }: { expose: (value: unknown) => void }) => {
+            const component = ref<typeof mocks.crosshair>();
+            expose({ component });
+            onMounted(() => void nextTick(() => (component.value = mocks.crosshair)));
+        },
+        template: '<div />',
+    },
 }));
 
 const organization = { id: 1, slug: 'mfw', name: 'MFW', created_at: '', updated_at: '' };
@@ -84,7 +98,7 @@ describe('WindHistoryWidget', () => {
         vi.useRealTimers();
     });
 
-    it('renders normalized sensor colors and measurement dash styles', async () => {
+    it('connects each series own readings without missing-data interpolation', async () => {
         mocks.get.mockResolvedValue(history);
         const wrapper = mount(WindHistoryWidget, { props: { organization }, global: { stubs } });
         await flushPromises();
@@ -93,17 +107,31 @@ describe('WindHistoryWidget', () => {
         expect(wrapper.text()).toContain('Roof gust');
         expect(wrapper.text()).toContain('DEF456 average');
 
-        const rows = wrapper.findComponent({ name: 'VisXYContainer' }).props('data') as Array<Record<string, number | Date | undefined>>;
         const lines = wrapper.findAllComponents({ name: 'VisLine' });
+        const averageRows = lines[0].props('data') as Array<Record<string, number | Date | undefined>>;
+        const gustRows = lines[1].props('data') as Array<Record<string, number | Date | undefined>>;
+        const otherSensorRows = lines[2].props('data') as Array<Record<string, number | Date | undefined>>;
 
         expect(lines).toHaveLength(3);
+        expect(wrapper.findComponent({ name: 'VisXYContainer' }).props('data')).toBeUndefined();
+        expect(averageRows).toHaveLength(2);
+        expect(gustRows).toHaveLength(1);
+        expect(otherSensorRows).toHaveLength(1);
         expect(lines[0].props('color')).toBe('var(--color-chart-1)');
         expect(lines[1].props('color')).toBe('var(--color-chart-1)');
         expect(lines[1].props('lineDashArray')).toEqual([6, 3]);
         expect(lines[2].props('color')).toBe('var(--color-chart-2)');
-        expect(lines.every((line) => line.props('interpolateMissingData') === true)).toBe(true);
-        expect(lines[0].props('y')(rows[0])).toBe(18);
-        expect(lines[1].props('y')(rows[1])).toBe(28.8);
+        expect(lines.every((line) => line.props('interpolateMissingData') !== true)).toBe(true);
+        expect(lines.every((line) => line.props('curveType') === CurveType.MonotoneX)).toBe(true);
+        expect(lines[0].props('y')(averageRows[0])).toBe(18);
+        expect(lines[1].props('y')(gustRows[0])).toBe(28.8);
+        const crosshair = wrapper.findComponent({ name: 'VisCrosshair' });
+        expect(crosshair.props('template')).toEqual(expect.any(Function));
+        expect(crosshair.props('color')).toEqual(['var(--color-chart-1)', 'var(--color-chart-1)', 'var(--color-chart-2)']);
+        expect(mocks.crosshair.setData).toHaveBeenCalledWith(expect.arrayContaining(averageRows));
+
+        const crosshairTemplate = crosshair.props('template') as (datum: Record<string, number | Date | undefined>, x: Date) => string;
+        expect(crosshairTemplate(averageRows[0], averageRows[0].date as Date)).toContain('18.0');
     });
 
     it('isolates a legend series and restores all when selected again', async () => {

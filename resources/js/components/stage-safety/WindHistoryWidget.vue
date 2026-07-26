@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, componentToString, type ChartConfig } from '@/components/ui/chart';
+import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import WidgetChartLegend from '@/components/widgets/WidgetChartLegend.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
@@ -9,11 +9,11 @@ import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyReadingKind, StageSafetyWindHistoryPayload } from '@/types';
 import { metersPerSecondToKilometersPerHour, stageSafetySensorName } from '@/utils/stageSafety';
-import { CurveType } from '@unovis/ts';
+import { CurveType, type Crosshair } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
 import { Wind } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, h, nextTick, ref, render, watch } from 'vue';
 
 interface ChartDataPoint {
     date: Date;
@@ -88,7 +88,46 @@ const chartData = computed<ChartDataPoint[]>(() => {
     return Array.from(buckets.values()).sort((left, right) => left.date.getTime() - right.date.getTime());
 });
 const hasData = computed(() => chartData.value.length > 0);
+const chartDataBySeries = computed<Record<string, ChartDataPoint[]>>(() =>
+    Object.fromEntries(chartSeries.value.map((item) => [item.key, chartData.value.filter((point) => seriesValue(point, item.key) !== undefined)])),
+);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
+const crosshairRef = ref<{ component: Crosshair<ChartDataPoint> } | null>(null);
+const windValueFormatter = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: number | Date): string {
+    const container = document.createElement('div');
+    const dataPoint = 'data' in datum ? (datum as { data: ChartDataPoint }).data : datum;
+    const payload = Object.fromEntries(
+        Object.entries(dataPoint).map(([key, value]) => [key, typeof value === 'number' ? windValueFormatter.format(value) : value]),
+    );
+    const vnode = h(ChartTooltipContent, {
+        payload,
+        config: chartConfig.value,
+        x,
+        indicator: 'line',
+        labelFormatter: (value: number | Date) =>
+            new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString([], {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
+    });
+
+    render(vnode, container);
+    const html = container.innerHTML;
+    render(null, container);
+
+    return html;
+}
+
+async function syncCrosshair(): Promise<void> {
+    // Unovis creates the exposed Crosshair one tick after its Vue wrapper mounts.
+    await nextTick();
+    await nextTick();
+    crosshairRef.value?.component.setData(chartData.value);
+}
 
 function seriesValue(point: ChartDataPoint, key: string): number | undefined {
     const value = point[key];
@@ -104,6 +143,7 @@ function formatWindTick(value: number): string {
 }
 
 watch(timeRange, refresh);
+watch(chartData, () => void syncCrosshair());
 </script>
 
 <template>
@@ -129,15 +169,15 @@ watch(timeRange, refresh);
                 role="img"
                 aria-label="Wind history in kilometers per hour"
             >
-                <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 38 }">
+                <VisXYContainer :margin="{ top: 8, right: 8, bottom: 24, left: 38 }">
                     <template v-for="item in chartSeries" :key="item.key">
                         <VisLine
                             v-if="isSeriesVisible(item.key)"
+                            :data="chartDataBySeries[item.key]"
                             :x="(point: ChartDataPoint) => point.date.getTime()"
                             :y="(point: ChartDataPoint) => seriesValue(point, item.key)"
                             :color="item.color"
                             :curve-type="CurveType.MonotoneX"
-                            :interpolate-missing-data="true"
                             :line-width="2"
                             :line-dash-array="item.dash"
                         />
@@ -145,21 +185,7 @@ watch(timeRange, refresh);
                     <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
                     <VisAxis type="y" :tick-line="false" :domain-line="false" :grid-line="true" :tick-format="formatWindTick" />
                     <ChartTooltip />
-                    <ChartCrosshair
-                        :template="
-                            componentToString(chartConfig, ChartTooltipContent, {
-                                indicator: 'line',
-                                labelFormatter: (value: number | Date) =>
-                                    new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString([], {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    }),
-                            })
-                        "
-                        :color="seriesColors"
-                    />
+                    <ChartCrosshair ref="crosshairRef" :template="crosshairTemplate" :color="seriesColors" />
                 </VisXYContainer>
             </ChartContainer>
             <WidgetChartLegend :series="chartSeries" :hidden-series-keys="hiddenSeriesKeys" @select="selectSeries" />
