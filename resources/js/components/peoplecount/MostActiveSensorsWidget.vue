@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import WidgetShell from '@/components/widgets/WidgetShell.vue';
+import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 interface SensorSums {
     in: number;
@@ -33,50 +34,20 @@ interface AreaItem {
 
 const props = defineProps<{ organization: { id: number; slug: string; name: string } }>();
 
-const loading = ref(true);
-const error = ref<string | null>(null);
-const data = ref<AreaItem[]>([]);
 const request = useHttp<Record<string, never>, AreaItem[]>({});
+const { data, loading, error, lastUpdated } = useWidgetPolling({
+    interval: 10_000,
+    load: () => request.get(route('peoplecount.most-active-sensors.index', { organization: props.organization.slug })),
+    errorMessage: 'Failed to load most active sensors',
+});
 const selectedRange = ref<'10m' | '30m' | '1h' | '2h'>('10m');
-let refreshInterval: number | null = null;
 
 // holds the open accordion area id when multiple areas exist
 const openArea = ref<string | undefined>(undefined);
 
-const fetchData = async () => {
-    if (request.processing) return;
-
-    try {
-        const response = await request.get(route('peoplecount.most-active-sensors.index', { organization: props.organization.slug }));
-        error.value = null;
-        data.value = response;
-    } catch (err) {
-        error.value = 'Failed to load most active sensors';
-        console.error(err);
-    } finally {
-        loading.value = false;
-    }
-};
-
-onMounted(() => {
-    fetchData();
-    refreshInterval = window.setInterval(fetchData, 10000);
-});
-
-onBeforeUnmount(() => {
-    if (refreshInterval !== null) {
-        clearInterval(refreshInterval);
-    }
-});
-
-const lastUpdatedTime = computed(() => {
-    if (!data.value.length) return 'N/A';
-    return new Date(data.value[0].last_updated).toLocaleTimeString();
-});
-
 const sortedAreas = computed(() => {
     // sort sensors within each area by selected range total desc
-    return data.value.map((area) => {
+    return (data.value ?? []).map((area) => {
         const sensors = [...area.sensors].sort((a, b) => b.sums[selectedRange.value].total - a.sums[selectedRange.value].total);
         return { ...area, sensors };
     });
@@ -100,115 +71,106 @@ watch(
 );
 </script>
 
-<style scoped>
-.widget-card {
-    min-width: 250px;
-}
-</style>
-
 <template>
-    <Card class="widget-card flex h-full flex-col">
-        <CardHeader>
-            <div class="flex items-center justify-between">
-                <CardTitle class="flex items-center gap-2"><Users class="size-4" aria-hidden="true" /> Most Active Sensors</CardTitle>
-                <div class="inline-flex items-center gap-1">
-                    <Button
-                        :class="{ 'bg-primary text-primary-foreground': selectedRange === '10m' }"
-                        size="sm"
-                        variant="outline"
-                        @click="selectedRange = '10m'"
-                        >10m</Button
-                    >
-                    <Button
-                        :class="{ 'bg-primary text-primary-foreground': selectedRange === '30m' }"
-                        size="sm"
-                        variant="outline"
-                        @click="selectedRange = '30m'"
-                        >30m</Button
-                    >
-                    <Button
-                        :class="{ 'bg-primary text-primary-foreground': selectedRange === '1h' }"
-                        size="sm"
-                        variant="outline"
-                        @click="selectedRange = '1h'"
-                        >1h</Button
-                    >
-                    <Button
-                        :class="{ 'bg-primary text-primary-foreground': selectedRange === '2h' }"
-                        size="sm"
-                        variant="outline"
-                        @click="selectedRange = '2h'"
-                        >2h</Button
-                    >
-                </div>
+    <WidgetShell title="Most Active Sensors" :error="error" :last-updated="lastUpdated">
+        <template #icon><Users /></template>
+        <template #actions>
+            <div class="flex flex-wrap items-center gap-1">
+                <Button
+                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '10m' }"
+                    :aria-pressed="selectedRange === '10m'"
+                    size="sm"
+                    variant="outline"
+                    @click="selectedRange = '10m'"
+                    >10m</Button
+                >
+                <Button
+                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '30m' }"
+                    :aria-pressed="selectedRange === '30m'"
+                    size="sm"
+                    variant="outline"
+                    @click="selectedRange = '30m'"
+                    >30m</Button
+                >
+                <Button
+                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '1h' }"
+                    :aria-pressed="selectedRange === '1h'"
+                    size="sm"
+                    variant="outline"
+                    @click="selectedRange = '1h'"
+                    >1h</Button
+                >
+                <Button
+                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '2h' }"
+                    :aria-pressed="selectedRange === '2h'"
+                    size="sm"
+                    variant="outline"
+                    @click="selectedRange = '2h'"
+                    >2h</Button
+                >
             </div>
-        </CardHeader>
-        <CardContent class="flex flex-1 flex-col p-6">
-            <div v-if="error" class="mb-4 rounded bg-red-50 p-2 text-center text-red-500">{{ error }}</div>
+        </template>
 
-            <div v-if="loading && !data.length">
-                <Skeleton v-for="i in 2" :key="i" class="mb-4 h-24 w-full" />
-            </div>
+        <div v-if="loading && !data?.length">
+            <Skeleton v-for="i in 2" :key="i" class="mb-4 h-24 w-full" />
+        </div>
 
-            <div v-else-if="!data.length" class="text-muted-foreground py-8 text-center">No active areas or sensors.</div>
+        <div v-else-if="data && !data.length" class="text-muted-foreground py-8 text-center">No active areas or sensors.</div>
 
-            <div v-else class="flex flex-1 flex-col space-y-4">
-                <!-- Single area: show expanded content without collapsible -->
-                <div v-if="sortedAreas.length === 1" class="rounded border">
-                    <div class="mb-2 flex items-center justify-between p-3">
-                        <div>
-                            <div class="text-sm font-medium">{{ sortedAreas[0].name }}</div>
-                            <div class="text-muted-foreground text-xs">{{ sortedAreas[0].event_name }}</div>
-                        </div>
-                        <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
+        <div v-else-if="data?.length" class="flex flex-1 flex-col space-y-4">
+            <!-- Single area: show expanded content without collapsible -->
+            <div v-if="sortedAreas.length === 1" class="rounded border">
+                <div class="mb-2 flex items-center justify-between p-3">
+                    <div>
+                        <div class="text-sm font-medium">{{ sortedAreas[0].name }}</div>
+                        <div class="text-muted-foreground text-xs">{{ sortedAreas[0].event_name }}</div>
                     </div>
-                    <div v-if="!sortedAreas[0].sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
-                    <ul v-else class="divide-y px-3 pb-3 text-sm">
-                        <li v-for="s in sortedAreas[0].sensors" :key="s.id" class="py-2">
-                            <div class="flex flex-col">
-                                <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
-                                <div class="mt-1 flex gap-3 text-xs">
-                                    <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
-                                    <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
-                                    <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
+                    <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
                 </div>
-
-                <!-- Multiple areas: use Accordion so only one open at a time -->
-                <Accordion v-else v-model="openArea" class="w-full" collapsible type="single">
-                    <AccordionItem v-for="area in sortedAreas" :key="area.id" :value="String(area.id)">
-                        <AccordionTrigger class="px-3 py-2">
-                            <div class="flex w-full items-center justify-between">
-                                <div class="text-left">
-                                    <div class="text-sm font-medium">{{ area.name }}</div>
-                                    <div class="text-muted-foreground text-xs">{{ area.event_name }}</div>
-                                </div>
-                                <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
+                <div v-if="!sortedAreas[0].sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
+                <ul v-else class="divide-y px-3 pb-3 text-sm">
+                    <li v-for="s in sortedAreas[0].sensors" :key="s.id" class="py-2">
+                        <div class="flex flex-col">
+                            <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
+                            <div class="mt-1 flex gap-3 text-xs">
+                                <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
+                                <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
+                                <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
                             </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                            <div v-if="!area.sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
-                            <ul v-else class="divide-y px-3 pb-3 text-sm">
-                                <li v-for="s in area.sensors" :key="s.id" class="py-2">
-                                    <div class="flex flex-col">
-                                        <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
-                                        <div class="mt-1 flex gap-3 text-xs">
-                                            <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
-                                            <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
-                                            <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-
-                <div class="text-muted-foreground mt-auto border-t pt-3 text-center text-xs">Last updated: {{ lastUpdatedTime }}</div>
+                        </div>
+                    </li>
+                </ul>
             </div>
-        </CardContent>
-    </Card>
+
+            <!-- Multiple areas: use Accordion so only one open at a time -->
+            <Accordion v-else v-model="openArea" class="w-full" collapsible type="single">
+                <AccordionItem v-for="area in sortedAreas" :key="area.id" :value="String(area.id)">
+                    <AccordionTrigger class="px-3 py-2">
+                        <div class="flex w-full items-center justify-between">
+                            <div class="text-left">
+                                <div class="text-sm font-medium">{{ area.name }}</div>
+                                <div class="text-muted-foreground text-xs">{{ area.event_name }}</div>
+                            </div>
+                            <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <div v-if="!area.sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
+                        <ul v-else class="divide-y px-3 pb-3 text-sm">
+                            <li v-for="s in area.sensors" :key="s.id" class="py-2">
+                                <div class="flex flex-col">
+                                    <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
+                                    <div class="mt-1 flex gap-3 text-xs">
+                                        <span class="text-green-600">In: {{ s.sums[selectedRange].in }}</span>
+                                        <span class="text-red-600">Out: {{ s.sums[selectedRange].out }}</span>
+                                        <span class="text-muted-foreground">Total: {{ s.sums[selectedRange].total }}</span>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </div>
+    </WidgetShell>
 </template>

@@ -5,6 +5,7 @@ import ActiveAreaCountsWidget from '../ActiveAreaCountsWidget.vue';
 const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     request: { processing: false, get: vi.fn() },
+    useIntervalFn: vi.fn(),
 }));
 
 // Mock Inertia's usePage
@@ -13,12 +14,16 @@ vi.mock('@inertiajs/vue3', () => ({
     usePage: () => ({
         props: {
             auth: {
-                permissions: ['peoplecount.area.view'],
+                permissions: ['peoplecount.area.view', 'peoplecount.areas.*'],
                 global_permissions: [],
                 roles: [],
             },
         },
     }),
+}));
+
+vi.mock('@vueuse/core', () => ({
+    useIntervalFn: mocks.useIntervalFn,
 }));
 
 describe('ActiveAreaCountsWidget', () => {
@@ -35,7 +40,7 @@ describe('ActiveAreaCountsWidget', () => {
             event_name: 'Event 1',
             count: 42,
             net_change: 5,
-            net_change_time_ago: 30,
+            net_change_time_ago: '30 seconds ago',
             debug_counts: {
                 in: 50,
                 out: 45,
@@ -49,7 +54,7 @@ describe('ActiveAreaCountsWidget', () => {
             event_name: 'Event 2',
             count: 123,
             net_change: -3,
-            net_change_time_ago: 45,
+            net_change_time_ago: '45 seconds ago',
             debug_counts: {
                 in: 120,
                 out: 123,
@@ -69,17 +74,10 @@ describe('ActiveAreaCountsWidget', () => {
             vi.fn((name: string) => name),
         );
         vi.useFakeTimers();
-
-        // Silence error logs from components during negative-path tests
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-
-        // Mock the window.setInterval function
-        vi.spyOn(window, 'setInterval').mockImplementation(() => {
-            return 123 as unknown as number; // Return a dummy interval ID
+        mocks.useIntervalFn.mockImplementation((callback: () => Promise<void>) => {
+            void callback();
+            return { pause: vi.fn(), resume: vi.fn(), isActive: true };
         });
-
-        // Mock the window.clearInterval function
-        vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
 
         const fixedNowDate = new Date('2025-08-04T22:08:00Z');
         vi.setSystemTime(fixedNowDate);
@@ -146,7 +144,24 @@ describe('ActiveAreaCountsWidget', () => {
         expect(areaItems[1].find('.count-display').text()).toBe('123');
 
         // Check last updated time
-        expect(wrapper.text()).toContain('Last updated:');
+        expect(wrapper.text()).toContain('Last refreshed:');
+    });
+
+    it('uses dark-mode styles for debug counts', async () => {
+        mocks.get.mockResolvedValue(mockAreaCounts);
+        const wrapper = mount(ActiveAreaCountsWidget, {
+            props: { organization: mockOrganization },
+        });
+        await flushPromises();
+
+        await wrapper
+            .findAll('button')
+            .find((button) => button.text().includes('Debug Counts'))!
+            .trigger('click');
+
+        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-green-950/30'))).toBe(true);
+        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-red-950/30'))).toBe(true);
+        expect(wrapper.findAll('div').some((element) => element.classes().includes('dark:bg-blue-950/30'))).toBe(true);
     });
 
     it('displays a message when no active areas are found', async () => {
@@ -171,8 +186,8 @@ describe('ActiveAreaCountsWidget', () => {
         await flushPromises();
 
         mocks.get.mockReturnValueOnce(new Promise(() => {}));
-        const refresh = vi.mocked(window.setInterval).mock.calls[0][0] as () => void;
-        refresh();
+        const refresh = mocks.useIntervalFn.mock.calls[0][0] as () => void;
+        void refresh();
 
         expect(wrapper.text()).toContain('No active areas found');
         expect(wrapper.find('.animate-pulse').exists()).toBe(false);
@@ -190,31 +205,23 @@ describe('ActiveAreaCountsWidget', () => {
         // Wait for the promise to reject
         await flushPromises();
 
-        // Check that error message is displayed
-        expect(wrapper.find('.text-red-500').exists()).toBe(true);
-        expect(wrapper.find('.text-red-500').text()).toBe('Failed to load area counts');
+        expect(wrapper.get('[role="alert"]').text()).toBe('Failed to load area counts');
+        expect(wrapper.text()).not.toContain('No active areas found');
     });
 
-    it('sets up auto-refresh on mount and cleans up on unmount', async () => {
+    it('polls every ten seconds', async () => {
         mocks.get.mockResolvedValue(mockAreaCounts);
 
-        const wrapper = mount(ActiveAreaCountsWidget, {
+        mount(ActiveAreaCountsWidget, {
             props: {
                 organization: mockOrganization,
             },
         });
 
-        // Check that setInterval was called with the correct interval
-        expect(window.setInterval).toHaveBeenCalledWith(expect.any(Function), 10000);
-
-        // Unmount the component
-        wrapper.unmount();
-
-        // Check that clearInterval was called
-        expect(window.clearInterval).toHaveBeenCalledWith(123);
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 10_000, { immediateCallback: true });
     });
 
-    it('applies stale-card class when data is more than one minute old', async () => {
+    it('shows a warning when data is more than one minute old', async () => {
         // Create a mock area count with a last_updated time more than 1 minute old
         const staleAreaCounts = [
             {
@@ -234,12 +241,10 @@ describe('ActiveAreaCountsWidget', () => {
         // Wait for the promise to resolve
         await flushPromises();
 
-        // Check that stale-card class is applied
-        expect(wrapper.find('.stale-card').exists()).toBe(true);
-        expect(wrapper.find('.pulse').exists()).toBe(true);
+        expect(wrapper.get('[role="status"]').text()).toBe('Data may be stale.');
     });
 
-    it('does not apply stale-card class when data is less than one minute old', async () => {
+    it('does not show a warning when data is less than one minute old', async () => {
         // Create a mock area count with a last_updated time less than 1 minute old
         const freshAreaCounts = [
             {
@@ -259,8 +264,6 @@ describe('ActiveAreaCountsWidget', () => {
         // Wait for the promise to resolve
         await flushPromises();
 
-        // Check that stale-card class is not applied
-        expect(wrapper.find('.stale-card').exists()).toBe(false);
-        expect(wrapper.find('.pulse').exists()).toBe(false);
+        expect(wrapper.find('[role="status"]').exists()).toBe(false);
     });
 });

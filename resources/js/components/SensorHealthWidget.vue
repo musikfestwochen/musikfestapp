@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
+import WidgetShell from '@/components/widgets/WidgetShell.vue';
+import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetySensorHealthPayload } from '@/types';
 import { getRelativeTime } from '@/utils/dateTimeHelpers';
 import { stageSafetySensorName } from '@/utils/stageSafety';
 import { useHttp } from '@inertiajs/vue3';
-import { useIntervalFn } from '@vueuse/core';
-import { computed, ref } from 'vue';
+import { Activity } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 interface PeoplecountHealthSensor {
     id: number;
@@ -35,73 +37,60 @@ const props = defineProps<{
 
 const peoplecountRequest = useHttp<Record<string, never>, PeoplecountSensorHealthPayload>({});
 const stageSafetyRequest = useHttp<Record<string, never>, StageSafetySensorHealthPayload>({});
-const peoplecount = ref<PeoplecountSensorHealthPayload | null>(null);
-const stageSafety = ref<StageSafetySensorHealthPayload | null>(null);
-const peoplecountLoading = ref(props.showPeoplecount);
-const stageSafetyLoading = ref(props.showStageSafety);
-const peoplecountError = ref<string | null>(null);
-const stageSafetyError = ref<string | null>(null);
+const {
+    data: peoplecount,
+    loading: peoplecountLoading,
+    error: peoplecountError,
+    lastUpdated: peoplecountLastUpdated,
+} = useWidgetPolling({
+    interval: 10_000,
+    load: () => peoplecountRequest.get(route('peoplecount.sensor-health.index', { organization: props.organization.slug })),
+    errorMessage: 'Failed to load Peoplecount sensor health.',
+    enabled: props.showPeoplecount,
+});
+const {
+    data: stageSafety,
+    loading: stageSafetyLoading,
+    error: stageSafetyError,
+    lastUpdated: stageSafetyLastUpdated,
+} = useWidgetPolling({
+    interval: 10_000,
+    load: () => stageSafetyRequest.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug })),
+    errorMessage: 'Failed to load Stage Safety sensor health.',
+    enabled: props.showStageSafety,
+});
 
 const stageSafetyIssues = computed(() => [...(stageSafety.value?.stale ?? []), ...(stageSafety.value?.never_seen ?? [])]);
+const lastUpdated = computed(() => {
+    const updates = [
+        props.showPeoplecount ? peoplecountLastUpdated.value : undefined,
+        props.showStageSafety ? stageSafetyLastUpdated.value : undefined,
+    ].filter((update): update is Date | null => update !== undefined);
+
+    if (!updates.length || updates.some((update) => update === null)) {
+        return null;
+    }
+
+    return new Date(Math.min(...updates.map((update) => update!.getTime())));
+});
 
 function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
     return sensor.name || `${sensor.vendor} ${sensor.model}`;
 }
-
-async function fetchPeoplecount(): Promise<void> {
-    if (!props.showPeoplecount || peoplecountRequest.processing) return;
-
-    try {
-        const response = await peoplecountRequest.get(route('peoplecount.sensor-health.index', { organization: props.organization.slug }));
-        peoplecountError.value = null;
-        peoplecount.value = response;
-    } catch {
-        peoplecountError.value = 'Failed to load Peoplecount sensor health.';
-    } finally {
-        peoplecountLoading.value = false;
-    }
-}
-
-async function fetchStageSafety(): Promise<void> {
-    if (!props.showStageSafety || stageSafetyRequest.processing) return;
-
-    try {
-        const response = await stageSafetyRequest.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug }));
-        stageSafetyError.value = null;
-        stageSafety.value = response;
-    } catch {
-        stageSafetyError.value = 'Failed to load Stage Safety sensor health.';
-    } finally {
-        stageSafetyLoading.value = false;
-    }
-}
-
-async function fetchHealth(): Promise<void> {
-    await Promise.all([fetchPeoplecount(), fetchStageSafety()]);
-}
-
-useIntervalFn(fetchHealth, 10_000, { immediateCallback: true });
 </script>
 
 <template>
-    <Card class="flex h-full flex-col">
-        <CardHeader>
-            <CardTitle>Sensor Health</CardTitle>
-        </CardHeader>
-        <CardContent class="flex flex-1 flex-col divide-y">
+    <WidgetShell title="Sensor Health" :last-updated="lastUpdated">
+        <template #icon><Activity /></template>
+
+        <div class="flex flex-1 flex-col divide-y">
             <section v-if="showPeoplecount" class="pb-4 first:pt-0 last:pb-0">
                 <div class="mb-3 flex items-center justify-between gap-2">
                     <h3 class="font-medium">Peoplecount</h3>
                     <Badge v-if="peoplecount?.all_healthy && peoplecount.total" class="bg-green-600 hover:bg-green-600">Healthy</Badge>
                     <Badge v-else-if="peoplecount?.total" variant="destructive">Attention</Badge>
                 </div>
-                <div
-                    v-if="peoplecountError"
-                    role="alert"
-                    class="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400"
-                >
-                    {{ peoplecountError }}
-                </div>
+                <WidgetNotice v-if="peoplecountError" class="mb-3" variant="error">{{ peoplecountError }}</WidgetNotice>
                 <Skeleton v-if="peoplecountLoading && !peoplecount" class="h-20 w-full" />
                 <p v-else-if="peoplecount && !peoplecount.total" class="text-muted-foreground py-4 text-center text-sm">
                     No sensors currently assigned.
@@ -123,9 +112,6 @@ useIntervalFn(fetchHealth, 10_000, { immediateCallback: true });
                         <Badge variant="destructive">Unhealthy</Badge>
                     </li>
                 </ul>
-                <p v-if="peoplecount" class="text-muted-foreground mt-2 text-right text-xs">
-                    Updated {{ getRelativeTime(new Date(peoplecount.last_updated)) }}
-                </p>
             </section>
 
             <section v-if="showStageSafety" class="pt-4 first:pt-0">
@@ -134,13 +120,7 @@ useIntervalFn(fetchHealth, 10_000, { immediateCallback: true });
                     <Badge v-if="stageSafety?.all_fresh" class="bg-green-600 hover:bg-green-600">Fresh</Badge>
                     <Badge v-else-if="stageSafety?.total" variant="destructive">Attention</Badge>
                 </div>
-                <div
-                    v-if="stageSafetyError"
-                    role="alert"
-                    class="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400"
-                >
-                    {{ stageSafetyError }}
-                </div>
+                <WidgetNotice v-if="stageSafetyError" class="mb-3" variant="error">{{ stageSafetyError }}</WidgetNotice>
                 <Skeleton v-if="stageSafetyLoading && !stageSafety" class="h-20 w-full" />
                 <p v-else-if="stageSafety && !stageSafety.total" class="text-muted-foreground py-4 text-center text-sm">
                     No active Stage Safety sensors configured.
@@ -162,6 +142,6 @@ useIntervalFn(fetchHealth, 10_000, { immediateCallback: true });
                     </li>
                 </ul>
             </section>
-        </CardContent>
-    </Card>
+        </div>
+    </WidgetShell>
 </template>

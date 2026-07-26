@@ -6,6 +6,7 @@ import AreaCountHistoryWidget from '../AreaCountHistoryWidget.vue';
 const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     request: { processing: false, get: vi.fn(), from: '', to: '' },
+    useIntervalFn: vi.fn(),
 }));
 
 vi.mock('@inertiajs/vue3', () => ({
@@ -19,6 +20,19 @@ vi.mock('@inertiajs/vue3', () => ({
             },
         },
     }),
+}));
+
+vi.mock('@vueuse/core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@vueuse/core')>()),
+    useIntervalFn: mocks.useIntervalFn,
+}));
+
+vi.mock('@unovis/vue', () => ({
+    VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
+    VisLine: { name: 'VisLine', props: ['color', 'lineDashArray', 'y'], template: '<div />' },
+    VisAxis: { template: '<div />' },
+    VisTooltip: { template: '<div />' },
+    VisCrosshair: { name: 'VisCrosshair', props: ['color'], template: '<div />' },
 }));
 
 const globalStubs = {
@@ -35,11 +49,11 @@ const globalStubs = {
         props: ['value'],
         template: '<option :value="value"><slot /></option>',
     },
-    VisXYContainer: { template: '<div><slot /></div>' },
-    VisLine: { template: '<div></div>' },
+    VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
+    VisLine: { name: 'VisLine', props: ['color', 'lineDashArray', 'y'], template: '<div></div>' },
     VisAxis: { template: '<div></div>' },
-    ChartContainer: { template: '<div><slot /></div>' },
-    ChartCrosshair: { template: '<div></div>' },
+    ChartContainer: { name: 'ChartContainer', props: ['config'], template: '<div><slot /></div>' },
+    ChartCrosshair: { name: 'ChartCrosshair', props: ['color'], template: '<div></div>' },
     ChartTooltip: { template: '<div></div>' },
 };
 
@@ -74,10 +88,10 @@ describe('AreaCountHistoryWidget', () => {
         );
         vi.useFakeTimers();
 
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-
-        vi.spyOn(window, 'setInterval').mockImplementation(() => 999 as unknown as number);
-        vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
+        mocks.useIntervalFn.mockImplementation((callback: () => Promise<void>) => {
+            void callback();
+            return { pause: vi.fn(), resume: vi.fn(), isActive: true };
+        });
 
         vi.setSystemTime(new Date('2025-08-04T22:08:00Z'));
 
@@ -128,6 +142,40 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.text()).toContain('No data available');
     });
 
+    it('uses entity colors and shared legend selection', async () => {
+        mocks.get.mockResolvedValue([
+            ...mockSeries,
+            {
+                id: 2,
+                name: 'Area 2',
+                event_name: 'Event 1',
+                data: [{ time: '2025-08-04T22:00:00Z', count: 20 }],
+            },
+        ]);
+        const wrapper = mount(AreaCountHistoryWidget, {
+            props: { organization: mockOrganization },
+            global: { stubs: globalStubs },
+        });
+        await flushPromises();
+
+        const lines = wrapper.findAllComponents({ name: 'VisLine' });
+        const rows = wrapper.findComponent({ name: 'VisXYContainer' }).props('data') as Array<Record<string, number | Date | undefined>>;
+        expect(lines).toHaveLength(2);
+        expect(lines[0].props('color')).toBe('var(--color-chart-1)');
+        expect(lines[1].props('color')).toBe('var(--color-chart-2)');
+        expect(lines.every((line) => line.props('lineDashArray') === undefined)).toBe(true);
+        expect(lines[0].props('y')(rows[0])).toBe(10);
+        expect(lines[1].props('y')(rows[0])).toBe(20);
+
+        await wrapper.get('[data-series="area_1"]').trigger('click');
+        expect(wrapper.findAllComponents({ name: 'VisLine' })).toHaveLength(1);
+        expect(Object.keys(wrapper.findComponent({ name: 'ChartContainer' }).props('config'))).toEqual(['area_1']);
+        expect(wrapper.findComponent({ name: 'VisCrosshair' }).props('color')).toEqual(['var(--color-chart-1)']);
+
+        await wrapper.get('[data-series="area_2"]').trigger('click', { shiftKey: true });
+        expect(wrapper.findAllComponents({ name: 'VisLine' })).toHaveLength(2);
+    });
+
     it('keeps the empty state visible while another range loads', async () => {
         mocks.get.mockResolvedValueOnce([]).mockReturnValueOnce(new Promise(() => {}));
         const wrapper = mount(AreaCountHistoryWidget, {
@@ -152,23 +200,19 @@ describe('AreaCountHistoryWidget', () => {
 
         await flushPromises();
 
-        expect(wrapper.find('.text-red-500').exists()).toBe(true);
-        expect(wrapper.find('.text-red-500').text()).toBe('Failed to load area count history');
+        expect(wrapper.get('[role="alert"]').text()).toBe('Failed to load area count history');
+        expect(wrapper.text()).not.toContain('No data available');
     });
 
-    it('sets up and cleans up auto-refresh', async () => {
+    it('polls every thirty seconds', async () => {
         mocks.get.mockResolvedValue(mockSeries);
 
-        const wrapper = mount(AreaCountHistoryWidget, {
+        mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
             global: { stubs: globalStubs },
         });
 
-        expect(window.setInterval).toHaveBeenCalledWith(expect.any(Function), 30000);
-
-        wrapper.unmount();
-
-        expect(window.clearInterval).toHaveBeenCalledWith(999);
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 30_000, { immediateCallback: true });
     });
 
     it('uses selected dropdown range params', async () => {

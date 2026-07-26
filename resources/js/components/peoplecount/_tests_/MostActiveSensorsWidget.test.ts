@@ -5,6 +5,7 @@ import MostActiveSensorsWidget from '../MostActiveSensorsWidget.vue';
 const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     request: { processing: false, get: vi.fn() },
+    useIntervalFn: vi.fn(),
 }));
 
 vi.mock('@inertiajs/vue3', () => ({
@@ -18,6 +19,10 @@ vi.mock('@inertiajs/vue3', () => ({
             },
         },
     }),
+}));
+
+vi.mock('@vueuse/core', () => ({
+    useIntervalFn: mocks.useIntervalFn,
 }));
 
 describe('MostActiveSensorsWidget', () => {
@@ -40,13 +45,16 @@ describe('MostActiveSensorsWidget', () => {
             'route',
             vi.fn((name: string) => name),
         );
-        // Silence error logs from components during negative-path tests
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-        vi.spyOn(window, 'setInterval').mockImplementation(() => 123 as unknown as number);
-        vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-07-26T12:00:00Z'));
+        mocks.useIntervalFn.mockImplementation((callback: () => Promise<void>) => {
+            void callback();
+            return { pause: vi.fn(), resume: vi.fn(), isActive: true };
+        });
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
     });
 
@@ -68,6 +76,7 @@ describe('MostActiveSensorsWidget', () => {
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.text()).toContain('No active areas or sensors.');
+        expect(wrapper.text()).toContain('Last refreshed:');
     });
 
     it('keeps the empty state visible during background refresh', async () => {
@@ -76,8 +85,8 @@ describe('MostActiveSensorsWidget', () => {
         await flushPromises();
 
         mocks.get.mockReturnValueOnce(new Promise(() => {}));
-        const refresh = vi.mocked(window.setInterval).mock.calls[0][0] as () => void;
-        refresh();
+        const refresh = mocks.useIntervalFn.mock.calls[0][0] as () => void;
+        void refresh();
 
         expect(wrapper.text()).toContain('No active areas or sensors.');
         expect(wrapper.find('.animate-pulse').exists()).toBe(false);
@@ -119,6 +128,18 @@ describe('MostActiveSensorsWidget', () => {
         // Default selectedRange = '10m' -> sensor with Total 3 should be first
         let items = wrapper.findAll('li');
         expect(items[0].text()).toContain('Total: 3');
+        expect(
+            wrapper
+                .findAll('button')
+                .find((button) => button.text() === '10m')!
+                .attributes('aria-pressed'),
+        ).toBe('true');
+        expect(
+            wrapper
+                .findAll('button')
+                .find((button) => button.text() === '30m')!
+                .attributes('aria-pressed'),
+        ).toBe('false');
 
         // Click 30m -> sensor with Total 4 should be first
         await wrapper
@@ -128,6 +149,12 @@ describe('MostActiveSensorsWidget', () => {
         await flushPromises();
         items = wrapper.findAll('li');
         expect(items[0].text()).toContain('Total: 4');
+        expect(
+            wrapper
+                .findAll('button')
+                .find((button) => button.text() === '30m')!
+                .attributes('aria-pressed'),
+        ).toBe('true');
 
         // Click 1h -> sensor with Total 10 should be first
         await wrapper
@@ -143,16 +170,14 @@ describe('MostActiveSensorsWidget', () => {
         mocks.get.mockRejectedValue(new Error('boom'));
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
-        expect(wrapper.find('.text-red-500').exists()).toBe(true);
-        expect(wrapper.text()).toContain('Failed to load most active sensors');
+        expect(wrapper.get('[role="alert"]').text()).toBe('Failed to load most active sensors');
+        expect(wrapper.text()).not.toContain('No active areas or sensors.');
     });
 
-    it('sets up and cleans up auto-refresh', async () => {
+    it('polls every ten seconds', async () => {
         mocks.get.mockResolvedValue([baseArea()]);
-        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
-        expect(window.setInterval).toHaveBeenCalledWith(expect.any(Function), 10000);
-        wrapper.unmount();
-        expect(window.clearInterval).toHaveBeenCalledWith(123);
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 10_000, { immediateCallback: true });
     });
 });
