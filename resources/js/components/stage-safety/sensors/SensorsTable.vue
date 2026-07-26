@@ -14,9 +14,9 @@ const props = defineProps<{
 
 const { can } = usePermissions();
 const columns = sensorColumns(props.organization);
-const rowHref = can('stage-safety.sensors.show')
+const rowHref = can('stage-safety.sensors.edit')
     ? (sensor: StageSafetySensor) =>
-          route('stage-safety.sensors.show', {
+          route('stage-safety.sensors.edit', {
               organization: props.organization.slug,
               stageSafetySensor: sensor.id,
           })

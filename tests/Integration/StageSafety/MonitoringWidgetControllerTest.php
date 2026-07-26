@@ -1,10 +1,8 @@
 <?php
 
-use App\Http\Controllers\StageSafety\SensorMonitoringController;
 use App\Http\Controllers\Widgets\StageSafetyCurrentWindWidgetController;
 use App\Http\Controllers\Widgets\StageSafetySensorHealthWidgetController;
 use App\Http\Controllers\Widgets\StageSafetyWindHistoryWidgetController;
-use App\Http\Requests\StageSafety\SensorMonitoringIndexRequest;
 use App\Http\Requests\Widgets\StageSafety\CurrentWindIndexRequest;
 use App\Http\Requests\Widgets\StageSafety\SensorHealthIndexRequest;
 use App\Http\Requests\Widgets\StageSafety\WindHistoryIndexRequest;
@@ -57,14 +55,6 @@ it('allows a Stage Safety viewer to access all monitoring endpoints', function (
         ->assertJsonPath('to', '2026-07-25T12:00:00+00:00')
         ->assertJsonPath('sensors.0.sensor.id', $sensor->id);
 
-    $this->actingAs($viewer)
-        ->getJson(route('stage-safety.sensors.monitoring.index', [
-            'organization' => $organization,
-            'stageSafetySensor' => $sensor,
-        ]))
-        ->assertSuccessful()
-        ->assertJsonPath('current.sensor.id', $sensor->id)
-        ->assertJsonPath('history.sensors.0.sensor.id', $sensor->id);
 });
 
 it('forbids users without monitoring permission', function (string $routeName) {
@@ -97,19 +87,6 @@ it('forbids an organization viewer from accessing another organization', functio
     'wind history' => 'stage-safety.wind-history.index',
 ]);
 
-it('does not bind another organization sensor to monitoring endpoint', function () {
-    $organization = Organization::factory()->create();
-    $admin = User::factory()->globalAdmin()->create();
-    $foreignSensor = Sensor::factory()->create();
-
-    $this->actingAs($admin)
-        ->getJson(route('stage-safety.sensors.monitoring.index', [
-            'organization' => $organization,
-            'stageSafetySensor' => $foreignSensor,
-        ]))
-        ->assertNotFound();
-});
-
 it('rejects invalid history ranges', function (array $query, array $invalidFields) {
     $organization = Organization::factory()->create();
     $admin = User::factory()->organizationAdmin($organization)->create();
@@ -137,7 +114,6 @@ it('uses monitoring form requests and organization middleware', function () {
         'stage-safety.current-wind.index' => [StageSafetyCurrentWindWidgetController::class, CurrentWindIndexRequest::class],
         'stage-safety.sensor-health.index' => [StageSafetySensorHealthWidgetController::class, SensorHealthIndexRequest::class],
         'stage-safety.wind-history.index' => [StageSafetyWindHistoryWidgetController::class, WindHistoryIndexRequest::class],
-        'stage-safety.sensors.monitoring.index' => [SensorMonitoringController::class, SensorMonitoringIndexRequest::class],
     ] as $routeName => [$controller, $request]) {
         test()->assertRouteUsesMiddleware(
             $routeName,

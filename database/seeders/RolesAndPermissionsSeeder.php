@@ -40,9 +40,15 @@ class RolesAndPermissionsSeeder extends Seeder
 
         foreach ($modules as $module) {
             foreach ($actions as $action) {
+                if ($module === 'stage-safety.sensors' && $action === 'show') {
+                    continue;
+                }
+
                 Permission::findOrCreate(sprintf('%s.%s', $module, $action));
             }
         }
+
+        Permission::query()->where('name', 'stage-safety.sensors.show')->delete();
 
         // add widget permissions
         Permission::findOrCreate('peoplecount.widgets.active_area_counts');
@@ -114,7 +120,6 @@ class RolesAndPermissionsSeeder extends Seeder
         $stageSafetyViewerRole = $this->role('StageSafetyViewer', 'Stage Safety viewer', 'Can view Stage Safety monitoring data.');
         $stageSafetyViewerRole->syncPermissions([
             'stage-safety.sensors.index',
-            'stage-safety.sensors.show',
             'stage-safety.monitoring.view',
         ]);
     }

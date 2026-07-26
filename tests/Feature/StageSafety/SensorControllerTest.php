@@ -6,7 +6,6 @@ use App\Http\Requests\StageSafety\SensorCreateRequest;
 use App\Http\Requests\StageSafety\SensorDestroyRequest;
 use App\Http\Requests\StageSafety\SensorEditRequest;
 use App\Http\Requests\StageSafety\SensorIndexRequest;
-use App\Http\Requests\StageSafety\SensorShowRequest;
 use App\Http\Requests\StageSafety\SensorStoreRequest;
 use App\Http\Requests\StageSafety\SensorUpdateRequest;
 use App\Models\Organization;
@@ -132,22 +131,6 @@ it('updates and deletes an organization sensor', function () {
     $this->assertSoftDeleted('stage_safety_sensors', ['id' => $sensor->id]);
 });
 
-it('shows the sensor monitoring page', function () {
-    $organization = Organization::factory()->create();
-    $admin = User::factory()->organizationAdmin($organization)->create();
-    $sensor = Sensor::factory()->for($organization)->create();
-
-    $this->actingAs($admin)
-        ->get(route('stage-safety.sensors.show', [
-            'organization' => $organization,
-            'stageSafetySensor' => $sensor,
-        ]))
-        ->assertInertia(fn ($page) => $page
-            ->component('stage-safety/Sensor', false)
-            ->where('organization.id', $organization->id)
-            ->where('sensor.id', $sensor->id));
-});
-
 it('does not bind another organization sensor', function () {
     $organization = Organization::factory()->create();
     $admin = User::factory()->organizationAdmin($organization)->create();
@@ -171,7 +154,6 @@ it('uses Stage Safety form requests and organization middleware', function () {
         'index' => SensorIndexRequest::class,
         'create' => SensorCreateRequest::class,
         'store' => SensorStoreRequest::class,
-        'show' => SensorShowRequest::class,
         'edit' => SensorEditRequest::class,
         'update' => SensorUpdateRequest::class,
         'destroy' => SensorDestroyRequest::class,

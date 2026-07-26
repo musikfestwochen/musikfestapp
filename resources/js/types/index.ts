@@ -185,12 +185,6 @@ export interface StageSafetyWindHistoryPayload {
     sensors: StageSafetyHistorySensor[];
 }
 
-export interface StageSafetySensorMonitoringPayload {
-    generated_at: string;
-    current: StageSafetyCurrentSensor;
-    history: StageSafetyWindHistoryPayload;
-}
-
 export interface PeoplecountSensor {
     id: number;
     vendor: string;
