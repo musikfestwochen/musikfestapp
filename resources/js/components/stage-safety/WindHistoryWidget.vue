@@ -29,9 +29,11 @@ async function fetchHistory(): Promise<void> {
     Object.assign(request, timeParams());
 
     try {
-        error.value = null;
         const response = await request.get(route('stage-safety.wind-history.index', { organization: props.organization.slug }));
-        if (requestedRange === timeRange.value) data.value = response;
+        if (requestedRange === timeRange.value) {
+            error.value = null;
+            data.value = response;
+        }
     } catch {
         error.value = 'Failed to load wind history.';
     } finally {
@@ -44,8 +46,6 @@ async function fetchHistory(): Promise<void> {
 }
 
 watch(timeRange, () => {
-    data.value = null;
-    loading.value = true;
     void fetchHistory();
 });
 

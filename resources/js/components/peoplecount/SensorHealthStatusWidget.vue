@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import axios from 'axios';
+import { useHttp } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 interface IntervalCountItem {
@@ -33,16 +33,18 @@ interface HealthPayload {
 const props = defineProps<{ organization: { id: number; slug: string; name: string } }>();
 
 const data = ref<HealthPayload | null>(null);
+const request = useHttp<Record<string, never>, HealthPayload>({});
 const loading = ref(true);
 const error = ref<string | null>(null);
 let refreshInterval: number | null = null;
 
 const fetchHealth = async () => {
+    if (request.processing) return;
+
     try {
-        loading.value = true;
+        const response = await request.get(route('peoplecount.sensor-health.index', { organization: props.organization.slug }));
         error.value = null;
-        const response = await axios.get(`/${props.organization.slug}/peoplecount/sensor-health`);
-        data.value = response.data;
+        data.value = response;
     } catch (err) {
         error.value = 'Failed to load sensor health';
         console.error(err);

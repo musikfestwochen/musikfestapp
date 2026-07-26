@@ -1,13 +1,15 @@
 import { flushPromises, mount } from '@vue/test-utils';
-import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SensorHealthStatusWidget from '../SensorHealthStatusWidget.vue';
 
-// Mock axios
-vi.mock('axios');
+const mocks = vi.hoisted(() => ({
+    get: vi.fn(),
+    request: { processing: false, get: vi.fn() },
+}));
 
 // Mock Inertia's usePage (permissions are not directly used in the widget, but keep parity)
 vi.mock('@inertiajs/vue3', () => ({
+    useHttp: () => mocks.request,
     usePage: () => ({
         props: {
             auth: {
@@ -37,6 +39,12 @@ describe('SensorHealthStatusWidget', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        mocks.request.processing = false;
+        mocks.request.get = mocks.get;
+        vi.stubGlobal(
+            'route',
+            vi.fn((name: string) => name),
+        );
         vi.useFakeTimers();
         // Silence error logs from components during negative-path tests
         vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -53,7 +61,7 @@ describe('SensorHealthStatusWidget', () => {
     });
 
     it('renders loading state initially', async () => {
-        vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+        mocks.get.mockReturnValue(new Promise(() => {}));
 
         const wrapper = mount(SensorHealthStatusWidget, {
             props: { organization: mockOrganization },
@@ -63,29 +71,27 @@ describe('SensorHealthStatusWidget', () => {
     });
 
     it('fetches health data on mount with correct url', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: basePayload });
+        mocks.get.mockResolvedValue(basePayload);
 
         mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
 
-        expect(axios.get).toHaveBeenCalledWith(`/${mockOrganization.slug}/peoplecount/sensor-health`);
+        expect(mocks.get).toHaveBeenCalledWith('peoplecount.sensor-health.index');
     });
 
     it('displays "No active sensors" when total is 0', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: { ...basePayload, total: 0 } });
+        mocks.get.mockResolvedValue({ ...basePayload, total: 0 });
         const wrapper = mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.text()).toContain('No active sensors');
     });
 
     it('displays all healthy state', async () => {
-        vi.mocked(axios.get).mockResolvedValue({
-            data: {
-                ...basePayload,
-                total: 2,
-                all_healthy: true,
-                healthy: [{ id: 1, serial: 'A', vendor: 'V', model: 'M', latest_ts: '2025-08-09T18:01:30Z', interval_counts: [] }],
-            },
+        mocks.get.mockResolvedValue({
+            ...basePayload,
+            total: 2,
+            all_healthy: true,
+            healthy: [{ id: 1, serial: 'A', vendor: 'V', model: 'M', latest_ts: '2025-08-09T18:01:30Z', interval_counts: [] }],
         });
         const wrapper = mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
@@ -104,7 +110,7 @@ describe('SensorHealthStatusWidget', () => {
             suspicious: [{ id: 1, serial: 'S-1', vendor: 'Axis', model: 'P8815-2', latest_ts: '2025-08-09T18:01:00Z', interval_counts: [] }],
             unhealthy: [{ id: 2, serial: 'U-1', vendor: 'Axis', model: 'P8815-2', latest_ts: '2025-08-09T17:58:00Z', interval_counts: [] }],
         };
-        vi.mocked(axios.get).mockResolvedValue({ data: payload });
+        mocks.get.mockResolvedValue(payload);
         const wrapper = mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
 
@@ -116,7 +122,7 @@ describe('SensorHealthStatusWidget', () => {
     });
 
     it('shows error when API fails', async () => {
-        vi.mocked(axios.get).mockRejectedValue(new Error('boom'));
+        mocks.get.mockRejectedValue(new Error('boom'));
         const wrapper = mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.find('.text-red-500').exists()).toBe(true);
@@ -124,14 +130,14 @@ describe('SensorHealthStatusWidget', () => {
     });
 
     it('applies stale-card when last_updated older than 2 minutes', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: { ...basePayload, last_updated: '2025-08-09T17:59:59Z', total: 0 } });
+        mocks.get.mockResolvedValue({ ...basePayload, last_updated: '2025-08-09T17:59:59Z', total: 0 });
         const wrapper = mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.find('.stale-card').exists()).toBe(true);
     });
 
     it('sets up and cleans up auto-refresh', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: basePayload });
+        mocks.get.mockResolvedValue(basePayload);
         const wrapper = mount(SensorHealthStatusWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(window.setInterval).toHaveBeenCalledWith(expect.any(Function), 10000);

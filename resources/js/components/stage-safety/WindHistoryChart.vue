@@ -8,7 +8,7 @@ import { metersPerSecondToKilometersPerHour, stageSafetySensorName } from '@/uti
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { Wind } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 interface ChartDataPoint {
     date: Date;
@@ -33,7 +33,8 @@ const emit = defineEmits<{
     'update:timeRange': [value: string];
 }>();
 
-const SENSOR_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
+const SENSOR_COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)'];
+const hiddenSeriesKeys = ref<Set<string>>(new Set());
 const timeRangeOptions = [
     { value: '1h', label: 'Last hour' },
     { value: '3h', label: 'Last 3 hours' },
@@ -49,6 +50,35 @@ const selectedRange = computed({
 
 function seriesKey(sensorId: number, kind: StageSafetyReadingKind): string {
     return `sensor_${sensorId}_${kind}`;
+}
+
+function isSeriesVisible(key: string): boolean {
+    return !hiddenSeriesKeys.value.has(key);
+}
+
+function toggleSeriesVisibility(key: string): void {
+    const next = new Set(hiddenSeriesKeys.value);
+
+    if (next.has(key)) {
+        next.delete(key);
+    } else {
+        next.add(key);
+    }
+
+    hiddenSeriesKeys.value = next;
+}
+
+function toggleLegendSeries(key: string, event: MouseEvent): void {
+    if (event.shiftKey) {
+        toggleSeriesVisibility(key);
+        return;
+    }
+
+    const visibleKeys = chartSeries.value.filter((series) => isSeriesVisible(series.key)).map((series) => series.key);
+    hiddenSeriesKeys.value =
+        visibleKeys.length === 1 && visibleKeys[0] === key
+            ? new Set()
+            : new Set(chartSeries.value.map((series) => series.key).filter((seriesKey) => seriesKey !== key));
 }
 
 const chartSeries = computed<ChartSeries[]>(() =>
@@ -75,6 +105,20 @@ const chartSeries = computed<ChartSeries[]>(() =>
 
         return series;
     }),
+);
+
+watch(
+    () => chartSeries.value.map((series) => series.key).join(','),
+    () => {
+        const availableKeys = new Set(chartSeries.value.map((series) => series.key));
+        const next = new Set([...hiddenSeriesKeys.value].filter((key) => availableKeys.has(key)));
+
+        if (availableKeys.size > 0 && [...availableKeys].every((key) => next.has(key))) {
+            next.clear();
+        }
+
+        hiddenSeriesKeys.value = next;
+    },
 );
 
 const chartConfig = computed<ChartConfig>(() =>
@@ -160,17 +204,18 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
                     aria-label="Wind history in kilometers per hour"
                 >
                     <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 38 }">
-                        <VisLine
-                            v-for="series in chartSeries"
-                            :key="series.key"
-                            :x="(point: ChartDataPoint) => point.date.getTime()"
-                            :y="(point: ChartDataPoint) => seriesValue(point, series.key)"
-                            :color="series.color"
-                            :curve-type="CurveType.MonotoneX"
-                            :interpolate-missing-data="true"
-                            :line-width="2"
-                            :line-dash-array="series.dash"
-                        />
+                        <template v-for="series in chartSeries" :key="series.key">
+                            <VisLine
+                                v-if="isSeriesVisible(series.key)"
+                                :x="(point: ChartDataPoint) => point.date.getTime()"
+                                :y="(point: ChartDataPoint) => seriesValue(point, series.key)"
+                                :color="series.color"
+                                :curve-type="CurveType.MonotoneX"
+                                :interpolate-missing-data="true"
+                                :line-width="2"
+                                :line-dash-array="series.dash"
+                            />
+                        </template>
                         <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
                         <VisAxis type="y" :tick-line="false" :domain-line="false" :grid-line="true" :tick-format="formatWindTick" />
                         <ChartTooltip />
@@ -193,8 +238,22 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
                 </ChartContainer>
 
                 <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t pt-3 text-sm">
-                    <div v-for="series in chartSeries" :key="`legend-${series.key}`" class="flex items-center gap-2">
-                        <svg width="24" height="8" :style="{ color: series.color }" aria-hidden="true">
+                    <button
+                        v-for="series in chartSeries"
+                        :key="`legend-${series.key}`"
+                        type="button"
+                        class="hover:bg-accent flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-left"
+                        :aria-label="`Show only ${series.label}. Shift-click to toggle visibility.`"
+                        :data-series="series.key"
+                        @click="toggleLegendSeries(series.key, $event)"
+                    >
+                        <svg
+                            width="24"
+                            height="8"
+                            :style="{ color: series.color }"
+                            :class="{ 'opacity-40': !isSeriesVisible(series.key) }"
+                            aria-hidden="true"
+                        >
                             <line
                                 x1="0"
                                 y1="4"
@@ -205,8 +264,8 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
                                 :stroke-dasharray="series.dash?.join(',') ?? 'none'"
                             />
                         </svg>
-                        <span>{{ series.label }}</span>
-                    </div>
+                        <span :class="{ 'text-muted-foreground line-through': !isSeriesVisible(series.key) }">{{ series.label }}</span>
+                    </button>
                 </div>
             </div>
         </CardContent>

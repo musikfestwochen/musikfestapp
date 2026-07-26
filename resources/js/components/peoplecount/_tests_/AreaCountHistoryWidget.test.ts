@@ -1,12 +1,15 @@
 import { flushPromises, mount } from '@vue/test-utils';
-import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import AreaCountHistoryWidget from '../AreaCountHistoryWidget.vue';
 
-vi.mock('axios');
+const mocks = vi.hoisted(() => ({
+    get: vi.fn(),
+    request: { processing: false, get: vi.fn(), from: '', to: '' },
+}));
 
 vi.mock('@inertiajs/vue3', () => ({
+    useHttp: () => mocks.request,
     usePage: () => ({
         props: {
             auth: {
@@ -61,6 +64,14 @@ describe('AreaCountHistoryWidget', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        mocks.request.processing = false;
+        mocks.request.get = mocks.get;
+        mocks.request.from = '';
+        mocks.request.to = '';
+        vi.stubGlobal(
+            'route',
+            vi.fn((name: string) => name),
+        );
         vi.useFakeTimers();
 
         vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -79,7 +90,7 @@ describe('AreaCountHistoryWidget', () => {
     });
 
     it('fetches history on mount with default range', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: mockSeries });
+        mocks.get.mockResolvedValue(mockSeries);
 
         mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
@@ -88,16 +99,13 @@ describe('AreaCountHistoryWidget', () => {
 
         await flushPromises();
 
-        expect(axios.get).toHaveBeenCalledWith(`/${mockOrganization.slug}/peoplecount/area-count-history`, {
-            params: {
-                from: '2025-08-04T21:08:00.000Z',
-                to: '2025-08-04T22:08:00.000Z',
-            },
-        });
+        expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-count-history.index');
+        expect(mocks.request.from).toBe('2025-08-04T21:08:00.000Z');
+        expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
     });
 
     it('renders the loading state initially', () => {
-        vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+        mocks.get.mockReturnValue(new Promise(() => {}));
 
         const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
@@ -108,7 +116,7 @@ describe('AreaCountHistoryWidget', () => {
     });
 
     it('renders the empty state when no series are returned', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        mocks.get.mockResolvedValue([]);
 
         const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
@@ -120,8 +128,22 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.text()).toContain('No data available');
     });
 
+    it('keeps the empty state visible while another range loads', async () => {
+        mocks.get.mockResolvedValueOnce([]).mockReturnValueOnce(new Promise(() => {}));
+        const wrapper = mount(AreaCountHistoryWidget, {
+            props: { organization: mockOrganization },
+            global: { stubs: globalStubs },
+        });
+        await flushPromises();
+
+        await wrapper.find('[data-testid="range-select"]').setValue('6h');
+
+        expect(wrapper.text()).toContain('No data available');
+        expect(wrapper.find('.animate-pulse').exists()).toBe(false);
+    });
+
     it('renders an error message when the request fails', async () => {
-        vi.mocked(axios.get).mockRejectedValue(new Error('boom'));
+        mocks.get.mockRejectedValue(new Error('boom'));
 
         const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
@@ -135,7 +157,7 @@ describe('AreaCountHistoryWidget', () => {
     });
 
     it('sets up and cleans up auto-refresh', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: mockSeries });
+        mocks.get.mockResolvedValue(mockSeries);
 
         const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
@@ -150,7 +172,7 @@ describe('AreaCountHistoryWidget', () => {
     });
 
     it('uses selected dropdown range params', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: mockSeries });
+        mocks.get.mockResolvedValue(mockSeries);
 
         const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
@@ -158,17 +180,14 @@ describe('AreaCountHistoryWidget', () => {
         });
 
         await flushPromises();
-        vi.mocked(axios.get).mockClear();
+        mocks.get.mockClear();
 
         await wrapper.find('[data-testid="range-select"]').setValue('6h');
         await nextTick();
         await flushPromises();
 
-        expect(axios.get).toHaveBeenCalledWith(`/${mockOrganization.slug}/peoplecount/area-count-history`, {
-            params: {
-                from: '2025-08-04T16:08:00.000Z',
-                to: '2025-08-04T22:08:00.000Z',
-            },
-        });
+        expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-count-history.index');
+        expect(mocks.request.from).toBe('2025-08-04T16:08:00.000Z');
+        expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
     });
 });

@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
+import { useHttp } from '@inertiajs/vue3';
 import { useStorage } from '@vueuse/core';
-import axios from 'axios';
 import { ChartColumnIncreasing, ChartSpline, Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
@@ -33,6 +33,7 @@ const props = defineProps<{
 }>();
 
 const series = ref<AreaSeries[]>([]);
+const request = useHttp<{ from: string; to: string }, AreaSeries[]>({ from: '', to: '' });
 const loading = ref(true);
 const error = ref<string | null>(null);
 const timeRange = ref('1h');
@@ -141,10 +142,11 @@ function formatTickDate(d: number): string {
 
 async function fetchHistory() {
     try {
-        error.value = null;
         const params = getTimeParams();
-        const response = await axios.get(`/${props.organization.slug}/peoplecount/area-count-history`, { params });
-        series.value = response.data;
+        Object.assign(request, params);
+        const response = await request.get(route('peoplecount.area-count-history.index', { organization: props.organization.slug }));
+        error.value = null;
+        series.value = response;
         lastUpdated.value = new Date();
     } catch (err) {
         error.value = 'Failed to load area count history';
@@ -155,7 +157,6 @@ async function fetchHistory() {
 }
 
 watch(timeRange, () => {
-    loading.value = true;
     fetchHistory();
 });
 

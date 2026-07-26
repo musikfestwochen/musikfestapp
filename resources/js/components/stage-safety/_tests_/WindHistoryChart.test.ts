@@ -5,7 +5,7 @@ import WindHistoryChart from '../WindHistoryChart.vue';
 
 vi.mock('@unovis/vue', () => ({
     VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
-    VisLine: { name: 'VisLine', props: ['y', 'interpolateMissingData'], template: '<div class="series-line" />' },
+    VisLine: { name: 'VisLine', props: ['y', 'color', 'interpolateMissingData'], template: '<div class="series-line" />' },
     VisAxis: { template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: { template: '<div />' },
@@ -70,9 +70,48 @@ describe('WindHistoryChart', () => {
 
         expect(lines).toHaveLength(3);
         expect(lines.every((line) => line.props('interpolateMissingData') === true)).toBe(true);
+        expect(lines[0].props('color')).toBe('var(--color-chart-1)');
         expect(lines[0].props('y')(rows[0])).toBe(18);
         expect(lines[0].props('y')(rows[1])).toBeUndefined();
         expect(lines[1].props('y')(rows[1])).toBe(28.8);
+    });
+
+    it('shows only a clicked legend series and restores all when clicked again', async () => {
+        const wrapper = mount(WindHistoryChart, {
+            props: { data: history, loading: false, error: null, timeRange: '1h' },
+            global: { stubs: chartStubs },
+        });
+        const legend = wrapper.find('[data-series="sensor_1_wind_average"]');
+
+        await legend.trigger('click');
+        expect(wrapper.findAllComponents({ name: 'VisLine' })).toHaveLength(1);
+        expect(wrapper.find('[data-series="sensor_1_wind_gust"] span').classes()).toContain('line-through');
+
+        await legend.trigger('click');
+        expect(wrapper.findAllComponents({ name: 'VisLine' })).toHaveLength(3);
+    });
+
+    it('restores visibility when the isolated series disappears', async () => {
+        const wrapper = mount(WindHistoryChart, {
+            props: { data: history, loading: false, error: null, timeRange: '1h' },
+            global: { stubs: chartStubs },
+        });
+        await wrapper.find('[data-series="sensor_1_wind_average"]').trigger('click');
+
+        await wrapper.setProps({
+            data: {
+                ...history,
+                sensors: [
+                    {
+                        ...history.sensors[0],
+                        readings: history.sensors[0].readings.filter((reading) => reading.kind === 'wind_gust'),
+                    },
+                ],
+            },
+        });
+
+        expect(wrapper.findAllComponents({ name: 'VisLine' })).toHaveLength(1);
+        expect(wrapper.find('[data-series="sensor_1_wind_gust"] span').classes()).not.toContain('line-through');
     });
 
     it('emits selected time range', async () => {

@@ -116,6 +116,35 @@ describe('Stage Safety monitoring widgets', () => {
         expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 30_000, { immediateCallback: true });
     });
 
+    it('keeps current history visible while another range loads', async () => {
+        const current = {
+            generated_at: '',
+            from: '2026-07-25T11:00:00Z',
+            to: '2026-07-25T12:00:00Z',
+            sensors: [],
+        };
+        mocks.get.mockResolvedValueOnce(current).mockReturnValueOnce(new Promise(() => {}));
+        const wrapper = mount(WindHistoryWidget, {
+            props: { organization },
+            global: {
+                stubs: {
+                    WindHistoryChart: {
+                        name: 'WindHistoryChart',
+                        props: ['data', 'loading', 'timeRange'],
+                        emits: ['update:timeRange'],
+                        template: '<button data-testid="range" @click="$emit(\'update:timeRange\', \'6h\')">range</button>',
+                    },
+                },
+            },
+        });
+        await flushPromises();
+
+        await wrapper.find('[data-testid="range"]').trigger('click');
+
+        expect(wrapper.findComponent({ name: 'WindHistoryChart' }).props('data')).toEqual(current);
+        expect(wrapper.findComponent({ name: 'WindHistoryChart' }).props('loading')).toBe(false);
+    });
+
     it('queues a changed history range while a request is active', async () => {
         let resolveFirst!: (value: { generated_at: string; from: string; to: string; sensors: never[] }) => void;
         mocks.get
