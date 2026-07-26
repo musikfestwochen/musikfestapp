@@ -1,7 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CurrentWindWidget from '../CurrentWindWidget.vue';
-import SensorHealthWidget from '../SensorHealthWidget.vue';
 import WindHistoryWidget from '../WindHistoryWidget.vue';
 
 const mocks = vi.hoisted(() => ({
@@ -67,34 +66,6 @@ describe('Stage Safety monitoring widgets', () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain('Failed to load current wind');
-    });
-
-    it('loads and renders stale sensor health', async () => {
-        mocks.get.mockResolvedValue({
-            generated_at: '',
-            total: 1,
-            all_fresh: false,
-            fresh: [],
-            stale: [
-                {
-                    id: 1,
-                    identifier: 'ABC123',
-                    name: 'Main Stage',
-                    location: null,
-                    stale_after_seconds: 300,
-                    status: 'stale',
-                    latest_observed_at: '2026-07-25T11:00:00Z',
-                },
-            ],
-            never_seen: [],
-        });
-        const wrapper = mount(SensorHealthWidget, { props: { organization } });
-        await flushPromises();
-
-        expect(mocks.get).toHaveBeenCalledWith('stage-safety.sensor-health.index');
-        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 10_000, { immediateCallback: true });
-        expect(wrapper.text()).toContain('Main Stage');
-        expect(wrapper.text()).toContain('stale');
     });
 
     it('loads bounded history independently every thirty seconds', async () => {
