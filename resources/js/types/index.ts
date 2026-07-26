@@ -17,6 +17,7 @@ export interface NavItem {
     url?: string; // External URL
     icon?: LucideIcon;
     permission?: string; // Permission required to view this item
+    children?: NavItem[];
 }
 
 export interface Token {

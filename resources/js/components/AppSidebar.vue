@@ -6,6 +6,7 @@ import UserNav from '@/components/users/UserNav.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
 const props = defineProps<{
@@ -15,12 +16,14 @@ const props = defineProps<{
 
 const { can } = usePermissions();
 
-const filteredMainNavItems = props.mainNavItems.filter((item) => {
-    if (item.permission) {
-        return can(item.permission);
-    }
-    return true;
-});
+const filteredMainNavItems = computed(() =>
+    props.mainNavItems
+        .map((item) => ({
+            ...item,
+            children: item.children?.filter((child) => !child.permission || can(child.permission)),
+        }))
+        .filter((item) => (!item.permission || can(item.permission)) && (!item.children || item.children.length > 0)),
+);
 
 const filteredFooterNavItems = props.footerNavItems.filter((item) => {
     if (item.permission) {
