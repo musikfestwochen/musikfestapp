@@ -39,10 +39,11 @@ async function fetchHistory(): Promise<void> {
             error.value = 'Failed to load wind history.';
         }
     } finally {
-        loading.value = false;
         if (refreshQueued) {
             refreshQueued = false;
             void fetchHistory();
+        } else {
+            loading.value = false;
         }
     }
 }

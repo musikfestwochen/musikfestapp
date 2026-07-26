@@ -165,11 +165,11 @@ async function fetchHistory(): Promise<void> {
             console.error(err);
         }
     } finally {
-        loading.value = false;
-
         if (refreshQueued) {
             refreshQueued = false;
             void fetchHistory();
+        } else {
+            loading.value = false;
         }
     }
 }

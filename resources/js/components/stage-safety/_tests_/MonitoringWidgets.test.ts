@@ -154,12 +154,14 @@ describe('Stage Safety monitoring widgets', () => {
                     resolveFirst = resolve;
                 });
             })
-            .mockResolvedValue({ generated_at: '', from: '', to: '', sensors: [] });
+            .mockReturnValue(new Promise(() => {}));
         const wrapper = mount(WindHistoryWidget, {
             props: { organization },
             global: {
                 stubs: {
                     WindHistoryChart: {
+                        name: 'WindHistoryChart',
+                        props: ['loading'],
                         emits: ['update:timeRange'],
                         template: '<button data-testid="range" @click="$emit(\'update:timeRange\', \'6h\')">range</button>',
                     },
@@ -173,6 +175,7 @@ describe('Stage Safety monitoring widgets', () => {
 
         expect(mocks.get).toHaveBeenCalledTimes(2);
         expect(mocks.request.from).toBe('2026-07-25T06:00:00.000Z');
+        expect(wrapper.findComponent({ name: 'WindHistoryChart' }).props('loading')).toBe(true);
     });
 
     it('ignores an error from a stale history range', async () => {

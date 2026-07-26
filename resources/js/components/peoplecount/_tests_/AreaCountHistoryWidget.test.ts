@@ -200,7 +200,7 @@ describe('AreaCountHistoryWidget', () => {
                     resolveFirst = resolve;
                 });
             })
-            .mockResolvedValue(mockSeries);
+            .mockReturnValue(new Promise(() => {}));
         const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
             global: { stubs: globalStubs },
@@ -215,5 +215,6 @@ describe('AreaCountHistoryWidget', () => {
 
         expect(mocks.get).toHaveBeenCalledTimes(2);
         expect(mocks.request.from).toBe('2025-08-04T16:08:00.000Z');
+        expect(wrapper.find('.animate-pulse').exists()).toBe(true);
     });
 });
