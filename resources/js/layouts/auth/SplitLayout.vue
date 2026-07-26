@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import type { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 // Responsive and LQIP background images (static imports for Vite compatibility)
 import bg1280Jpg from '../../../img/mfw_background_01-1280.jpg';
@@ -65,7 +66,7 @@ onMounted(async () => {
     };
 });
 
-const page = usePage();
+const page = usePage<SharedData>();
 const name = page.props.name;
 const quote = page.props.quote;
 

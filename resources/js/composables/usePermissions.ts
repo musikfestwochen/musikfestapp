@@ -1,7 +1,13 @@
 import { usePage } from '@inertiajs/vue3';
 
 export function usePermissions() {
-    const page = usePage();
+    const page = usePage<{
+        auth?: {
+            permissions?: string[];
+            global_permissions?: string[];
+            roles?: string[];
+        };
+    }>();
 
     const can = (permission: string) => {
         // For guests, fallback to empty array

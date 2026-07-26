@@ -91,6 +91,9 @@
         "test:frontend": [
             "npm run test"
         ],
+        "test:frontend:types": [
+            "npm run typecheck"
+        ],
         "test:coverage": [
             "pest --coverage --parallel --min=100"
         ],
@@ -130,6 +133,7 @@
         ],
         "test": [
             "npm run test",
+            "@test:frontend:types",
             "@test:sca",
             "@test:coverage",
             "@test:types",
@@ -137,6 +141,7 @@
         ],
         "test:ai": [
             "npx vitest run --reporter=dot --silent=passed-only",
+            "@test:frontend:types",
             "@test:sca:ai",
             "@test:coverage:ai",
             "@test:types:ai",

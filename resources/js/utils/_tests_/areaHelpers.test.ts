@@ -26,7 +26,7 @@ const createMockAssignment = (id: number): PeoplecountAssignment => ({
     event_id: 1,
     area_id: 1,
     sensor_id: 1,
-    direction: 'in',
+    direction_flipped: false,
     active_from: '2024-07-25T10:00:00.000Z',
     active_to: '2024-07-25T18:00:00.000Z',
     created_at: '2024-01-01T00:00:00.000Z',

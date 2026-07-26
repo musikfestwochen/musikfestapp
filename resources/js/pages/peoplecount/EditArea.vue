@@ -48,14 +48,12 @@ watch(activeTab, (val) => {
             onFinish: () => {
                 hasLoadedAlerts.value = true;
             },
-            preserveState: true,
-            preserveScroll: true,
         });
     }
 });
 
 function refreshAlerts() {
-    router.reload({ only: ['alerts'], preserveState: true, preserveScroll: true });
+    router.reload({ only: ['alerts'] });
 }
 
 const breadcrumbItems: BreadcrumbItem[] = [

@@ -4,10 +4,11 @@ import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Switch } from '@/components/ui/switch';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
+import type { SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
-const page = usePage();
+const page = usePage<SharedData>();
 const initialValue = computed<boolean>(() => page.props.auth.user.eastereggs_activated as boolean);
 
 const form = useForm({

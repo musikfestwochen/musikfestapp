@@ -37,7 +37,7 @@ const currentRoute = route().current();
                         as-child
                         variant="ghost"
                     >
-                        <Link :href="route(item.route)">
+                        <Link :href="route(item.route!)">
                             {{ item.title }}
                         </Link>
                     </Button>

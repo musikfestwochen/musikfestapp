@@ -12,7 +12,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-    <SidebarLayout :breadcrumbs="breadcrumbs">
+    <SidebarLayout :breadcrumbs="breadcrumbs" :footer-nav-items="[]" :main-nav-items="[]">
         <slot />
     </SidebarLayout>
 </template>
