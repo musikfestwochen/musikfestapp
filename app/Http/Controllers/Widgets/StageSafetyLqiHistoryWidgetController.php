@@ -10,12 +10,12 @@ use App\Models\Organization;
 use App\Services\StageSafety\MonitoringService;
 use Illuminate\Http\JsonResponse;
 
-class StageSafetyWindHistoryWidgetController extends Controller
+class StageSafetyLqiHistoryWidgetController extends Controller
 {
     public function index(HistoryIndexRequest $request, Organization $organization, MonitoringService $monitoringService): JsonResponse
     {
         [$from, $to] = $request->range();
 
-        return response()->json($monitoringService->windHistory($organization, $from, $to));
+        return response()->json($monitoringService->lqiHistory($organization, $from, $to));
     }
 }

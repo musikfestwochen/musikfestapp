@@ -65,6 +65,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'POST', 'uri' => 'organization/select'],
 
         // People Count Sensor Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors'],
         ['method' => 'POST', 'uri' => '{organization}/peoplecount/sensors'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/sensors/create'],
@@ -80,6 +81,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'DELETE', 'uri' => '{organization}/peoplecount/sensors/{sensor}/shares/{share}'],
 
         // Stage Safety Sensor Routes
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors'],
         ['method' => 'POST', 'uri' => '{organization}/stage-safety/sensors'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensors/create'],
@@ -93,6 +95,7 @@ it('tests if no unwanted routes are exposed', function () {
         ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/current-wind'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/sensor-health'],
         ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/wind-history'],
+        ['method' => 'GET|HEAD', 'uri' => '{organization}/stage-safety/lqi-history'],
 
         // People Count Events Routes
         ['method' => 'GET|HEAD', 'uri' => '{organization}/peoplecount/events'],

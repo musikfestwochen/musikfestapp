@@ -1,0 +1,172 @@
+<script setup lang="ts">
+import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+import { Skeleton } from '@/components/ui/skeleton';
+import WidgetChartLegend from '@/components/widgets/WidgetChartLegend.vue';
+import WidgetShell from '@/components/widgets/WidgetShell.vue';
+import WidgetTimeRangeSelect from '@/components/widgets/WidgetTimeRangeSelect.vue';
+import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
+import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
+import { useWidgetPolling } from '@/composables/useWidgetPolling';
+import type { Organization, StageSafetyLqiHistoryPayload } from '@/types';
+import { stageSafetySensorName } from '@/utils/stageSafety';
+import { CurveType, type Crosshair } from '@unovis/ts';
+import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
+import { useHttp } from '@inertiajs/vue3';
+import { Radio } from 'lucide-vue-next';
+import { computed, h, nextTick, ref, render, watch } from 'vue';
+
+interface ChartDataPoint {
+    date: Date;
+    [key: string]: Date | number;
+}
+
+const props = defineProps<{ organization: Organization }>();
+const timeRange = ref<WidgetTimeRange>('1h');
+const request = useHttp<{ from: string; to: string }, StageSafetyLqiHistoryPayload>({ from: '', to: '' });
+const { data, loading, error, lastUpdated, refresh } = useWidgetPolling({
+    interval: 30_000,
+    load: () => {
+        Object.assign(request, timeParams());
+        return request.get(route('stage-safety.lqi-history.index', { organization: props.organization.slug }));
+    },
+    errorMessage: 'Failed to load link quality history.',
+});
+
+function timeParams(): { from: string; to: string } {
+    const to = new Date();
+    const from = new Date(to.getTime() - WIDGET_TIME_RANGE_MINUTES[timeRange.value] * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
+}
+
+function seriesKey(sensorId: number): string {
+    return `sensor_${sensorId}_lqi`;
+}
+
+const chartSeries = computed<WidgetChartSeries[]>(() =>
+    (data.value?.sensors ?? []).map((item, index) => ({
+        key: seriesKey(item.sensor.id),
+        label: stageSafetySensorName(item.sensor),
+        color: WIDGET_CHART_COLORS[index % WIDGET_CHART_COLORS.length],
+    })),
+);
+const { hiddenSeriesKeys, isSeriesVisible, selectSeries } = useChartSeriesVisibility(() => chartSeries.value.map((item) => item.key));
+const visibleChartSeries = computed(() => chartSeries.value.filter((item) => isSeriesVisible(item.key)));
+const chartConfig = computed<ChartConfig>(() =>
+    Object.fromEntries(visibleChartSeries.value.map((item) => [item.key, { label: item.label, color: item.color }])),
+);
+const chartDataBySeries = computed<Record<string, ChartDataPoint[]>>(() =>
+    Object.fromEntries(
+        (data.value?.sensors ?? []).map((item) => [
+            seriesKey(item.sensor.id),
+            item.samples.map((sample) => ({
+                date: new Date(sample.observed_at),
+                [seriesKey(item.sensor.id)]: sample.lqi_percent,
+            })),
+        ]),
+    ),
+);
+const chartData = computed(() =>
+    Object.values(chartDataBySeries.value)
+        .flat()
+        .sort((left, right) => left.date.getTime() - right.date.getTime()),
+);
+const hasData = computed(() => chartData.value.length > 0);
+const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
+const crosshairRef = ref<{ component: Crosshair<ChartDataPoint> } | null>(null);
+const percentageFormatter = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: number | Date): string {
+    const container = document.createElement('div');
+    const dataPoint = 'data' in datum ? (datum as { data: ChartDataPoint }).data : datum;
+    const payload = Object.fromEntries(
+        Object.entries(dataPoint).map(([key, value]) => [key, typeof value === 'number' ? `${percentageFormatter.format(value)}%` : value]),
+    );
+    const vnode = h(ChartTooltipContent, {
+        payload,
+        config: chartConfig.value,
+        x,
+        indicator: 'line',
+        labelFormatter: (value: number | Date) =>
+            new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString([], {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
+    });
+
+    render(vnode, container);
+    const html = container.innerHTML;
+    render(null, container);
+
+    return html;
+}
+
+async function syncCrosshair(): Promise<void> {
+    await nextTick();
+    await nextTick();
+    crosshairRef.value?.component.setData(chartData.value);
+}
+
+function seriesValue(point: ChartDataPoint, key: string): number | undefined {
+    const value = point[key];
+    return typeof value === 'number' ? value : undefined;
+}
+
+function formatTickDate(value: number): string {
+    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatPercentageTick(value: number): string {
+    return `${Math.round(value)}%`;
+}
+
+watch(timeRange, refresh);
+watch(chartData, () => void syncCrosshair());
+</script>
+
+<template>
+    <WidgetShell title="Link Quality History" subtitle="Normalized LQI in %" :error="error" :last-updated="lastUpdated" span="full">
+        <template #icon><Radio /></template>
+        <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
+
+        <div v-if="loading && !hasData" class="flex h-[280px] items-center justify-center sm:h-[350px]">
+            <Skeleton class="h-full w-full" />
+        </div>
+
+        <div v-else-if="data && !hasData" class="text-muted-foreground flex h-[280px] items-center justify-center text-center sm:h-[350px]">
+            No link quality samples for selected time range.
+        </div>
+
+        <div v-else-if="hasData" class="flex flex-1 flex-col">
+            <p class="sr-only" aria-live="polite">
+                Link quality history chart with {{ chartSeries.length }} series across {{ data?.sensors.length ?? 0 }} sensors.
+            </p>
+            <ChartContainer
+                :config="chartConfig"
+                class="h-[280px] w-full min-w-0 sm:h-[350px]"
+                role="img"
+                aria-label="Link quality history in percent"
+            >
+                <VisXYContainer :margin="{ top: 8, right: 8, bottom: 24, left: 38 }" :y-domain="[0, 100]">
+                    <template v-for="item in chartSeries" :key="item.key">
+                        <VisLine
+                            v-if="isSeriesVisible(item.key)"
+                            :data="chartDataBySeries[item.key]"
+                            :x="(point: ChartDataPoint) => point.date.getTime()"
+                            :y="(point: ChartDataPoint) => seriesValue(point, item.key)"
+                            :color="item.color"
+                            :curve-type="CurveType.MonotoneX"
+                            :line-width="2"
+                        />
+                    </template>
+                    <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
+                    <VisAxis type="y" :tick-line="false" :domain-line="false" :grid-line="true" :tick-format="formatPercentageTick" />
+                    <ChartTooltip />
+                    <ChartCrosshair ref="crosshairRef" :template="crosshairTemplate" :color="seriesColors" />
+                </VisXYContainer>
+            </ChartContainer>
+            <WidgetChartLegend :series="chartSeries" :hidden-series-keys="hiddenSeriesKeys" @select="selectSeries" />
+        </div>
+    </WidgetShell>
+</template>

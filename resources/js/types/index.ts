@@ -185,6 +185,23 @@ export interface StageSafetyWindHistoryPayload {
     sensors: StageSafetyHistorySensor[];
 }
 
+export interface StageSafetyLqiHistorySample {
+    observed_at: string;
+    lqi_percent: number;
+}
+
+export interface StageSafetyLqiHistorySensor {
+    sensor: StageSafetySensorSummary;
+    samples: StageSafetyLqiHistorySample[];
+}
+
+export interface StageSafetyLqiHistoryPayload {
+    generated_at: string;
+    from: string;
+    to: string;
+    sensors: StageSafetyLqiHistorySensor[];
+}
+
 export interface PeoplecountSensor {
     id: number;
     vendor: string;

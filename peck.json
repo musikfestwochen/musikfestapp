@@ -47,7 +47,10 @@
             "stdout",
             "xdebug",
             "broadweigh",
-            "wss"
+            "wss",
+            "lqi",
+            "rssi",
+            "dbm"
         ],
         "paths": []
     }

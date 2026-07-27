@@ -20,6 +20,12 @@ export const orgMainNavItems = (organization: string | number) => [
         icon: ProjectorIcon,
         children: [
             {
+                title: 'Dashboard',
+                route: 'peoplecount.dashboard',
+                permission: 'peoplecount.dashboard.view',
+                params: { organization },
+            },
+            {
                 title: 'Sensors',
                 route: 'peoplecount.sensors.index',
                 permission: 'peoplecount.sensors.index',
@@ -49,6 +55,12 @@ export const orgMainNavItems = (organization: string | number) => [
         title: 'Stage Safety',
         icon: WindIcon,
         children: [
+            {
+                title: 'Dashboard',
+                route: 'stage-safety.dashboard',
+                permission: 'stage-safety.monitoring.view',
+                params: { organization },
+            },
             {
                 title: 'Sensors',
                 route: 'stage-safety.sensors.index',
