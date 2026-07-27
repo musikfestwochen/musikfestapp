@@ -16,10 +16,16 @@ use App\Http\Controllers\Widgets\PeoplecountActiveAreaCountsWidgetController;
 use App\Http\Controllers\Widgets\PeoplecountAreaCountHistoryWidgetController;
 use App\Http\Controllers\Widgets\PeoplecountMostActiveSensorsWidgetController;
 use App\Http\Controllers\Widgets\PeoplecountSensorHealthStatusWidgetController;
+use App\Models\Organization;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(function () {
     Route::prefix('{organization:slug}/peoplecount')->name('peoplecount.')->group(function () {
+        Route::get('/', fn (Organization $organization) => Inertia::render('peoplecount/Dashboard', [
+            'organization' => $organization,
+        ]))->middleware('permission:peoplecount.dashboard.view')->name('dashboard');
+
         Route::resource(
             'sensors',
             SensorController::class

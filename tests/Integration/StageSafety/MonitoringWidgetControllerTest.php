@@ -1,11 +1,12 @@
 <?php
 
 use App\Http\Controllers\Widgets\StageSafetyCurrentWindWidgetController;
+use App\Http\Controllers\Widgets\StageSafetyLqiHistoryWidgetController;
 use App\Http\Controllers\Widgets\StageSafetySensorHealthWidgetController;
 use App\Http\Controllers\Widgets\StageSafetyWindHistoryWidgetController;
 use App\Http\Requests\Widgets\StageSafety\CurrentWindIndexRequest;
+use App\Http\Requests\Widgets\StageSafety\HistoryIndexRequest;
 use App\Http\Requests\Widgets\StageSafety\SensorHealthIndexRequest;
-use App\Http\Requests\Widgets\StageSafety\WindHistoryIndexRequest;
 use App\Models\Organization;
 use App\Models\StageSafety\Reading;
 use App\Models\StageSafety\Sensor;
@@ -36,6 +37,8 @@ it('allows a Stage Safety viewer to access all monitoring endpoints', function (
     Reading::factory()->for($sensor)->create([
         'observed_at' => now()->subMinute(),
         'received_at' => now()->subMinute(),
+        'rssi_dbm' => -90,
+        'cv' => 97,
     ]);
 
     $this->actingAs($viewer)
@@ -55,6 +58,14 @@ it('allows a Stage Safety viewer to access all monitoring endpoints', function (
         ->assertJsonPath('to', '2026-07-25T12:00:00+00:00')
         ->assertJsonPath('sensors.0.sensor.id', $sensor->id);
 
+    $this->actingAs($viewer)
+        ->getJson(route('stage-safety.lqi-history.index', ['organization' => $organization]))
+        ->assertSuccessful()
+        ->assertJsonPath('from', '2026-07-25T11:00:00+00:00')
+        ->assertJsonPath('to', '2026-07-25T12:00:00+00:00')
+        ->assertJsonPath('sensors.0.sensor.id', $sensor->id)
+        ->assertJsonPath('sensors.0.samples.0.lqi_percent', fn (float $value): bool => abs($value - 50.8974358974) < 0.0001);
+
 });
 
 it('forbids users without monitoring permission', function (string $routeName) {
@@ -68,6 +79,7 @@ it('forbids users without monitoring permission', function (string $routeName) {
     'current wind' => 'stage-safety.current-wind.index',
     'sensor health' => 'stage-safety.sensor-health.index',
     'wind history' => 'stage-safety.wind-history.index',
+    'LQI history' => 'stage-safety.lqi-history.index',
 ]);
 
 it('forbids an organization viewer from accessing another organization', function (string $routeName) {
@@ -85,6 +97,7 @@ it('forbids an organization viewer from accessing another organization', functio
     'current wind' => 'stage-safety.current-wind.index',
     'sensor health' => 'stage-safety.sensor-health.index',
     'wind history' => 'stage-safety.wind-history.index',
+    'LQI history' => 'stage-safety.lqi-history.index',
 ]);
 
 it('rejects invalid history ranges', function (array $query, array $invalidFields) {
@@ -113,7 +126,8 @@ it('uses monitoring form requests and organization middleware', function () {
     foreach ([
         'stage-safety.current-wind.index' => [StageSafetyCurrentWindWidgetController::class, CurrentWindIndexRequest::class],
         'stage-safety.sensor-health.index' => [StageSafetySensorHealthWidgetController::class, SensorHealthIndexRequest::class],
-        'stage-safety.wind-history.index' => [StageSafetyWindHistoryWidgetController::class, WindHistoryIndexRequest::class],
+        'stage-safety.wind-history.index' => [StageSafetyWindHistoryWidgetController::class, HistoryIndexRequest::class],
+        'stage-safety.lqi-history.index' => [StageSafetyLqiHistoryWidgetController::class, HistoryIndexRequest::class],
     ] as $routeName => [$controller, $request]) {
         test()->assertRouteUsesMiddleware(
             $routeName,

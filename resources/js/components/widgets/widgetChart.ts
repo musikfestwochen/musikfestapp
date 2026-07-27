@@ -1,4 +1,13 @@
-export type WidgetTimeRange = '1h' | '3h' | '6h' | '12h' | '24h';
+export type WidgetTimeRange = '30m' | '1h' | '3h' | '6h' | '12h' | '24h';
+
+export const WIDGET_TIME_RANGE_MINUTES: Record<WidgetTimeRange, number> = {
+    '30m': 30,
+    '1h': 60,
+    '3h': 180,
+    '6h': 360,
+    '12h': 720,
+    '24h': 1440,
+};
 
 export interface WidgetChartSeries {
     key: string;

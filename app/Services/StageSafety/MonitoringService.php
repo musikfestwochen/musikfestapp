@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Number;
 
 class MonitoringService
 {
@@ -100,6 +101,53 @@ class MonitoringService
                 'sensor' => $this->sensorPayload($sensor),
                 'readings' => array_values($sensor->readings
                     ->map(fn (Reading $reading): array => $this->historyReadingPayload($reading))
+                    ->values()
+                    ->all()),
+            ])
+            ->values()
+            ->all());
+
+        return [
+            'generated_at' => Date::now()->toIso8601String(),
+            'from' => $from->toIso8601String(),
+            'to' => $to->toIso8601String(),
+            'sensors' => $sensors,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     generated_at: string,
+     *     from: string,
+     *     to: string,
+     *     sensors: list<array{sensor: array<string, mixed>, samples: list<array{observed_at: string, lqi_percent: float}>}>
+     * }
+     */
+    public function lqiHistory(Organization $organization, CarbonInterface $from, CarbonInterface $to): array
+    {
+        $sensors = array_values($organization->stageSafetySensors()
+            ->whereNull('archived_at')
+            ->whereHas('readings', fn (Builder $query): Builder => $query
+                ->whereBetween('observed_at', [$from, $to])
+                ->whereNotNull('rssi_dbm')
+                ->whereNotNull('cv'))
+            ->with(['readings' => function (Relation $relation) use ($from, $to): void {
+                $relation->getQuery()
+                    ->whereBetween('observed_at', [$from, $to])
+                    ->whereNotNull('rssi_dbm')
+                    ->whereNotNull('cv')
+                    ->oldest('observed_at')
+                    ->orderBy('kind');
+            }])
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Sensor $sensor): array => [
+                'sensor' => $this->sensorPayload($sensor),
+                'samples' => array_values($sensor->readings
+                    ->map(fn (Reading $reading): array => [
+                        'observed_at' => $reading->observed_at->toIso8601String(),
+                        'lqi_percent' => $this->lqiPercent((int) $reading->rssi_dbm, (int) $reading->cv),
+                    ])
                     ->values()
                     ->all()),
             ])
@@ -246,5 +294,12 @@ class MonitoringService
 
         return $observedTimestamp <= $nowTimestamp
             && $observedTimestamp >= $nowTimestamp - $sensor->stale_after_seconds;
+    }
+
+    protected function lqiPercent(int $rssiDbm, int $cv): float
+    {
+        $rawLqi = ((94 + $rssiDbm + $cv - 55) / 2) * 3.9;
+
+        return Number::clamp(($rawLqi - 50) * 100 / (128 - 50), min: 0, max: 100);
     }
 }

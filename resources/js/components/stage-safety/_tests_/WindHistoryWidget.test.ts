@@ -66,11 +66,16 @@ const history: StageSafetyWindHistoryPayload = {
 };
 
 const stubs = {
-    Select: { template: '<div><slot /></div>' },
+    Select: {
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template:
+            '<select data-testid="range-select" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot /></select>',
+    },
     SelectTrigger: { template: '<div><slot /></div>' },
     SelectValue: { template: '<div />' },
     SelectContent: { template: '<div><slot /></div>' },
-    SelectItem: { template: '<div><slot /></div>' },
+    SelectItem: { props: ['value'], template: '<option :value="value"><slot /></option>' },
     ChartContainer: { name: 'ChartContainer', props: ['config'], template: '<div><slot /></div>' },
     ChartTooltip: { template: '<div />' },
     ChartCrosshair: { name: 'ChartCrosshair', props: ['color'], template: '<div />' },
@@ -132,6 +137,21 @@ describe('WindHistoryWidget', () => {
 
         const crosshairTemplate = crosshair.props('template') as (datum: Record<string, number | Date | undefined>, x: Date) => string;
         expect(crosshairTemplate(averageRows[0], averageRows[0].date as Date)).toContain('18.0');
+    });
+
+    it('uses one hour by default and supports the thirty-minute range', async () => {
+        mocks.get.mockResolvedValue(history);
+        const wrapper = mount(WindHistoryWidget, { props: { organization }, global: { stubs } });
+        await flushPromises();
+
+        expect(mocks.request.from).toBe('2026-07-25T11:00:00.000Z');
+        expect(mocks.request.to).toBe('2026-07-25T12:00:00.000Z');
+
+        await wrapper.get('[data-testid="range-select"]').setValue('30m');
+        await flushPromises();
+
+        expect(mocks.request.from).toBe('2026-07-25T11:30:00.000Z');
+        expect(mocks.request.to).toBe('2026-07-25T12:00:00.000Z');
     });
 
     it('isolates a legend series and restores all when selected again', async () => {

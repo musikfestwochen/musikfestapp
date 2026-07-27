@@ -22,6 +22,7 @@ describe('WidgetTimeRangeSelect', () => {
         });
 
         expect(wrapper.findAll('option').map((option) => [option.attributes('value'), option.text()])).toEqual([
+            ['30m', 'Last 30 minutes'],
             ['1h', 'Last hour'],
             ['3h', 'Last 3 hours'],
             ['6h', 'Last 6 hours'],

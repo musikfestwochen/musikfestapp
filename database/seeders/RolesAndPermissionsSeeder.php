@@ -51,6 +51,7 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::query()->where('name', 'stage-safety.sensors.show')->delete();
 
         // add widget permissions
+        Permission::findOrCreate('peoplecount.dashboard.view');
         Permission::findOrCreate('peoplecount.widgets.active_area_counts');
         Permission::findOrCreate('peoplecount.widgets.sensor_health');
         Permission::findOrCreate('peoplecount.widgets.most_active_sensors');
@@ -82,6 +83,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.alerts.*',
             'stage-safety.sensors.*',
             'stage-safety.monitoring.view',
+            'peoplecount.dashboard.view',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
@@ -99,6 +101,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'peoplecount.alerts.*',
             'stage-safety.sensors.*',
             'stage-safety.monitoring.view',
+            'peoplecount.dashboard.view',
             'peoplecount.widgets.active_area_counts',
             'peoplecount.widgets.sensor_health',
             'peoplecount.widgets.most_active_sensors',
@@ -107,6 +110,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $peoplecountViewerRole = $this->role('PeopleCountViewer', 'People count viewer', 'Can view people-count dashboards and data.');
         $peoplecountViewerRole->syncPermissions([
+            'peoplecount.dashboard.view',
             'peoplecount.areas.index',
             'peoplecount.areas.show',
             'peoplecount.events.index',

@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\Validator;
 
-class WindHistoryIndexRequest extends FormRequest
+class HistoryIndexRequest extends FormRequest
 {
     public const int MAX_RANGE_HOURS = 24;
 

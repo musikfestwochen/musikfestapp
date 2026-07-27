@@ -191,3 +191,47 @@ it('returns bounded ordered history without archived or foreign sensors', functi
         ->and($payload['sensors'][0]['readings'][1]['value'])->toBe(8.0)
         ->and($emptySensor->exists)->toBeTrue();
 });
+
+it('returns ordered clamped LQI percentages from complete radio diagnostics', function () {
+    $organization = Organization::factory()->create();
+    $sensor = Sensor::factory()->for($organization)->create();
+    $archivedSensor = Sensor::factory()->for($organization)->create(['archived_at' => now()]);
+    $foreignSensor = Sensor::factory()->create();
+
+    foreach ([
+        ['minutes' => 30, 'rssi_dbm' => -98, 'cv' => 0],
+        ['minutes' => 20, 'rssi_dbm' => -90, 'cv' => 97],
+        ['minutes' => 10, 'rssi_dbm' => -30, 'cv' => 127],
+    ] as $sample) {
+        Reading::factory()->for($sensor)->create([
+            'observed_at' => now()->subMinutes($sample['minutes']),
+            'received_at' => now()->subMinutes($sample['minutes']),
+            'rssi_dbm' => $sample['rssi_dbm'],
+            'cv' => $sample['cv'],
+        ]);
+    }
+
+    Reading::factory()->for($sensor)->create([
+        'observed_at' => now()->subMinutes(5),
+        'received_at' => now()->subMinutes(5),
+        'rssi_dbm' => -70,
+        'cv' => null,
+    ]);
+    Reading::factory()->for($sensor)->create([
+        'observed_at' => now()->subHours(2),
+        'received_at' => now()->subHours(2),
+        'rssi_dbm' => -70,
+        'cv' => 100,
+    ]);
+    Reading::factory()->for($archivedSensor)->create(['rssi_dbm' => -70, 'cv' => 100]);
+    Reading::factory()->for($foreignSensor)->create(['rssi_dbm' => -70, 'cv' => 100]);
+
+    $payload = $this->service->lqiHistory($organization, now()->subHour(), now());
+
+    expect($payload['sensors'])->toHaveCount(1)
+        ->and($payload['sensors'][0]['sensor']['id'])->toBe($sensor->id)
+        ->and($payload['sensors'][0]['samples'])->toHaveCount(3)
+        ->and($payload['sensors'][0]['samples'][0]['lqi_percent'])->toBe(0.0)
+        ->and($payload['sensors'][0]['samples'][1]['lqi_percent'])->toEqualWithDelta(50.8974358974, 0.000001)
+        ->and($payload['sensors'][0]['samples'][2]['lqi_percent'])->toBe(100.0);
+});
