@@ -17,6 +17,7 @@ const selectedRange = computed({
 });
 
 const options: Array<{ value: WidgetTimeRange; label: string }> = [
+    { value: '30m', label: 'Last 30 minutes' },
     { value: '1h', label: 'Last hour' },
     { value: '3h', label: 'Last 3 hours' },
     { value: '6h', label: 'Last 6 hours' },

@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import WidgetChartLegend from '@/components/widgets/WidgetChartLegend.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import WidgetTimeRangeSelect from '@/components/widgets/WidgetTimeRangeSelect.vue';
-import { WIDGET_CHART_COLORS, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
+import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyReadingKind, StageSafetyWindHistoryPayload } from '@/types';
@@ -34,7 +34,7 @@ const { data, loading, error, lastUpdated, refresh } = useWidgetPolling({
 
 function timeParams(): { from: string; to: string } {
     const to = new Date();
-    const from = new Date(to.getTime() - Number.parseInt(timeRange.value) * 60 * 60 * 1000);
+    const from = new Date(to.getTime() - WIDGET_TIME_RANGE_MINUTES[timeRange.value] * 60 * 1000);
     return { from: from.toISOString(), to: to.toISOString() };
 }
 

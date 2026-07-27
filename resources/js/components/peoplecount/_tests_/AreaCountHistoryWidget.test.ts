@@ -226,12 +226,12 @@ describe('AreaCountHistoryWidget', () => {
         await flushPromises();
         mocks.get.mockClear();
 
-        await wrapper.find('[data-testid="range-select"]').setValue('6h');
+        await wrapper.find('[data-testid="range-select"]').setValue('30m');
         await nextTick();
         await flushPromises();
 
         expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-count-history.index');
-        expect(mocks.request.from).toBe('2025-08-04T16:08:00.000Z');
+        expect(mocks.request.from).toBe('2025-08-04T21:38:00.000Z');
         expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
     });
 
