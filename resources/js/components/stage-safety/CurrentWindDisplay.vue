@@ -28,7 +28,17 @@ function statusVariant(status: StageSafetyCurrentSensor['status']): 'default' | 
             </div>
 
             <dl class="mt-4 flex flex-col items-center gap-3">
-                <div>
+                <div v-if="item.wind_gust">
+                    <dt :class="readingLabel('Gust', item.wind_gust, item.status) === 'Gust' ? 'sr-only' : 'text-muted-foreground mb-1 text-xs'">
+                        {{ readingLabel('Gust', item.wind_gust, item.status) }}
+                    </dt>
+                    <dd class="text-foreground text-5xl leading-none font-semibold tracking-tight tabular-nums">
+                        {{ formatWindSpeed(item.wind_gust.value) }}
+                        <span class="text-muted-foreground text-sm font-medium">km/h</span>
+                    </dd>
+                </div>
+
+                <div v-else-if="item.wind_average">
                     <dt
                         :class="
                             readingLabel('Average', item.wind_average, item.status) === 'Average' ? 'sr-only' : 'text-muted-foreground mb-1 text-xs'
@@ -36,17 +46,19 @@ function statusVariant(status: StageSafetyCurrentSensor['status']): 'default' | 
                     >
                         {{ readingLabel('Average', item.wind_average, item.status) }}
                     </dt>
-                    <dd v-if="item.wind_average" class="text-foreground text-5xl leading-none font-semibold tracking-tight tabular-nums">
+                    <dd class="text-foreground text-5xl leading-none font-semibold tracking-tight tabular-nums">
                         {{ formatWindSpeed(item.wind_average.value) }}
                         <span class="text-muted-foreground text-sm font-medium">km/h</span>
                     </dd>
-                    <dd v-else class="text-muted-foreground py-2 text-sm">Average unavailable</dd>
                 </div>
 
-                <div v-if="item.wind_gust" class="bg-muted/40 inline-flex items-baseline gap-1.5 rounded-full border px-2.5 py-1">
-                    <dt class="text-muted-foreground text-xs">{{ readingLabel('Gust', item.wind_gust, item.status) }}</dt>
+                <div
+                    v-if="item.wind_gust && item.wind_average"
+                    class="bg-muted/40 inline-flex items-baseline gap-1.5 rounded-full border px-2.5 py-1"
+                >
+                    <dt class="text-muted-foreground text-xs">{{ readingLabel('Average', item.wind_average, item.status) }}</dt>
                     <dd class="text-sm font-semibold tracking-tight tabular-nums">
-                        {{ formatWindSpeed(item.wind_gust.value) }}
+                        {{ formatWindSpeed(item.wind_average.value) }}
                         <span class="text-xs font-medium">km/h</span>
                     </dd>
                 </div>
