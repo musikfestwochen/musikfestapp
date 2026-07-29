@@ -23,8 +23,8 @@ interface ChartDataPoint {
 const props = defineProps<{ organization: Organization }>();
 const timeRange = ref<WidgetTimeRange>('1h');
 const request = useHttp<{ from: string; to: string }, StageSafetyLqiHistoryPayload>({ from: '', to: '' });
-const { data, loading, error, lastUpdated, refresh } = useWidgetPolling({
-    interval: 30_000,
+const { data, loading, error, refresh } = useWidgetPolling({
+    interval: 60_000,
     load: () => {
         Object.assign(request, timeParams());
         return request.get(route('stage-safety.lqi-history.index', { organization: props.organization.slug }));
@@ -71,6 +71,7 @@ const chartData = computed(() =>
         .sort((left, right) => left.date.getTime() - right.date.getTime()),
 );
 const hasData = computed(() => chartData.value.length > 0);
+const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
 const crosshairRef = ref<{ component: Crosshair<ChartDataPoint> } | null>(null);
 const percentageFormatter = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -126,7 +127,7 @@ watch(chartData, () => void syncCrosshair());
 </script>
 
 <template>
-    <WidgetShell title="Link Quality History" subtitle="Normalized LQI in %" :error="error" :last-updated="lastUpdated" span="full">
+    <WidgetShell title="Link Quality History" subtitle="Normalized LQI in %" :error="error" :last-updated="latestDataAt" span="full">
         <template #icon><Radio /></template>
         <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
 

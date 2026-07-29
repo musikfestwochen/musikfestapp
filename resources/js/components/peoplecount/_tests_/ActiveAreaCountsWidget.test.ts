@@ -143,8 +143,8 @@ describe('ActiveAreaCountsWidget', () => {
         expect(areaItems[1].find('.text-muted-foreground').text()).toBe('Event 2');
         expect(areaItems[1].find('.count-display').text()).toBe('123');
 
-        // Check last updated time
-        expect(wrapper.text()).toContain('Last refreshed:');
+        expect(wrapper.text()).toContain('Latest data:');
+        expect(wrapper.get('time').attributes('datetime')).toBe('2025-08-04T22:00:00.000Z');
     });
 
     it('uses dark-mode styles for debug counts', async () => {
@@ -209,7 +209,7 @@ describe('ActiveAreaCountsWidget', () => {
         expect(wrapper.text()).not.toContain('No active areas found');
     });
 
-    it('polls every ten seconds', async () => {
+    it('polls every twenty seconds', async () => {
         mocks.get.mockResolvedValue(mockAreaCounts);
 
         mount(ActiveAreaCountsWidget, {
@@ -218,7 +218,7 @@ describe('ActiveAreaCountsWidget', () => {
             },
         });
 
-        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 10_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 20_000, { immediateCallback: true });
     });
 
     it('shows a warning when data is more than one minute old', async () => {

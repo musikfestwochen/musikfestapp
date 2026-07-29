@@ -40,10 +40,9 @@ const {
     data: series,
     loading,
     error,
-    lastUpdated,
     refresh,
 } = useWidgetPolling({
-    interval: 30_000,
+    interval: 60_000,
     load: () => {
         Object.assign(request, timeParams());
         return request.get(route('peoplecount.area-count-history.index', { organization: props.organization.slug }));
@@ -88,6 +87,7 @@ const chartData = computed<ChartDataPoint[]>(() => {
     return Array.from(buckets.values()).sort((left, right) => left.date.getTime() - right.date.getTime());
 });
 const hasData = computed(() => chartData.value.length > 0);
+const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
 
 function seriesValue(point: ChartDataPoint, key: string): number | undefined {
@@ -103,7 +103,7 @@ watch(timeRange, refresh);
 </script>
 
 <template>
-    <WidgetShell title="Area Count History" :error="error" :last-updated="lastUpdated" span="full">
+    <WidgetShell title="Area Count History" :error="error" :last-updated="latestDataAt" span="full">
         <template #icon><Users /></template>
         <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
 

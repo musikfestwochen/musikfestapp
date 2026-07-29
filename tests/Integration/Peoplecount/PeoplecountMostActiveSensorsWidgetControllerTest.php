@@ -58,7 +58,7 @@ it('returns most active sensors payload for an organization', function () {
             ],
         ])
         ->assertJson(fn ($json) => $json
-            ->whereType('0.last_updated', 'string')
+            ->where('0.last_updated', Carbon::now()->subMinutes(4)->toIso8601String())
             ->where('0.sensors.0.serial', 'S-1')
             ->where('0.sensors.0.sums.10m.total', 3)
             ->etc()

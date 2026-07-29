@@ -106,7 +106,7 @@ describe('AreaCountHistoryWidget', () => {
     it('fetches history on mount with default range', async () => {
         mocks.get.mockResolvedValue(mockSeries);
 
-        mount(AreaCountHistoryWidget, {
+        const wrapper = mount(AreaCountHistoryWidget, {
             props: { organization: mockOrganization },
             global: { stubs: globalStubs },
         });
@@ -116,6 +116,7 @@ describe('AreaCountHistoryWidget', () => {
         expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-count-history.index');
         expect(mocks.request.from).toBe('2025-08-04T21:08:00.000Z');
         expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
+        expect(wrapper.get('time').attributes('datetime')).toBe('2025-08-04T22:05:00.000Z');
     });
 
     it('renders the loading state initially', () => {
@@ -204,7 +205,7 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.text()).not.toContain('No data available');
     });
 
-    it('polls every thirty seconds', async () => {
+    it('polls every minute', async () => {
         mocks.get.mockResolvedValue(mockSeries);
 
         mount(AreaCountHistoryWidget, {
@@ -212,7 +213,7 @@ describe('AreaCountHistoryWidget', () => {
             global: { stubs: globalStubs },
         });
 
-        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 30_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 60_000, { immediateCallback: true });
     });
 
     it('uses selected dropdown range params', async () => {

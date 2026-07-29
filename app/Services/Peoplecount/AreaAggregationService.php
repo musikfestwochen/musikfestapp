@@ -714,7 +714,9 @@ class AreaAggregationService
                         ? Date::parse($latestCount->period_end)->diffForHumans(Date::parse($oneHourAgoCount->period_end), ['syntax' => true])
                         : null,
                     'debug_counts' => $debugCounts,
-                    'last_updated' => $now->toIso8601String(),
+                    'last_updated' => $latestCount
+                        ? ($latestCount->period_end->greaterThan($now) ? $now : $latestCount->period_end)->toIso8601String()
+                        : null,
                 ];
             })->all();
         });

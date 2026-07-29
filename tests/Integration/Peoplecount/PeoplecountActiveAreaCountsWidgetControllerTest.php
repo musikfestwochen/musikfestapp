@@ -58,7 +58,8 @@ it('returns active area counts for an organization', function () {
         ->assertJsonPath('0.id', $area->id)
         ->assertJsonPath('0.name', 'Test Area')
         ->assertJsonPath('0.event_name', $event->name)
-        ->assertJsonPath('0.count', 42);
+        ->assertJsonPath('0.count', 42)
+        ->assertJsonPath('0.last_updated', Carbon::now()->toIso8601String());
 
     // Reset the fixed time
     Carbon::setTestNow();

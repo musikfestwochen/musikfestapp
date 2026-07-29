@@ -80,6 +80,7 @@ class SensorActivityService
             $result = [];
             foreach ($areas as $area) {
                 $sensors = [];
+                $latestDataAt = null;
                 foreach ($area->assignments as $assignment) {
                     $sensor = $assignment->sensor;
                     $sensorCounts = $countsBySensor->get($sensor->id, collect());
@@ -91,6 +92,11 @@ class SensorActivityService
                         foreach ($sensorCounts as $ic) {
                             // Only include when inside both the time window and assignment active period
                             if ($ic->ts_from >= $from && $ic->ts_from < $now && $ic->ts_from >= $assignment->active_from && $ic->ts_from < $assignment->active_to) {
+                                $dataAt = $ic->ts_to->greaterThan($now) ? $now : $ic->ts_to;
+                                if ($latestDataAt === null || $dataAt->greaterThan($latestDataAt)) {
+                                    $latestDataAt = $dataAt;
+                                }
+
                                 $in = (int) $ic->count_in;
                                 $out = (int) $ic->count_out;
                                 if ($assignment->direction_flipped) {
@@ -126,7 +132,7 @@ class SensorActivityService
                     'name' => $area->name,
                     'event_name' => $area->event->name,
                     'sensors' => $sensors,
-                    'last_updated' => $now->toIso8601String(),
+                    'last_updated' => $latestDataAt?->toIso8601String(),
                 ];
             }
 

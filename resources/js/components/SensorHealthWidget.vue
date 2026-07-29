@@ -41,9 +41,8 @@ const {
     data: peoplecount,
     loading: peoplecountLoading,
     error: peoplecountError,
-    lastUpdated: peoplecountLastUpdated,
 } = useWidgetPolling({
-    interval: 10_000,
+    interval: 20_000,
     load: () => peoplecountRequest.get(route('peoplecount.sensor-health.index', { organization: props.organization.slug })),
     errorMessage: 'Failed to load Peoplecount sensor health.',
     enabled: props.showPeoplecount,
@@ -52,26 +51,25 @@ const {
     data: stageSafety,
     loading: stageSafetyLoading,
     error: stageSafetyError,
-    lastUpdated: stageSafetyLastUpdated,
 } = useWidgetPolling({
-    interval: 10_000,
+    interval: 20_000,
     load: () => stageSafetyRequest.get(route('stage-safety.sensor-health.index', { organization: props.organization.slug })),
     errorMessage: 'Failed to load Stage Safety sensor health.',
     enabled: props.showStageSafety,
 });
 
 const stageSafetyIssues = computed(() => [...(stageSafety.value?.stale ?? []), ...(stageSafety.value?.never_seen ?? [])]);
-const lastUpdated = computed(() => {
-    const updates = [
-        props.showPeoplecount ? peoplecountLastUpdated.value : undefined,
-        props.showStageSafety ? stageSafetyLastUpdated.value : undefined,
-    ].filter((update): update is Date | null => update !== undefined);
+const latestDataAt = computed(() => {
+    const peoplecountSensors = peoplecount.value
+        ? [...peoplecount.value.healthy, ...peoplecount.value.suspicious, ...peoplecount.value.unhealthy]
+        : [];
+    const stageSafetySensors = stageSafety.value ? [...stageSafety.value.fresh, ...stageSafety.value.stale, ...stageSafety.value.never_seen] : [];
+    const timestamps = [
+        ...peoplecountSensors.flatMap((sensor) => (sensor.latest_ts ? [new Date(sensor.latest_ts).getTime()] : [])),
+        ...stageSafetySensors.flatMap((sensor) => (sensor.latest_observed_at ? [new Date(sensor.latest_observed_at).getTime()] : [])),
+    ];
 
-    if (!updates.length || updates.some((update) => update === null)) {
-        return null;
-    }
-
-    return new Date(Math.min(...updates.map((update) => update!.getTime())));
+    return timestamps.length ? new Date(Math.max(...timestamps)) : null;
 });
 
 function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
@@ -80,7 +78,7 @@ function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
 </script>
 
 <template>
-    <WidgetShell title="Sensor Health" :last-updated="lastUpdated">
+    <WidgetShell title="Sensor Health" :last-updated="latestDataAt">
         <template #icon><Activity /></template>
 
         <div class="flex flex-1 flex-col divide-y">

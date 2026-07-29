@@ -60,16 +60,15 @@ describe('Stage Safety monitoring widgets', () => {
         vi.useRealTimers();
     });
 
-    it('loads current wind through its endpoint every ten seconds', async () => {
+    it('loads current wind through its endpoint every twenty seconds', async () => {
         mocks.get.mockResolvedValue({ generated_at: '', sensors: [] });
         const wrapper = mount(CurrentWindWidget, { props: { organization } });
         await flushPromises();
 
         expect(mocks.get).toHaveBeenCalledWith('stage-safety.current-wind.index');
-        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 10_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 20_000, { immediateCallback: true });
         expect(wrapper.text()).toContain('No sensors currently report fresh wind data');
-        expect(wrapper.text()).toContain('Last refreshed:');
-        expect(wrapper.get('time').attributes('datetime')).toBe('2026-07-25T12:00:00.000Z');
+        expect(wrapper.find('time').exists()).toBe(false);
     });
 
     it('shows initial loading while the current wind request is pending', () => {
@@ -102,7 +101,7 @@ describe('Stage Safety monitoring widgets', () => {
         expect(wrapper.text()).not.toContain('No wind readings');
     });
 
-    it('loads bounded history independently every thirty seconds', async () => {
+    it('loads bounded history independently every minute', async () => {
         mocks.get.mockResolvedValue({
             generated_at: '',
             from: '2026-07-25T11:00:00Z',
@@ -118,7 +117,7 @@ describe('Stage Safety monitoring widgets', () => {
         expect(mocks.get).toHaveBeenCalledWith('stage-safety.wind-history.index');
         expect(mocks.request.from).toBe('2026-07-25T11:00:00.000Z');
         expect(mocks.request.to).toBe('2026-07-25T12:00:00.000Z');
-        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 30_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 60_000, { immediateCallback: true });
     });
 
     it('keeps current history visible while another range loads', async () => {

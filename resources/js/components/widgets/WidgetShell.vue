@@ -44,8 +44,8 @@ const cardClass = computed(() => (props.span === 'full' ? 'col-span-full' : unde
             <slot />
             <div v-if="lastUpdated" class="mt-auto pt-4">
                 <div class="text-muted-foreground border-t pt-3 text-center text-xs">
-                    Last refreshed:
-                    <time :datetime="lastUpdated.toISOString()">{{ lastUpdated.toLocaleTimeString() }}</time>
+                    Latest data:
+                    <time :datetime="lastUpdated.toISOString()">{{ lastUpdated.toLocaleString() }}</time>
                 </div>
             </div>
         </CardContent>
