@@ -24,7 +24,18 @@ const rowHref = can('stage-safety.sensors.edit')
 </script>
 
 <template>
-    <DataTable :columns="columns" :data="sensors" :row-href="rowHref" filter-column="name" search-placeholder="Search Stage Safety sensors...">
+    <DataTable
+        :columns="columns"
+        :data="sensors"
+        :row-href="rowHref"
+        description="Manage safety sensors, installation details, and API tokens"
+        filter-column="name"
+        search-placeholder="Search Stage Safety sensors..."
+        title="Stage Safety Sensors"
+    >
+        <template #heading-actions>
+            <slot name="heading-actions"></slot>
+        </template>
         <template #actions>
             <Button v-if="can('stage-safety.sensors.create')" as-child size="sm">
                 <Link :href="route('stage-safety.sensors.create', { organization: organization.slug })">

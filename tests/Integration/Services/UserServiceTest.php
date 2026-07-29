@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -214,6 +215,60 @@ describe('getUsers', function () {
             ->and($result->first()->id)->toBe($userInOrg->id);
         $attrs = $result->first()->getAttributes();
         expect(array_keys($attrs))->toEqualCanonicalizing(['id']);
+    });
+});
+
+describe('getOrganizationUsersWithRoles', function () {
+    beforeEach(function () {
+        foreach (['PeopleCountViewer', 'StageSafetyViewer', 'OrganizationAdmin', 'Admin'] as $name) {
+            Role::query()->create([
+                'name' => $name,
+                'guard_name' => 'web',
+                'display_name' => str($name)->headline()->toString(),
+                'description' => $name.' description',
+            ]);
+        }
+    });
+
+    it('returns only users and roles from the requested organization', function () {
+        $organization = Organization::factory()->create();
+        $otherOrganization = Organization::factory()->create();
+        $user = User::factory()->create(['name' => 'Assigned User']);
+        $userWithoutRoles = User::factory()->create(['name' => 'No Role User']);
+        $outsider = User::factory()->create();
+        $organization->users()->attach([$user->id, $userWithoutRoles->id]);
+        $otherOrganization->users()->attach([$user->id, $outsider->id]);
+
+        setPermissionsOrgId($organization->id);
+        $user->assignRole(['OrganizationAdmin', 'PeopleCountViewer']);
+        setPermissionsOrgId($otherOrganization->id);
+        $user->assignRole('StageSafetyViewer');
+        setPermissionsOrgId(GLOBAL_ORG_ID);
+        $user->assignRole('Admin');
+
+        $result = $this->service->getOrganizationUsersWithRoles($organization);
+
+        expect($result->pluck('id')->all())->toBe([$user->id, $userWithoutRoles->id])
+            ->and(collect($result->firstWhere('id', $user->id)['organization_roles'])->pluck('name')->all())->toBe([
+                'PeopleCountViewer',
+                'OrganizationAdmin',
+            ])
+            ->and($result->firstWhere('id', $userWithoutRoles->id)['organization_roles'])->toBe([])
+            ->and(getPermissionsOrgId())->toBe(GLOBAL_ORG_ID);
+    });
+
+    it('eager loads roles with a fixed query count', function () {
+        $organization = Organization::factory()->create();
+        $users = User::factory()->count(3)->create();
+        $organization->users()->attach($users->pluck('id'));
+        setPermissionsOrgId($organization->id);
+        $users->each(fn (User $user) => $user->assignRole('PeopleCountViewer'));
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->service->getOrganizationUsersWithRoles($organization);
+
+        expect(DB::getQueryLog())->toHaveCount(2);
     });
 });
 

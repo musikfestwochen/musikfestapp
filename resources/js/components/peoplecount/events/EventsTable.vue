@@ -26,6 +26,8 @@ const { can } = usePermissions();
         "
         filter-column="name"
         search-placeholder="Search events..."
+        title="Events"
+        description="Manage your people counting events and their schedules"
     >
         <template #actions>
             <Button v-if="can('peoplecount.events.create')" as-child size="sm" variant="default">

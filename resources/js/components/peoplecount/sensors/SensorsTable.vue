@@ -28,7 +28,12 @@ const { can } = usePermissions();
         "
         filter-column="sensors"
         search-placeholder="Search sensors..."
+        title="Sensors"
+        description="See all your sensors and manage their API tokens"
     >
+        <template #heading-actions>
+            <slot name="heading-actions"></slot>
+        </template>
         <template #actions>
             <Button v-if="can('peoplecount.sensors.create')" as-child size="sm" variant="default">
                 <Link :href="route('peoplecount.sensors.create', { organization: props.organization.slug })">

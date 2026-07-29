@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,20 +16,21 @@ use Spatie\Permission\Models\Role;
 
 class UserService
 {
+    private const array ORGANIZATION_ROLE_NAMES = ['PeopleCountViewer', 'StageSafetyViewer', 'OrganizationAdmin'];
+
     /**
      * @return array<int, array{name: string, display_name: string|null, description: string|null}>
      */
     public function availableOrganizationRoles(): array
     {
-        $roleNames = ['PeopleCountViewer', 'StageSafetyViewer', 'OrganizationAdmin'];
         $roles = Role::query()
-            ->whereIn('name', $roleNames)
+            ->whereIn('name', self::ORGANIZATION_ROLE_NAMES)
             ->get(['name', 'display_name', 'description'])
             ->keyBy('name');
 
         $availableRoles = [];
 
-        foreach ($roleNames as $roleName) {
+        foreach (self::ORGANIZATION_ROLE_NAMES as $roleName) {
             $role = $roles->get($roleName);
 
             if (! $role instanceof Role) {
@@ -84,6 +87,55 @@ class UserService
         }
 
         return $query->get();
+    }
+
+    /**
+     * @return Collection<int, non-empty-array<string, mixed>>
+     */
+    public function getOrganizationUsersWithRoles(Organization $organization): Collection
+    {
+        $previousOrganizationId = getPermissionsOrgId();
+
+        try {
+            setPermissionsOrgId($organization->id);
+
+            $users = User::query()
+                ->whereHas('organizations', function (Builder $query) use ($organization): void {
+                    $query->where('organizations.id', $organization->id);
+                })
+                ->with([
+                    'roles' => function (Relation $query): void {
+                        $query->whereIn('name', self::ORGANIZATION_ROLE_NAMES)
+                            ->select(['roles.id', 'roles.name', 'roles.display_name', 'roles.description']);
+                    },
+                ])
+                ->orderBy('name')
+                ->orderBy('id')
+                ->get();
+
+            $roleOrder = array_flip(self::ORGANIZATION_ROLE_NAMES);
+
+            return $users->map(function (User $user) use ($roleOrder): array {
+                return [
+                    ...$user->attributesToArray(),
+                    'organization_roles' => $user->roles
+                        ->sortBy(function (Model $role) use ($roleOrder): int {
+                            $name = $role->getAttribute('name');
+
+                            return is_string($name) ? ($roleOrder[$name] ?? PHP_INT_MAX) : PHP_INT_MAX;
+                        })
+                        ->map(fn (Model $role): array => [
+                            'name' => $role->getAttribute('name'),
+                            'display_name' => $role->getAttribute('display_name'),
+                            'description' => $role->getAttribute('description'),
+                        ])
+                        ->values()
+                        ->all(),
+                ];
+            });
+        } finally {
+            setPermissionsOrgId($previousOrganizationId);
+        }
     }
 
     /**

@@ -28,7 +28,7 @@ class UserController extends Controller
     {
         return Inertia::render('orgmgmt/Users', [
             'organization' => $organization,
-            'users' => $userService->getUsers(),
+            'users' => $userService->getOrganizationUsersWithRoles($organization),
             'status' => $request->session()->get('status'),
         ]);
     }

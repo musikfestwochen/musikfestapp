@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import OrganizationsTable from '@/components/organizations/OrganizationsTable.vue';
 import Layout from '@/layouts/admin/Layout.vue';
 import { type BreadcrumbItem, Organization } from '@/types';
@@ -27,10 +26,7 @@ defineProps<{
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your organizations" title="Organizations" />
-            <div class="mt-4">
-                <OrganizationsTable :organizations="organizations" />
-            </div>
+            <OrganizationsTable :organizations="organizations" />
         </div>
     </Layout>
 </template>
