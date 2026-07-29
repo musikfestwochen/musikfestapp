@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
-import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { computed } from 'vue';
 
 const props = withDefaults(
@@ -21,6 +20,12 @@ const props = withDefaults(
 );
 
 const cardClass = computed(() => (props.span === 'full' ? 'col-span-full' : undefined));
+
+function formatLastUpdated(date: Date): string {
+    const pad = (value: number): string => value.toString().padStart(2, '0');
+
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
 </script>
 
 <template>
@@ -46,7 +51,7 @@ const cardClass = computed(() => (props.span === 'full' ? 'col-span-full' : unde
             <div v-if="lastUpdated" class="mt-auto pt-4">
                 <div class="text-muted-foreground border-t pt-3 text-center text-xs">
                     Latest data:
-                    <time :datetime="lastUpdated.toISOString()">{{ lastUpdated.toLocaleString(APP_LOCALE) }}</time>
+                    <time :datetime="lastUpdated.toISOString()">{{ formatLastUpdated(lastUpdated) }}</time>
                 </div>
             </div>
         </CardContent>

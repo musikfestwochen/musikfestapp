@@ -21,7 +21,7 @@ describe('WidgetShell', () => {
     });
 
     it('renders a standard error and successful update footer', () => {
-        const lastUpdated = new Date('2026-07-26T12:34:56Z');
+        const lastUpdated = new Date(2026, 6, 29, 13, 57, 30);
         const wrapper = mount(WidgetShell, {
             props: { title: 'Current Wind', error: 'Failed to load current wind.', lastUpdated },
         });
@@ -29,6 +29,7 @@ describe('WidgetShell', () => {
         expect(wrapper.get('[role="alert"]').text()).toBe('Failed to load current wind.');
         expect(wrapper.text()).toContain('Latest data:');
         expect(wrapper.get('time').attributes('datetime')).toBe(lastUpdated.toISOString());
+        expect(wrapper.get('time').text()).toBe('29.07.2026 13:57:30');
         expect(wrapper.get('time').element.closest('.pt-4')).not.toBeNull();
     });
 
