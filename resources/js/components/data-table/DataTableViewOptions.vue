@@ -16,7 +16,9 @@ interface DataTableViewOptionsProps<TData> {
     table: Table<TData>;
 }
 
-const props = defineProps<DataTableViewOptionsProps<any>>();
+const props = withDefaults(defineProps<DataTableViewOptionsProps<any> & { compact?: boolean }>(), {
+    compact: false,
+});
 
 const columns = computed(() => props.table.getAllColumns().filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide()));
 </script>
@@ -24,9 +26,9 @@ const columns = computed(() => props.table.getAllColumns().filter((column) => ty
 <template>
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="sm" class="ml-auto h-8">
-                <SlidersHorizontal class="mr-2 h-4 w-4" />
-                View
+            <Button variant="outline" size="sm" :class="compact ? 'size-10 px-0' : 'ml-auto h-8'">
+                <SlidersHorizontal :class="compact ? 'h-4 w-4' : 'mr-2 h-4 w-4'" />
+                <span :class="compact ? 'sr-only' : undefined">View</span>
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-[150px]">

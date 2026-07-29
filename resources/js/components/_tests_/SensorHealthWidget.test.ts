@@ -86,11 +86,11 @@ describe('combined sensor health widget', () => {
         expect(wrapper.text()).toContain('Roof');
         expect(wrapper.text()).not.toContain('Main Stage');
         expect(wrapper.text()).toContain('Observed 30 seconds ago');
-        expect(wrapper.text()).toContain('Last refreshed:');
+        expect(wrapper.text()).toContain('Latest data:');
         expect(wrapper.get('time').attributes('datetime')).toBe('2026-07-25T12:00:00.000Z');
         expect(mocks.useIntervalFn).toHaveBeenCalledTimes(2);
-        expect(mocks.useIntervalFn).toHaveBeenNthCalledWith(1, expect.any(Function), 10_000, { immediateCallback: true });
-        expect(mocks.useIntervalFn).toHaveBeenNthCalledWith(2, expect.any(Function), 10_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenNthCalledWith(1, expect.any(Function), 20_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenNthCalledWith(2, expect.any(Function), 20_000, { immediateCallback: true });
     });
 
     it('only fetches endpoints granted by its permission props', async () => {
@@ -106,7 +106,7 @@ describe('combined sensor health widget', () => {
         expect(mocks.useIntervalFn).toHaveBeenCalledOnce();
         expect(wrapper.text()).toContain('Peoplecount');
         expect(wrapper.text()).not.toContain('Stage Safety');
-        expect(wrapper.text()).toContain('Last refreshed:');
+        expect(wrapper.text()).toContain('Latest data:');
     });
 
     it('keeps one source visible when the other source fails', async () => {
@@ -121,6 +121,6 @@ describe('combined sensor health widget', () => {
         expect(wrapper.get('[role="alert"]').text()).toBe('Failed to load Peoplecount sensor health.');
         expect(wrapper.text()).not.toContain('No sensors currently assigned');
         expect(wrapper.text()).toContain('Roof');
-        expect(wrapper.find('time').exists()).toBe(false);
+        expect(wrapper.get('time').attributes('datetime')).toBe('2026-07-25T11:59:30.000Z');
     });
 });

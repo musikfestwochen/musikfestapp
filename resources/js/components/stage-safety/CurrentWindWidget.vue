@@ -6,18 +6,25 @@ import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyCurrentWindPayload } from '@/types';
 import { useHttp } from '@inertiajs/vue3';
 import { Wind } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 const props = defineProps<{ organization: Organization }>();
 const request = useHttp<Record<string, never>, StageSafetyCurrentWindPayload>({});
-const { data, loading, error, lastUpdated } = useWidgetPolling({
-    interval: 10_000,
+const { data, loading, error } = useWidgetPolling({
+    interval: 20_000,
     load: () => request.get(route('stage-safety.current-wind.index', { organization: props.organization.slug })),
     errorMessage: 'Failed to load current wind.',
+});
+const latestDataAt = computed(() => {
+    const timestamps = (data.value?.sensors ?? []).flatMap((sensor) =>
+        sensor.latest_observed_at ? [new Date(sensor.latest_observed_at).getTime()] : [],
+    );
+    return timestamps.length ? new Date(Math.max(...timestamps)) : null;
 });
 </script>
 
 <template>
-    <WidgetShell title="Current Wind" :error="error" :last-updated="lastUpdated">
+    <WidgetShell title="Current Wind" :error="error" :last-updated="latestDataAt">
         <template #icon><Wind /></template>
 
         <div v-if="loading && !data">

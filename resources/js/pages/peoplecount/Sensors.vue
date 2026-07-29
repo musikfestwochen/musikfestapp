@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import SensorsTable from '@/components/peoplecount/sensors/SensorsTable.vue';
 import { Button } from '@/components/ui/button';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
@@ -38,17 +37,15 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your sensors and manage their API tokens" title="Sensors">
-                <Button as-child size="sm" variant="outline">
-                    <Link :href="route('peoplecount.sensors.index', { organization: props.organization.slug, archived: !props.showArchived })">
-                        {{ props.showArchived ? 'Show Active' : 'Show Archived' }}
-                    </Link>
-                </Button>
-            </Heading>
-
-            <div class="mt-4">
-                <SensorsTable :organization="props.organization" :sensors="sensors" />
-            </div>
+            <SensorsTable :organization="props.organization" :sensors="sensors">
+                <template #heading-actions>
+                    <Button as-child size="sm" variant="outline">
+                        <Link :href="route('peoplecount.sensors.index', { organization: props.organization.slug, archived: !props.showArchived })">
+                            {{ props.showArchived ? 'Show Active' : 'Show Archived' }}
+                        </Link>
+                    </Button>
+                </template>
+            </SensorsTable>
         </div>
     </Layout>
 </template>

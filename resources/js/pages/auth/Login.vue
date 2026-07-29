@@ -29,7 +29,7 @@ const submit = () => {
 
 <template>
     <AuthBase description="Enter your email and password below to log in" title="Log in to your account">
-        <Head title="Musikfestapp" />
+        <Head title="Log in" />
 
         <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
             {{ status }}

@@ -10,12 +10,12 @@ defineProps<{
 </script>
 
 <template>
-    <div>
+    <div class="w-full sm:w-72">
         <Input
             :placeholder="placeholder || `Filter ${filterColumn}...`"
             :value="table.getColumn(filterColumn)?.getFilterValue() as string"
             @input="(e: Event) => table.getColumn(filterColumn)?.setFilterValue((e.target as HTMLInputElement).value)"
-            class="max-w-sm"
+            class="w-full"
         />
     </div>
 </template>

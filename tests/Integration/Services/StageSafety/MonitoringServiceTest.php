@@ -19,7 +19,7 @@ afterEach(function () {
     Carbon::setTestNow();
 });
 
-it('returns every fresh sensor with independently resolved latest readings', function () {
+it('returns every fresh sensor with independently resolved fresh readings', function () {
     $organization = Organization::factory()->create();
     $sensor = Sensor::factory()->for($organization)->create([
         'name' => 'Main Stage',
@@ -76,16 +76,39 @@ it('returns every fresh sensor with independently resolved latest readings', fun
         ->and($payload['sensors'])->toHaveCount(1)
         ->and($payload['sensors'][0]['sensor']['id'])->toBe($sensor->id)
         ->and($payload['sensors'][0]['status'])->toBe('fresh')
-        ->and($payload['sensors'][0]['wind_average']['value'])->toBe(4.5)
-        ->and($payload['sensors'][0]['wind_average']['status'])->toBe('stale')
-        ->and($payload['sensors'][0]['wind_average']['receipt_delay_seconds'])->toBe(3)
+        ->and($payload['sensors'][0]['wind_average'])->toBeNull()
         ->and($payload['sensors'][0]['wind_gust']['value'])->toBe(7.25)
         ->and($payload['sensors'][0]['wind_gust']['window_seconds'])->toBe(10)
+        ->and($payload['sensors'][0]['wind_gust']['receipt_delay_seconds'])->toBe(4)
         ->and($payload['sensors'][0]['radio_diagnostics'])->toBe([
             'battery_low' => true,
             'rssi_dbm' => -65,
             'cv' => 105,
         ]);
+});
+
+it('omits a stale gust while keeping a fresh average for the same sensor', function () {
+    $organization = Organization::factory()->create();
+    $sensor = Sensor::factory()->for($organization)->create(['stale_after_seconds' => 300]);
+
+    Reading::factory()->for($sensor)->create([
+        'kind' => ReadingKind::WindGust,
+        'value' => 8.2,
+        'observed_at' => now()->subSeconds(301),
+        'received_at' => now()->subSeconds(300),
+    ]);
+    Reading::factory()->for($sensor)->create([
+        'kind' => ReadingKind::WindAverage,
+        'value' => 4.1,
+        'observed_at' => now()->subMinute(),
+        'received_at' => now()->subMinute()->addSecond(),
+    ]);
+
+    $currentSensor = $this->service->currentWind($organization)['sensors'][0];
+
+    expect($currentSensor['wind_gust'])->toBeNull()
+        ->and($currentSensor['wind_average']['value'])->toBe(4.1)
+        ->and($currentSensor['latest_observed_at'])->toBe('2026-07-25T11:59:00+00:00');
 });
 
 it('classifies sensor health at the stale boundary and excludes archived sensors', function () {

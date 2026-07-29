@@ -6,6 +6,7 @@ import { Organization, User } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { UserPlus } from 'lucide-vue-next';
 import { usersColumns } from './columns';
+import UserRoleFilters from './UserRoleFilters.vue';
 
 const props = defineProps<{
     users: User[];
@@ -31,8 +32,14 @@ const { can } = usePermissions();
                       : null
         "
         filter-column="name"
-        search-placeholder="Search users..."
+        search-placeholder="Search by name or email..."
+        title="Users"
+        description="See all your users"
+        :initial-sorting="[{ id: 'name', desc: false }]"
     >
+        <template #filters="{ table }">
+            <UserRoleFilters v-if="props.organization" :table="table" :users="users" />
+        </template>
         <template #actions>
             <Button v-if="props.organization ? can('orgmgmt.users.create') : can('admin.users.create')" as-child size="sm" variant="default">
                 <Link

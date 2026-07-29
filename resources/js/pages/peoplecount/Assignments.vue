@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import AssignmentsTable from '@/components/peoplecount/assignments/AssignmentsTable.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization, PeoplecountAssignment } from '@/types';
@@ -36,11 +35,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="Manage sensor assignments to events and areas" title="Assignments" />
-
-            <div class="mt-4">
-                <AssignmentsTable :assignments="assignments" :organization="props.organization" />
-            </div>
+            <AssignmentsTable :assignments="assignments" :organization="props.organization" />
         </div>
     </Layout>
 </template>

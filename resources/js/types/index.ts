@@ -50,6 +50,7 @@ export interface User {
     updated_at: string;
     organizations?: Organization[];
     organizations_count?: number;
+    organization_roles?: RoleOption[];
     area_single_resets?: PeoplecountAreaSingleReset[]; // Optional, for related area single resets created by this user
 }
 

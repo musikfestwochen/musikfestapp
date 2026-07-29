@@ -20,6 +20,7 @@ it('can list users for an organization', function () {
     $org = Organization::factory()->create();
     $users = User::factory()->count(3)->create();
     $org->users()->attach($users->pluck('id'));
+    $users = $users->sortBy('name')->values();
 
     $this->actingAs($admin)
         ->get(route('orgmgmt.users.index', ['organization' => $org->slug]))

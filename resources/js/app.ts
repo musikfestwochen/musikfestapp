@@ -2,6 +2,7 @@ import '../css/app.css';
 
 import ConfirmDialogHost from '@/components/ui/confirm/ConfirmDialogHost.vue';
 import Toaster from '@/components/ui/toast/Toaster.vue';
+import type { SharedData } from '@/types';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
@@ -10,10 +11,8 @@ import { ZiggyVue } from 'ziggy-js';
 import { initializeTheme } from './composables/useAppearance';
 import { usePermissions } from './composables/usePermissions';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
-createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+createInertiaApp<SharedData>({
+    title: (title, page) => `${title} - ${page.props.name}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         const app = createApp({

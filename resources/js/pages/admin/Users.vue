@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import UsersTable from '@/components/users/UsersTable.vue';
 import Layout from '@/layouts/admin/Layout.vue';
 import { type BreadcrumbItem, User } from '@/types';
@@ -27,11 +26,7 @@ defineProps<{
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your users" title="Users" />
-
-            <div class="mt-4">
-                <UsersTable :users="users" />
-            </div>
+            <UsersTable :users="users" />
         </div>
     </Layout>
 </template>

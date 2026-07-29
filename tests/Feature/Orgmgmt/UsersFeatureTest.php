@@ -15,8 +15,15 @@ beforeEach(function () {
 it('shows the users index page for an organization', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
-    $users = User::factory()->count(2)->create();
+    $otherOrg = Organization::factory()->create();
+    $users = User::factory()->sequence(['name' => 'Assigned User'], ['name' => 'No Role User'])->count(2)->create();
     $org->users()->attach($users->pluck('id'));
+    $otherOrg->users()->attach($users->first()->id);
+
+    setPermissionsOrgId($org->id);
+    $users->first()->assignRole(['PeopleCountViewer', 'OrganizationAdmin']);
+    setPermissionsOrgId($otherOrg->id);
+    $users->first()->assignRole('StageSafetyViewer');
 
     $this->actingAs($admin)
         ->get(route('orgmgmt.users.index', ['organization' => $org->slug]))
@@ -24,6 +31,13 @@ it('shows the users index page for an organization', function () {
             ->component('orgmgmt/Users')
             ->where('organization.id', $org->id)
             ->has('users', 2)
+            ->where('users.0.name', 'Assigned User')
+            ->where('users.0.organization_roles.0.name', 'PeopleCountViewer')
+            ->where('users.0.organization_roles.0.display_name', 'People count viewer')
+            ->where('users.0.organization_roles.1.name', 'OrganizationAdmin')
+            ->has('users.0.organization_roles', 2)
+            ->where('users.1.name', 'No Role User')
+            ->where('users.1.organization_roles', [])
         );
 });
 

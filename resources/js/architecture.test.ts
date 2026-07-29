@@ -26,4 +26,14 @@ describe('frontend architecture', () => {
         expect(importsAxios(['require(', "'axios'", ')'].join(''))).toBe(true);
         expect(importsAxios(['// import axios ', "from 'axios'"].join(''))).toBe(false);
     });
+
+    it('uses Musikfestapp as the page title suffix without duplicate page titles', () => {
+        expect(browserSources['./app.ts']).toContain('`${title} - ${page.props.name}`');
+
+        const duplicateTitles = Object.entries(browserSources)
+            .filter(([, source]) => /<Head\b[^>]*\btitle=["']Musikfestapp["']/.test(source))
+            .map(([path]) => path);
+
+        expect(duplicateTitles).toEqual([]);
+    });
 });

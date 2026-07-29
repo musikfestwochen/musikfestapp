@@ -5,6 +5,7 @@ import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
+import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -39,36 +40,38 @@ const {
     data: areaCounts,
     loading,
     error,
-    lastUpdated,
 } = useWidgetPolling({
-    interval: 10_000,
+    interval: 20_000,
     load: () => request.get(route('peoplecount.area-aggregation.index', { organization: props.organization.slug })),
     errorMessage: 'Failed to load area counts',
 });
 
 // Check if user can view debug counts
 const canViewDebugCounts = computed(() => can('peoplecount.areas.*'));
+const latestDataAt = computed(() => {
+    const timestamps = (areaCounts.value ?? []).flatMap((area) => (area.last_updated ? [new Date(area.last_updated).getTime()] : []));
+    return timestamps.length ? new Date(Math.max(...timestamps)) : null;
+});
 
 function formatDate(dateString: string | null): string {
     if (!dateString) {
         return 'N/A';
     }
 
-    return new Date(dateString).toLocaleTimeString();
+    return new Date(dateString).toLocaleTimeString(APP_LOCALE);
 }
 
 const isDataStale = computed(() => {
-    if (!areaCounts.value?.[0]?.last_updated) {
+    if (!latestDataAt.value) {
         return false;
     }
 
-    const lastUpdated = new Date(areaCounts.value[0].last_updated);
-    return Date.now() - lastUpdated.getTime() > 60_000;
+    return Date.now() - latestDataAt.value.getTime() > 60_000;
 });
 </script>
 
 <template>
-    <WidgetShell title="Active Area Counts" :error="error" :last-updated="lastUpdated">
+    <WidgetShell title="Active Area Counts" :error="error" :last-updated="latestDataAt">
         <template #icon><Users /></template>
 
         <WidgetNotice v-if="isDataStale" class="mb-4" variant="warning">Data may be stale.</WidgetNotice>

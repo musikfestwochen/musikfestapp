@@ -137,6 +137,7 @@ describe('WindHistoryWidget', () => {
 
         const crosshairTemplate = crosshair.props('template') as (datum: Record<string, number | Date | undefined>, x: Date) => string;
         expect(crosshairTemplate(averageRows[0], averageRows[0].date as Date)).toContain('18.0');
+        expect(wrapper.get('time').attributes('datetime')).toBe('2026-07-25T11:40:00.000Z');
     });
 
     it('uses one hour by default and supports the thirty-minute range', async () => {

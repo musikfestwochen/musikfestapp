@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import AreasTable from '@/components/peoplecount/areas/AreasTable.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization, PeoplecountArea } from '@/types';
@@ -36,11 +35,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="Manage areas within your events for people counting" title="Areas" />
-
-            <div class="mt-4">
-                <AreasTable :areas="areas" :organization="props.organization" />
-            </div>
+            <AreasTable :areas="areas" :organization="props.organization" />
         </div>
     </Layout>
 </template>

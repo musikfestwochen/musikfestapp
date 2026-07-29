@@ -7,6 +7,7 @@ import WidgetTimeRangeSelect from '@/components/widgets/WidgetTimeRangeSelect.vu
 import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
+import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
@@ -40,10 +41,9 @@ const {
     data: series,
     loading,
     error,
-    lastUpdated,
     refresh,
 } = useWidgetPolling({
-    interval: 30_000,
+    interval: 60_000,
     load: () => {
         Object.assign(request, timeParams());
         return request.get(route('peoplecount.area-count-history.index', { organization: props.organization.slug }));
@@ -88,6 +88,7 @@ const chartData = computed<ChartDataPoint[]>(() => {
     return Array.from(buckets.values()).sort((left, right) => left.date.getTime() - right.date.getTime());
 });
 const hasData = computed(() => chartData.value.length > 0);
+const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
 
 function seriesValue(point: ChartDataPoint, key: string): number | undefined {
@@ -96,14 +97,14 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
-    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(value).toLocaleTimeString(APP_LOCALE, { hour: '2-digit', minute: '2-digit' });
 }
 
 watch(timeRange, refresh);
 </script>
 
 <template>
-    <WidgetShell title="Area Count History" :error="error" :last-updated="lastUpdated" span="full">
+    <WidgetShell title="Area Count History" :error="error" :last-updated="latestDataAt" span="full">
         <template #icon><Users /></template>
         <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
 
@@ -145,7 +146,7 @@ watch(timeRange, refresh);
                             componentToString(chartConfig, ChartTooltipContent, {
                                 indicator: 'line',
                                 labelFormatter: (value: number | Date) =>
-                                    new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString([], {
+                                    new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString(APP_LOCALE, {
                                         month: 'short',
                                         day: 'numeric',
                                         hour: '2-digit',

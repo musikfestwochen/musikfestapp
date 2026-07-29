@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import EventsTable from '@/components/peoplecount/events/EventsTable.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization, PeoplecountEvent } from '@/types';
@@ -36,11 +35,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="Manage your people counting events and their schedules" title="Events" />
-
-            <div class="mt-4">
-                <EventsTable :events="events" :organization="props.organization" />
-            </div>
+            <EventsTable :events="events" :organization="props.organization" />
         </div>
     </Layout>
 </template>

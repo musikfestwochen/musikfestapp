@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Heading from '@/components/Heading.vue';
 import SensorsTable from '@/components/stage-safety/sensors/SensorsTable.vue';
 import { Button } from '@/components/ui/button';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
@@ -34,24 +33,22 @@ const breadcrumbs: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="Manage safety sensors, installation details, and API tokens" title="Stage Safety Sensors">
-                <Button as-child size="sm" variant="outline">
-                    <Link
-                        :href="
-                            route('stage-safety.sensors.index', {
-                                organization: organization.slug,
-                                archived: !showArchived,
-                            })
-                        "
-                    >
-                        {{ showArchived ? 'Show Active' : 'Show Archived' }}
-                    </Link>
-                </Button>
-            </Heading>
-
-            <div class="mt-4">
-                <SensorsTable :organization="organization" :sensors="sensors" />
-            </div>
+            <SensorsTable :organization="organization" :sensors="sensors">
+                <template #heading-actions>
+                    <Button as-child size="sm" variant="outline">
+                        <Link
+                            :href="
+                                route('stage-safety.sensors.index', {
+                                    organization: organization.slug,
+                                    archived: !showArchived,
+                                })
+                            "
+                        >
+                            {{ showArchived ? 'Show Active' : 'Show Archived' }}
+                        </Link>
+                    </Button>
+                </template>
+            </SensorsTable>
         </div>
     </Layout>
 </template>

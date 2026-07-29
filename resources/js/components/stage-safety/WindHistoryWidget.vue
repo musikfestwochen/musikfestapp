@@ -8,6 +8,7 @@ import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries,
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyReadingKind, StageSafetyWindHistoryPayload } from '@/types';
+import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { metersPerSecondToKilometersPerHour, stageSafetySensorName } from '@/utils/stageSafety';
 import { CurveType, type Crosshair } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
@@ -23,8 +24,8 @@ interface ChartDataPoint {
 const props = defineProps<{ organization: Organization }>();
 const timeRange = ref<WidgetTimeRange>('1h');
 const request = useHttp<{ from: string; to: string }, StageSafetyWindHistoryPayload>({ from: '', to: '' });
-const { data, loading, error, lastUpdated, refresh } = useWidgetPolling({
-    interval: 30_000,
+const { data, loading, error, refresh } = useWidgetPolling({
+    interval: 60_000,
     load: () => {
         Object.assign(request, timeParams());
         return request.get(route('stage-safety.wind-history.index', { organization: props.organization.slug }));
@@ -88,6 +89,7 @@ const chartData = computed<ChartDataPoint[]>(() => {
     return Array.from(buckets.values()).sort((left, right) => left.date.getTime() - right.date.getTime());
 });
 const hasData = computed(() => chartData.value.length > 0);
+const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const chartDataBySeries = computed<Record<string, ChartDataPoint[]>>(() =>
     Object.fromEntries(chartSeries.value.map((item) => [item.key, chartData.value.filter((point) => seriesValue(point, item.key) !== undefined)])),
 );
@@ -107,7 +109,7 @@ function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: 
         x,
         indicator: 'line',
         labelFormatter: (value: number | Date) =>
-            new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString([], {
+            new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString(APP_LOCALE, {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
@@ -135,7 +137,7 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
-    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(value).toLocaleTimeString(APP_LOCALE, { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatWindTick(value: number): string {
@@ -147,7 +149,7 @@ watch(chartData, () => void syncCrosshair());
 </script>
 
 <template>
-    <WidgetShell title="Wind History" subtitle="Average and gust speed in km/h" :error="error" :last-updated="lastUpdated" span="full">
+    <WidgetShell title="Wind History" subtitle="Average and gust speed in km/h" :error="error" :last-updated="latestDataAt" span="full">
         <template #icon><Wind /></template>
         <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
 

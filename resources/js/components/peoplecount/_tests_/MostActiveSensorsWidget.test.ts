@@ -66,9 +66,10 @@ describe('MostActiveSensorsWidget', () => {
 
     it('fetches data with correct URL', async () => {
         mocks.get.mockResolvedValue([baseArea()]);
-        mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(mocks.get).toHaveBeenCalledWith('peoplecount.most-active-sensors.index');
+        expect(wrapper.get('time').attributes('datetime')).toBe('2025-08-09T18:00:00.000Z');
     });
 
     it('shows empty state when no data', async () => {
@@ -76,7 +77,7 @@ describe('MostActiveSensorsWidget', () => {
         const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
         expect(wrapper.text()).toContain('No active areas or sensors.');
-        expect(wrapper.text()).toContain('Last refreshed:');
+        expect(wrapper.find('time').exists()).toBe(false);
     });
 
     it('keeps the empty state visible during background refresh', async () => {
@@ -174,10 +175,10 @@ describe('MostActiveSensorsWidget', () => {
         expect(wrapper.text()).not.toContain('No active areas or sensors.');
     });
 
-    it('polls every ten seconds', async () => {
+    it('polls every twenty seconds', async () => {
         mocks.get.mockResolvedValue([baseArea()]);
         mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
         await flushPromises();
-        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 10_000, { immediateCallback: true });
+        expect(mocks.useIntervalFn).toHaveBeenCalledWith(expect.any(Function), 20_000, { immediateCallback: true });
     });
 });

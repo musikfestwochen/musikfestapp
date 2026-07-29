@@ -27,7 +27,7 @@ describe('WidgetShell', () => {
         });
 
         expect(wrapper.get('[role="alert"]').text()).toBe('Failed to load current wind.');
-        expect(wrapper.text()).toContain('Last refreshed:');
+        expect(wrapper.text()).toContain('Latest data:');
         expect(wrapper.get('time').attributes('datetime')).toBe(lastUpdated.toISOString());
         expect(wrapper.get('time').element.closest('.pt-4')).not.toBeNull();
     });

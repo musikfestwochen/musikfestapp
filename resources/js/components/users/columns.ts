@@ -19,6 +19,10 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                     title: 'Name',
                 }),
             cell: ({ row }) => h('div', { class: 'font-medium' }, row.getValue('name')),
+            filterFn: (row, _columnId, filterValue) => {
+                const search = String(filterValue).trim().toLocaleLowerCase();
+                return [row.original.name, row.original.email].some((value) => value.toLocaleLowerCase().includes(search));
+            },
             enableSorting: true,
             enableHiding: true,
         },
@@ -47,14 +51,15 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
             enableHiding: true,
         },
         {
-            accessorKey: 'email_verified_at',
+            id: 'verified',
+            accessorFn: (user) => user.email_verified_at,
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
                     title: 'Verified',
                 }),
             cell: ({ row }) => {
-                const verified = row.getValue('email_verified_at');
+                const verified = row.getValue('verified');
 
                 return verified ? h(Badge, { variant: 'default' }, () => 'Yes') : h(Badge, { variant: 'destructive' }, () => 'No');
             },
@@ -72,6 +77,43 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                           }),
                       cell: ({ row }) => h('div', {}, row.getValue('organizations_count') ?? 0),
                       enableSorting: true,
+                      enableHiding: true,
+                  } satisfies ColumnDef<User>,
+              ]
+            : []),
+        ...(organization
+            ? [
+                  {
+                      id: 'roles',
+                      accessorFn: (user) => user.organization_roles ?? [],
+                      header: 'Roles',
+                      cell: ({ row }) => {
+                          const roles = row.original.organization_roles ?? [];
+
+                          if (!roles.length) {
+                              return h(Badge, { variant: 'destructive' }, () => 'No role assigned');
+                          }
+
+                          return h(
+                              'div',
+                              { class: 'flex min-w-48 flex-wrap gap-1' },
+                              roles.map((role) =>
+                                  h(
+                                      Badge,
+                                      {
+                                          variant: 'secondary',
+                                          title: role.description ?? undefined,
+                                      },
+                                      () => role.display_name || role.name,
+                                  ),
+                              ),
+                          );
+                      },
+                      filterFn: (row, _columnId, filterValue) => {
+                          const roles = row.original.organization_roles ?? [];
+                          return filterValue === 'none' ? roles.length === 0 : roles.some((role) => role.name === filterValue);
+                      },
+                      enableSorting: false,
                       enableHiding: true,
                   } satisfies ColumnDef<User>,
               ]

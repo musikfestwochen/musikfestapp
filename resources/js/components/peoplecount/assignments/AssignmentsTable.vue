@@ -28,6 +28,9 @@ const { can } = usePermissions();
         "
         filter-column="event"
         search-placeholder="Search assignments..."
+        title="Assignments"
+        description="Manage sensor assignments to events and areas"
+        :initial-sorting="[{ id: 'active_from', desc: true }]"
     >
         <template #actions>
             <Button v-if="can('peoplecount.assignments.create')" as-child size="sm" variant="default">

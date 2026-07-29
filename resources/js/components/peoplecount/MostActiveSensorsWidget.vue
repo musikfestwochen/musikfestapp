@@ -29,18 +29,22 @@ interface AreaItem {
     name: string;
     event_name: string;
     sensors: SensorItem[];
-    last_updated: string;
+    last_updated: string | null;
 }
 
 const props = defineProps<{ organization: { id: number; slug: string; name: string } }>();
 
 const request = useHttp<Record<string, never>, AreaItem[]>({});
-const { data, loading, error, lastUpdated } = useWidgetPolling({
-    interval: 10_000,
+const { data, loading, error } = useWidgetPolling({
+    interval: 20_000,
     load: () => request.get(route('peoplecount.most-active-sensors.index', { organization: props.organization.slug })),
     errorMessage: 'Failed to load most active sensors',
 });
 const selectedRange = ref<'10m' | '30m' | '1h' | '2h'>('10m');
+const latestDataAt = computed(() => {
+    const timestamps = (data.value ?? []).flatMap((area) => (area.last_updated ? [new Date(area.last_updated).getTime()] : []));
+    return timestamps.length ? new Date(Math.max(...timestamps)) : null;
+});
 
 // holds the open accordion area id when multiple areas exist
 const openArea = ref<string | undefined>(undefined);
@@ -72,7 +76,7 @@ watch(
 </script>
 
 <template>
-    <WidgetShell title="Most Active Sensors" :error="error" :last-updated="lastUpdated">
+    <WidgetShell title="Most Active Sensors" :error="error" :last-updated="latestDataAt">
         <template #icon><Users /></template>
         <template #actions>
             <div class="flex flex-wrap items-center gap-1">

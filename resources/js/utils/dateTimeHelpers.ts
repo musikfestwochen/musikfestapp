@@ -22,6 +22,8 @@
  * This approach ensures consistent daily reset behavior across different timezones and DST transitions.
  */
 
+export const APP_LOCALE = 'en-US';
+
 /**
  * Format a date/time in the user's local timezone
  * Format: dd.mm.yy, hh:mm (24h format, no timezone info)
@@ -39,7 +41,7 @@ export function formatLocalDateTime(utcString: string, options?: Intl.DateTimeFo
             minute: '2-digit',
             timeZoneName: 'short',
         };
-        return date.toLocaleString('en-US', { ...defaultOptions, ...options });
+        return date.toLocaleString(APP_LOCALE, { ...defaultOptions, ...options });
     }
 
     // Default format: dd.mm.yy, hh:mm (24h format, no timezone)
@@ -72,7 +74,7 @@ export function formatLocalDateTimeLong(utcString: string): string {
  */
 export function formatTimestamp(utcString: string): string {
     const date = new Date(utcString);
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString(APP_LOCALE, {
         dateStyle: 'short',
         timeStyle: 'short',
     });
@@ -132,13 +134,13 @@ export function getUserTimezone(): string {
  */
 export function convertTimezone(date: Date, fromTimezone: string, toTimezone: string): Date {
     // Create a date string in the source timezone
-    const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-    const sourceDate = new Date(date.toLocaleString('en-US', { timeZone: fromTimezone }));
+    const utcDate = new Date(date.toLocaleString(APP_LOCALE, { timeZone: 'UTC' }));
+    const sourceDate = new Date(date.toLocaleString(APP_LOCALE, { timeZone: fromTimezone }));
     const diff = utcDate.getTime() - sourceDate.getTime();
 
     // Apply the difference and convert to target timezone
     const targetDate = new Date(date.getTime() + diff);
-    return new Date(targetDate.toLocaleString('en-US', { timeZone: toTimezone }));
+    return new Date(targetDate.toLocaleString(APP_LOCALE, { timeZone: toTimezone }));
 }
 
 /**
@@ -155,7 +157,7 @@ export function formatDateInTimezone(date: Date, timezone: string, options?: Int
         timeZoneName: 'short',
     };
 
-    return date.toLocaleString('en-US', { ...defaultOptions, ...options });
+    return date.toLocaleString(APP_LOCALE, { ...defaultOptions, ...options });
 }
 
 /**
@@ -269,7 +271,7 @@ export function isFuture(date: Date): boolean {
  */
 export function getRelativeTime(date: Date): string {
     const diffSeconds = Math.round((date.getTime() - Date.now()) / 1000);
-    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+    const formatter = new Intl.RelativeTimeFormat(APP_LOCALE, { numeric: 'auto' });
 
     if (Math.abs(diffSeconds) < 60) return formatter.format(diffSeconds, 'second');
     if (Math.abs(diffSeconds) < 3600) return formatter.format(Math.round(diffSeconds / 60), 'minute');

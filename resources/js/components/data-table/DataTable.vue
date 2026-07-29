@@ -5,19 +5,33 @@ import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Heading from '@/components/Heading.vue';
 import { valueUpdater } from '@/lib/utils';
 import DataTablePagination from './DataTablePagination.vue';
 import DataTableToolbar from './DataTableToolbar.vue';
 
-const props = defineProps<{
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-    filterColumn?: string;
-    searchPlaceholder?: string;
-    rowHref?: (row: TData) => string | null | undefined;
-}>();
+const props = withDefaults(
+    defineProps<{
+        columns: ColumnDef<TData, TValue>[];
+        data: TData[];
+        title?: string;
+        description?: string;
+        initialSorting?: SortingState;
+        filterColumn?: string;
+        searchPlaceholder?: string;
+        rowHref?: (row: TData) => string | null | undefined;
+    }>(),
+    {
+        title: undefined,
+        description: undefined,
+        initialSorting: () => [],
+        filterColumn: undefined,
+        searchPlaceholder: undefined,
+        rowHref: undefined,
+    },
+);
 
-const sorting = ref<SortingState>([]);
+const sorting = ref<SortingState>([...props.initialSorting]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 const rowSelection = ref({});
@@ -68,7 +82,19 @@ function openRow(row: TData, event: MouseEvent | KeyboardEvent): void {
 
 <template>
     <div>
+        <Heading v-if="title" :description="description" :title="title">
+            <div class="flex items-center gap-2">
+                <div v-if="$slots.actions" class="lg:hidden">
+                    <slot name="actions" :table="table"></slot>
+                </div>
+                <slot name="heading-actions"></slot>
+            </div>
+        </Heading>
+
         <DataTableToolbar :table="table" :filter-column="filterColumn" :search-placeholder="searchPlaceholder">
+            <template #filters>
+                <slot name="filters" :table="table"></slot>
+            </template>
             <template #actions>
                 <slot name="actions" :table="table"></slot>
             </template>

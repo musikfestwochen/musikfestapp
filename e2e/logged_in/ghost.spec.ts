@@ -48,7 +48,7 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
     await page.getByRole('button', { name: 'Go to first page' }).click();
 
     // Toggle columns in user view
-    for (const col of ['name', 'email', 'email_verified_at']) {
+    for (const col of ['name', 'email', 'verified']) {
         console.log(`Toggling user column: ${col}`);
         await page.getByRole('button', { name: 'View' }).click();
         await page.getByRole('menuitemcheckbox', { name: col, exact: col === 'email' }).click();

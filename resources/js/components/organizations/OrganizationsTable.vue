@@ -21,6 +21,9 @@ const { can } = usePermissions();
         :row-href="(organization) => (can('admin.organizations.edit') ? route('admin.organizations.edit', { id: organization.id }) : null)"
         filter-column="name"
         search-placeholder="Search organizations..."
+        title="Organizations"
+        description="See all your organizations"
+        :initial-sorting="[{ id: 'name', desc: false }]"
     >
         <template #actions>
             <Button v-if="can('admin.organizations.create')" as-child size="sm" variant="default">

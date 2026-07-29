@@ -126,25 +126,11 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 </TabsContent>
 
                 <TabsContent class="mt-6" value="resets-single">
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <Heading title="Manual Resets" />
-                        </div>
-                        <div class="mt-4">
-                            <SingleResetTable :area="props.area" :organization="props.organization" :resets="area.area_single_resets || []" />
-                        </div>
-                    </div>
+                    <SingleResetTable :area="props.area" :organization="props.organization" :resets="area.area_single_resets || []" />
                 </TabsContent>
 
                 <TabsContent class="mt-6" value="resets-recurring">
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <Heading title="Recurring Resets" />
-                        </div>
-                        <div class="mt-4">
-                            <RecurringResetTable :area="props.area" :organization="props.organization" :resets="area.area_recurring_resets || []" />
-                        </div>
-                    </div>
+                    <RecurringResetTable :area="props.area" :organization="props.organization" :resets="area.area_recurring_resets || []" />
                 </TabsContent>
 
                 <TabsContent class="mt-6" value="alerts">

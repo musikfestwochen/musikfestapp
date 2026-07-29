@@ -2,7 +2,7 @@ import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { APP_LOCALE, formatLocalDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Edit, Trash2 } from 'lucide-vue-next';
@@ -123,7 +123,7 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                 const scheduleText = `Daily at ${reset.reset_time} (${reset.timezone})`;
                 return h('div', { class: 'text-sm' }, scheduleText);
             },
-            enableSorting: false,
+            enableSorting: true,
             enableHiding: true,
         },
         {
@@ -165,7 +165,7 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                             : today;
 
                     // Format the occurrence in the stored timezone
-                    const formatter = new Intl.DateTimeFormat('en-GB', {
+                    const formatter = new Intl.DateTimeFormat(APP_LOCALE, {
                         timeZone: reset.timezone || 'UTC',
                         day: '2-digit',
                         month: '2-digit',

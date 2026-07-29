@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import Heading from '@/components/Heading.vue';
 import UsersTable from '@/components/users/UsersTable.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { type BreadcrumbItem, Organization, User } from '@/types';
@@ -32,11 +31,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
         </div>
 
         <div class="px-4 py-6">
-            <Heading description="See all your users" title="Users" />
-
-            <div class="mt-4">
-                <UsersTable :organization="props.organization" :users="users" />
-            </div>
+            <UsersTable :organization="props.organization" :users="users" />
         </div>
     </Layout>
 </template>
