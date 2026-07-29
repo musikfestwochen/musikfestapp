@@ -234,17 +234,13 @@ class MonitoringService
      */
     protected function currentReadingPayload(Sensor $sensor, ?Reading $reading, CarbonInterface $now): ?array
     {
-        if (! $reading instanceof Reading) {
+        if (! $reading instanceof Reading || ! $this->isFresh($reading->observed_at, $sensor, $now)) {
             return null;
         }
 
-        $status = $this->isFresh($reading->observed_at, $sensor, $now)
-            ? SensorHealthStatus::Fresh
-            : SensorHealthStatus::Stale;
-
         return [
             ...$this->historyReadingPayload($reading),
-            'status' => $status->value,
+            'status' => SensorHealthStatus::Fresh->value,
             'received_at' => $reading->received_at->toIso8601String(),
             'receipt_delay_seconds' => (int) $reading->observed_at->diffInSeconds($reading->received_at, false),
         ];
