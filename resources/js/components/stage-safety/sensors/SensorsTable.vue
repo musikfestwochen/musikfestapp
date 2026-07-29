@@ -30,6 +30,7 @@ const rowHref = can('stage-safety.sensors.edit')
         :row-href="rowHref"
         description="Manage safety sensors, installation details, and API tokens"
         filter-column="name"
+        :initial-sorting="[{ id: 'name', desc: false }]"
         search-placeholder="Search Stage Safety sensors..."
         title="Stage Safety Sensors"
     >

@@ -28,6 +28,7 @@ const { can } = usePermissions();
         search-placeholder="Search areas..."
         title="Areas"
         description="Manage areas within your events for people counting"
+        :initial-sorting="[{ id: 'name', desc: false }]"
     >
         <template #actions>
             <Button v-if="can('peoplecount.areas.create')" as-child size="sm" variant="default">

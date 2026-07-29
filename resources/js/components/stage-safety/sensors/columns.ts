@@ -12,7 +12,8 @@ import { h } from 'vue';
 export function sensorColumns(organization: Organization): ColumnDef<StageSafetySensor>[] {
     return [
         {
-            accessorKey: 'name',
+            id: 'name',
+            accessorFn: (sensor) => sensor.name || sensor.identifier,
             header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
             cell: ({ row }) => h('div', { class: 'font-medium' }, row.original.name || row.original.identifier),
         },

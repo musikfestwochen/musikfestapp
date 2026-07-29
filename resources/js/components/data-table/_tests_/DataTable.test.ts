@@ -39,4 +39,23 @@ describe('DataTable responsive actions', () => {
         expect(primaryActions.some((action) => action.element.parentElement?.classList.contains('hidden'))).toBe(true);
         expect(wrapper.findAll('[data-testid="secondary-action"]')).toHaveLength(1);
     });
+
+    it('applies initial sorting before rendering rows', () => {
+        const wrapper = mount(DataTable, {
+            props: {
+                columns: [
+                    {
+                        id: 'name',
+                        accessorFn: (row: unknown) => (row as { name: string }).name,
+                        header: 'Name',
+                        cell: ({ getValue }) => getValue(),
+                    },
+                ],
+                data: [{ name: 'Alpha' }, { name: 'Charlie' }, { name: 'Bravo' }],
+                initialSorting: [{ id: 'name', desc: true }],
+            },
+        });
+
+        expect(wrapper.findAll('tbody tr').map((row) => row.text())).toEqual(['Charlie', 'Bravo', 'Alpha']);
+    });
 });

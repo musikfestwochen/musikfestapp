@@ -23,6 +23,7 @@ const { can } = usePermissions();
         search-placeholder="Search organizations..."
         title="Organizations"
         description="See all your organizations"
+        :initial-sorting="[{ id: 'name', desc: false }]"
     >
         <template #actions>
             <Button v-if="can('admin.organizations.create')" as-child size="sm" variant="default">

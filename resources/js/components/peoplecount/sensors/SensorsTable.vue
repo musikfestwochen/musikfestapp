@@ -30,6 +30,7 @@ const { can } = usePermissions();
         search-placeholder="Search sensors..."
         title="Sensors"
         description="See all your sensors and manage their API tokens"
+        :initial-sorting="[{ id: 'serial', desc: false }]"
     >
         <template #heading-actions>
             <slot name="heading-actions"></slot>

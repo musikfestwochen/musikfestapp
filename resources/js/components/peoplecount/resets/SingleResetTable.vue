@@ -18,7 +18,14 @@ const { can } = usePermissions();
 </script>
 
 <template>
-    <DataTable :columns="columns" :data="resets" filter-column="notes" search-placeholder="Search resets..." title="Manual Resets">
+    <DataTable
+        :columns="columns"
+        :data="resets"
+        :initial-sorting="[{ id: 'effective_at', desc: true }]"
+        filter-column="notes"
+        search-placeholder="Search resets..."
+        title="Manual Resets"
+    >
         <template #actions>
             <Button v-if="can('peoplecount.area_resets.create')" as-child size="sm" variant="default">
                 <Link

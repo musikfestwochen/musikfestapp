@@ -123,7 +123,7 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                 const scheduleText = `Daily at ${reset.reset_time} (${reset.timezone})`;
                 return h('div', { class: 'text-sm' }, scheduleText);
             },
-            enableSorting: false,
+            enableSorting: true,
             enableHiding: true,
         },
         {

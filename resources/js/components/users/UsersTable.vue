@@ -35,6 +35,7 @@ const { can } = usePermissions();
         search-placeholder="Search by name or email..."
         title="Users"
         description="See all your users"
+        :initial-sorting="[{ id: 'name', desc: false }]"
     >
         <template #filters="{ table }">
             <UserRoleFilters v-if="props.organization" :table="table" :users="users" />

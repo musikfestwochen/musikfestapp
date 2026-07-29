@@ -16,6 +16,7 @@ const props = withDefaults(
         data: TData[];
         title?: string;
         description?: string;
+        initialSorting?: SortingState;
         filterColumn?: string;
         searchPlaceholder?: string;
         rowHref?: (row: TData) => string | null | undefined;
@@ -23,13 +24,14 @@ const props = withDefaults(
     {
         title: undefined,
         description: undefined,
+        initialSorting: () => [],
         filterColumn: undefined,
         searchPlaceholder: undefined,
         rowHref: undefined,
     },
 );
 
-const sorting = ref<SortingState>([]);
+const sorting = ref<SortingState>([...props.initialSorting]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 const rowSelection = ref({});
