@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
+import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { computed } from 'vue';
 
 const props = withDefaults(
@@ -45,7 +46,7 @@ const cardClass = computed(() => (props.span === 'full' ? 'col-span-full' : unde
             <div v-if="lastUpdated" class="mt-auto pt-4">
                 <div class="text-muted-foreground border-t pt-3 text-center text-xs">
                     Latest data:
-                    <time :datetime="lastUpdated.toISOString()">{{ lastUpdated.toLocaleString() }}</time>
+                    <time :datetime="lastUpdated.toISOString()">{{ lastUpdated.toLocaleString(APP_LOCALE) }}</time>
                 </div>
             </div>
         </CardContent>

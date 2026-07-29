@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    APP_LOCALE,
     combineDateAndTime,
     convertTimezone,
     dailyResetToText,
@@ -362,6 +363,7 @@ describe('Timezone Functions', () => {
 describe('Date Utility Functions', () => {
     afterEach(() => {
         vi.useRealTimers();
+        vi.restoreAllMocks();
     });
 
     describe('formatDateForInput', () => {
@@ -435,6 +437,17 @@ describe('Date Utility Functions', () => {
     });
 
     describe('getRelativeTime', () => {
+        it('should use the application locale instead of the browser locale', () => {
+            const NativeRelativeTimeFormat = Intl.RelativeTimeFormat;
+            const formatter = vi.spyOn(Intl, 'RelativeTimeFormat').mockImplementation(function (locales, options) {
+                return new NativeRelativeTimeFormat(locales, options);
+            });
+
+            getRelativeTime(new Date());
+
+            expect(formatter).toHaveBeenCalledWith(APP_LOCALE, { numeric: 'auto' });
+        });
+
         it('should return "now" for current time', () => {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));

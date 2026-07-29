@@ -7,6 +7,7 @@ import WidgetTimeRangeSelect from '@/components/widgets/WidgetTimeRangeSelect.vu
 import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
+import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
@@ -96,7 +97,7 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
-    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(value).toLocaleTimeString(APP_LOCALE, { hour: '2-digit', minute: '2-digit' });
 }
 
 watch(timeRange, refresh);
@@ -145,7 +146,7 @@ watch(timeRange, refresh);
                             componentToString(chartConfig, ChartTooltipContent, {
                                 indicator: 'line',
                                 labelFormatter: (value: number | Date) =>
-                                    new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString([], {
+                                    new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString(APP_LOCALE, {
                                         month: 'short',
                                         day: 'numeric',
                                         hour: '2-digit',

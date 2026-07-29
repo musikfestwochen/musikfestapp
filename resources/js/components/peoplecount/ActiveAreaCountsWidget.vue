@@ -5,6 +5,7 @@ import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
+import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -57,7 +58,7 @@ function formatDate(dateString: string | null): string {
         return 'N/A';
     }
 
-    return new Date(dateString).toLocaleTimeString();
+    return new Date(dateString).toLocaleTimeString(APP_LOCALE);
 }
 
 const isDataStale = computed(() => {
