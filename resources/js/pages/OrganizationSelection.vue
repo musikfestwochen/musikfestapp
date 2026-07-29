@@ -25,7 +25,7 @@ const submit = (organizationId: number) => {
 </script>
 
 <template>
-    <Head title="Musikfestapp" />
+    <Head title="Select Organization" />
 
     <AuthLayout :class="{ 'cursor-wait': form.processing }" description="Please select an organization to continue" title="Select Organization">
         <InputError :message="form.errors.organization_id" class="mt-2" />
