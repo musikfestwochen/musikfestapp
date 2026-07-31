@@ -35,6 +35,6 @@ export default defineConfig({
         // (requires installing happy-dom as a peer dependency)
         environment: 'happy-dom',
         // exclude e2e tests from vitest
-        exclude: ['**/node_modules/**', '**/e2e/**', '**/dist/**'],
+        exclude: ['**/node_modules/**', '**/vendor/**', '**/e2e/**', '**/dist/**'],
     },
 });

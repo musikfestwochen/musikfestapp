@@ -1,6 +1,6 @@
 // TODO: Remove video and sleeps after video check
 import { faker } from '@faker-js/faker';
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // This test clocks through major app flows as a superadmin user
 // TODO: Consider splitting into smaller tests or using utility functions for repeated flows
@@ -59,10 +59,14 @@ test('superadmin can click through main app flows (ghost test)', async ({ page }
     // Create a new user
     console.log(`Creating a new user: ${userName} (${userEmail})`);
     await page.getByRole('link', { name: 'Create User' }).click();
-    await page.getByRole('textbox', { name: 'Name' }).fill(userName);
-    await page.getByRole('textbox', { name: 'Email address' }).fill(userEmail);
+    const userNameInput = page.getByLabel('Name');
+    const userEmailInput = page.getByLabel('Email address');
+    await userEmailInput.fill(userEmail);
+    await userNameInput.fill(userName);
+    await expect(userNameInput).toHaveValue(userName);
+    await expect(userEmailInput).toHaveValue(userEmail);
     await page.getByRole('button', { name: 'Create User' }).click();
-    await page.waitForTimeout(1000); // TODO: Remove sleep after video check
+    await page.waitForURL(/\/admin\/users(?:\?|$)/);
     console.log('User created, searching for user in table...');
 
     // Paginate through users to find the created user
