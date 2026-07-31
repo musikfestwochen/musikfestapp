@@ -200,16 +200,21 @@ class MonitoringService
     protected function currentSensorPayload(Sensor $sensor, CarbonInterface $now): array
     {
         $latestReading = $this->latestReading($sensor);
+        $radioDiagnostics = null;
+
+        if ($latestReading instanceof Reading) {
+            $radioDiagnostics = [
+                'battery_low' => $latestReading->battery_low,
+                'rssi_dbm' => $latestReading->rssi_dbm,
+                'cv' => $latestReading->cv,
+            ];
+        }
 
         return [
             'sensor' => $this->sensorPayload($sensor),
             'status' => $this->status($sensor, $now)->value,
             'latest_observed_at' => $latestReading?->observed_at->toIso8601String(),
-            'radio_diagnostics' => $latestReading instanceof Reading ? [
-                'battery_low' => $latestReading->battery_low,
-                'rssi_dbm' => $latestReading->rssi_dbm,
-                'cv' => $latestReading->cv,
-            ] : null,
+            'radio_diagnostics' => $radioDiagnostics,
             'wind_average' => $this->currentReadingPayload($sensor, $sensor->latestWindAverage, $now),
             'wind_gust' => $this->currentReadingPayload($sensor, $sensor->latestWindGust, $now),
         ];

@@ -111,6 +111,16 @@ it('omits a stale gust while keeping a fresh average for the same sensor', funct
         ->and($currentSensor['latest_observed_at'])->toBe('2026-07-25T11:59:00+00:00');
 });
 
+it('returns null radio diagnostics when a sensor has no readings', function () {
+    $sensor = Sensor::factory()->create();
+    $method = new ReflectionMethod($this->service, 'currentSensorPayload');
+
+    /** @var array<string, mixed> $payload */
+    $payload = $method->invoke($this->service, $sensor, now());
+
+    expect($payload['radio_diagnostics'])->toBeNull();
+});
+
 it('classifies sensor health at the stale boundary and excludes archived sensors', function () {
     $organization = Organization::factory()->create();
     $freshSensor = Sensor::factory()->for($organization)->create(['stale_after_seconds' => 300]);

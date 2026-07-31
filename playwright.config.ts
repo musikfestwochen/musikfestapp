@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { lookup } from 'node:dns/promises';
 
 /**
  * Read environment variables from file.
@@ -18,6 +19,27 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 process.env.APP_DEBUG = 'false';
 process.env.DEBUGBAR_ENABLED = 'false';
 
+const fallbackBaseURL = 'http://127.0.0.1:8000';
+const configuredBaseURL = process.env.PLAYWRIGHT_BASE_URL || process.env.APP_URL || 'http://musikfestapp.test';
+
+const isLocalURL = (url: string): boolean => ['localhost', '127.0.0.1'].includes(new URL(url).hostname);
+
+async function isResolvable(url: string): Promise<boolean> {
+    try {
+        await lookup(new URL(url).hostname);
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+const shouldUseConfiguredBaseURL =
+    Boolean(process.env.PLAYWRIGHT_BASE_URL) || isLocalURL(configuredBaseURL) || (await isResolvable(configuredBaseURL));
+const baseURL = shouldUseConfiguredBaseURL ? configuredBaseURL : fallbackBaseURL;
+const baseURLObject = new URL(baseURL);
+const needsLocalServer = !process.env.CI && isLocalURL(baseURL);
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -36,7 +58,7 @@ export default defineConfig({
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://musikfestapp.test',
+        baseURL,
 
         /* Slow down actions for better video visibility */
         launchOptions: {
@@ -73,11 +95,32 @@ export default defineConfig({
     ],
 
     /* Run your local dev server before starting the tests */
-    webServer: process.env.CI
-        ? undefined
-        : {
-              command: 'npm run dev',
-              url: 'http://musikfestapp.test',
-              reuseExistingServer: true,
-          },
+    webServer: needsLocalServer
+        ? [
+              {
+                  command: `php artisan serve --host=${baseURLObject.hostname} --port=${baseURLObject.port || '8000'}`,
+                  url: baseURL,
+                  name: 'Laravel',
+                  reuseExistingServer: true,
+                  timeout: 120_000,
+                  stdout: 'pipe',
+                  stderr: 'pipe',
+                  env: {
+                      ...process.env,
+                      APP_URL: baseURL,
+                      APP_DEBUG: 'false',
+                      DEBUGBAR_ENABLED: 'false',
+                  },
+              },
+              {
+                  command: 'npm run dev -- --host=127.0.0.1',
+                  url: 'http://127.0.0.1:5173/@vite/client',
+                  name: 'Vite',
+                  reuseExistingServer: true,
+                  timeout: 120_000,
+                  stdout: 'pipe',
+                  stderr: 'pipe',
+              },
+          ]
+        : undefined,
 });

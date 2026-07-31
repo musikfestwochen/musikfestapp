@@ -702,21 +702,30 @@ class AreaAggregationService
                     ];
                 }
 
+                $netChange = null;
+                $netChangeTimeAgo = null;
+
+                if ($latestCount && $oneHourAgoCount) {
+                    $netChange = $latestCount->count - $oneHourAgoCount->count;
+                    $netChangeTimeAgo = Date::parse($latestCount->period_end)
+                        ->diffForHumans(Date::parse($oneHourAgoCount->period_end), ['syntax' => true]);
+                }
+
+                $lastUpdated = null;
+
+                if ($latestCount) {
+                    $lastUpdated = ($latestCount->period_end->greaterThan($now) ? $now : $latestCount->period_end)->toIso8601String();
+                }
+
                 return [
                     'id' => $area->id,
                     'name' => $area->name,
                     'event_name' => $area->event->name,
                     'count' => $latestCount->count ?? 0,
-                    'net_change' => $latestCount && $oneHourAgoCount
-                        ? $latestCount->count - $oneHourAgoCount->count
-                        : null,
-                    'net_change_time_ago' => $latestCount && $oneHourAgoCount
-                        ? Date::parse($latestCount->period_end)->diffForHumans(Date::parse($oneHourAgoCount->period_end), ['syntax' => true])
-                        : null,
+                    'net_change' => $netChange,
+                    'net_change_time_ago' => $netChangeTimeAgo,
                     'debug_counts' => $debugCounts,
-                    'last_updated' => $latestCount
-                        ? ($latestCount->period_end->greaterThan($now) ? $now : $latestCount->period_end)->toIso8601String()
-                        : null,
+                    'last_updated' => $lastUpdated,
                 ];
             })->all();
         });
