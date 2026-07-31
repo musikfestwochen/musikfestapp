@@ -38,7 +38,7 @@ const shouldUseConfiguredBaseURL =
     Boolean(process.env.PLAYWRIGHT_BASE_URL) || isLocalURL(configuredBaseURL) || (await isResolvable(configuredBaseURL));
 const baseURL = shouldUseConfiguredBaseURL ? configuredBaseURL : fallbackBaseURL;
 const baseURLObject = new URL(baseURL);
-const needsLocalServer = isLocalURL(baseURL);
+const needsLocalServer = !process.env.CI && isLocalURL(baseURL);
 
 /**
  * See https://playwright.dev/docs/test-configuration.
