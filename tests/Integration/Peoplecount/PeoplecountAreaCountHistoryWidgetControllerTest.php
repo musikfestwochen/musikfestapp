@@ -99,8 +99,8 @@ it('does not return data outside the requested range', function () {
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-count-history.index', [
             'organization' => $org->slug,
-            'from' => Date::now()->subHour()->toIso8601String(),
-            'to' => Date::now()->toIso8601String(),
+            'from' => Date::now()->subHour()->toIso8601ZuluString('millisecond'),
+            'to' => Date::now()->toIso8601ZuluString('millisecond'),
         ]));
 
     $response->assertStatus(200)
@@ -218,6 +218,17 @@ it('rejects invalid date parameters', function () {
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['from']);
+
+    // Naive datetime strings without UTC marker are rejected too
+    $response = $this->actingAs($admin)
+        ->getJson(route('peoplecount.area-count-history.index', [
+            'organization' => $org->slug,
+            'from' => '2025-08-04 21:08:00',
+            'to' => '2025-08-04 22:08:00',
+        ]));
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['from', 'to']);
 });
 
 it('rejects history ranges above maximum allowed duration', function () {
@@ -229,8 +240,8 @@ it('rejects history ranges above maximum allowed duration', function () {
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-count-history.index', [
             'organization' => $org->slug,
-            'from' => Date::now()->subHours(25)->toIso8601String(),
-            'to' => Date::now()->toIso8601String(),
+            'from' => Date::now()->subHours(25)->toIso8601ZuluString('millisecond'),
+            'to' => Date::now()->toIso8601ZuluString('millisecond'),
         ]));
 
     $response->assertStatus(422)
@@ -248,8 +259,8 @@ it('rejects an inverted history range', function () {
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-count-history.index', [
             'organization' => $org->slug,
-            'from' => Date::now()->toIso8601String(),
-            'to' => Date::now()->subHour()->toIso8601String(),
+            'from' => Date::now()->toIso8601ZuluString('millisecond'),
+            'to' => Date::now()->subHour()->toIso8601ZuluString('millisecond'),
         ]));
 
     $response->assertStatus(422)
@@ -294,8 +305,8 @@ it('allows history ranges at maximum allowed duration', function () {
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-count-history.index', [
             'organization' => $org->slug,
-            'from' => Date::now()->subHours(24)->toIso8601String(),
-            'to' => Date::now()->toIso8601String(),
+            'from' => Date::now()->subHours(24)->toIso8601ZuluString('millisecond'),
+            'to' => Date::now()->toIso8601ZuluString('millisecond'),
         ]));
 
     $response->assertStatus(200);

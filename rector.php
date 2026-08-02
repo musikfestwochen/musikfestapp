@@ -13,6 +13,7 @@ use Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRect
 use Rector\ValueObject\PhpVersion;
 use RectorLaravel\Rector\ArrayDimFetch\EnvVariableToEnvHelperRector;
 use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
+use RectorLaravel\Rector\StaticCall\CarbonToDateFacadeRector;
 use RectorLaravel\Set\LaravelLevelSetList;
 use RectorLaravel\Set\LaravelSetList;
 
@@ -37,6 +38,10 @@ return static function (RectorConfig $rectorConfig): void {
         // TODO: Remove once https://github.com/driftingly/rector-laravel/issues/419 is fixed.
         ServerVariableToRequestFacadeRector::class => [
             __DIR__.'/tests/Feature/PeoplecountConfigTest.php',
+        ],
+        // Unit tests must stay facade-free (UnitTestPurityTest)
+        CarbonToDateFacadeRector::class => [
+            __DIR__.'/tests/Unit',
         ],
         __DIR__.'/vendor/*',
         __DIR__.'/node_modules/*',

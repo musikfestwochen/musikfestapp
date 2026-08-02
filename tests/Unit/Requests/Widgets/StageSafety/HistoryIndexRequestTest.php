@@ -9,8 +9,8 @@ it('defines paired bounded history inputs', function () {
     $request = new HistoryIndexRequest;
 
     expect($request->rules())->toBe([
-        'from' => ['nullable', 'date', 'required_with:to', 'before_or_equal:to'],
-        'to' => ['nullable', 'date', 'required_with:from', 'after_or_equal:from'],
+        'from' => ['nullable', 'date_format:Y-m-d\TH:i:s.v\Z', 'required_with:to', 'before_or_equal:to'],
+        'to' => ['nullable', 'date_format:Y-m-d\TH:i:s.v\Z', 'required_with:from', 'after_or_equal:from'],
     ])->and($request->after())->toHaveCount(1)
         ->and(HistoryIndexRequest::MAX_RANGE_HOURS)->toBe(24);
 });

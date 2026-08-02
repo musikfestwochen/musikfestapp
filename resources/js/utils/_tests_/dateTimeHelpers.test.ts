@@ -13,7 +13,6 @@ import {
     formatTimeForInput,
     formatTimestamp,
     getLocalDateFromUTC,
-    getNextDailyOccurrence,
     getRelativeTime,
     getUserTimezone,
     getUTCStringFromLocal,
@@ -139,14 +138,6 @@ describe('DateTimeHelper Class', () => {
             it('should convert time and timezone to readable text', () => {
                 const text = DateTimeHelper.dailyResetToText('08:00', 'Europe/Zurich');
                 expect(text).toBe('Daily at 08:00 (Europe/Zurich)');
-            });
-        });
-
-        describe('getNextDailyOccurrence', () => {
-            it('should return next daily occurrences', () => {
-                const occurrences = DateTimeHelper.getNextDailyOccurrence('09:00', 'UTC', 3);
-                expect(occurrences).toHaveLength(3);
-                expect(occurrences[0]).toBeInstanceOf(Date);
             });
         });
     });
@@ -291,38 +282,6 @@ describe('Time Format Functions', () => {
         it('should handle UTC timezone', () => {
             const text = dailyResetToText('12:00', 'UTC');
             expect(text).toBe('Daily at 12:00 (UTC)');
-        });
-    });
-
-    describe('getNextDailyOccurrence', () => {
-        it('should return next daily occurrences', () => {
-            const occurrences = getNextDailyOccurrence('09:00', 'UTC', 3);
-            expect(occurrences).toHaveLength(3);
-            expect(occurrences[0]).toBeInstanceOf(Date);
-            expect(occurrences[1]).toBeInstanceOf(Date);
-            expect(occurrences[2]).toBeInstanceOf(Date);
-        });
-
-        it('should handle different timezones', () => {
-            const occurrences = getNextDailyOccurrence('14:30', 'Europe/Zurich', 2);
-            expect(occurrences).toHaveLength(2);
-            expect(occurrences[0]).toBeInstanceOf(Date);
-        });
-
-        it('should handle invalid time format', () => {
-            const occurrences = getNextDailyOccurrence('invalid', 'UTC', 3);
-            expect(occurrences).toHaveLength(0);
-        });
-
-        it('should limit occurrences to requested count', () => {
-            const occurrences = getNextDailyOccurrence('08:00', 'UTC', 2);
-            expect(occurrences).toHaveLength(2);
-        });
-
-        it('should handle edge case times', () => {
-            const occurrences = getNextDailyOccurrence('00:00', 'UTC', 1);
-            expect(occurrences).toHaveLength(1);
-            expect(occurrences[0]).toBeInstanceOf(Date);
         });
     });
 });

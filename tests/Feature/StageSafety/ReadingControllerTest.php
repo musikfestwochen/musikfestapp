@@ -69,7 +69,7 @@ it('persists a token-bound m/s reading with client and server timestamps', funct
         ->and($reading->cv)->toBe(103);
 });
 
-it('ignores extra identity and payload fields', function () {
+it('rejects extra identity and payload fields', function () {
     $authenticatedSensor = Sensor::factory()->create();
     $otherSensor = Sensor::factory()->for(Organization::factory())->create();
     $payload = stageSafetyReadingPayload([
@@ -87,10 +87,10 @@ it('ignores extra identity and payload fields', function () {
         route('stage-safety.readings.store'),
         $payload,
         stageSafetyReadingHeaders(stageSafetyReadingToken($authenticatedSensor)),
-    )->assertOk();
+    )->assertUnprocessable()
+        ->assertJsonValidationErrors(['sensor_id', 'organization_id', 'ignored']);
 
-    expect(Reading::query()->sole()->sensor_id)->toBe($authenticatedSensor->id)
-        ->and(Reading::query()->whereBelongsTo($otherSensor)->exists())->toBeFalse();
+    expect(Reading::query()->count())->toBe(0);
 });
 
 it('stores average and gust frames independently', function () {

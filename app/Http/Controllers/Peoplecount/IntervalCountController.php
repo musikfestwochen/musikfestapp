@@ -16,7 +16,12 @@ class IntervalCountController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * TODO: Consider adding request validation class for improved type safety
+     * Intentionally uses a plain Request: the Axis vendor payload allows
+     * additional properties (see the OpenAPI spec in docs/api), which
+     * conflicts with global fail-on-unknown-fields. IntervalCountService
+     * performs structural validation instead and rejects invalid payloads
+     * with an exception.
+     *
      * TODO: Consider adding rate limiting for API endpoints
      * TODO: Consider adding request logging for debugging sensor issues
      */

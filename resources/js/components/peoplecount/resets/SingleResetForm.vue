@@ -16,7 +16,6 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
-    area_id: props.area.id,
     reset_value: props.reset?.reset_value || 0,
     effective_at: props.reset ? utcStringToDatetimeLocal(props.reset.effective_at) : utcStringToDatetimeLocal(new Date().toISOString()),
     notes: props.reset?.notes || '',

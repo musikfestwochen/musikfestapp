@@ -83,12 +83,11 @@ it('shows create and edit pages with supported sensor types', function () {
 
 it('creates a sensor for the route organization', function () {
     $organization = Organization::factory()->create();
-    $otherOrganization = Organization::factory()->create();
     $admin = User::factory()->organizationAdmin($organization)->create();
 
     $response = $this->actingAs($admin)->postJson(
         route('stage-safety.sensors.store', ['organization' => $organization]),
-        stageSafetySensorPayload(['organization_id' => $otherOrganization->id]),
+        stageSafetySensorPayload(),
     );
 
     $response->assertCreated()
@@ -102,6 +101,20 @@ it('creates a sensor for the route organization', function () {
         'organization_id' => $organization->id,
         'identifier' => 'FF1234',
     ]);
+});
+
+it('rejects a spoofed organization_id when creating a sensor', function () {
+    $organization = Organization::factory()->create();
+    $otherOrganization = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($organization)->create();
+
+    $this->actingAs($admin)->postJson(
+        route('stage-safety.sensors.store', ['organization' => $organization]),
+        stageSafetySensorPayload(['organization_id' => $otherOrganization->id]),
+    )->assertUnprocessable()
+        ->assertJsonValidationErrors(['organization_id']);
+
+    $this->assertDatabaseMissing('stage_safety_sensors', ['identifier' => 'FF1234']);
 });
 
 it('updates and deletes an organization sensor', function () {

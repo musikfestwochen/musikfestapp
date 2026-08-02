@@ -115,7 +115,7 @@ describe('getUsers', function () {
     })->with(
         [
             [GLOBAL_ORG_ID, 2],
-            [Str(GLOBAL_ORG_ID), 0], // String "0" should not match integer 0
+            [(string) GLOBAL_ORG_ID, 0], // String "0" should not match integer 0
         ]
     );
 

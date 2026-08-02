@@ -70,8 +70,8 @@ it('can create an assignment for an organization', function () {
         'area_id' => (string) $area->id,
         'sensor_id' => (string) $sensor->id,
         'direction_flipped' => '0',
-        'active_from' => now()->subDays(2)->toDateTimeString(),
-        'active_to' => now()->addDays(2)->toDateTimeString(),
+        'active_from' => now()->subDays(2)->toIso8601ZuluString('millisecond'),
+        'active_to' => now()->addDays(2)->toIso8601ZuluString('millisecond'),
     ];
 
     $response = $this->actingAs($admin)
@@ -178,8 +178,8 @@ it('can update an assignment for an organization', function () {
             'area_id' => (string) $area->id,
             'sensor_id' => (string) $sensor->id,
             'direction_flipped' => '1',
-            'active_from' => now()->subDays(1)->toDateTimeString(),
-            'active_to' => now()->addDays(1)->toDateTimeString(),
+            'active_from' => now()->subDays(1)->toIso8601ZuluString('millisecond'),
+            'active_to' => now()->addDays(1)->toIso8601ZuluString('millisecond'),
         ]);
     $response->assertRedirect(route('peoplecount.assignments.index', ['organization' => $org->slug]));
     $this->assertDatabaseHas('peoplecount_assignments', [
@@ -217,8 +217,8 @@ it('does not update another organization assignment', function () {
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
             'direction_flipped' => true,
-            'active_from' => now()->subDay()->toDateTimeString(),
-            'active_to' => now()->addDay()->toDateTimeString(),
+            'active_from' => now()->subDay()->toIso8601ZuluString('millisecond'),
+            'active_to' => now()->addDay()->toIso8601ZuluString('millisecond'),
         ])
         ->assertNotFound();
 
@@ -300,6 +300,29 @@ it('does not show another organization assignment', function () {
         ->assertNotFound();
 });
 
+it('rejects non-ISO 8601 UTC datetimes when creating an assignment', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+    $event = Event::factory()->for($org, 'organization')->create([
+        'starts_at' => now()->subDays(5),
+        'ends_at' => now()->addDays(5),
+    ]);
+    $area = Area::factory()->for($event)->create();
+    $sensor = Sensor::factory()->for($org)->create();
+
+    $response = $this->actingAs($admin)
+        ->post(route('peoplecount.assignments.store', ['organization' => $org->slug]), [
+            'event_id' => (string) $event->id,
+            'area_id' => (string) $area->id,
+            'sensor_id' => (string) $sensor->id,
+            'direction_flipped' => '0',
+            'active_from' => now()->subDays(2)->toDateTimeString(),
+            'active_to' => now()->addDays(2)->toDateTimeString(),
+        ]);
+
+    $response->assertSessionHasErrors(['active_from', 'active_to']);
+});
+
 it('validates overlapping assignments on create', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -327,8 +350,8 @@ it('validates overlapping assignments on create', function () {
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
         'direction_flipped' => false,
-        'active_from' => now()->subDays(2)->toDateTimeString(),
-        'active_to' => now()->addDays(2)->toDateTimeString(),
+        'active_from' => now()->subDays(2)->toIso8601ZuluString('millisecond'),
+        'active_to' => now()->addDays(2)->toIso8601ZuluString('millisecond'),
     ];
 
     $response = $this->actingAs($admin)
@@ -353,8 +376,8 @@ it('validates assignment time within event time on create', function () {
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
         'direction_flipped' => false,
-        'active_from' => now()->subDays(2)->toDateTimeString(), // Before event starts
-        'active_to' => now()->addDays(2)->toDateTimeString(),
+        'active_from' => now()->subDays(2)->toIso8601ZuluString('millisecond'), // Before event starts
+        'active_to' => now()->addDays(2)->toIso8601ZuluString('millisecond'),
     ];
 
     $response = $this->actingAs($admin)
@@ -401,8 +424,8 @@ it('validates overlapping assignments on update', function () {
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
         'direction_flipped' => false,
-        'active_from' => now()->subDays(2)->toDateTimeString(), // Overlaps with first assignment
-        'active_to' => now()->addDays(2)->toDateTimeString(),
+        'active_from' => now()->subDays(2)->toIso8601ZuluString('millisecond'), // Overlaps with first assignment
+        'active_to' => now()->addDays(2)->toIso8601ZuluString('millisecond'),
     ];
 
     $response = $this->actingAs($admin)
@@ -436,8 +459,8 @@ it('validates assignment time within event time on update', function () {
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
         'direction_flipped' => false,
-        'active_from' => now()->subDays(2)->toDateTimeString(), // Before event starts
-        'active_to' => now()->addDays(2)->toDateTimeString(),
+        'active_from' => now()->subDays(2)->toIso8601ZuluString('millisecond'), // Before event starts
+        'active_to' => now()->addDays(2)->toIso8601ZuluString('millisecond'),
     ];
 
     $response = $this->actingAs($admin)

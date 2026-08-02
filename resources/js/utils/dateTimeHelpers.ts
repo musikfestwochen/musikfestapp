@@ -1,26 +1,4 @@
-/**
- * Date and Time Helper Functions
- * Provides utility functions for date and time formatting and conversion
- * Includes daily reset scheduling and advanced timezone handling
- *
- * IMPORTANT: Daily Reset Timezone Handling
- * ========================================
- * This implementation handles daily resets at specific times in specified timezones:
- *
- * 1. Reset times are stored in HH:MM format (24-hour)
- * 2. Timezone handling ensures resets occur at the correct local time
- * 3. DST transitions are handled by applying the reset at the defined time in the current day
- * 4. Next occurrence calculation accounts for whether today's reset time has already passed
- *
- * Example of daily reset usage:
- * ```typescript
- * const nextOccurrences = getNextDailyOccurrence('09:00', 'Europe/Zurich', 5);
- * const isValid = validateResetTime('09:00');
- * const description = dailyResetToText('09:00', 'Europe/Zurich');
- * ```
- *
- * This approach ensures consistent daily reset behavior across different timezones and DST transitions.
- */
+/** Date and time formatting and conversion helpers. */
 
 export const APP_LOCALE = 'en-US';
 
@@ -158,38 +136,6 @@ export function formatDateInTimezone(date: Date, timezone: string, options?: Int
     };
 
     return date.toLocaleString(APP_LOCALE, { ...defaultOptions, ...options });
-}
-
-/**
- * Calculate next daily occurrences at resetTime in specified timezone
- * Handles DST by applying reset at defined time in current day
- */
-export function getNextDailyOccurrence(resetTime: string, timezone: string, count: number = 5): Date[] {
-    const occurrences: Date[] = [];
-    const [hours, minutes] = resetTime.split(':').map(Number);
-
-    // Validate time format
-    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-        return [];
-    }
-
-    const now = new Date();
-
-    for (let i = 0; i < count; i++) {
-        // Create a date for today + i days
-        const targetDate = new Date(now);
-        targetDate.setDate(now.getDate() + i);
-        targetDate.setHours(hours, minutes, 0, 0);
-
-        // If it's today and the time has already passed, skip to tomorrow
-        if (i === 0 && targetDate <= now) {
-            targetDate.setDate(now.getDate() + 1);
-        }
-
-        occurrences.push(targetDate);
-    }
-
-    return occurrences;
 }
 
 /**
@@ -353,13 +299,6 @@ export class DateTimeHelper {
      */
     static formatDateInTimezone(date: Date, timezone: string, options?: Intl.DateTimeFormatOptions): string {
         return formatDateInTimezone(date, timezone, options);
-    }
-
-    /**
-     * Calculate next daily occurrences at resetTime in specified timezone
-     */
-    static getNextDailyOccurrence(resetTime: string, timezone: string, count: number = 5): Date[] {
-        return getNextDailyOccurrence(resetTime, timezone, count);
     }
 
     /**

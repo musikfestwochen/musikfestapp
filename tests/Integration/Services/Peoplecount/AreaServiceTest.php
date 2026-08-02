@@ -571,7 +571,8 @@ describe('checksum functionality', function () {
                 ->and($result)->toHaveKeys(['area', 'event', 'assignments', 'areaSingleResets', 'areaRecurringResets']);
             // Check area data
             // Check event data
-            expect($result)->toMatchArray(['area' => $event->id, 'event' => $event->id]);
+            expect($result['area'])->toMatchArray(['id' => $area->id, 'event_id' => $event->id])
+                ->and($result['event'])->toMatchArray(['id' => $event->id]);
 
             // Check collection data (should be empty arrays for new area)
             expect($result['assignments'])->toBeArray()

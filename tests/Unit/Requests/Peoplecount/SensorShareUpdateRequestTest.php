@@ -12,8 +12,8 @@ beforeEach(function () {
 it('has correct rules', function () {
     expect($this->request->rules())->toBe([
         'borrower_organization_id' => ['required', 'integer', 'exists:organizations,id'],
-        'starts_at' => ['required', 'date', 'before:ends_at'],
-        'ends_at' => ['required', 'date', 'after:starts_at'],
+        'starts_at' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'before:ends_at'],
+        'ends_at' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'after:starts_at'],
     ]);
 });
 

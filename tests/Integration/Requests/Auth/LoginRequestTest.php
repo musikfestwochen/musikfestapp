@@ -13,11 +13,13 @@ covers(LoginRequest::class);
 function createLoginRequest(string $email, string $password, bool $remember = false, string $ip = '127.0.0.1'): LoginRequest
 {
     $request = new LoginRequest;
-    $request->merge([
+    $data = [
         'email' => $email,
         'password' => $password,
         'remember' => $remember,
-    ]);
+    ];
+    $request->merge($data);
+    $request->setValidator(validator($data, $request->rules()));
     $request->server->set('REMOTE_ADDR', $ip);
 
     return $request;
@@ -47,6 +49,7 @@ describe('basic functionality', function () {
         expect($request->rules())->toBe([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'remember' => ['boolean'],
         ]);
     });
 

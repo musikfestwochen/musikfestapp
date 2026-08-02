@@ -52,7 +52,7 @@ it('can create an area single reset', function () {
     ]);
     $resetData = [
         'reset_value' => '50',
-        'effective_at' => '2025-07-27T15:00:00',
+        'effective_at' => '2025-07-27T15:00:00.000Z',
         'notes' => 'Manual reset for testing',
     ];
 

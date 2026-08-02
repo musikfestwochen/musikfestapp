@@ -128,7 +128,7 @@ it('can update a sensor for an organization', function () {
     ]);
 });
 
-it('ignores unvalidated sensor update fields', function () {
+it('rejects unvalidated sensor update fields', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
     $foreignOrg = Organization::factory()->create();
@@ -146,14 +146,11 @@ it('ignores unvalidated sensor update fields', function () {
             'api_token' => 'changed-token',
             'archived_at' => now()->toDateTimeString(),
         ])
-        ->assertRedirect(route('peoplecount.sensors.index', ['organization' => $org->slug]));
+        ->assertSessionHasErrors(['organization_id', 'api_token', 'archived_at']);
 
     $sensor->refresh();
 
-    expect($sensor->vendor)->toBe('UpdatedVendor')
-        ->and($sensor->model)->toBe('UpdatedModel')
-        ->and($sensor->serial)->toBe('UpdatedSerial')
-        ->and($sensor->organization_id)->toBe($org->id)
+    expect($sensor->organization_id)->toBe($org->id)
         ->and($sensor->api_token)->toBe('original-token')
         ->and($sensor->archived_at)->toBeNull();
 });

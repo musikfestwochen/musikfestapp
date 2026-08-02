@@ -55,17 +55,26 @@ const withoutRoles = (data: UserFormData) => {
     return dataWithoutRoles;
 };
 
+// orgmgmt endpoints derive the organization from the route, and admin user
+// creation assigns no organizations — neither accepts organization_ids
+const withoutOrganizationIds = <T extends { organization_ids: number[] }>(data: T) => {
+    const { organization_ids, ...dataWithoutOrganizationIds } = data;
+    void organization_ids;
+
+    return dataWithoutOrganizationIds;
+};
+
 const submit = () => {
     if (props.user && props.organization) {
-        form.transform((data) => (showRoleField.value ? data : withoutRoles(data))).put(
+        form.transform((data) => withoutOrganizationIds(showRoleField.value ? data : withoutRoles(data))).put(
             route('orgmgmt.users.update', { user: props.user.id, organization: props.organization.slug }),
         );
     } else if (props.user) {
         form.transform(withoutRoles).put(route('admin.users.update', { id: props.user.id }));
     } else if (props.organization) {
-        form.post(route('orgmgmt.users.store', { organization: props.organization.slug }));
+        form.transform(withoutOrganizationIds).post(route('orgmgmt.users.store', { organization: props.organization.slug }));
     } else if (!props.user && !props.organization) {
-        form.transform(withoutRoles).post(route('admin.users.store'));
+        form.transform((data) => withoutOrganizationIds(withoutRoles(data))).post(route('admin.users.store'));
     }
 };
 </script>

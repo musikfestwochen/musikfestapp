@@ -11,16 +11,9 @@ use App\Listeners\Permissions\RoleDetachedListener;
 use App\Models\StageSafety\Sensor as StageSafetySensor;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
-use App\Services\Peoplecount\AlertService;
-use App\Services\Peoplecount\AreaAggregationService;
-use App\Services\Peoplecount\AreaResetService;
-use App\Services\Peoplecount\AreaService;
-use App\Services\Peoplecount\AssignmentService;
-use App\Services\Peoplecount\EventService;
-use App\Services\Peoplecount\IntervalCountService;
-use App\Services\Peoplecount\SensorService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -35,28 +28,14 @@ use Spatie\Permission\Events\RoleDetachedEvent;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        $this->app->singleton(GlobalPermissionService::class);
-        $this->app->singleton(SensorService::class);
-        $this->app->singleton(IntervalCountService::class);
-        $this->app->singleton(EventService::class);
-        $this->app->singleton(AreaService::class);
-        $this->app->singleton(AreaResetService::class);
-        $this->app->singleton(AssignmentService::class);
-        $this->app->singleton(AreaAggregationService::class);
-        $this->app->singleton(AlertService::class);
-
-    }
-
-    /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
         Model::automaticallyEagerLoadRelationships();
+
+        // Reject unknown fields in all FormRequests globally (#115)
+        FormRequest::failOnUnknownFields();
 
         URL::forceHttps(app()->isProduction());
 
