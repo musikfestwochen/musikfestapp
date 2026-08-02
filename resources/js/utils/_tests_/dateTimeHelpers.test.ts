@@ -324,6 +324,99 @@ describe('Time Format Functions', () => {
             expect(occurrences).toHaveLength(1);
             expect(occurrences[0]).toBeInstanceOf(Date);
         });
+
+        describe('timezone-aware behavior', () => {
+            afterEach(() => {
+                vi.useRealTimers();
+            });
+
+            const wallTimeIn = (date: Date, timezone: string): string =>
+                date.toLocaleString(APP_LOCALE, {
+                    timeZone: timezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hourCycle: 'h23',
+                });
+
+            it('should apply the reset time in the target timezone, not the viewer timezone', () => {
+                // 2024-07-25 12:00 UTC — independent of the host/viewer timezone,
+                // every occurrence must read 09:00 in Europe/Zurich
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-07-25T12:00:00Z'));
+
+                const occurrences = getNextDailyOccurrence('09:00', 'Europe/Zurich', 3);
+
+                expect(occurrences).toHaveLength(3);
+                for (const occurrence of occurrences) {
+                    expect(wallTimeIn(occurrence, 'Europe/Zurich')).toBe('09:00');
+                }
+            });
+
+            it('should shift UTC instants across DST transitions while keeping local wall time', () => {
+                // Europe/Zurich springs forward CET -> CEST on 2024-03-31
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-03-30T12:00:00Z'));
+
+                const occurrences = getNextDailyOccurrence('09:00', 'Europe/Zurich', 3);
+
+                expect(occurrences.map((date) => date.toISOString())).toEqual([
+                    '2024-03-31T07:00:00.000Z', // CET (UTC+1)
+                    '2024-04-01T07:00:00.000Z', // CEST (UTC+2)
+                    '2024-04-02T07:00:00.000Z', // CEST (UTC+2)
+                ]);
+            });
+
+            it('should keep UTC instants aligned across DST fall-back', () => {
+                // Europe/Zurich falls back CEST -> CET on 2024-10-27
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-10-25T12:00:00Z'));
+
+                const occurrences = getNextDailyOccurrence('09:00', 'Europe/Zurich', 3);
+
+                expect(occurrences.map((date) => date.toISOString())).toEqual([
+                    '2024-10-26T07:00:00.000Z', // CEST (UTC+2)
+                    '2024-10-27T08:00:00.000Z', // CET (UTC+1)
+                    '2024-10-28T08:00:00.000Z', // CET (UTC+1)
+                ]);
+            });
+
+            it('should skip today when the reset time already passed in the target timezone', () => {
+                // 2024-07-25 10:00 UTC = 12:00 in Europe/Zurich — 09:00 already passed there
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-07-25T10:00:00Z'));
+
+                const occurrences = getNextDailyOccurrence('09:00', 'Europe/Zurich', 2);
+
+                expect(occurrences.map((date) => date.toISOString())).toEqual(['2024-07-26T07:00:00.000Z', '2024-07-27T07:00:00.000Z']);
+            });
+
+            it('should include today when the reset time is still ahead near midnight', () => {
+                // 2024-07-25 21:30 UTC = 23:30 in Europe/Zurich — 00:00 tomorrow is 30 min away
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-07-25T21:30:00Z'));
+
+                const occurrences = getNextDailyOccurrence('00:00', 'Europe/Zurich', 2);
+
+                expect(occurrences.map((date) => date.toISOString())).toEqual(['2024-07-25T22:00:00.000Z', '2024-07-26T22:00:00.000Z']);
+            });
+
+            it('should return occurrences in the future and in ascending order', () => {
+                vi.useFakeTimers();
+                const now = new Date('2024-07-25T12:00:00Z');
+                vi.setSystemTime(now);
+
+                const occurrences = getNextDailyOccurrence('14:30', 'America/New_York', 5);
+
+                expect(occurrences).toHaveLength(5);
+                for (const occurrence of occurrences) {
+                    expect(occurrence.getTime()).toBeGreaterThan(now.getTime());
+                    expect(wallTimeIn(occurrence, 'America/New_York')).toBe('14:30');
+                }
+                for (let i = 1; i < occurrences.length; i++) {
+                    expect(occurrences[i].getTime()).toBeGreaterThan(occurrences[i - 1].getTime());
+                }
+            });
+        });
     });
 });
 

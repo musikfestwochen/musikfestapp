@@ -161,11 +161,69 @@ export function formatDateInTimezone(date: Date, timezone: string, options?: Int
 }
 
 /**
+ * Wall-clock parts of a date as seen in a specific IANA timezone
+ */
+interface TimezoneWallClockParts {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+}
+
+/**
+ * Get the wall-clock parts of a date in a specific timezone
+ */
+function getWallClockPartsInTimezone(date: Date, timezone: string): TimezoneWallClockParts {
+    const parts = new Intl.DateTimeFormat(APP_LOCALE, {
+        timeZone: timezone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hourCycle: 'h23',
+    }).formatToParts(date);
+
+    const partValue = (type: Intl.DateTimeFormatPartTypes): number => Number(parts.find((part) => part.type === type)?.value);
+
+    return {
+        year: partValue('year'),
+        month: partValue('month'),
+        day: partValue('day'),
+        hour: partValue('hour'),
+        minute: partValue('minute'),
+    };
+}
+
+/**
+ * Convert a wall-clock time in a specific timezone to a UTC instant.
+ * Iteratively corrects the timezone offset by reading back the candidate
+ * instant in the target timezone. For nonexistent wall times (DST
+ * spring-forward gap) the iteration does not converge and the last
+ * approximation is returned (pre-gap instant).
+ */
+function wallTimeInTimezoneToUtc(year: number, month: number, day: number, hour: number, minute: number, timezone: string): Date {
+    const target = Date.UTC(year, month - 1, day, hour, minute);
+    let utc = target;
+
+    for (let i = 0; i < 3; i++) {
+        const parts = getWallClockPartsInTimezone(new Date(utc), timezone);
+        const readBack = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+        if (readBack === target) {
+            break;
+        }
+        utc -= readBack - target;
+    }
+
+    return new Date(utc);
+}
+
+/**
  * Calculate next daily occurrences at resetTime in specified timezone
  * Handles DST by applying reset at defined time in current day
  */
 export function getNextDailyOccurrence(resetTime: string, timezone: string, count: number = 5): Date[] {
-    const occurrences: Date[] = [];
     const [hours, minutes] = resetTime.split(':').map(Number);
 
     // Validate time format
@@ -174,19 +232,17 @@ export function getNextDailyOccurrence(resetTime: string, timezone: string, coun
     }
 
     const now = new Date();
+    const today = getWallClockPartsInTimezone(now, timezone);
+    const occurrences: Date[] = [];
 
-    for (let i = 0; i < count; i++) {
-        // Create a date for today + i days
-        const targetDate = new Date(now);
-        targetDate.setDate(now.getDate() + i);
-        targetDate.setHours(hours, minutes, 0, 0);
+    // Each day after the first always yields an occurrence, so this terminates
+    for (let i = 0; occurrences.length < count; i++) {
+        const day = new Date(Date.UTC(today.year, today.month - 1, today.day + i));
+        const candidate = wallTimeInTimezoneToUtc(day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate(), hours, minutes, timezone);
 
-        // If it's today and the time has already passed, skip to tomorrow
-        if (i === 0 && targetDate <= now) {
-            targetDate.setDate(now.getDate() + 1);
+        if (candidate > now) {
+            occurrences.push(candidate);
         }
-
-        occurrences.push(targetDate);
     }
 
     return occurrences;
