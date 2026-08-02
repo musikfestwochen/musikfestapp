@@ -2,7 +2,7 @@
 import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import Heading from '@/components/Heading.vue';
 import SensorForm from '@/components/stage-safety/sensors/SensorForm.vue';
-import SensorTokenDialog from '@/components/stage-safety/sensors/SensorTokenDialog.vue';
+import SensorTokenDialog from '@/components/SensorTokenDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/composables/useConfirmDialog';

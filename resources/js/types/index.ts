@@ -211,7 +211,7 @@ export interface PeoplecountSensor {
     name?: string | null;
     organization_id: number;
     archived_at?: string | null;
-    api_token?: string | null; // Plaintext API token, nullable
+    has_active_token?: boolean;
     created_at: string;
     updated_at: string;
     deleted_at?: string;
@@ -219,6 +219,18 @@ export interface PeoplecountSensor {
     organization?: Organization; // Optional, for related organization
     assignments?: PeoplecountAssignment[]; // Optional, for related assignments
     shares?: PeoplecountSensorShare[]; // Optional, for related shares
+}
+
+export interface PeoplecountSensorFormData {
+    vendor: string;
+    model: string;
+    serial: string;
+    name: string | null;
+}
+
+export interface PeoplecountSensorCreatedResponse {
+    sensor: PeoplecountSensor;
+    token: string;
 }
 
 export interface PeoplecountSensorShare {

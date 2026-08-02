@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SensorService
@@ -35,7 +36,9 @@ class SensorService
             ? $query->whereNotNull('archived_at')
             : $query->whereNull('archived_at');
 
-        return $query->get();
+        return $query->withExists(['tokens as has_active_token' => function (Builder $query): void {
+            $query->where('name', self::SENSOR_TOKEN_NAME);
+        }])->get();
     }
 
     /**
@@ -186,15 +189,18 @@ class SensorService
      * Create a new sensor and generate its API token.
      *
      * @param  array<string, mixed>  $attributes
+     * @return array{sensor: Sensor, token: string}
      */
-    public function createWithToken(array $attributes): Sensor
+    public function createWithToken(array $attributes): array
     {
-        $sensor = Sensor::query()->create($attributes);
-        $token = $this->createOrRegenerateToken($sensor);
-        $sensor->api_token = $token;
-        $sensor->save();
+        return DB::transaction(function () use ($attributes): array {
+            $sensor = Sensor::query()->create($attributes);
 
-        return $sensor;
+            return [
+                'sensor' => $sensor,
+                'token' => $this->issueToken($sensor),
+            ];
+        });
     }
 
     /**
@@ -205,25 +211,33 @@ class SensorService
      */
     public function createOrRegenerateToken(Sensor $sensor): string
     {
-        // Delete existing token(s) with the same name
-        $sensor->tokens()->where('name', self::SENSOR_TOKEN_NAME)->delete();
-        // Create new token and return plain text
-        $token = $sensor->createToken(self::SENSOR_TOKEN_NAME);
+        $this->verifySensorManagedByCurrentOrganization($sensor);
+        $this->ensureSensorIsActive($sensor);
 
-        // TODO: Storing token in plaintext, revisit if API becomes sensitive
-        // The token is formatted as <id>|<token>, so we only want the token part
-        $parts = explode('|', $token->plainTextToken, 2);
+        return DB::transaction(function () use ($sensor): string {
+            $sensor->tokens()->where('name', self::SENSOR_TOKEN_NAME)->delete();
 
-        return $parts[1] ?? $token->plainTextToken;
+            return $this->issueToken($sensor);
+        });
+    }
+
+    public function revokeTokens(Sensor $sensor): void
+    {
+        $this->verifySensorManagedByCurrentOrganization($sensor);
+
+        $sensor->tokens()->delete();
     }
 
     public function archive(Sensor $sensor): Sensor
     {
         $this->verifySensorManagedByCurrentOrganization($sensor);
 
-        $sensor->update(['archived_at' => Date::now()]);
+        return DB::transaction(function () use ($sensor): Sensor {
+            $sensor->tokens()->delete();
+            $sensor->update(['archived_at' => Date::now()]);
 
-        return $sensor;
+            return $sensor;
+        });
     }
 
     public function unarchive(Sensor $sensor): Sensor
@@ -243,7 +257,10 @@ class SensorService
             'sensor_id' => 'This sensor cannot be deleted because it is used by assignments.',
         ]));
 
-        $sensor->delete();
+        DB::transaction(function () use ($sensor): void {
+            $sensor->tokens()->delete();
+            $sensor->delete();
+        });
     }
 
     public function verifySensorManagedByCurrentOrganization(Sensor $sensor): void
@@ -259,5 +276,20 @@ class SensorService
             AuthorizationException::class,
             'You are not authorized to manage this sensor.'
         );
+    }
+
+    protected function issueToken(Sensor $sensor): string
+    {
+        $token = $sensor->createToken(self::SENSOR_TOKEN_NAME)->plainTextToken;
+        $parts = explode('|', $token, 2);
+
+        return $parts[1] ?? $token;
+    }
+
+    protected function ensureSensorIsActive(Sensor $sensor): void
+    {
+        throw_if($sensor->archived_at !== null, ValidationException::withMessages([
+            'sensor' => 'Archived sensors cannot receive API tokens.',
+        ]));
     }
 }

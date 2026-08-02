@@ -4,20 +4,25 @@ import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import InputError from '@/components/InputError.vue';
 import MeasurementCard from '@/components/peoplecount/cards/MeasurementCard.vue';
 import SensorForm from '@/components/peoplecount/sensors/SensorForm.vue';
+import SensorTokenDialog from '@/components/SensorTokenDialog.vue';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useConfirmDialog } from '@/composables/useConfirmDialog';
+import { usePermissions } from '@/composables/usePermissions';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
-import { BreadcrumbItem, Organization, PeoplecountSensor, PeoplecountSensorShare } from '@/types';
+import { BreadcrumbItem, Organization, PeoplecountSensor, PeoplecountSensorFormData, PeoplecountSensorShare } from '@/types';
 import { formatLocalDateTime, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { Head, Link, router, useForm, useHttp } from '@inertiajs/vue3';
+import { Archive, KeyRound, LoaderCircle, RotateCcw, Trash2, Undo2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps<{
     sensor: PeoplecountSensor;
     organization: Organization;
     organizations: Organization[];
+    status?: string;
 }>();
 
 const shareForm = useForm({
@@ -25,6 +30,19 @@ const shareForm = useForm({
     starts_at: '',
     ends_at: '',
 });
+
+const sensorForm = useForm<PeoplecountSensorFormData>({
+    vendor: props.sensor.vendor,
+    model: props.sensor.model,
+    serial: props.sensor.serial,
+    name: props.sensor.name ?? null,
+});
+
+const tokenRequest = useHttp<Record<string, never>, { token: string }>({});
+const token = ref<string | null>(null);
+const tokenRegenerationPending = ref(false);
+const confirmDialog = useConfirmDialog();
+const { can } = usePermissions();
 
 const editingShareId = ref<number | null>(null);
 
@@ -40,6 +58,54 @@ const formatDateTimeLocal = (value: string) => {
 
     return localDate.toISOString().slice(0, 16);
 };
+
+const submitSensor = () => {
+    sensorForm.put(
+        route('peoplecount.sensors.update', {
+            sensor: props.sensor.id,
+            organization: props.organization.slug,
+        }),
+    );
+};
+
+const updateSensorForm = (values: Partial<PeoplecountSensorFormData>) => {
+    Object.assign(sensorForm, values);
+};
+
+async function regenerateToken(): Promise<void> {
+    if (tokenRegenerationPending.value) return;
+
+    tokenRegenerationPending.value = true;
+
+    try {
+        const confirmed = await confirmDialog.confirm({
+            title: props.sensor.has_active_token ? 'Replace sensor token?' : 'Generate sensor token?',
+            description: props.sensor.has_active_token
+                ? 'The current API token will stop working immediately.'
+                : 'A new API token will be shown once.',
+            confirmText: props.sensor.has_active_token ? 'Replace token' : 'Generate token',
+        });
+
+        if (!confirmed) return;
+
+        const response = await tokenRequest.post(
+            route('peoplecount.sensors.regenerate-token', {
+                organization: props.organization.slug,
+                sensor: props.sensor.id,
+            }),
+        );
+        token.value = response.token;
+    } catch {
+        // useHttp retains request errors and processing state.
+    } finally {
+        tokenRegenerationPending.value = false;
+    }
+}
+
+function acknowledgeToken(): void {
+    token.value = null;
+    router.reload({ only: ['sensor'] });
+}
 
 const submitShare = () => {
     shareForm
@@ -117,11 +183,60 @@ const breadcrumbItems: BreadcrumbItem[] = [
     <Layout :breadcrumbs="breadcrumbItems">
         <Head title="Sensors" />
 
-        <div class="px-4 py-6">
-            <Heading title="Edit Sensor" />
-            <SensorForm :organization="props.organization" :sensor="props.sensor" />
+        <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600 dark:text-green-400">
+            {{ status }}
+        </div>
 
-            <div class="mt-8 rounded-lg border p-6">
+        <div class="space-y-8 px-4 py-6">
+            <section>
+                <Heading title="Edit Sensor" />
+                <div class="mt-6">
+                    <SensorForm
+                        :errors="sensorForm.errors"
+                        :form="sensorForm"
+                        :processing="sensorForm.processing"
+                        submit-label="Update Sensor"
+                        @change="updateSensorForm"
+                        @submit="submitSensor"
+                    />
+                </div>
+            </section>
+
+            <section class="rounded-lg border p-6">
+                <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                    <div class="space-y-2">
+                        <Heading description="Token used to authenticate Peoplecount API requests" title="Sensor API Token" />
+                        <Badge :variant="props.sensor.has_active_token ? 'default' : 'secondary'">
+                            {{ props.sensor.has_active_token ? 'Active' : 'Not active' }}
+                        </Badge>
+                    </div>
+
+                    <div v-if="can('peoplecount.sensors.update')" class="flex flex-wrap gap-2">
+                        <Button :disabled="tokenRegenerationPending" size="sm" type="button" @click="regenerateToken">
+                            <RotateCcw v-if="props.sensor.has_active_token" class="mr-1 size-4" />
+                            <KeyRound v-else class="mr-1 size-4" />
+                            {{ props.sensor.has_active_token ? 'Replace Token' : 'Generate Token' }}
+                        </Button>
+                        <ConfirmActionButton
+                            v-if="props.sensor.has_active_token"
+                            :href="
+                                route('peoplecount.sensors.revoke-token', {
+                                    organization: props.organization.slug,
+                                    sensor: props.sensor.id,
+                                })
+                            "
+                            :icon="Trash2"
+                            confirm-label="Revoke token"
+                            description="API requests using this token will fail authentication until a new token is generated."
+                            label="Revoke"
+                            method="delete"
+                            title="Revoke sensor token?"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-lg border p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <Heading description="Hide retired sensors without breaking assignments or history" title="Archive" />
@@ -136,20 +251,23 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         as="button"
                         method="delete"
                     >
-                        <Button variant="outline">Unarchive</Button>
+                        <Button variant="outline"><Undo2 class="mr-1 size-4" />Restore</Button>
                     </Link>
-                    <Link
+                    <ConfirmActionButton
                         v-else
                         :href="route('peoplecount.sensors.archive.store', { organization: props.organization.slug, sensor: props.sensor.id })"
-                        as="button"
+                        :icon="Archive"
+                        confirm-label="Archive sensor"
+                        description="Archiving immediately revokes every API token for this sensor."
+                        label="Archive"
                         method="post"
-                    >
-                        <Button variant="outline">Archive</Button>
-                    </Link>
+                        title="Archive this sensor?"
+                        variant="outline"
+                    />
                 </div>
-            </div>
+            </section>
 
-            <div class="mt-8 rounded-lg border p-6">
+            <section class="rounded-lg border p-6">
                 <Heading description="Allow another organization to assign this sensor inside a selected period" title="Sharing" />
 
                 <form class="mt-4 grid max-w-3xl gap-4 md:grid-cols-4" @submit.prevent="submitShare">
@@ -273,9 +391,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 </div>
 
                 <p v-else class="text-muted-foreground mt-4 text-sm">This sensor is not shared.</p>
-            </div>
+            </section>
 
-            <div class="mt-8">
+            <section>
                 <Heading title="Last Measurements" />
 
                 <div v-if="(props.sensor.interval_counts?.length ?? 0) > 0" class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -283,7 +401,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 </div>
 
                 <div v-else class="text-muted-foreground mt-4 text-sm">No measurements available.</div>
-            </div>
+            </section>
         </div>
+
+        <SensorTokenDialog :open="token !== null" :token="token || ''" @acknowledged="acknowledgeToken" />
     </Layout>
 </template>

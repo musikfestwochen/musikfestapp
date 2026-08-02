@@ -23,7 +23,6 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $serial
  * @property string|null $name
  * @property int $organization_id
- * @property string|null $api_token
  * @property Carbon|null $archived_at
  */
 #[Fillable([
@@ -33,7 +32,6 @@ use Laravel\Sanctum\HasApiTokens;
     'name',
     'organization_id',
     'archived_at',
-    'api_token', // TODO: Storing token in plaintext, revisit if API becomes sensitive
 ])]
 #[Table(name: 'peoplecount_sensors')]
 class Sensor extends Model

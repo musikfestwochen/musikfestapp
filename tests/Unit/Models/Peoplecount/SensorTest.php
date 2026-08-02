@@ -13,7 +13,6 @@ it('has correct fillable attributes', function () {
         'model',
         'serial',
         'name',
-        'api_token',
         'organization_id',
         'archived_at',
     ]);

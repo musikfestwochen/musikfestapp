@@ -21,7 +21,7 @@ it('calls IntervalCountService with authenticated sensor and payload', function 
 
     $this->app->instance(IntervalCountService::class, $mock);
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -47,7 +47,7 @@ it('returns 200 when no records are processed', function () {
 
     $this->app->instance(IntervalCountService::class, $mock);
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -69,7 +69,7 @@ it('returns 400 when service throws exception', function () {
 
     $this->app->instance(IntervalCountService::class, $mock);
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -92,7 +92,7 @@ it('returns 400 when service throws validation exception', function () {
 
     $this->app->instance(IntervalCountService::class, $mock);
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -127,7 +127,7 @@ it('returns 401 when expired token provided', function () {
     $payload = ['some' => 'data'];
 
     // Create a token and then delete it to simulate expiration
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
     $sensor->tokens()->delete();
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
@@ -156,7 +156,7 @@ it('rejects an authenticated web user', function () {
 
 it('rejects an archived Peoplecount sensor', function () {
     $sensor = Sensor::factory()->create();
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
     $sensor->update(['archived_at' => now()]);
 
     $this->postJson(route('peoplecount.interval-count.store'), ['some' => 'data'], [
@@ -202,7 +202,7 @@ it('processes real axis data successfully', function () {
         ],
     ];
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -240,7 +240,7 @@ it('processes empty axis data successfully', function () {
         ],
     ];
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -272,7 +272,7 @@ it('handles malformed axis data gracefully', function () {
         ],
     ];
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -304,7 +304,7 @@ it('handles sensor serial mismatch gracefully', function () {
         ],
     ];
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -325,7 +325,7 @@ it('handles unsupported sensor vendor gracefully', function () {
 
     $payload = ['some' => 'data'];
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -349,7 +349,7 @@ it('accepts empty request body', function () {
 
     $this->app->instance(IntervalCountService::class, $mock);
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), [], [
         'Authorization' => 'Bearer '.$token,
@@ -397,7 +397,7 @@ it('processes multiple measurements in single request', function () {
         ],
     ];
 
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, [
         'Authorization' => 'Bearer '.$token,
@@ -444,7 +444,7 @@ it('idempotently updates a replayed interval', function () {
             ]],
         ],
     ];
-    $token = resolve(SensorService::class)->createOrRegenerateToken($sensor);
+    $token = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
     $headers = ['Authorization' => 'Bearer '.$token];
 
     $this->postJson(route('peoplecount.interval-count.store'), $payload, $headers)

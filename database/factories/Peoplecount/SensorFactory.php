@@ -54,10 +54,7 @@ class SensorFactory extends Factory
     public function withToken(): static
     {
         return $this->afterCreating(function (Sensor $sensor) {
-            $sensorService = new SensorService;
-            $token = $sensorService->createOrRegenerateToken($sensor);
-            $sensor->api_token = $token;
-            $sensor->save();
+            $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
         });
     }
 

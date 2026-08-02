@@ -66,6 +66,8 @@ Route::middleware(['auth', 'verified', 'permissions.organization_slug'])->group(
         // Regenerate token route
         Route::post('sensors/{sensor}/regenerate-token', [SensorTokenController::class, 'update'])
             ->name('sensors.regenerate-token');
+        Route::delete('sensors/{sensor}/revoke-token', [SensorTokenController::class, 'destroy'])
+            ->name('sensors.revoke-token');
 
         Route::post('sensors/{sensor}/archive', [SensorArchiveController::class, 'store'])
             ->name('sensors.archive.store');

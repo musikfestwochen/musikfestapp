@@ -2,7 +2,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
-import SensorTokenDialog from '../sensors/SensorTokenDialog.vue';
+import SensorTokenDialog from '../SensorTokenDialog.vue';
 
 const toast = vi.fn();
 vi.mock('@/components/ui/toast/use-toast', () => ({
@@ -22,7 +22,7 @@ const InputStub = defineComponent({
     },
 });
 
-describe('Stage Safety SensorTokenDialog', () => {
+describe('SensorTokenDialog', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         Object.defineProperty(navigator, 'clipboard', {
