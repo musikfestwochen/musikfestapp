@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Heading from '@/components/Heading.vue';
 import SensorForm from '@/components/stage-safety/sensors/SensorForm.vue';
-import SensorTokenDialog from '@/components/stage-safety/sensors/SensorTokenDialog.vue';
+import SensorTokenDialog from '@/components/SensorTokenDialog.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import type {
     BreadcrumbItem,

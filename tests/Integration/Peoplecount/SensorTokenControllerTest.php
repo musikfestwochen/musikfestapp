@@ -5,80 +5,92 @@ use App\Http\Requests\Peoplecount\SensorTokenUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
 use App\Models\User;
+use App\Services\Peoplecount\SensorService;
+use Laravel\Sanctum\PersonalAccessToken;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
-it('creates a token if none exist', function () {
-    $org = Organization::factory()->create();
-    $sensor = Sensor::factory()->withOrganization($org)->create();
-    $admin = User::factory()->organizationAdmin($org)->create();
+it('regenerates a sensor token and returns it once', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($organization)->create();
+    $sensor = Sensor::factory()->for($organization)->create();
+    $oldToken = $sensor->createToken(SensorService::SENSOR_TOKEN_NAME)->plainTextToken;
 
-    expect($sensor->api_token)->toBeNull();
+    $response = $this->actingAs($admin)->postJson(route('peoplecount.sensors.regenerate-token', [
+        'organization' => $organization,
+        'sensor' => $sensor,
+    ]));
 
-    $response = test()->actingAs($admin)
-        ->post(route('peoplecount.sensors.regenerate-token', [
-            'organization' => $org->slug,
-            'sensor' => $sensor->id,
-        ]));
+    $response->assertSuccessful()
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonStructure(['token']);
 
-    $response->assertRedirect(route('peoplecount.sensors.index', ['organization' => $org->slug]));
-
-    expect($sensor->fresh()->api_token)->not->toBeNull();
+    expect(PersonalAccessToken::findToken($oldToken))->toBeNull()
+        ->and($response->json('token'))->not->toContain('|')
+        ->and(PersonalAccessToken::findToken($response->json('token')))->not->toBeNull();
 });
 
-it('regenerates an existing token', function () {
-    $org = Organization::factory()->create();
-    $sensor = Sensor::factory()->withOrganization($org)->create();
-    $admin = User::factory()->organizationAdmin($org)->create();
+it('revokes all sensor tokens', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->organizationAdmin($organization)->create();
+    $sensor = Sensor::factory()->for($organization)->create();
+    $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+    $sensor->createToken('legacy-token');
 
-    $originalToken = 'original-token';
-    $sensor->api_token = $originalToken;
-    $sensor->save();
-
-    expect($sensor->api_token)->toBe($originalToken);
-
-    $response = test()->actingAs($admin)
-        ->post(route('peoplecount.sensors.regenerate-token', [
-            'organization' => $org->slug,
-            'sensor' => $sensor->id,
+    $this->actingAs($admin)
+        ->delete(route('peoplecount.sensors.revoke-token', [
+            'organization' => $organization,
+            'sensor' => $sensor,
+        ]))
+        ->assertRedirect(route('peoplecount.sensors.edit', [
+            'organization' => $organization,
+            'sensor' => $sensor,
         ]));
 
-    $response->assertRedirect(route('peoplecount.sensors.index', ['organization' => $org->slug]));
-
-    expect($sensor->fresh()->api_token)->not->toBe($originalToken)
-        ->and($sensor->fresh()->api_token)->not->toBeNull()
-        ->and($sensor->fresh()->api_token)->toBeString()
-        ->and($sensor->fresh()->api_token)->not->toBe($originalToken);
+    expect($sensor->tokens()->count())->toBe(0);
 });
 
 it('does not regenerate token for another organization sensor', function () {
     $org = Organization::factory()->create();
     $foreignOrg = Organization::factory()->create();
     $admin = User::factory()->organizationAdmin($org)->create();
-    $foreignSensor = Sensor::factory()->withOrganization($foreignOrg)->create();
+    $foreignSensor = Sensor::factory()->for($foreignOrg)->create();
 
-    test()->actingAs($admin)
-        ->post(route('peoplecount.sensors.regenerate-token', [
+    $this->actingAs($admin)
+        ->postJson(route('peoplecount.sensors.regenerate-token', [
             'organization' => $org->slug,
             'sensor' => $foreignSensor->id,
         ]))
         ->assertForbidden();
 });
 
-it('uses the correct form requests', function () {
-    // middleware
+it('uses the correct form requests and organization middleware', function () {
     test()->assertRouteUsesMiddleware(
         'peoplecount.sensors.regenerate-token',
         ['permissions.organization_slug', 'auth', 'verified'],
     );
-    // update
+    test()->assertRouteUsesMiddleware(
+        'peoplecount.sensors.revoke-token',
+        ['permissions.organization_slug', 'auth', 'verified'],
+    );
     test()->assertActionUsesFormRequest(
         SensorTokenController::class,
         'update',
-        SensorTokenUpdateRequest::class);
+        SensorTokenUpdateRequest::class,
+    );
     test()->assertRouteUsesFormRequest(
         'peoplecount.sensors.regenerate-token',
-        SensorTokenUpdateRequest::class);
+        SensorTokenUpdateRequest::class,
+    );
+    test()->assertActionUsesFormRequest(
+        SensorTokenController::class,
+        'destroy',
+        SensorTokenUpdateRequest::class,
+    );
+    test()->assertRouteUsesFormRequest(
+        'peoplecount.sensors.revoke-token',
+        SensorTokenUpdateRequest::class,
+    );
 });

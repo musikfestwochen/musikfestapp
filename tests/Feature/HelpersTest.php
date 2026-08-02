@@ -43,14 +43,12 @@ it('tests consistency of setupPeoplecountBasic methos', function () {
     expect($sensor1)->not->toBeNull()
         ->and($sensor1->vendor)->toBe('TestVendor')
         ->and($sensor1->model)->toBe('TestModel1')
-        ->and($sensor1->api_token)->toBe('test_token_1')
         ->and($sensor1->id)->toBe($setup['sensors'][0]->id);
 
     $sensor2 = $sensors->where('serial', 'TEST002')->first();
     expect($sensor2)->not->toBeNull()
         ->and($sensor2->vendor)->toBe('TestVendor')
         ->and($sensor2->model)->toBe('TestModel2')
-        ->and($sensor2->api_token)->toBe('test_token_2')
         ->and($sensor2->id)->toBe($setup['sensors'][1]->id);
 
     // check assignments

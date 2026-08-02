@@ -16,6 +16,7 @@ use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\SensorService;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -43,18 +44,13 @@ class SensorController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(SensorStoreRequest $request, Organization $organization): RedirectResponse
+    public function store(SensorStoreRequest $request, Organization $organization, SensorService $sensorService): JsonResponse
     {
-        $sensor = $this->sensorService->createWithToken(
+        $result = $sensorService->createWithToken(
             array_merge($request->validated(), ['organization_id' => $organization->id])
         );
 
-        $displayName = $sensor->name ?? ($sensor->vendor.' '.$sensor->model.' '.$sensor->serial);
-
-        return to_route('peoplecount.sensors.index', [
-            'organization' => $organization,
-        ])
-            ->with('status', 'Sensor created successfully ('.$displayName.').');
+        return response()->json($result, 201)->header('Cache-Control', 'no-store, private');
     }
 
     /**
@@ -95,7 +91,7 @@ class SensorController extends Controller
             $query->with('borrowerOrganization')
                 ->withCount('assignments')
                 ->latest('starts_at');
-        }]);
+        }])->loadExists(['tokens as has_active_token']);
 
         return Inertia::render('peoplecount/EditSensor', [
             'organization' => $organization,

@@ -44,7 +44,6 @@ function setupPeoplecountBasic(): array
         'model' => 'TestModel1',
         'serial' => 'TEST001',
         'organization_id' => $organization->id,
-        'api_token' => 'test_token_1',
     ]);
 
     $sensor2 = Sensor::factory()->create([
@@ -52,7 +51,6 @@ function setupPeoplecountBasic(): array
         'model' => 'TestModel2',
         'serial' => 'TEST002',
         'organization_id' => $organization->id,
-        'api_token' => 'test_token_2',
     ]);
 
     // Create assignments for both sensors without flipping during the whole event period

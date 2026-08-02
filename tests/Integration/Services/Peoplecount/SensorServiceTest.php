@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 covers(SensorService::class);
 
@@ -96,6 +97,20 @@ describe('getSensors', function () {
         expect($result)->toHaveCount(1)
             ->and($result->first()->is($archivedSensor))->toBeTrue();
     });
+
+    it('reports whether each listed sensor has an active token', function () {
+        $org = Organization::factory()->create();
+        $sensorWithToken = Sensor::factory()->withOrganization($org)->create(['serial' => 'A']);
+        $sensorWithoutToken = Sensor::factory()->withOrganization($org)->create(['serial' => 'B']);
+        $sensorWithToken->createToken(SensorService::SENSOR_TOKEN_NAME);
+
+        setPermissionsOrgId($org->id);
+
+        $sensors = $this->service->getSensors();
+
+        expect($sensors->firstWhere('id', $sensorWithToken->id)?->has_active_token)->toBeTruthy()
+            ->and($sensors->firstWhere('id', $sensorWithoutToken->id)?->has_active_token)->toBeFalsy();
+    });
 });
 
 describe('archive', function () {
@@ -129,6 +144,31 @@ describe('archive', function () {
         setPermissionsOrgId($org->id);
         expect(fn () => $this->service->archive($sensor))->toThrow(AuthorizationException::class);
     });
+
+    it('revokes every sensor token when archiving', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+        $sensor->createToken('legacy-token');
+
+        setPermissionsOrgId($org->id);
+
+        $this->service->archive($sensor);
+
+        expect($sensor->tokens()->count())->toBe(0);
+    });
+
+    it('restores a sensor without issuing a token', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['archived_at' => now()]);
+
+        setPermissionsOrgId($org->id);
+
+        $restored = $this->service->unarchive($sensor);
+
+        expect($restored->archived_at)->toBeNull()
+            ->and($sensor->tokens()->count())->toBe(0);
+    });
 });
 
 describe('delete', function () {
@@ -159,10 +199,24 @@ describe('delete', function () {
         setPermissionsOrgId($owner->id);
         expect(fn () => $this->service->delete($sensor))->toThrow(ValidationException::class);
     });
+
+    it('revokes every token when deleting a sensor', function () {
+        $owner = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($owner)->create();
+        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+        $sensor->createToken('legacy-token');
+
+        setPermissionsOrgId($owner->id);
+
+        $this->service->delete($sensor);
+
+        $this->assertSoftDeleted('peoplecount_sensors', ['id' => $sensor->id]);
+        expect($sensor->tokens()->count())->toBe(0);
+    });
 });
 
 describe('createWithToken', function () {
-    it('creates a sensor and generates a token', function () {
+    it('creates a sensor and returns the token secret', function () {
         $org = Organization::factory()->create();
         $attributes = [
             'organization_id' => $org->id,
@@ -171,61 +225,16 @@ describe('createWithToken', function () {
             'serial' => 'SN123456',
         ];
 
-        $sensor = $this->service->createWithToken($attributes);
+        $result = $this->service->createWithToken($attributes);
+        $accessToken = PersonalAccessToken::findToken($result['token']);
 
-        expect($sensor)->toBeInstanceOf(Sensor::class)
-            ->and($sensor->organization_id)->toBe($org->id)
-            ->and($sensor->vendor)->toBe('TestVendor')
-            ->and($sensor->model)->toBe('TestModel')
-            ->and($sensor->serial)->toBe('SN123456')
-            ->and($sensor->api_token)->not->toBeEmpty();
-
-        // Token should exist in the database
-        $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
-        expect($dbToken)->not->toBeNull();
-
-        // Ensure api_token is persisted in the database
-        $sensorFromDb = Sensor::query()->find($sensor->id);
-        expect($sensorFromDb->api_token)->toBe($sensor->api_token);
-    });
-
-    it('creates sensor with token that matches the token in database', function () {
-        $org = Organization::factory()->create();
-        $attributes = [
-            'organization_id' => $org->id,
-            'vendor' => 'TestVendor',
-            'model' => 'TestModel',
-            'serial' => 'SN123456',
-        ];
-
-        $sensor = $this->service->createWithToken($attributes);
-
-        // Get the actual token from the database
-        $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
-
-        // The api_token field should contain the token part (after the |)
-        expect($sensor->api_token)->toBeString()
-            ->and($sensor->api_token)->not->toContain('|')
-            ->and(strlen($sensor->api_token))->toBeGreaterThan(10);
-    });
-
-    it('saves api_token to database correctly', function () {
-        $org = Organization::factory()->create();
-        $attributes = [
-            'organization_id' => $org->id,
-            'vendor' => 'TestVendor',
-            'model' => 'TestModel',
-            'serial' => 'SN123456',
-        ];
-
-        $sensor = $this->service->createWithToken($attributes);
-
-        // Refresh from database to ensure it was persisted
-        $sensor->refresh();
-
-        expect($sensor->api_token)->not->toBeNull()
-            ->and($sensor->api_token)->not->toBeEmpty()
-            ->and($sensor->api_token)->toBeString();
+        expect($result['sensor'])->toBeInstanceOf(Sensor::class)
+            ->and($result['sensor']->organization_id)->toBe($org->id)
+            ->and($result['token'])->not->toContain('|')
+            ->and($accessToken)->not->toBeNull()
+            ->and($accessToken->tokenable->is($result['sensor']))->toBeTrue()
+            ->and($accessToken->name)->toBe(SensorService::SENSOR_TOKEN_NAME)
+            ->and($accessToken->token)->toBe(hash('sha256', $result['token']));
     });
 });
 
@@ -233,9 +242,13 @@ describe('createOrRegenerateToken', function () {
     it('creates a new token for a sensor', function () {
         $org = Organization::factory()->create();
         $sensor = Sensor::factory()->withOrganization($org)->create();
+        setPermissionsOrgId($org->id);
+
         $token = $this->service->createOrRegenerateToken($sensor);
 
-        expect($token)->not->toBeEmpty();
+        expect($token)->not->toBeEmpty()
+            ->and($token)->not->toContain('|')
+            ->and(PersonalAccessToken::findToken($token))->not->toBeNull();
 
         $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
         expect($dbToken)->not->toBeNull();
@@ -244,90 +257,69 @@ describe('createOrRegenerateToken', function () {
     it('regenerates token and deletes previous one', function () {
         $org = Organization::factory()->create();
         $sensor = Sensor::factory()->withOrganization($org)->create();
+        setPermissionsOrgId($org->id);
+
         $firstToken = $this->service->createOrRegenerateToken($sensor);
-
-        $dbToken1 = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
-        expect($dbToken1)->not->toBeNull();
-
         $secondToken = $this->service->createOrRegenerateToken($sensor);
 
-        // Should have only one token with the name
-        $tokensCount = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count();
-        expect($tokensCount)->toBe(1)
-            ->and($secondToken)->not->toBe($firstToken);
+        expect($sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count())->toBe(1)
+            ->and($secondToken)->not->toBe($firstToken)
+            ->and(PersonalAccessToken::findToken($firstToken))->toBeNull()
+            ->and(PersonalAccessToken::findToken($secondToken))->not->toBeNull();
     });
 
-    it('deletes multiple existing tokens with same name', function () {
+    it('regenerates without deleting differently named tokens', function () {
         $org = Organization::factory()->create();
         $sensor = Sensor::factory()->withOrganization($org)->create();
-
-        // Create multiple tokens manually with the same name
-        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
-        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
-        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
-
-        expect($sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count())->toBe(3);
+        $legacyToken = $sensor->createToken('legacy-token')->plainTextToken;
+        setPermissionsOrgId($org->id);
 
         $newToken = $this->service->createOrRegenerateToken($sensor);
 
-        // Should now have only one token with the name
-        $tokensCount = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count();
-        expect($tokensCount)->toBe(1)
-            ->and($newToken)->not->toBeEmpty();
+        expect(PersonalAccessToken::findToken($legacyToken))->not->toBeNull()
+            ->and($sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->count())->toBe(1)
+            ->and(PersonalAccessToken::findToken($newToken))->not->toBeNull();
     });
 
-    it('returns only the token part when token has pipe format', function () {
+    it('rejects token rotation for archived sensors', function () {
         $org = Organization::factory()->create();
-        $sensor = Sensor::factory()->withOrganization($org)->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['archived_at' => now()]);
+        setPermissionsOrgId($org->id);
 
-        $token = $this->service->createOrRegenerateToken($sensor);
-
-        // Token should not contain pipe character (should be the token part only)
-        expect($token)->not->toContain('|')
-            ->and($token)->toBeString()
-            ->and(strlen($token))->toBeGreaterThan(10);
+        expect(fn () => $this->service->createOrRegenerateToken($sensor))
+            ->toThrow(ValidationException::class, 'Archived sensors cannot receive API tokens.');
     });
 
-    it('handles token without pipe format gracefully', function () {
+    it('rejects managing another organization sensor', function () {
+        $org = Organization::factory()->create();
+        $foreignOrg = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($foreignOrg)->create();
+
+        setPermissionsOrgId($org->id);
+        expect(fn () => $this->service->createOrRegenerateToken($sensor))->toThrow(AuthorizationException::class);
+    });
+});
+
+describe('revokeTokens', function () {
+    it('revokes every sensor token', function () {
         $org = Organization::factory()->create();
         $sensor = Sensor::factory()->withOrganization($org)->create();
+        $sensor->createToken(SensorService::SENSOR_TOKEN_NAME);
+        $sensor->createToken('legacy-token');
+        setPermissionsOrgId($org->id);
 
-        $token = $this->service->createOrRegenerateToken($sensor);
+        $this->service->revokeTokens($sensor);
 
-        // Should return a valid token regardless of format
-        expect($token)->toBeString()
-            ->and($token)->not->toBeEmpty();
+        expect($sensor->tokens()->count())->toBe(0);
     });
 
-    it('uses correct token name constant', function () {
+    it('blocks revoking another organization sensor', function () {
         $org = Organization::factory()->create();
-        $sensor = Sensor::factory()->withOrganization($org)->create();
+        $foreignOrg = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($foreignOrg)->create();
 
-        $this->service->createOrRegenerateToken($sensor);
-
-        $dbToken = $sensor->tokens()->where('name', SensorService::SENSOR_TOKEN_NAME)->first();
-        expect($dbToken->name)->toBe('peoplecount_sensor_token');
-    });
-
-    it('extracts token correctly when token contains multiple pipe characters', function () {
-        $org = Organization::factory()->create();
-        $sensor = Sensor::factory()->withOrganization($org)->create();
-
-        // Mock createToken to return a token with multiple pipe characters
-        $mockToken = new class
-        {
-            public $plainTextToken = '123|actual_token_part|extra_part';
-        };
-
-        $sensorMock = Mockery::mock($sensor);
-        $sensorMock->shouldReceive('tokens->where->delete')->andReturn(true);
-        $sensorMock->shouldReceive('createToken')->andReturn($mockToken);
-
-        $token = $this->service->createOrRegenerateToken($sensorMock);
-
-        // With limit=2, this should return 'actual_token_part|extra_part'
-        // With limit=3, this would return 'actual_token_part'
-        expect($token)->toBe('actual_token_part|extra_part');
+        setPermissionsOrgId($org->id);
+        expect(fn () => $this->service->revokeTokens($sensor))->toThrow(AuthorizationException::class);
     });
 });
 

@@ -9,6 +9,7 @@ use App\Http\Requests\Peoplecount\SensorTokenUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\SensorService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 
 class SensorTokenController extends Controller
@@ -20,16 +21,25 @@ class SensorTokenController extends Controller
      *
      * @param  SensorTokenUpdateRequest  $request  Needed for Authorization
      */
-    public function update(SensorTokenUpdateRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
+    public function update(SensorTokenUpdateRequest $request, Organization $organization, Sensor $sensor): JsonResponse
     {
-        $this->sensorService->verifySensorManagedByCurrentOrganization($sensor);
-
         $token = $this->sensorService->createOrRegenerateToken($sensor);
-        $sensor->api_token = $token;
-        $sensor->save();
 
-        return to_route('peoplecount.sensors.index', [
+        return response()->json(['token' => $token])->header('Cache-Control', 'no-store, private');
+    }
+
+    /**
+     * Revoke all API tokens for a sensor.
+     *
+     * @param  SensorTokenUpdateRequest  $request  Needed for Authorization
+     */
+    public function destroy(SensorTokenUpdateRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
+    {
+        $this->sensorService->revokeTokens($sensor);
+
+        return to_route('peoplecount.sensors.edit', [
             'organization' => $organization,
-        ])->with('status', 'Sensor token regenerated successfully for '.$sensor->vendor.' '.$sensor->model.' '.$sensor->serial.'.');
+            'sensor' => $sensor,
+        ])->with('status', 'Sensor token revoked successfully.');
     }
 }

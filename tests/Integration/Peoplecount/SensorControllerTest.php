@@ -71,9 +71,19 @@ it('can create a sensor for an organization', function () {
     $sensorData = Sensor::factory()->make()->toArray();
     unset($sensorData['organization_id']); // Will be set by controller
 
-    $response = $this->actingAs($admin)
-        ->post(route('peoplecount.sensors.store', ['organization' => $org->slug]), $sensorData);
-    $response->assertRedirect(route('peoplecount.sensors.index', ['organization' => $org->slug]));
+    $response = $this->actingAs($admin)->postJson(
+        route('peoplecount.sensors.store', ['organization' => $org->slug]),
+        $sensorData,
+    );
+
+    $response->assertCreated()
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('sensor.organization_id', $org->id)
+        ->assertJsonPath('sensor.vendor', $sensorData['vendor'])
+        ->assertJsonStructure(['sensor' => ['id'], 'token']);
+
+    expect($response->json('token'))->not->toContain('|');
+
     $this->assertDatabaseHas('peoplecount_sensors', [
         'vendor' => $sensorData['vendor'],
         'model' => $sensorData['model'],
@@ -94,6 +104,7 @@ it('shows the edit sensor form for an organization sensor', function () {
             ->component('peoplecount/EditSensor')
             ->where('organization.id', $org->id)
             ->where('sensor.id', $sensor->id)
+            ->where('sensor.has_active_token', false)
         );
 });
 
@@ -133,7 +144,6 @@ it('rejects unvalidated sensor update fields', function () {
     $org = Organization::factory()->create();
     $foreignOrg = Organization::factory()->create();
     $sensor = Sensor::factory()->for($org)->create([
-        'api_token' => 'original-token',
         'archived_at' => null,
     ]);
 
@@ -143,15 +153,13 @@ it('rejects unvalidated sensor update fields', function () {
             'model' => 'UpdatedModel',
             'serial' => 'UpdatedSerial',
             'organization_id' => $foreignOrg->id,
-            'api_token' => 'changed-token',
             'archived_at' => now()->toDateTimeString(),
         ])
-        ->assertSessionHasErrors(['organization_id', 'api_token', 'archived_at']);
+        ->assertSessionHasErrors(['organization_id', 'archived_at']);
 
     $sensor->refresh();
 
     expect($sensor->organization_id)->toBe($org->id)
-        ->and($sensor->api_token)->toBe('original-token')
         ->and($sensor->archived_at)->toBeNull();
 });
 
