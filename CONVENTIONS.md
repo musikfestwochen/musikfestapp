@@ -28,3 +28,18 @@ Use **kebab-case** for the short description.
 | `ui`         | UX/UI improvements without adding features  | `ux/improve-dashboard-spacing`             |
 | `i18n`       | Internationalization/localization changes   | `i18n/add-french-translations`             |
 | `migration`  | Major database schema changes               | `migration/refactor-user-tables`           |
+
+## Datetime Input Contract
+
+All datetime inputs to backend endpoints (form posts and query parameters) must be
+**ISO 8601 UTC with milliseconds**, i.e. the exact output of `Date.prototype.toISOString()`:
+
+```
+2026-08-01T09:00:00.000Z
+```
+
+- FormRequests enforce this via `date_format:Y-m-d\TH:i:s.v\Z`. Use that rule for new
+  datetime fields; do not use the permissive `date` rule.
+- In PHP tests, produce the format with `$carbon->toIso8601ZuluString('millisecond')`.
+- Exception: the hardware-facing sensor API (`observed_at`) accepts ISO 8601 with `Z` or
+  numeric offset at seconds precision, enforced by regex in `ReadingStoreRequest`.

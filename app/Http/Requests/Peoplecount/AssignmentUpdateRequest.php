@@ -30,8 +30,8 @@ class AssignmentUpdateRequest extends FormRequest
             'sensor_id' => ['required', 'integer', 'exists:peoplecount_sensors,id'],
             'label' => ['nullable', 'string', 'max:255'],
             'direction_flipped' => ['required', 'boolean'],
-            'active_from' => ['required', 'date', 'before:active_to'],
-            'active_to' => ['required', 'date', 'after:active_from'],
+            'active_from' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'before:active_to'],
+            'active_to' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'after:active_from'],
         ];
     }
 

@@ -26,8 +26,8 @@ class EventStoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'starts_at' => ['required', 'date'],
-            'ends_at' => ['required', 'date', 'after:starts_at'],
+            'starts_at' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z'],
+            'ends_at' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'after:starts_at'],
         ];
     }
 }

@@ -53,8 +53,8 @@ it('can create an event for an organization', function () {
     $org = Organization::factory()->create();
     $eventData = [
         'name' => 'Test Event',
-        'starts_at' => now()->format('Y-m-d H:i:s'),
-        'ends_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+        'starts_at' => now()->toIso8601ZuluString('millisecond'),
+        'ends_at' => now()->addDays(3)->toIso8601ZuluString('millisecond'),
     ];
 
     $response = $this->actingAs($admin)
@@ -65,6 +65,20 @@ it('can create an event for an organization', function () {
         'organization_id' => $org->id,
         'deleted_at' => null,
     ]);
+});
+
+it('rejects non-ISO 8601 UTC datetimes when creating an event', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->post(route('peoplecount.events.store', ['organization' => $org->slug]), [
+            'name' => 'Test Event',
+            'starts_at' => now()->format('Y-m-d H:i:s'),
+            'ends_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+        ]);
+
+    $response->assertSessionHasErrors(['starts_at', 'ends_at']);
 });
 
 it('shows the edit event form for an organization event', function () {
@@ -106,8 +120,8 @@ it('can update an event for an organization', function () {
     $response = $this->actingAs($admin)
         ->put(route('peoplecount.events.update', ['organization' => $org->slug, 'event' => $event->id]), [
             'name' => $newName,
-            'starts_at' => $event->starts_at,
-            'ends_at' => $event->ends_at,
+            'starts_at' => $event->starts_at->toIso8601ZuluString('millisecond'),
+            'ends_at' => $event->ends_at->toIso8601ZuluString('millisecond'),
         ]);
     $response->assertRedirect(route('peoplecount.events.index', ['organization' => $org->slug]));
     $this->assertDatabaseHas('peoplecount_events', [

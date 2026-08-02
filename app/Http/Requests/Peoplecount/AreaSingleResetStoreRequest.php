@@ -26,7 +26,7 @@ class AreaSingleResetStoreRequest extends FormRequest
     {
         return [
             'reset_value' => ['required', 'integer', 'min:0'],
-            'effective_at' => ['required', 'date'],
+            'effective_at' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

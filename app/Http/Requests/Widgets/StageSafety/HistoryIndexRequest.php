@@ -30,8 +30,8 @@ class HistoryIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'from' => ['nullable', 'date', 'required_with:to', 'before_or_equal:to'],
-            'to' => ['nullable', 'date', 'required_with:from', 'after_or_equal:from'],
+            'from' => ['nullable', 'date_format:Y-m-d\TH:i:s.v\Z', 'required_with:to', 'before_or_equal:to'],
+            'to' => ['nullable', 'date_format:Y-m-d\TH:i:s.v\Z', 'required_with:from', 'after_or_equal:from'],
         ];
     }
 

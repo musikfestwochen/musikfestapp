@@ -113,13 +113,17 @@ it('rejects invalid history ranges', function (array $query, array $invalidField
         ->assertJsonValidationErrors($invalidFields);
 })->with([
     'longer than 24 hours' => [[
-        'from' => '2026-07-24T11:59:59Z',
-        'to' => '2026-07-25T12:00:00Z',
+        'from' => '2026-07-24T11:59:59.000Z',
+        'to' => '2026-07-25T12:00:00.000Z',
     ], ['to']],
     'reversed' => [[
-        'from' => '2026-07-25T12:00:00Z',
-        'to' => '2026-07-25T11:00:00Z',
+        'from' => '2026-07-25T12:00:00.000Z',
+        'to' => '2026-07-25T11:00:00.000Z',
     ], ['from', 'to']],
+    'not iso 8601 utc' => [[
+        'from' => '2026-07-24 11:59:59',
+        'to' => '2026-07-25T12:00:00.000Z',
+    ], ['from']],
 ]);
 
 it('uses monitoring form requests and organization middleware', function () {

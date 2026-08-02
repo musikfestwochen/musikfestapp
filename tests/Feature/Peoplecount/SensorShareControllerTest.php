@@ -24,8 +24,8 @@ it('stores a sensor share', function () {
             'sensor' => $sensor->id,
         ]), [
             'borrower_organization_id' => (string) $borrower->id,
-            'starts_at' => '2026-08-01 09:00:00',
-            'ends_at' => '2026-08-01 18:00:00',
+            'starts_at' => '2026-08-01T09:00:00.000Z',
+            'ends_at' => '2026-08-01T18:00:00.000Z',
         ])
         ->assertRedirect(route('peoplecount.sensors.edit', [
             'organization' => $owner->slug,
@@ -51,8 +51,8 @@ it('returns validation errors when storing invalid share', function () {
             'sensor' => $sensor->id,
         ]), [
             'borrower_organization_id' => $owner->id,
-            'starts_at' => '2026-08-01 09:00:00',
-            'ends_at' => '2026-08-01 18:00:00',
+            'starts_at' => '2026-08-01T09:00:00.000Z',
+            'ends_at' => '2026-08-01T18:00:00.000Z',
         ])
         ->assertRedirect(route('peoplecount.sensors.edit', ['organization' => $owner->slug, 'sensor' => $sensor->id]))
         ->assertSessionHasErrors('borrower_organization_id');
@@ -73,8 +73,8 @@ it('updates a sensor share', function () {
             'share' => $share->id,
         ]), [
             'borrower_organization_id' => (string) $newBorrower->id,
-            'starts_at' => '2026-08-01 08:00:00',
-            'ends_at' => '2026-08-01 19:00:00',
+            'starts_at' => '2026-08-01T08:00:00.000Z',
+            'ends_at' => '2026-08-01T19:00:00.000Z',
         ])
         ->assertRedirect(route('peoplecount.sensors.edit', [
             'organization' => $owner->slug,
@@ -99,8 +99,8 @@ it('rejects updating a share for another sensor', function () {
             'share' => $share->id,
         ]), [
             'borrower_organization_id' => $borrower->id,
-            'starts_at' => '2026-08-01 08:00:00',
-            'ends_at' => '2026-08-01 19:00:00',
+            'starts_at' => '2026-08-01T08:00:00.000Z',
+            'ends_at' => '2026-08-01T19:00:00.000Z',
         ])
         ->assertNotFound();
 });
@@ -120,8 +120,8 @@ it('returns validation errors when updating invalid share', function () {
             'share' => $share->id,
         ]), [
             'borrower_organization_id' => $owner->id,
-            'starts_at' => '2026-08-01 08:00:00',
-            'ends_at' => '2026-08-01 19:00:00',
+            'starts_at' => '2026-08-01T08:00:00.000Z',
+            'ends_at' => '2026-08-01T19:00:00.000Z',
         ])
         ->assertRedirect(route('peoplecount.sensors.edit', ['organization' => $owner->slug, 'sensor' => $sensor->id]))
         ->assertSessionHasErrors('borrower_organization_id');
