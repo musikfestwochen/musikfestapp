@@ -14,8 +14,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-use function Pest\Laravel\actingAs;
-
 covers(AlertService::class);
 
 // Test helpers and DTO
@@ -69,11 +67,6 @@ function enforceSqliteForeignKeys(): void
 function svc(): AlertService
 {
     return app(AlertService::class);
-}
-
-function signIn(User $user): void
-{
-    actingAs($user);
 }
 
 function defaultAlertAttrs(?int $cooldownMinutes = 60): array
@@ -142,7 +135,7 @@ it('getAreaAlerts returns only alerts for the given area and eager loads relatio
     $svc = svc();
     $graph = buildGraph();
     $user = $graph->users->first();
-    signIn($user);
+    $this->actingAs($user);
 
     // create alerts for both areas
     $a1Alert1 = Alert::factory()->for($graph->area)->create();
@@ -162,7 +155,7 @@ it('storeAreaAlert forces area_id and sets created_by', function () {
     $svc = svc();
     $graph = buildGraph();
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $attributes = array_merge(
         defaultAlertAttrs(300),
@@ -194,7 +187,7 @@ it('storeAreaAlert syncs recipients from mixed input and dedupes', function () {
     /** @var Collection<int,int> $recipientIds */
     $recipientIds = $graph->users->slice(0, 2)->pluck('id');
 
-    signIn($actor);
+    $this->actingAs($actor);
 
     $attributes = array_merge(
         defaultAlertAttrs(60),
@@ -219,7 +212,7 @@ it('storeAreaAlert with empty recipients clears pivot', function () {
     $svc = svc();
     $graph = buildGraph();
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     // first create with some recipients
     $r1 = $graph->users[0]->id;
@@ -247,7 +240,7 @@ it('updateAreaAlert keeps area_id stable and updates attributes', function () {
     $svc = svc();
     $graph = buildGraph();
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $alert = Alert::factory()->for($graph->area)->create([
         'type' => AlertType::OccupancyAlert,
@@ -272,7 +265,7 @@ it('updateAreaAlert re-syncs recipients without duplicates', function () {
     $svc = svc();
     $graph = buildGraph(userCount: 4);
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $r1 = $graph->users[0]->id;
     $r2 = $graph->users[1]->id;
@@ -299,7 +292,7 @@ it('destroyAreaAlert deletes the alert when area and org match', function () {
     $svc = svc();
     $graph = buildGraph();
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $alert = Alert::factory()->for($graph->area)->create();
 
@@ -313,7 +306,7 @@ it('throws if area is not in organization for all relevant methods', function ()
     $svc = svc();
     $graph = buildGraph();
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     // Create alert in other area/org
     $foreignAlert = Alert::factory()->for($graph->otherArea)->create();
@@ -341,7 +334,7 @@ it('throws if alert does not belong to the given area for update/destroy', funct
     $svc = svc();
     $graph = buildGraph();
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $alertInArea2 = Alert::factory()->for($graph->area2)->create();
 
@@ -358,7 +351,7 @@ it('rejects recipients that are not part of the organization on store/update', f
     $svc = svc();
     $graph = buildGraph(userCount: 2);
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $inOrg = $graph->users[0]->id;
     $outOrgUser = User::factory()->create(); // not attached to org
@@ -389,7 +382,7 @@ it('recipient sync is idempotent and does not duplicate entries', function () {
     $svc = svc();
     $graph = buildGraph(userCount: 3);
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $r1 = $graph->users[0]->id;
     $r2 = $graph->users[1]->id;
@@ -421,7 +414,7 @@ it('normalizes recipients from various input shapes', function () {
     $svc = svc();
     $graph = buildGraph(userCount: 3);
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $r1 = $graph->users[0]->id;
     $r2 = $graph->users[1]->id;
@@ -498,7 +491,7 @@ it('updateAreaAlert without recipients key preserves existing recipients', funct
     $svc = svc();
     $graph = buildGraph(userCount: 3);
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $r1 = $graph->users[0]->id;
     $r2 = $graph->users[1]->id;
@@ -525,7 +518,7 @@ it('updateAreaAlert with recipients => null clears recipients', function () {
     $svc = svc();
     $graph = buildGraph(userCount: 3);
     $actor = $graph->users->first();
-    signIn($actor);
+    $this->actingAs($actor);
 
     $r1 = $graph->users[0]->id;
 
