@@ -188,7 +188,7 @@ describe('canGlobally', function () {
             ->andReturn(true);
 
         $result = GlobalPermissionService::canGlobally($user, 'any-ability');
-        expect($result)->not->not->toBeNull()->toBeTrue()->toBeFalse();
+        expect($result)->toBeTrue();
     });
 
     it('returns true when user has the specific global permission', function () {
