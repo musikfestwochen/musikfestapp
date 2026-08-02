@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Date;
 
 covers(AreaRecurringReset::class);
 
@@ -56,7 +55,7 @@ it('belongs to an area', function () {
 
 it('gets next daily occurrence', function () {
     // Freeze time at 06:00 UTC (07:00 in Europe/Zurich during standard time)
-    Date::setTestNow('2024-01-15 06:00:00');
+    Carbon::setTestNow('2024-01-15 06:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
@@ -68,12 +67,12 @@ it('gets next daily occurrence', function () {
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-15'); // Should be today since 08:00 hasn't passed yet
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets next daily occurrence for tomorrow if time has passed today', function () {
     // Freeze time at 10:30 UTC - well after midnight, so next occurrence should be tomorrow
-    Date::setTestNow('2024-01-15 10:30:00');
+    Carbon::setTestNow('2024-01-15 10:30:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '00:00'; // Midnight - already passed today
@@ -85,12 +84,12 @@ it('gets next daily occurrence for tomorrow if time has passed today', function 
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-16'); // Should be tomorrow since midnight has passed
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets previous daily occurrence', function () {
     // Freeze time at 10:00 UTC (11:00 in Europe/Zurich during standard time) - after 08:00 reset time
-    Date::setTestNow('2024-01-15 10:00:00');
+    Carbon::setTestNow('2024-01-15 10:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
@@ -101,15 +100,15 @@ it('gets previous daily occurrence', function () {
     expect($previousOccurrence)->toBeInstanceOf(Carbon::class)
         ->and($previousOccurrence->format('H:i'))->toBe('07:00') // Time in UTC (08:00 in Europe/Zurich)
         ->and($previousOccurrence->format('Y-m-d'))->toBe('2024-01-15') // Should be today since 08:00 has already passed
-        ->and($previousOccurrence->isBefore(Date::parse('2024-01-15 10:00:00', 'Europe/Zurich')))->toBeTrue();
+        ->and($previousOccurrence->isBefore(Carbon::parse('2024-01-15 10:00:00', 'Europe/Zurich')))->toBeTrue();
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets previous daily occurrence for yesterday if time has not yet occurred today', function () {
     // Freeze time at 10:30 UTC - well before 23:59, so previous occurrence should be yesterday
-    Date::setTestNow('2024-01-15 10:30:00');
+    Carbon::setTestNow('2024-01-15 10:30:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '23:59'; // Late time, has not yet occurred today
@@ -120,15 +119,15 @@ it('gets previous daily occurrence for yesterday if time has not yet occurred to
     expect($previousOccurrence)->toBeInstanceOf(Carbon::class)
         ->and($previousOccurrence->format('H:i'))->toBe('23:59')
         ->and($previousOccurrence->format('Y-m-d'))->toBe('2024-01-14') // Should be yesterday since 23:59 hasn't occurred today
-        ->and($previousOccurrence->isBefore(Date::parse('2024-01-15 10:30:00', 'UTC')))->toBeTrue();
+        ->and($previousOccurrence->isBefore(Carbon::parse('2024-01-15 10:30:00', 'UTC')))->toBeTrue();
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('handles different timezones for next daily occurrence', function () {
     // Freeze time at 10:00 UTC (06:00 in America/New_York during standard time) - before 14:30 reset time
-    Date::setTestNow('2024-01-15 10:00:00');
+    Carbon::setTestNow('2024-01-15 10:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '14:30';
@@ -141,12 +140,12 @@ it('handles different timezones for next daily occurrence', function () {
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-15'); // Should be today since 14:30 hasn't passed yet in NY timezone
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets next daily occurrence when current time equals reset time', function () {
     // Freeze time at exactly 08:00 UTC - same as reset time
-    Date::setTestNow('2024-01-15 08:00:00');
+    Carbon::setTestNow('2024-01-15 08:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
@@ -158,12 +157,12 @@ it('gets next daily occurrence when current time equals reset time', function ()
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-16'); // Should be tomorrow since current time >= reset time
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets previous daily occurrence when current time equals reset time', function () {
     // Freeze time at exactly 08:00 UTC - same as reset time
-    Date::setTestNow('2024-01-15 08:00:00');
+    Carbon::setTestNow('2024-01-15 08:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
@@ -175,27 +174,27 @@ it('gets previous daily occurrence when current time equals reset time', functio
         ->and($previousOccurrence->format('Y-m-d'))->toBe('2024-01-15'); // Should be today since current time is not < reset time
 
     // Reset time mocking
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets next daily occurrence with while loop when reset time is before provided datetime', function () {
     // This test covers line 70 - the while loop in getNextDailyOccurrence
     // Create a scenario where the reset time needs to be advanced multiple times
-    Date::setTestNow('2024-01-15 10:00:00');
+    Carbon::setTestNow('2024-01-15 10:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
     $model->timezone = 'UTC';
 
     // Pass a datetime that's after today's reset time but before tomorrow's
-    $fromTime = Date::parse('2024-01-15 09:00:00', 'UTC');
+    $fromTime = Carbon::parse('2024-01-15 09:00:00', 'UTC');
 
     $nextOccurrence = $model->getNextDailyOccurrence($fromTime);
     expect($nextOccurrence)->toBeInstanceOf(Carbon::class)
         ->and($nextOccurrence->format('H:i'))->toBe('08:00')
         ->and($nextOccurrence->format('Y-m-d'))->toBe('2024-01-16'); // Should be tomorrow
 
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('gets occurrences between two dates', function () {
@@ -203,15 +202,15 @@ it('gets occurrences between two dates', function () {
     $model->reset_time = '12:00:00';
     $model->timezone = 'UTC';
 
-    $start = Date::parse('2024-01-15 10:00:00', 'UTC');
-    $end = Date::parse('2024-01-17 14:00:00', 'UTC');
+    $start = Carbon::parse('2024-01-15 10:00:00', 'UTC');
+    $end = Carbon::parse('2024-01-17 14:00:00', 'UTC');
 
     $occurrences = $model->getOccurrencesBetween($start, $end);
 
     $expectedOccurrences = [
-        Date::parse('2024-01-15 12:00:00', 'UTC'),
-        Date::parse('2024-01-16 12:00:00', 'UTC'),
-        Date::parse('2024-01-17 12:00:00', 'UTC'),
+        Carbon::parse('2024-01-15 12:00:00', 'UTC'),
+        Carbon::parse('2024-01-16 12:00:00', 'UTC'),
+        Carbon::parse('2024-01-17 12:00:00', 'UTC'),
     ];
 
     expect($occurrences)->toBeArray()
@@ -224,16 +223,16 @@ it('gets occurrences between two dates in different timezones', function () {
     $model->reset_time = '15:30:00';
     $model->timezone = 'Europe/Zurich';
 
-    $start = Date::parse('2024-01-15 10:00:00', 'UTC');
-    $end = Date::parse('2024-01-17 19:00:00', 'UTC');
+    $start = Carbon::parse('2024-01-15 10:00:00', 'UTC');
+    $end = Carbon::parse('2024-01-17 19:00:00', 'UTC');
 
     $occurrences = $model->getOccurrencesBetween($start, $end);
 
     // Convert expected occurrences to UTC for comparison
     $expectedOccurrences = [
-        Date::parse('2024-01-15 14:30:00', 'UTC'),
-        Date::parse('2024-01-16 14:30:00', 'UTC'),
-        Date::parse('2024-01-17 14:30:00', 'UTC'),
+        Carbon::parse('2024-01-15 14:30:00', 'UTC'),
+        Carbon::parse('2024-01-16 14:30:00', 'UTC'),
+        Carbon::parse('2024-01-17 14:30:00', 'UTC'),
     ];
 
     expect($occurrences)->toBeArray()
@@ -247,8 +246,8 @@ it('gets occurrences between dates with single occurrence', function () {
     $model->reset_time = '15:30';
     $model->timezone = 'UTC';
 
-    $start = Date::parse('2024-01-15 10:00:00', 'UTC');
-    $end = Date::parse('2024-01-15 20:00:00', 'UTC');
+    $start = Carbon::parse('2024-01-15 10:00:00', 'UTC');
+    $end = Carbon::parse('2024-01-15 20:00:00', 'UTC');
 
     $occurrences = $model->getOccurrencesBetween($start, $end);
 
@@ -261,14 +260,14 @@ it('gets occurrences between dates with single occurrence', function () {
 
 it('gets previous daily occurrence with explicit Carbon parameter', function () {
     // This test covers the $from instanceof Carbon branch in getPreviousDailyOccurrence
-    Date::setTestNow('2024-01-15 10:00:00');
+    Carbon::setTestNow('2024-01-15 10:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
     $model->timezone = 'UTC';
 
     // Create an explicit Carbon instance to pass as parameter
-    $explicitTime = Date::parse('2024-01-15 07:00:00', 'UTC');
+    $explicitTime = Carbon::parse('2024-01-15 07:00:00', 'UTC');
 
     $previousOccurrence = $model->getPreviousDailyOccurrence($explicitTime);
 
@@ -277,7 +276,7 @@ it('gets previous daily occurrence with explicit Carbon parameter', function () 
         ->and($previousOccurrence->format('H:i'))->toBe('08:00')
         ->and($previousOccurrence->format('Y-m-d'))->toBe('2024-01-14');
 
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('verifies date part is correctly set in previous daily occurrence', function () {
@@ -285,7 +284,7 @@ it('verifies date part is correctly set in previous daily occurrence', function 
     // We'll use a specific date that's different from the default to ensure the setDate method is working
 
     // Create a mock Carbon instance for testing
-    $mockNow = Date::parse('2023-12-25 10:00:00', 'UTC'); // Christmas day
+    $mockNow = Carbon::parse('2023-12-25 10:00:00', 'UTC'); // Christmas day
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
@@ -303,7 +302,7 @@ it('verifies date part is correctly set in previous daily occurrence', function 
         ->and($previousOccurrence->day)->toBe($mockNow->day);
 
     // Now test with a time before the reset time
-    $mockNow = Date::parse('2023-12-25 07:00:00', 'UTC'); // Christmas day, before reset
+    $mockNow = Carbon::parse('2023-12-25 07:00:00', 'UTC'); // Christmas day, before reset
 
     // Call the method with our mock date
     $previousOccurrence = $model->getPreviousDailyOccurrence($mockNow);
@@ -319,15 +318,15 @@ it('verifies date part is correctly set in previous daily occurrence', function 
 
 it('verifies occurrences are only added if within range', function () {
     // This test verifies that occurrences are only added if they are within the range
-    Date::setTestNow('2024-01-15 08:00:00');
+    Carbon::setTestNow('2024-01-15 08:00:00');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '12:00';
     $model->timezone = 'UTC';
 
     // Test with a next occurrence that's outside the range
-    $start = Date::parse('2024-01-16 13:00:00', 'UTC'); // After the reset time on Jan 16
-    $end = Date::parse('2024-01-17 11:00:00', 'UTC');   // Before the reset time on Jan 17
+    $start = Carbon::parse('2024-01-16 13:00:00', 'UTC'); // After the reset time on Jan 16
+    $end = Carbon::parse('2024-01-17 11:00:00', 'UTC');   // Before the reset time on Jan 17
 
     $occurrences = $model->getOccurrencesBetween($start, $end);
 
@@ -337,8 +336,8 @@ it('verifies occurrences are only added if within range', function () {
         ->and($occurrences)->toBeEmpty();
 
     // Now test with a range that includes exactly one occurrence
-    $start = Date::parse('2024-01-16 10:00:00', 'UTC'); // Before the reset time on Jan 16
-    $end = Date::parse('2024-01-16 14:00:00', 'UTC');   // After the reset time on Jan 16
+    $start = Carbon::parse('2024-01-16 10:00:00', 'UTC'); // Before the reset time on Jan 16
+    $end = Carbon::parse('2024-01-16 14:00:00', 'UTC');   // After the reset time on Jan 16
 
     $occurrences = $model->getOccurrencesBetween($start, $end);
 
@@ -346,7 +345,7 @@ it('verifies occurrences are only added if within range', function () {
         ->and($occurrences)->toHaveCount(1)
         ->and($occurrences[0]->format('Y-m-d H:i'))->toBe('2024-01-16 12:00');
 
-    Date::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('has factory', function () {
@@ -362,7 +361,7 @@ it('throws on invalid timezone when getting next daily occurrence', function () 
 });
 
 it('does not modify the provided $from Carbon instance and returns UTC timezone', function () {
-    $from = Date::parse('2024-01-15 23:30:00', 'UTC');
+    $from = Carbon::parse('2024-01-15 23:30:00', 'UTC');
 
     $model = new AreaRecurringReset;
     $model->reset_time = '08:00';
@@ -382,8 +381,8 @@ it('includes occurrences equal to start and end boundaries', function () {
     $model->reset_time = '12:00';
     $model->timezone = 'UTC';
 
-    $start = Date::parse('2024-01-15 12:00:00', 'UTC');
-    $end = Date::parse('2024-01-16 12:00:00', 'UTC');
+    $start = Carbon::parse('2024-01-15 12:00:00', 'UTC');
+    $end = Carbon::parse('2024-01-16 12:00:00', 'UTC');
 
     $occ = $model->getOccurrencesBetween($start, $end);
 
@@ -401,8 +400,8 @@ it('returns strictly increasing daily occurrences without duplicates across DST 
     $model->timezone = 'Europe/Zurich';
 
     // Window that spans the EU spring DST transition in 2024 (2024-03-31)
-    $start = Date::parse('2024-03-29 00:00:00', 'UTC');
-    $end = Date::parse('2024-04-03 23:59:59', 'UTC');
+    $start = Carbon::parse('2024-03-29 00:00:00', 'UTC');
+    $end = Carbon::parse('2024-04-03 23:59:59', 'UTC');
 
     $occ = $model->getOccurrencesBetween($start, $end);
 
