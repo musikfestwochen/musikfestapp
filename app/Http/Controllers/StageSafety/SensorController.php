@@ -15,6 +15,7 @@ use App\Http\Requests\StageSafety\SensorUpdateRequest;
 use App\Models\Organization;
 use App\Models\StageSafety\Sensor;
 use App\Services\StageSafety\SensorService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -54,7 +55,9 @@ class SensorController extends Controller
 
         return Inertia::render('stage-safety/EditSensor', [
             'organization' => $organization,
-            'sensor' => $stageSafetySensor->loadExists(['tokens as has_active_token']),
+            'sensor' => $stageSafetySensor->loadExists(['tokens as has_active_token' => function (Builder $query): void {
+                $query->where('name', SensorService::SENSOR_TOKEN_NAME);
+            }]),
             'sensorTypes' => $this->sensorTypes(),
             'status' => $request->session()->get('status'),
         ]);

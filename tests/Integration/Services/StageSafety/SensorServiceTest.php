@@ -151,3 +151,12 @@ it('reports whether each listed sensor has an active token', function () {
     expect($sensors->firstWhere('id', $sensorWithToken->id)?->has_active_token)->toBeTruthy()
         ->and($sensors->firstWhere('id', $sensorWithoutToken->id)?->has_active_token)->toBeFalsy();
 });
+
+it('does not report a legacy-named token as active', function () {
+    $sensor = Sensor::factory()->for($this->organization)->create();
+    $sensor->createToken('legacy-token');
+
+    $sensors = $this->service->getSensors($this->organization);
+
+    expect($sensors->firstWhere('id', $sensor->id)?->has_active_token)->toBeFalsy();
+});

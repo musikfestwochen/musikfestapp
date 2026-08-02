@@ -36,7 +36,9 @@ class SensorService
             ? $query->whereNotNull('archived_at')
             : $query->whereNull('archived_at');
 
-        return $query->withExists(['tokens as has_active_token'])->get();
+        return $query->withExists(['tokens as has_active_token' => function (Builder $query): void {
+            $query->where('name', self::SENSOR_TOKEN_NAME);
+        }])->get();
     }
 
     /**

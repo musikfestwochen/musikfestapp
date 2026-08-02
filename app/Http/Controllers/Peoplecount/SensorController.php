@@ -15,6 +15,7 @@ use App\Http\Requests\Peoplecount\SensorUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\SensorService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,17 +25,15 @@ use Inertia\Response;
 
 class SensorController extends Controller
 {
-    public function __construct(private readonly SensorService $sensorService) {}
-
     /**
      * Display a listing of the resource.
      */
-    public function index(SensorIndexRequest $request, Organization $organization): Response
+    public function index(SensorIndexRequest $request, Organization $organization, SensorService $sensorService): Response
     {
         $showArchived = $request->showArchived();
 
         return Inertia::render('peoplecount/Sensors', [
-            'sensors' => $this->sensorService->getSensors($showArchived),
+            'sensors' => $sensorService->getSensors($showArchived),
             'organization' => $organization,
             'showArchived' => $showArchived,
             'status' => $request->session()->get('status'),
@@ -80,9 +79,9 @@ class SensorController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(SensorEditRequest $request, Organization $organization, Sensor $sensor): Response
+    public function edit(SensorEditRequest $request, Organization $organization, Sensor $sensor, SensorService $sensorService): Response
     {
-        $this->sensorService->verifySensorManagedByCurrentOrganization($sensor);
+        $sensorService->verifySensorManagedByCurrentOrganization($sensor);
 
         // get the last 10 interval counts for the sensor
         $sensor->load(['intervalCounts' => function (HasMany $query) {
@@ -91,7 +90,9 @@ class SensorController extends Controller
             $query->with('borrowerOrganization')
                 ->withCount('assignments')
                 ->latest('starts_at');
-        }])->loadExists(['tokens as has_active_token']);
+        }])->loadExists(['tokens as has_active_token' => function (Builder $query): void {
+            $query->where('name', SensorService::SENSOR_TOKEN_NAME);
+        }]);
 
         return Inertia::render('peoplecount/EditSensor', [
             'organization' => $organization,
@@ -109,9 +110,9 @@ class SensorController extends Controller
      *
      * @param  SensorUpdateRequest  $request  Required for Authorization
      */
-    public function update(SensorUpdateRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
+    public function update(SensorUpdateRequest $request, Organization $organization, Sensor $sensor, SensorService $sensorService): RedirectResponse
     {
-        $this->sensorService->verifySensorManagedByCurrentOrganization($sensor);
+        $sensorService->verifySensorManagedByCurrentOrganization($sensor);
 
         $sensor->update($request->validated());
 
@@ -129,12 +130,12 @@ class SensorController extends Controller
      *
      * @param  SensorDestroyRequest  $request  Required for Authorization
      */
-    public function destroy(SensorDestroyRequest $request, Organization $organization, Sensor $sensor): RedirectResponse
+    public function destroy(SensorDestroyRequest $request, Organization $organization, Sensor $sensor, SensorService $sensorService): RedirectResponse
     {
         $name = $sensor->name ?? ($sensor->vendor.' '.$sensor->model.' '.$sensor->serial);
 
         try {
-            $this->sensorService->delete($sensor);
+            $sensorService->delete($sensor);
         } catch (ValidationException $validationException) {
             return back()->withErrors($validationException->errors());
         }

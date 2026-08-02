@@ -111,6 +111,18 @@ describe('getSensors', function () {
         expect($sensors->firstWhere('id', $sensorWithToken->id)?->has_active_token)->toBeTruthy()
             ->and($sensors->firstWhere('id', $sensorWithoutToken->id)?->has_active_token)->toBeFalsy();
     });
+
+    it('does not report a legacy-named token as active', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create();
+        $sensor->createToken('legacy-token');
+
+        setPermissionsOrgId($org->id);
+
+        $sensors = $this->service->getSensors();
+
+        expect($sensors->firstWhere('id', $sensor->id)?->has_active_token)->toBeFalsy();
+    });
 });
 
 describe('archive', function () {
