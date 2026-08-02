@@ -37,9 +37,7 @@ final class Graph implements ArrayAccess
 
     public function offsetGet(mixed $offset): mixed
     {
-        if (! is_string($offset) || ! property_exists($this, $offset)) {
-            throw new OutOfBoundsException('Invalid graph key: '.(string) $offset);
-        }
+        throw_if(! is_string($offset) || ! property_exists($this, $offset), OutOfBoundsException::class, 'Invalid graph key: '.$offset);
 
         return $this->$offset;
     }
@@ -59,14 +57,14 @@ function enforceSqliteForeignKeys(): void
 {
     try {
         DB::statement('PRAGMA foreign_keys = ON');
-    } catch (Throwable $e) {
+    } catch (Throwable $throwable) {
         // noop for non-sqlite environments
     }
 }
 
 function svc(): AlertService
 {
-    return app(AlertService::class);
+    return resolve(AlertService::class);
 }
 
 function defaultAlertAttrs(?int $cooldownMinutes = 60): array
@@ -84,7 +82,8 @@ function recipientsCsv(iterable $ids): string
     foreach ($ids as $id) {
         $list[] = (string) $id;
     }
-    if (count($list) === 0) {
+
+    if ($list === []) {
         return '';
     }
 
@@ -146,7 +145,7 @@ it('getAreaAlerts returns only alerts for the given area and eager loads relatio
 
     expect($alerts->pluck('id')->all())
         ->toEqualCanonicalizing([$a1Alert1->id, $a1Alert2->id])
-        ->and($alerts->every(fn (Alert $a) => $a->relationLoaded('creator') && $a->relationLoaded('recipients')))
+        ->and($alerts->every(fn (Alert $a): bool => $a->relationLoaded('creator') && $a->relationLoaded('recipients')))
         ->toBeTrue();
 });
 
@@ -200,6 +199,7 @@ it('storeAreaAlert syncs recipients from mixed input and dedupes', function () {
     $alert = $svc->storeAreaAlert($graph->org, $graph->area, $attributes);
 
     $alert->load('recipients');
+
     expect($alert->recipients->pluck('id')->all())
         ->toEqualCanonicalizing($recipientIds->all());
 
@@ -231,7 +231,7 @@ it('storeAreaAlert with empty recipients clears pivot', function () {
     ]);
 
     $alert->load('recipients');
-    expect($alert->recipients)->toHaveCount(0);
+    expect($alert->recipients)->toBeEmpty();
     $this->assertDatabaseCount('peoplecount_alert_user', 0);
 });
 
@@ -312,15 +312,15 @@ it('throws if area is not in organization for all relevant methods', function ()
     $foreignAlert = Alert::factory()->for($graph->otherArea)->create();
 
     // getAreaAlerts
-    expect(fn () => $svc->getAreaAlerts($graph->org, $graph->otherArea))
+    expect(fn (): Collection => $svc->getAreaAlerts($graph->org, $graph->otherArea))
         ->toThrow(AuthorizationException::class);
 
     // storeAreaAlert
-    expect(fn () => $svc->storeAreaAlert($graph->org, $graph->otherArea, defaultAlertAttrs(60)))
+    expect(fn (): Alert => $svc->storeAreaAlert($graph->org, $graph->otherArea, defaultAlertAttrs(60)))
         ->toThrow(AuthorizationException::class);
 
     // updateAreaAlert (alert belongs to other area)
-    expect(fn () => $svc->updateAreaAlert($graph->org, $graph->otherArea, $foreignAlert, [
+    expect(fn (): Alert => $svc->updateAreaAlert($graph->org, $graph->otherArea, $foreignAlert, [
         'cooldown_minutes' => 90,
     ]))->toThrow(AuthorizationException::class);
 
@@ -338,12 +338,10 @@ it('throws if alert does not belong to the given area for update/destroy', funct
 
     $alertInArea2 = Alert::factory()->for($graph->area2)->create();
 
-    expect(fn () => $svc->updateAreaAlert($graph->org, $graph->area, $alertInArea2, [
+    expect(fn (): Alert => $svc->updateAreaAlert($graph->org, $graph->area, $alertInArea2, [
         'cooldown_minutes' => 111,
-    ]))->toThrow(AuthorizationException::class);
-
-    expect(fn () => $svc->destroyAreaAlert($graph->org, $graph->area, $alertInArea2))
-        ->toThrow(AuthorizationException::class);
+    ]))->toThrow(AuthorizationException::class)
+        ->and(fn () => $svc->destroyAreaAlert($graph->org, $graph->area, $alertInArea2))->toThrow(AuthorizationException::class);
 });
 
 // 10. Authorization: recipients not in org rejected
@@ -357,7 +355,7 @@ it('rejects recipients that are not part of the organization on store/update', f
     $outOrgUser = User::factory()->create(); // not attached to org
 
     // store
-    expect(fn () => $svc->storeAreaAlert($graph->org, $graph->area, array_merge(
+    expect(fn (): Alert => $svc->storeAreaAlert($graph->org, $graph->area, array_merge(
         defaultAlertAttrs(60),
         [
             'recipients' => [$inOrg, $outOrgUser->id],
@@ -372,7 +370,7 @@ it('rejects recipients that are not part of the organization on store/update', f
         ],
     ));
 
-    expect(fn () => $svc->updateAreaAlert($graph->org, $graph->area, $alert, [
+    expect(fn (): Alert => $svc->updateAreaAlert($graph->org, $graph->area, $alert, [
         'recipients' => [$inOrg, $outOrgUser->id],
     ]))->toThrow(AuthorizationException::class);
 });
@@ -427,6 +425,7 @@ it('normalizes recipients from various input shapes', function () {
         ],
     ));
     $alert1->load('recipients');
+
     expect($alert1->recipients->pluck('id')->all())
         ->toEqualCanonicalizing([$r1, $r2]);
 
@@ -434,10 +433,11 @@ it('normalizes recipients from various input shapes', function () {
     $alert2 = $svc->storeAreaAlert($graph->org, $graph->area, array_merge(
         defaultAlertAttrs(60),
         [
-            'recipients' => "$r1, $r1, $r2",
+            'recipients' => sprintf('%s, %s, %s', $r1, $r1, $r2),
         ],
     ));
     $alert2->load('recipients');
+
     expect($alert2->recipients->pluck('id')->all())
         ->toEqualCanonicalizing([$r1, $r2]);
 
@@ -449,6 +449,7 @@ it('normalizes recipients from various input shapes', function () {
         ],
     ));
     $alert3->load('recipients');
+
     expect($alert3->recipients->pluck('id')->all())
         ->toEqualCanonicalizing([$r1, $r2]);
 
@@ -460,6 +461,7 @@ it('normalizes recipients from various input shapes', function () {
         ],
     ));
     $alert4->load('recipients');
+
     expect($alert4->recipients->pluck('id')->all())
         ->toEqual([$r1]);
 
@@ -471,6 +473,7 @@ it('normalizes recipients from various input shapes', function () {
         ],
     ));
     $alert5->load('recipients');
+
     expect($alert5->recipients->pluck('id')->all())
         ->toEqualCanonicalizing([$r1, $r2]);
 
@@ -482,6 +485,7 @@ it('normalizes recipients from various input shapes', function () {
         ],
     ));
     $alert6->load('recipients');
+
     expect($alert6->recipients->pluck('id')->all())
         ->toEqual([$r2]);
 });
@@ -534,7 +538,7 @@ it('updateAreaAlert with recipients => null clears recipients', function () {
     ]);
 
     $alert->load('recipients');
-    expect($alert->recipients)->toHaveCount(0);
+    expect($alert->recipients)->toBeEmpty();
     $this->assertDatabaseCount('peoplecount_alert_user', 0);
 });
 
@@ -562,12 +566,12 @@ function _extract(mixed $input): array
 }
 
 it('returns [] for null', function () {
-    expect(_extract(null))->toEqual([]);
+    expect(_extract(null))->toBeEmpty();
 });
 
 it('returns [] for empty and whitespace strings', function () {
-    expect(_extract(''))->toEqual([])
-        ->and(_extract('   '))->toEqual([]);
+    expect(_extract(''))->toBeEmpty()
+        ->and(_extract('   '))->toBeEmpty();
 });
 
 it('parses CSV string into unique positive ints', function () {
@@ -601,11 +605,11 @@ it('deduplicates values regardless of type', function () {
 });
 
 it('filters out non-positive and non-numeric values', function () {
-    expect(_extract(['0', '-3', 'a']))->toEqual([]);
+    expect(_extract(['0', '-3', 'a']))->toBeEmpty();
 });
 
 it('returns [] for invalid JSON array strings', function () {
-    expect(_extract('[1,]'))->toEqual([]);
+    expect(_extract('[1,]'))->toBeEmpty();
 });
 
 it('trims surrounding whitespace for scalar numeric strings', function () {
@@ -628,13 +632,13 @@ it('always returns integers, not numeric strings', function () {
 
 use App\Models\Peoplecount\AreaAggregatedCount;
 use App\Notifications\Peoplecount\AreaOccupancyAlert;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     // Fix time for deterministic alert processing assertions
-    if (! Carbon::hasTestNow()) {
-        Carbon::setTestNow(Carbon::parse('2025-08-13 12:00:00')->utc());
+    if (! Date::hasTestNow()) {
+        Date::setTestNow(Date::parse('2025-08-13 12:00:00')->utc());
     }
 });
 
@@ -648,8 +652,8 @@ function _setupEventAreaAndUsers(): array
 
     $event = Event::factory()->create([
         'organization_id' => $org->id,
-        'starts_at' => Carbon::now()->subHour(),
-        'ends_at' => Carbon::now()->addHours(2),
+        'starts_at' => Date::now()->subHour(),
+        'ends_at' => Date::now()->addHours(2),
     ]);
 
     $area = Area::factory()->create([
@@ -667,7 +671,7 @@ function _createAgg(Area $area, string $start, string $end, int $count): AreaAgg
 {
     return AreaAggregatedCount::factory()
         ->withArea($area)
-        ->withPeriod(Carbon::parse($start)->utc(), Carbon::parse($end)->utc())
+        ->withPeriod(Date::parse($start)->utc(), Date::parse($end)->utc())
         ->create(['count' => $count]);
 }
 
@@ -704,7 +708,7 @@ it('processAlertsForArea sends occupancy alert and updates last_triggered_at whe
 
     $alert->refresh();
     expect($alert->last_triggered_at)->not()->toBeNull()
-        ->and($alert->last_triggered_at->equalTo(Carbon::now()))->toBeTrue();
+        ->and($alert->last_triggered_at->equalTo(Date::now()))->toBeTrue();
 });
 
 it('does not send when no aggregated counts exist or latest below threshold', function () {
@@ -739,7 +743,7 @@ it('respects cooldown window for subsequent triggers', function () {
         [
             'area_id' => $area->id,
             'occupancy_alert_threshold' => 50,
-            'last_triggered_at' => Carbon::now()->subMinutes(30),
+            'last_triggered_at' => Date::now()->subMinutes(30),
         ],
     ));
     $alert->recipients()->attach([$u1->id, $u2->id]);
@@ -762,7 +766,7 @@ it('does not trigger during cooldown even when drop-below condition is satisfied
         [
             'area_id' => $area->id,
             'occupancy_alert_threshold' => $threshold,
-            'last_triggered_at' => Carbon::now()->subMinutes(30),
+            'last_triggered_at' => Date::now()->subMinutes(30),
         ],
     ));
     $alert->recipients()->attach([$u1->id, $u2->id]);
@@ -787,7 +791,7 @@ it('requires a drop below threshold since last trigger before re-sending', funct
         [
             'area_id' => $area->id,
             'occupancy_alert_threshold' => $threshold,
-            'last_triggered_at' => Carbon::now()->subHours(2),
+            'last_triggered_at' => Date::now()->subHours(2),
         ],
     ));
     $alert->recipients()->attach([$u1->id, $u2->id]);
@@ -818,8 +822,8 @@ it('does nothing when event is not ongoing', function () {
     $org = Organization::factory()->create();
     $event = Event::factory()->create([
         'organization_id' => $org->id,
-        'starts_at' => Carbon::now()->addHour(), // future start
-        'ends_at' => Carbon::now()->addHours(3),
+        'starts_at' => Date::now()->addHour(), // future start
+        'ends_at' => Date::now()->addHours(3),
     ]);
     $area = Area::factory()->create(['event_id' => $event->id]);
     $u1 = User::factory()->create();
@@ -989,7 +993,7 @@ it('does not trigger when now is exactly at the event end time (end-exclusive wi
     Notification::fake();
 
     $org = Organization::factory()->create();
-    $now = Carbon::now();
+    $now = Date::now();
     $event = Event::factory()->create([
         'organization_id' => $org->id,
         'starts_at' => $now->copy()->subHour(),
@@ -1019,7 +1023,7 @@ it('does trigger when now is exactly at the event start time (start-inclusive wi
     Notification::fake();
 
     $org = Organization::factory()->create();
-    $now = Carbon::now();
+    $now = Date::now();
     $event = Event::factory()->create([
         'organization_id' => $org->id,
         'starts_at' => $now->copy(), // exactly now

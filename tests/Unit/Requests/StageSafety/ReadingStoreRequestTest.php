@@ -47,6 +47,7 @@ function stageSafetyRequestSensor(mixed $archivedAt, array $abilities): Sensor
 {
     $token = new PersonalAccessToken;
     $token->abilities = $abilities;
+
     $sensor = new Sensor;
     $sensor->archived_at = $archivedAt;
 

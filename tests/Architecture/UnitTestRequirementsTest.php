@@ -60,7 +60,11 @@ it('ensures each class appears exactly once in covers() annotations', function (
         );
 
         foreach ($iterator as $file) {
-            if ($file->getExtension() !== 'php' || ! str_ends_with($file->getFilename(), 'Test.php')) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            if (! str_ends_with($file->getFilename(), 'Test.php')) {
                 continue;
             }
 

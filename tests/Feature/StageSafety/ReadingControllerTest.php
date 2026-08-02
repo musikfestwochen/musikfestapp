@@ -7,6 +7,7 @@ use App\Models\StageSafety\Reading;
 use App\Models\StageSafety\Sensor;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Auth\Factory;
 
 afterEach(function () {
     CarbonImmutable::setTestNow();
@@ -157,7 +158,7 @@ it('keeps identical frame identities separate across sensors', function () {
             stageSafetyReadingPayload(sensorIdentifier: $sensor->identifier),
             stageSafetyReadingHeaders(stageSafetyReadingToken($sensor)),
         )->assertOk();
-        $this->app['auth']->forgetGuards();
+        $this->app->make(Factory::class)->forgetGuards();
     }
 
     expect(Reading::query()->count())->toBe(2);
@@ -184,7 +185,7 @@ it('rejects non-Stage-Safety principals', function () {
         stageSafetyReadingPayload(),
         stageSafetyReadingHeaders($peoplecountSensor->createToken('test')->plainTextToken),
     )->assertForbidden();
-    $this->app['auth']->forgetGuards();
+    $this->app->make(Factory::class)->forgetGuards();
     $this->actingAs($user)
         ->postJson(route('stage-safety.readings.store'), stageSafetyReadingPayload())
         ->assertForbidden();
@@ -203,7 +204,7 @@ it('rejects archived sensors and tokens without full ability', function () {
         stageSafetyReadingPayload(sensorIdentifier: $archivedSensor->identifier),
         stageSafetyReadingHeaders($archivedToken),
     )->assertForbidden();
-    $this->app['auth']->forgetGuards();
+    $this->app->make(Factory::class)->forgetGuards();
     $this->postJson(
         route('stage-safety.readings.store'),
         stageSafetyReadingPayload(sensorIdentifier: $limitedSensor->identifier),
@@ -290,7 +291,7 @@ it('gives each sensor token an independent rate limit', function () {
         stageSafetyReadingHeaders(stageSafetyReadingToken($firstSensor)),
     )->assertOk()->assertHeader('X-RateLimit-Remaining', '59');
 
-    $this->app['auth']->forgetGuards();
+    $this->app->make(Factory::class)->forgetGuards();
 
     $this->postJson(
         route('stage-safety.readings.store'),

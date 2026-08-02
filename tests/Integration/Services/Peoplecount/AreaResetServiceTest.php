@@ -10,10 +10,7 @@ use App\Services\Peoplecount\AreaResetService;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
-
-uses(RefreshDatabase::class);
 
 covers(AreaResetService::class);
 
@@ -44,12 +41,12 @@ describe('createSingleReset', function () {
 
         $reset = $this->service->createSingleReset($area, $attributes);
 
-        expect($reset)->toBeInstanceOf(AreaSingleReset::class);
-        expect($reset->area_id)->toBe($area->id);
-        expect($reset->reset_value)->toBe(50);
-        expect($reset->notes)->toBe('Manual reset for testing');
-        expect($reset->created_by)->toBe($user->id);
-        expect($reset->effective_at)->toBeInstanceOf(Carbon::class);
+        expect($reset)->toBeInstanceOf(AreaSingleReset::class)
+            ->and($reset->area_id)->toBe($area->id)
+            ->and($reset->reset_value)->toBe(50)
+            ->and($reset->notes)->toBe('Manual reset for testing')
+            ->and($reset->created_by)->toBe($user->id)
+            ->and($reset->effective_at)->toBeInstanceOf(Carbon::class);
     });
 
     it('converts effective_at to UTC for storage', function () {
@@ -116,8 +113,8 @@ describe('createSingleReset', function () {
 
         $reset = $this->service->createSingleReset($area, $attributes);
 
-        expect($reset)->toBeInstanceOf(AreaSingleReset::class);
-        expect($reset->reset_value)->toBe(100);
+        expect($reset)->toBeInstanceOf(AreaSingleReset::class)
+            ->and($reset->reset_value)->toBe(100);
     });
 });
 
@@ -145,8 +142,8 @@ describe('getAreaResets', function () {
 
         $resets = $this->service->getAreaResets($area);
 
-        expect($resets)->toHaveCount(2);
-        expect($resets->first()->id)->toBe($reset2->id); // Most recent first
+        expect($resets)->toHaveCount(2)
+            ->and($resets->first()->id)->toBe($reset2->id); // Most recent first
         expect($resets->last()->id)->toBe($reset1->id);
     });
 
@@ -166,8 +163,8 @@ describe('getAreaResets', function () {
 
         $resets = $this->service->getAreaResets($area);
 
-        expect($resets->first()->relationLoaded('createdBy'))->toBeTrue();
-        expect($resets->first()->createdBy->id)->toBe($user->id);
+        expect($resets->first()->relationLoaded('createdBy'))->toBeTrue()
+            ->and($resets->first()->createdBy->id)->toBe($user->id);
     });
 
     it('throws authorization exception for area from different organization', function () {
@@ -338,8 +335,8 @@ describe('getAreaRecurringResets', function () {
 
         $resets = $this->service->getAreaRecurringResets($area);
 
-        expect($resets)->toHaveCount(2);
-        expect($resets->first()->id)->toBe($reset2->id); // Most recent first
+        expect($resets)->toHaveCount(2)
+            ->and($resets->first()->id)->toBe($reset2->id); // Most recent first
         expect($resets->last()->id)->toBe($reset1->id);
     });
 
@@ -356,8 +353,8 @@ describe('getAreaRecurringResets', function () {
 
         $resets = $this->service->getAreaRecurringResets($area);
 
-        expect($resets->first()->relationLoaded('area'))->toBeTrue();
-        expect($resets->first()->area->id)->toBe($area->id);
+        expect($resets->first()->relationLoaded('area'))->toBeTrue()
+            ->and($resets->first()->area->id)->toBe($area->id);
     });
 
     it('throws authorization exception for area from different organization', function () {
@@ -390,12 +387,12 @@ describe('createRecurringReset', function () {
 
         $reset = $this->service->createRecurringReset($area, $attributes);
 
-        expect($reset)->toBeInstanceOf(AreaRecurringReset::class);
-        expect($reset->area_id)->toBe($area->id);
-        expect($reset->reset_value)->toBe(50);
-        expect($reset->reset_time)->toBe('08:00');
-        expect($reset->timezone)->toBe('Europe/Zurich');
-        expect($reset->notes)->toBe('Daily reset for testing');
+        expect($reset)->toBeInstanceOf(AreaRecurringReset::class)
+            ->and($reset->area_id)->toBe($area->id)
+            ->and($reset->reset_value)->toBe(50)
+            ->and($reset->reset_time)->toBe('08:00')
+            ->and($reset->timezone)->toBe('Europe/Zurich')
+            ->and($reset->notes)->toBe('Daily reset for testing');
     });
 
     it('throws authorization exception for area from different organization', function () {
@@ -433,8 +430,8 @@ describe('createRecurringReset', function () {
 
         $reset = $this->service->createRecurringReset($area, $attributes);
 
-        expect($reset)->toBeInstanceOf(AreaRecurringReset::class);
-        expect($reset->reset_value)->toBe(100);
+        expect($reset)->toBeInstanceOf(AreaRecurringReset::class)
+            ->and($reset->reset_value)->toBe(100);
     });
 });
 
@@ -463,10 +460,10 @@ describe('updateRecurringReset', function () {
 
         $updatedReset = $this->service->updateRecurringReset($reset, $attributes);
 
-        expect($updatedReset->reset_value)->toBe(75);
-        expect($updatedReset->reset_time)->toBe('14:30');
-        expect($updatedReset->timezone)->toBe('America/New_York');
-        expect($updatedReset->notes)->toBe('Updated notes');
+        expect($updatedReset->reset_value)->toBe(75)
+            ->and($updatedReset->reset_time)->toBe('14:30')
+            ->and($updatedReset->timezone)->toBe('America/New_York')
+            ->and($updatedReset->notes)->toBe('Updated notes');
     });
 
     it('throws authorization exception for reset from different organization', function () {

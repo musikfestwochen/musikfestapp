@@ -22,8 +22,8 @@ it('has correct rules', function () {
 
     $rules = $this->request->rules();
 
-    expect($rules)->toHaveKey('organization_id');
-    expect($rules['organization_id'])->toContain('required');
+    expect($rules)->toHaveKey('organization_id')
+        ->and($rules['organization_id'])->toContain('required');
 
     // Check that there's a Rule::in constraint
     $hasInRule = collect($rules['organization_id'])->contains(function ($rule): bool {
@@ -40,8 +40,8 @@ it('authorizes all authenticated users', function () {
 it('validates organization_id is required', function () {
     $validator = validator([], $this->request->rules());
 
-    expect($validator->fails())->toBeTrue();
-    expect($validator->errors()->has('organization_id'))->toBeTrue();
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('organization_id'))->toBeTrue();
 });
 
 it('validates organization_id exists in database', function () {
@@ -67,8 +67,8 @@ it('rejects non-existent organization_id', function () {
         'organization_id' => 999999,
     ], $this->request->rules());
 
-    expect($validator->fails())->toBeTrue();
-    expect($validator->errors()->has('organization_id'))->toBeTrue();
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('organization_id'))->toBeTrue();
 });
 
 it('rejects invalid organization_id types', function () {
@@ -76,14 +76,14 @@ it('rejects invalid organization_id types', function () {
         'organization_id' => 'invalid',
     ], $this->request->rules());
 
-    expect($validator->fails())->toBeTrue();
-    expect($validator->errors()->has('organization_id'))->toBeTrue();
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('organization_id'))->toBeTrue();
 });
 
 it('has required methods', function () {
-    expect(method_exists($this->request, 'rules'))->toBeTrue();
-    expect(method_exists($this->request, 'authorize'))->toBeTrue();
-    expect(method_exists($this->request, 'organizationId'))->toBeTrue();
+    expect(method_exists($this->request, 'rules'))->toBeTrue()
+        ->and(method_exists($this->request, 'authorize'))->toBeTrue()
+        ->and(method_exists($this->request, 'organizationId'))->toBeTrue();
 });
 
 it('returns typed organization id', function () {

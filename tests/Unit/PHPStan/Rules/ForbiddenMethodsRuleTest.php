@@ -76,10 +76,10 @@ it('can be extended with new forbidden methods', function () {
 
     // Verify each entry has the required structure
     foreach ($forbiddenMethods as $methodName => $config) {
-        expect($methodName)->toBeString();
-        expect($config)->toHaveKeys(['message', 'identifier']);
-        expect($config['message'])->toBeString();
-        expect($config['identifier'])->toBeString();
+        expect($methodName)->toBeString()
+            ->and($config)->toHaveKeys(['message', 'identifier'])
+            ->and($config['message'])->toBeString()
+            ->and($config['identifier'])->toBeString();
     }
 });
 

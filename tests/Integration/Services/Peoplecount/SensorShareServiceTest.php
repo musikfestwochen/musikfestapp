@@ -11,11 +11,8 @@ use App\Services\Peoplecount\SensorService;
 use App\Services\Peoplecount\SensorShareService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
-
-uses(RefreshDatabase::class);
 
 covers(SensorShareService::class);
 
@@ -113,16 +110,16 @@ function sharedSensorScenario(): array
     $borrower = Organization::factory()->create();
     $sensor = Sensor::factory()->withOrganization($owner)->create();
     $event = Event::factory()->withOrganization($borrower)->create([
-        'starts_at' => Carbon::parse('2026-08-01 08:00:00'),
-        'ends_at' => Carbon::parse('2026-08-01 22:00:00'),
+        'starts_at' => Date::parse('2026-08-01 08:00:00'),
+        'ends_at' => Date::parse('2026-08-01 22:00:00'),
     ]);
     $area = Area::factory()->withEvent($event)->create();
     $share = SensorShare::factory()
         ->withSensor($sensor)
         ->withBorrowerOrganization($borrower)
         ->create([
-            'starts_at' => Carbon::parse('2026-08-01 09:00:00'),
-            'ends_at' => Carbon::parse('2026-08-01 18:00:00'),
+            'starts_at' => Date::parse('2026-08-01 09:00:00'),
+            'ends_at' => Date::parse('2026-08-01 18:00:00'),
         ]);
 
     return [$owner, $borrower, $sensor, $event, $area, $share];
@@ -150,32 +147,26 @@ it('rejects sharing a sensor with its owning organization', function () {
     $sensor = Sensor::factory()->withOrganization($owner)->create();
 
     setPermissionsOrgId(GLOBAL_ORG_ID);
-
-    $this->expectException(ValidationException::class);
-
-    $this->sensorShareService->create([
+    expect(fn () => $this->sensorShareService->create([
         'sensor_id' => $sensor->id,
         'borrower_organization_id' => $owner->id,
         'starts_at' => '2026-08-01 09:00:00',
         'ends_at' => '2026-08-01 18:00:00',
-    ]);
+    ]))->toThrow(ValidationException::class);
 });
 
 it('rejects borrower assignment outside the share window', function () {
     [, $borrower, $sensor, $event, $area] = sharedSensorScenario();
 
     setPermissionsOrgId($borrower->id);
-
-    $this->expectException(AuthorizationException::class);
-
-    $this->assignmentService->create([
+    expect(fn () => $this->assignmentService->create([
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
         'direction_flipped' => false,
         'active_from' => '2026-08-01 08:30:00',
         'active_to' => '2026-08-01 12:00:00',
-    ]);
+    ]))->toThrow(AuthorizationException::class);
 });
 
 it('rejects creating an assignment with an archived sensor', function () {
@@ -184,23 +175,20 @@ it('rejects creating an assignment with an archived sensor', function () {
         'archived_at' => now(),
     ]);
     $event = Event::factory()->withOrganization($organization)->create([
-        'starts_at' => Carbon::parse('2026-08-01 08:00:00'),
-        'ends_at' => Carbon::parse('2026-08-01 22:00:00'),
+        'starts_at' => Date::parse('2026-08-01 08:00:00'),
+        'ends_at' => Date::parse('2026-08-01 22:00:00'),
     ]);
     $area = Area::factory()->withEvent($event)->create();
 
     setPermissionsOrgId($organization->id);
-
-    $this->expectException(ValidationException::class);
-
-    $this->assignmentService->create([
+    expect(fn () => $this->assignmentService->create([
         'event_id' => $event->id,
         'area_id' => $area->id,
         'sensor_id' => $sensor->id,
         'direction_flipped' => false,
         'active_from' => '2026-08-01 10:00:00',
         'active_to' => '2026-08-01 12:00:00',
-    ]);
+    ]))->toThrow(ValidationException::class);
 });
 
 it('allows updating an existing assignment that already uses an archived sensor', function () {
@@ -209,8 +197,8 @@ it('allows updating an existing assignment that already uses an archived sensor'
         'archived_at' => now(),
     ]);
     $event = Event::factory()->withOrganization($organization)->create([
-        'starts_at' => Carbon::parse('2026-08-01 08:00:00'),
-        'ends_at' => Carbon::parse('2026-08-01 22:00:00'),
+        'starts_at' => Date::parse('2026-08-01 08:00:00'),
+        'ends_at' => Date::parse('2026-08-01 22:00:00'),
     ]);
     $area = Area::factory()->withEvent($event)->create();
     $assignment = Assignment::factory()->withEvent($event)->withArea($area)->withSensor($sensor)->create([
@@ -237,8 +225,8 @@ it('allows overlapping assignments for the same sensor in different organization
     [$owner, $borrower, $sensor, $borrowerEvent, $borrowerArea] = sharedSensorScenario();
 
     $ownerEvent = Event::factory()->withOrganization($owner)->create([
-        'starts_at' => Carbon::parse('2026-08-01 08:00:00'),
-        'ends_at' => Carbon::parse('2026-08-01 22:00:00'),
+        'starts_at' => Date::parse('2026-08-01 08:00:00'),
+        'ends_at' => Date::parse('2026-08-01 22:00:00'),
     ]);
     $ownerArea = Area::factory()->withEvent($ownerEvent)->create();
 
@@ -266,8 +254,8 @@ it('allows adjacent assignments in the same organization', function () {
     $organization = Organization::factory()->create();
     $sensor = Sensor::factory()->withOrganization($organization)->create();
     $event = Event::factory()->withOrganization($organization)->create([
-        'starts_at' => Carbon::parse('2026-08-01 08:00:00'),
-        'ends_at' => Carbon::parse('2026-08-01 22:00:00'),
+        'starts_at' => Date::parse('2026-08-01 08:00:00'),
+        'ends_at' => Date::parse('2026-08-01 22:00:00'),
     ]);
     $area = Area::factory()->withEvent($event)->create();
 
@@ -305,10 +293,7 @@ it('blocks deleting a share that is used by an assignment', function () {
     ]);
 
     setPermissionsOrgId($owner->id);
-
-    $this->expectException(ValidationException::class);
-
-    $this->sensorShareService->delete($share);
+    expect(fn () => $this->sensorShareService->delete($share))->toThrow(ValidationException::class);
 });
 
 it('database rejects hard deleting a share that is used by an assignment', function () {
@@ -323,10 +308,7 @@ it('database rejects hard deleting a share that is used by an assignment', funct
         'active_from' => '2026-08-01 10:00:00',
         'active_to' => '2026-08-01 12:00:00',
     ]);
-
-    $this->expectException(QueryException::class);
-
-    $share->forceDelete();
+    expect(fn () => $share->forceDelete())->toThrow(QueryException::class);
 });
 
 it('blocks shrinking share period outside assignments using the share', function () {
@@ -343,14 +325,11 @@ it('blocks shrinking share period outside assignments using the share', function
     ]);
 
     setPermissionsOrgId($owner->id);
-
-    $this->expectException(ValidationException::class);
-
-    $this->sensorShareService->update($share, [
+    expect(fn () => $this->sensorShareService->update($share, [
         'borrower_organization_id' => $borrower->id,
         'starts_at' => '2026-08-01 11:00:00',
         'ends_at' => '2026-08-01 18:00:00',
-    ]);
+    ]))->toThrow(ValidationException::class);
 });
 
 it('blocks changing borrower organization while assignments use the share', function () {
@@ -368,14 +347,11 @@ it('blocks changing borrower organization while assignments use the share', func
     ]);
 
     setPermissionsOrgId($owner->id);
-
-    $this->expectException(ValidationException::class);
-
-    $this->sensorShareService->update($share, [
+    expect(fn () => $this->sensorShareService->update($share, [
         'borrower_organization_id' => $anotherBorrower->id,
         'starts_at' => '2026-08-01 09:00:00',
         'ends_at' => '2026-08-01 18:00:00',
-    ]);
+    ]))->toThrow(ValidationException::class);
 });
 
 it('blocks sensor deletion when any assignment references the sensor', function () {
@@ -392,10 +368,7 @@ it('blocks sensor deletion when any assignment references the sensor', function 
     ]);
 
     setPermissionsOrgId($owner->id);
-
-    $this->expectException(ValidationException::class);
-
-    $this->sensorService->delete($sensor);
+    expect(fn () => $this->sensorService->delete($sensor))->toThrow(ValidationException::class);
 });
 
 it('hides archived sensors from default sensor list', function () {

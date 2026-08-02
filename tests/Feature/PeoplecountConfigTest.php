@@ -11,7 +11,7 @@ it('clamps peoplecount aggregation granularity to one minute minimum', function 
     try {
         $_ENV[$key] = $value;
         $_SERVER[$key] = $value;
-        putenv("{$key}={$value}");
+        putenv(sprintf('%s=%s', $key, $value));
         Env::enablePutenv();
 
         $config = require config_path('peoplecount.php');
@@ -33,7 +33,7 @@ it('clamps peoplecount aggregation granularity to one minute minimum', function 
         if ($previousPutenv === false) {
             putenv($key);
         } else {
-            putenv("{$key}={$previousPutenv}");
+            putenv(sprintf('%s=%s', $key, $previousPutenv));
         }
 
         Env::enablePutenv();

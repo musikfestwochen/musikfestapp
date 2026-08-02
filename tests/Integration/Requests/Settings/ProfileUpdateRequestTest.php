@@ -2,10 +2,8 @@
 
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\Rule;
 
-uses(RefreshDatabase::class);
 covers(ProfileUpdateRequest::class);
 
 beforeEach(function () {
@@ -21,17 +19,15 @@ beforeEach(function () {
 it('has correct rules', function () {
     $rules = $this->request->rules();
 
-    expect($rules)->toHaveKey('name');
-    expect($rules)->toHaveKey('email');
-
-    expect($rules['name'])->toBe(['required', 'string', 'max:255']);
+    expect($rules)->toHaveKeys(['name', 'email'])
+        ->and($rules['name'])->toBe(['required', 'string', 'max:255']);
 
     // For email, we check the structure since it contains a Rule object
     expect($rules['email'])->toContain('required');
-    expect($rules['email'])->toContain('string');
-    expect($rules['email'])->toContain('lowercase');
-    expect($rules['email'])->toContain('email');
-    expect($rules['email'])->toContain('max:255');
+    expect($rules['email'])->toContain('string')
+        ->toContain('lowercase')
+        ->toContain('email')
+        ->toContain('max:255');
 
     // Check that the unique rule exists and ignores the current user
     $uniqueRule = null;
@@ -98,8 +94,8 @@ it('allows valid data', function () {
 
     // Check that all required rules are present
     expect($rules['name'])->toContain('required');
-    expect($rules['email'])->toContain('required');
-    expect($rules['email'])->toContain('email');
+    expect($rules['email'])->toContain('required')
+        ->toContain('email');
 });
 
 it('allows same email for current user', function () {
@@ -140,10 +136,10 @@ it('prevents duplicate email for different user', function () {
 
 it('has correct phone rules', function () {
     $rules = $this->request->rules();
-    expect($rules)->toHaveKey('phone');
-    expect($rules['phone'])->toContain('nullable');
-    expect($rules['phone'])->toContain('string');
-    expect($rules['phone'])->toContain('max:20');
+    expect($rules)->toHaveKey('phone')
+        ->and($rules['phone'])->toContain('nullable')
+        ->toContain('string')
+        ->toContain('max:20');
 
     $uniqueRule = null;
     foreach ($rules['phone'] as $rule) {
@@ -155,8 +151,8 @@ it('has correct phone rules', function () {
 
     expect($uniqueRule)->not->toBeNull('Should have a unique rule for phone validation');
     $ruleString = (string) $uniqueRule;
-    expect($ruleString)->toContain('users');
-    expect($ruleString)->toContain((string) $this->user->id);
+    expect($ruleString)->toContain('users')
+        ->toContain((string) $this->user->id);
 });
 
 it('validates phone is nullable', function () {

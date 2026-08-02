@@ -29,7 +29,7 @@ it('uses timestamps', function () {
 
 it('uses soft deletes', function () {
     $model = new Event;
-    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeTrue();
+    expect(class_uses_recursive($model))->toContain(SoftDeletes::class);
 });
 
 it('casts attributes correctly', function () {

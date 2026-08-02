@@ -37,39 +37,39 @@ it('uses timestamps', function () {
 
 it('uses soft deletes', function () {
     $model = new Assignment;
-    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeTrue();
+    expect(class_uses_recursive($model))->toContain(SoftDeletes::class);
 });
 
 it('belongs to an event', function () {
     $model = new Assignment;
     $relation = $model->event();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Event::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Event::class);
 });
 
 it('belongs to an area', function () {
     $model = new Assignment;
     $relation = $model->area();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Area::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Area::class);
 });
 
 it('belongs to a sensor', function () {
     $model = new Assignment;
     $relation = $model->sensor();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Sensor::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Sensor::class);
 });
 
 it('belongs to a sensor share', function () {
     $model = new Assignment;
     $relation = $model->sensorShare();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(SensorShare::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(SensorShare::class);
 });
 
 it('has factory', function () {
@@ -80,9 +80,9 @@ it('casts fields correctly', function () {
     $model = new Assignment;
     $casts = $model->getCasts();
 
-    expect($casts)->toHaveKey('direction_flipped', 'boolean');
-    expect($casts)->toHaveKey('active_from', 'datetime');
-    expect($casts)->toHaveKey('active_to', 'datetime');
+    expect($casts)->toHaveKey('direction_flipped', 'boolean')
+        ->toHaveKey('active_from', 'datetime')
+        ->toHaveKey('active_to', 'datetime');
 });
 
 it('handles direction enum correctly', function () {
@@ -92,9 +92,9 @@ it('handles direction enum correctly', function () {
 
     // Check that direction_flipped is a boolean and validate its value
     expect($assignment->direction_flipped)->toBeBool();
-    expect($assignment->direction_flipped)->toBe(false);
+    expect($assignment->direction_flipped)->toBeFalse();
 
     // Check that we can compare with boolean values
-    expect($assignment->direction_flipped === false)->toBeTrue();
+    expect($assignment->direction_flipped)->toBeFalse();
     expect($assignment->direction_flipped)->toBeFalse();
 });

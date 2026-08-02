@@ -6,7 +6,7 @@ use App\Models\User;
 covers(CurrentWindIndexRequest::class);
 
 it('has no input rules', function () {
-    expect((new CurrentWindIndexRequest)->rules())->toBe([]);
+    expect((new CurrentWindIndexRequest)->rules())->toBeEmpty();
 });
 
 it('authorizes users with the monitoring permission', function () {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Pest\Rector\Set\PestSetList;
 use Rector\CodeQuality\Rector\FuncCall\CompactToVariablesRector;
 use Rector\Config\RectorConfig;
 use Rector\Renaming\Rector\Name\RenameClassRector;
@@ -10,6 +11,8 @@ use Rector\TypeDeclaration\Rector\Closure\AddClosureVoidReturnTypeWhereNoReturnR
 use Rector\TypeDeclaration\Rector\StmtsAwareInterface\DeclareStrictTypesRector;
 use Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRector;
 use Rector\ValueObject\PhpVersion;
+use RectorLaravel\Rector\ArrayDimFetch\EnvVariableToEnvHelperRector;
+use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
 use RectorLaravel\Set\LaravelLevelSetList;
 use RectorLaravel\Set\LaravelSetList;
 
@@ -19,6 +22,7 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__.'/config',
         __DIR__.'/database',
         __DIR__.'/routes',
+        __DIR__.'/tests',
     ]);
 
     $rectorConfig->skip([
@@ -26,11 +30,18 @@ return static function (RectorConfig $rectorConfig): void {
         AddClosureVoidReturnTypeWhereNoReturnRector::class,
         SafeDeclareStrictTypesRector::class,
         CompactToVariablesRector::class,
+        // TODO: Remove once https://github.com/driftingly/rector-laravel/issues/419 is fixed.
+        EnvVariableToEnvHelperRector::class => [
+            __DIR__.'/tests/Feature/PeoplecountConfigTest.php',
+        ],
+        // TODO: Remove once https://github.com/driftingly/rector-laravel/issues/419 is fixed.
+        ServerVariableToRequestFacadeRector::class => [
+            __DIR__.'/tests/Feature/PeoplecountConfigTest.php',
+        ],
         __DIR__.'/vendor/*',
         __DIR__.'/node_modules/*',
         __DIR__.'/storage/*',
         __DIR__.'/resources/*',
-        __DIR__.'/tests/*',
     ]);
 
     $rectorConfig->sets([
@@ -50,6 +61,7 @@ return static function (RectorConfig $rectorConfig): void {
         SetList::TYPE_DECLARATION,
         SetList::PHP_84,
         SetList::EARLY_RETURN,
+        PestSetList::CODING_STYLE,
     ]);
 
     $rectorConfig->rules([

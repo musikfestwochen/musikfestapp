@@ -20,17 +20,13 @@ it('has correct rules', function () {
     ];
 
     $actualRules = $this->request->rules();
-
     // Test the basic structure without the unique rule
-    expect($actualRules['reset_value'])->toBe($expectedRules['reset_value']);
-    expect($actualRules['timezone'])->toBe($expectedRules['timezone']);
-    expect($actualRules['notes'])->toBe($expectedRules['notes']);
+    expect($actualRules)->toMatchArray(['reset_value' => $expectedRules['reset_value'], 'timezone' => $expectedRules['timezone'], 'notes' => $expectedRules['notes']]);
+    expect($actualRules['reset_time'])->toMatchArray([0 => 'required', 1 => 'date_format:H:i'])
+        ->and($actualRules['reset_time'][2])->toBeInstanceOf(Unique::class);
 
     // Test that reset_time has the expected structure
     expect($actualRules['reset_time'])->toHaveCount(3);
-    expect($actualRules['reset_time'][0])->toBe('required');
-    expect($actualRules['reset_time'][1])->toBe('date_format:H:i');
-    expect($actualRules['reset_time'][2])->toBeInstanceOf(Unique::class);
 });
 
 it('returns typed payload values', function () {

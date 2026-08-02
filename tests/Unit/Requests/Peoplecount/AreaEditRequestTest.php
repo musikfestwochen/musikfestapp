@@ -10,7 +10,7 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([]);
+    expect($this->request->rules())->toBeEmpty();
 });
 
 it('authorizes when user can edit areas', function () {

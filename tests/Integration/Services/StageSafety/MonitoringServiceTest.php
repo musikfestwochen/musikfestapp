@@ -6,17 +6,17 @@ use App\Models\Organization;
 use App\Models\StageSafety\Reading;
 use App\Models\StageSafety\Sensor;
 use App\Services\StageSafety\MonitoringService;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 covers(MonitoringService::class);
 
 beforeEach(function () {
-    Carbon::setTestNow('2026-07-25 12:00:00 UTC');
+    Date::setTestNow('2026-07-25 12:00:00 UTC');
     $this->service = new MonitoringService;
 });
 
 afterEach(function () {
-    Carbon::setTestNow();
+    Date::setTestNow();
 });
 
 it('returns every fresh sensor with independently resolved fresh readings', function () {
@@ -160,7 +160,7 @@ it('does not treat a future observation as current', function () {
     ]);
 
     expect($this->service->status($sensor))->toBe(SensorHealthStatus::Stale)
-        ->and($this->service->currentWind($organization)['sensors'])->toBe([]);
+        ->and($this->service->currentWind($organization)['sensors'])->toBeEmpty();
 });
 
 it('uses the newer average observation as latest sensor activity', function () {

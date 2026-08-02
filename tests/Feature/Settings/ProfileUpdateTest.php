@@ -30,10 +30,10 @@ it('can update profile information without phone', function () {
 
     $user->refresh();
 
-    expect($user->name)->toBe('Test User');
-    expect($user->email)->toBe('test@example.com');
-    expect($user->phone)->toBeNull();
-    expect($user->email_verified_at)->toBeNull();
+    expect($user->name)->toBe('Test User')
+        ->and($user->email)->toBe('test@example.com')
+        ->and($user->phone)->toBeNull()
+        ->and($user->email_verified_at)->toBeNull();
 });
 
 it('can update profile information with phone', function () {
@@ -53,10 +53,10 @@ it('can update profile information with phone', function () {
 
     $user->refresh();
 
-    expect($user->name)->toBe('Test User');
-    expect($user->email)->toBe('test@example.com');
-    expect($user->phone)->toBe('+41791234567');
-    expect($user->email_verified_at)->toBeNull();
+    expect($user->name)->toBe('Test User')
+        ->and($user->email)->toBe('test@example.com')
+        ->and($user->phone)->toBe('+41791234567')
+        ->and($user->email_verified_at)->toBeNull();
 });
 
 it('keeps email verification status unchanged when email address is unchanged', function () {
@@ -89,8 +89,8 @@ it('allows user to delete their account', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect('/');
 
-    expect(auth()->guest())->toBeTrue();
-    expect($user->fresh())->toBeNull();
+    expect(auth()->guest())->toBeTrue()
+        ->and($user->fresh())->toBeNull();
 });
 
 it('requires correct password to delete account', function () {

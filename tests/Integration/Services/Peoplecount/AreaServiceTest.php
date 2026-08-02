@@ -10,11 +10,9 @@ use App\Models\Peoplecount\Sensor;
 use App\Models\User;
 use App\Services\Peoplecount\AreaService;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-
-uses(RefreshDatabase::class);
+use Illuminate\Support\Facades\Date;
 
 covers(AreaService::class);
 
@@ -31,7 +29,7 @@ describe('deduplicateResets', function () {
         $service = new AreaService;
         $resets = collect([
             [
-                'at' => Carbon::parse('2025-01-01 00:00:00'),
+                'at' => Date::parse('2025-01-01 00:00:00'),
                 'reset_value' => 0,
                 'type' => 'unknown_type',
             ],
@@ -400,21 +398,12 @@ describe('checksum functionality', function () {
 
             expect($config)->toBeArray()
                 ->and($config)->toHaveKeys(['area', 'event', 'assignments', 'areaSingleResets', 'areaRecurringResets']);
-
             // Test area config
-            expect($config['area'])->toBe(['id', 'event_id']);
-
             // Test event config
-            expect($config['event'])->toBe(['id', 'starts_at', 'ends_at']);
-
             // Test assignments config
-            expect($config['assignments'])->toBe(['id', 'area_id', 'sensor_id', 'direction_flipped', 'active_from', 'active_to']);
-
             // Test areaSingleResets config
-            expect($config['areaSingleResets'])->toBe(['id', 'area_id', 'reset_value', 'effective_at']);
-
             // Test areaRecurringResets config
-            expect($config['areaRecurringResets'])->toBe(['id', 'area_id', 'reset_value', 'reset_time', 'timezone']);
+            expect($config)->toMatchArray(['area' => ['id', 'event_id'], 'event' => ['id', 'starts_at', 'ends_at'], 'assignments' => ['id', 'area_id', 'sensor_id', 'direction_flipped', 'active_from', 'active_to'], 'areaSingleResets' => ['id', 'area_id', 'reset_value', 'effective_at'], 'areaRecurringResets' => ['id', 'area_id', 'reset_value', 'reset_time', 'timezone']]);
         });
     });
 
@@ -580,15 +569,9 @@ describe('checksum functionality', function () {
 
             expect($result)->toBeArray()
                 ->and($result)->toHaveKeys(['area', 'event', 'assignments', 'areaSingleResets', 'areaRecurringResets']);
-
             // Check area data
-            expect($result['area'])->toHaveKeys(['id', 'event_id'])
-                ->and($result['area']['id'])->toBe($area->id)
-                ->and($result['area']['event_id'])->toBe($event->id);
-
             // Check event data
-            expect($result['event'])->toHaveKeys(['id', 'starts_at', 'ends_at'])
-                ->and($result['event']['id'])->toBe($event->id);
+            expect($result)->toMatchArray(['area' => $event->id, 'event' => $event->id]);
 
             // Check collection data (should be empty arrays for new area)
             expect($result['assignments'])->toBeArray()
@@ -633,7 +616,7 @@ describe('checksum functionality', function () {
 
             expect($checksum1)->toBeString()
                 ->and($checksum1)->toBe($checksum2)
-                ->and(strlen($checksum1))->toBe(64); // SHA256 produces 64 character hex string
+                ->and($checksum1)->toHaveLength(64); // SHA256 produces 64 character hex string
         });
 
         it('returns different checksums for different areas', function () {
@@ -970,13 +953,13 @@ describe('getAreaResets', function () {
         $resets = $this->service->getAreaResets($area);
 
         // The entry at the event start timestamp should be the event_start (reset_value 0), not the recurring reset
-        $atStart = $resets->firstWhere('at', Carbon::parse('2024-01-01 10:00:00'));
+        $atStart = $resets->firstWhere('at', Date::parse('2024-01-01 10:00:00'));
         expect($atStart)->not->toBeNull()
             ->and($atStart['type'])->toBe('event_start')
             ->and($atStart['reset_value'])->toBe(0);
 
         // And there should also be another recurring reset on the next day at 10:00
-        $nextDay = Carbon::parse('2024-01-02 10:00:00');
+        $nextDay = Date::parse('2024-01-02 10:00:00');
         $atNextDay = $resets->firstWhere('at', $nextDay);
         expect($atNextDay)->not->toBeNull()
             ->and($atNextDay['type'])->toBe('recurring_reset')
@@ -1024,8 +1007,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 12:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 12:00:00');
         $startValue = 100;
         $checksum = 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890';
 
@@ -1079,8 +1062,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 3,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 12:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 12:00:00');
         $startValue = 50;
         $checksum = 'b1c2d3e4f5a6789012345678901234567890123456789012345678901234567890';
 
@@ -1124,8 +1107,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 5,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 12:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 12:00:00');
         $startValue = 50;
         $checksum = 'c1d2e3f4a5b6789012345678901234567890123456789012345678901234567890';
 
@@ -1166,8 +1149,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 5,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 12:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 12:00:00');
         $startValue = 50;
         $checksum = 'd1e2f3a4b5c6789012345678901234567890123456789012345678901234567890';
 
@@ -1215,8 +1198,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 3,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 13:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 13:00:00');
         $startValue = 50;
         $checksum = 'e1f2a3b4c5d6789012345678901234567890123456789012345678901234567890';
 
@@ -1276,8 +1259,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 2,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 12:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 12:00:00');
         $startValue = 50;
         $checksum = 'f1a2b3c4d5e6789012345678901234567890123456789012345678901234567890';
 
@@ -1299,8 +1282,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'event_id' => $event->id,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 12:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 12:00:00');
         $startValue = 100;
         $checksum = '1a2b3c4d5e6f789012345678901234567890123456789012345678901234567890';
 
@@ -1365,8 +1348,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 3,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 16:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 16:00:00');
         $startValue = 50;
         $checksum = '5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a';
 
@@ -1406,8 +1389,8 @@ describe('calculateAndStoreAggregatedCount', function () {
             'count_out' => 5,
         ]);
 
-        $start = Carbon::parse('2024-01-01 10:00:00');
-        $end = Carbon::parse('2024-01-01 16:00:00');
+        $start = Date::parse('2024-01-01 10:00:00');
+        $end = Date::parse('2024-01-01 16:00:00');
         $startValue = 50;
         $checksum = '6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b';
 
@@ -1450,7 +1433,7 @@ describe('getLatestSingleResetBefore', function () {
             'created_by' => $user->id,
         ]);
 
-        $beforeTime = Carbon::parse('2024-01-01 10:00:00');
+        $beforeTime = Date::parse('2024-01-01 10:00:00');
         $result = $this->service->getLatestSingleResetBefore($area, $beforeTime);
 
         expect($result)->toBeNull();
@@ -1486,7 +1469,7 @@ describe('getLatestSingleResetBefore', function () {
             'created_by' => $user->id,
         ]);
 
-        $beforeTime = Carbon::parse('2024-01-01 14:00:00');
+        $beforeTime = Date::parse('2024-01-01 14:00:00');
         $result = $this->service->getLatestSingleResetBefore($area, $beforeTime);
 
         expect($result)->not->toBeNull()
@@ -1512,7 +1495,7 @@ describe('getLatestSingleResetBefore', function () {
             'created_by' => $user->id,
         ]);
 
-        $beforeTime = Carbon::parse('2024-01-01 12:00:00');
+        $beforeTime = Date::parse('2024-01-01 12:00:00');
         $result = $this->service->getLatestSingleResetBefore($area, $beforeTime);
 
         expect($result)->not->toBeNull()
@@ -1924,7 +1907,7 @@ describe('calculateAreaCounts', function () {
 describe('calculateAreaDebugCounts fallback coverage', function () {
     it('uses event_start fallback when now is before event start', function () {
         // Freeze time before the event start so no resets exist at or before now
-        Carbon::setTestNow('2024-01-01 09:00:00');
+        Date::setTestNow('2024-01-01 09:00:00');
 
         $org = Organization::factory()->create();
         $event = Event::factory()->create([
@@ -1949,6 +1932,6 @@ describe('calculateAreaDebugCounts fallback coverage', function () {
             ->and($result['last_reset_at']->toDateTimeString())->toBe('2024-01-01 10:00:00');
 
         // Reset frozen time to avoid impacting other tests
-        Carbon::setTestNow();
+        Date::setTestNow();
     });
 });

@@ -33,7 +33,7 @@ it('has correct cast attributes', function () {
 
     $casts = $model->getCasts();
 
-    expect(count($casts))->toBe(4)
+    expect($casts)->toHaveCount(4)
         ->and($casts['id'])->toBe('int')
         ->and($casts['type'])->toBe(AlertType::class)
         ->and($casts['channel'])->toBe(AlertChannel::class)
@@ -50,16 +50,16 @@ it('belongs to an area', function () {
     $model = new Alert;
     $relation = $model->area();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Area::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Area::class);
 });
 
 it('belongs to a creator (user)', function () {
     $model = new Alert;
     $relation = $model->creator();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(User::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(User::class);
 });
 
 it('has many recipients (users) via pivot', function () {

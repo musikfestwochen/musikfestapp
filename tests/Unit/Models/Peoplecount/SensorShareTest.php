@@ -40,47 +40,47 @@ it('uses timestamps', function () {
 it('does not use soft deletes', function () {
     $model = new SensorShare;
 
-    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeFalse();
+    expect(class_uses_recursive($model))->not->toContain(SoftDeletes::class);
 });
 
 it('belongs to a sensor', function () {
     $model = new SensorShare;
     $relation = $model->sensor();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Sensor::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Sensor::class);
 });
 
 it('belongs to an owner organization', function () {
     $model = new SensorShare;
     $relation = $model->ownerOrganization();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Organization::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Organization::class);
 });
 
 it('belongs to a borrower organization', function () {
     $model = new SensorShare;
     $relation = $model->borrowerOrganization();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Organization::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Organization::class);
 });
 
 it('belongs to a creator', function () {
     $model = new SensorShare;
     $relation = $model->createdBy();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(User::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(User::class);
 });
 
 it('has many assignments', function () {
     $model = new SensorShare;
     $relation = $model->assignments();
 
-    expect($relation)->toBeInstanceOf(HasMany::class);
-    expect($relation->getRelated())->toBeInstanceOf(Assignment::class);
+    expect($relation)->toBeInstanceOf(HasMany::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Assignment::class);
 });
 
 it('has factory', function () {
@@ -91,6 +91,6 @@ it('casts fields correctly', function () {
     $model = new SensorShare;
     $casts = $model->getCasts();
 
-    expect($casts)->toHaveKey('starts_at', 'datetime');
-    expect($casts)->toHaveKey('ends_at', 'datetime');
+    expect($casts)->toHaveKey('starts_at', 'datetime')
+        ->toHaveKey('ends_at', 'datetime');
 });

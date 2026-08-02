@@ -5,11 +5,8 @@ use App\Models\User;
 use App\Services\OrganizationSelectionService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
-
-uses(RefreshDatabase::class);
 
 it('redirects to organization dashboard if user has only one organization', function () {
     // Create a user and an organization

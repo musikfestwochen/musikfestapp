@@ -3,13 +3,10 @@
 use App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Spatie\Permission\Models\Permission;
 use Symfony\Component\HttpFoundation\Response;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Define the GLOBAL_ORG_ID constant if it's not already defined

@@ -44,8 +44,8 @@ it('casts count_in to integer', function () {
         'count_out' => '15',
     ]);
 
-    expect($intervalCount->count_in)->toBeInt();
-    expect($intervalCount->count_in)->toBe(42);
+    expect($intervalCount->count_in)->toBeInt()
+        ->toBe(42);
 });
 
 it('casts count_out to integer', function () {
@@ -54,8 +54,8 @@ it('casts count_out to integer', function () {
         'count_out' => '25',
     ]);
 
-    expect($intervalCount->count_out)->toBeInt();
-    expect($intervalCount->count_out)->toBe(25);
+    expect($intervalCount->count_out)->toBeInt()
+        ->toBe(25);
 });
 
 it('belongs to a sensor', function () {

@@ -32,15 +32,15 @@ it('belongs to an area', function () {
     $model = new AreaAggregatedCount;
     $relation = $model->area();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Area::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Area::class);
 });
 
 it('casts fields correctly', function () {
     $model = new AreaAggregatedCount;
     $casts = $model->getCasts();
 
-    expect($casts)->toHaveKey('period_start', 'datetime');
-    expect($casts)->toHaveKey('period_end', 'datetime');
-    expect($casts)->toHaveKey('checksum', BinaryHexCast::class);
+    expect($casts)->toHaveKey('period_start', 'datetime')
+        ->toHaveKey('period_end', 'datetime')
+        ->toHaveKey('checksum', BinaryHexCast::class);
 });

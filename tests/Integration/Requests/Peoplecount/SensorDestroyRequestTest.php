@@ -4,11 +4,8 @@ use App\Http\Requests\Peoplecount\SensorDestroyRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Sensor;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 covers(SensorDestroyRequest::class);
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->request = new SensorDestroyRequest;
@@ -16,7 +13,7 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([]);
+    expect($this->request->rules())->toBeEmpty();
 });
 
 it('authorizes when user can destroy sensors', function () {

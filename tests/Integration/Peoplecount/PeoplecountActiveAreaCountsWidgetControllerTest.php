@@ -7,7 +7,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
@@ -15,7 +15,7 @@ beforeEach(function () {
 
 it('returns active area counts for an organization', function () {
     // Set a fixed time for consistent testing
-    Carbon::setTestNow('2025-08-04 22:08:00');
+    Date::setTestNow('2025-08-04 22:08:00');
 
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -23,8 +23,8 @@ it('returns active area counts for an organization', function () {
     // Create an active event (current time is within the event period)
     $event = Event::factory()->create([
         'organization_id' => $org->id,
-        'starts_at' => Carbon::now()->subHours(1),
-        'ends_at' => Carbon::now()->addHours(1),
+        'starts_at' => Date::now()->subHours(1),
+        'ends_at' => Date::now()->addHours(1),
     ]);
 
     // Create an area for the event
@@ -36,8 +36,8 @@ it('returns active area counts for an organization', function () {
     // Create an aggregated count for the area
     AreaAggregatedCount::factory()->create([
         'area_id' => $area->id,
-        'period_start' => Carbon::now()->subMinutes(10),
-        'period_end' => Carbon::now(),
+        'period_start' => Date::now()->subMinutes(10),
+        'period_end' => Date::now(),
         'count' => 42,
     ]);
 
@@ -59,15 +59,15 @@ it('returns active area counts for an organization', function () {
         ->assertJsonPath('0.name', 'Test Area')
         ->assertJsonPath('0.event_name', $event->name)
         ->assertJsonPath('0.count', 42)
-        ->assertJsonPath('0.last_updated', Carbon::now()->toIso8601String());
+        ->assertJsonPath('0.last_updated', Date::now()->toIso8601String());
 
     // Reset the fixed time
-    Carbon::setTestNow();
+    Date::setTestNow();
 });
 
 it('returns empty array when no active events exist', function () {
     // Set a fixed time for consistent testing
-    Carbon::setTestNow('2025-08-04 22:08:00');
+    Date::setTestNow('2025-08-04 22:08:00');
 
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -75,8 +75,8 @@ it('returns empty array when no active events exist', function () {
     // Create a past event
     $pastEvent = Event::factory()->create([
         'organization_id' => $org->id,
-        'starts_at' => Carbon::now()->subHours(3),
-        'ends_at' => Carbon::now()->subHours(1),
+        'starts_at' => Date::now()->subHours(3),
+        'ends_at' => Date::now()->subHours(1),
     ]);
 
     // Create an area for the past event
@@ -91,7 +91,7 @@ it('returns empty array when no active events exist', function () {
         ->assertJsonCount(0);
 
     // Reset the fixed time
-    Carbon::setTestNow();
+    Date::setTestNow();
 });
 
 it('returns 403 when user does not have permission', function () {

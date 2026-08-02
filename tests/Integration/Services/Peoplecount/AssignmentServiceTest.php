@@ -9,11 +9,8 @@ use App\Models\Peoplecount\SensorShare;
 use App\Services\Peoplecount\AssignmentService;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
-
-uses(RefreshDatabase::class);
 
 covers(AssignmentService::class);
 
@@ -160,7 +157,7 @@ describe('create', function () {
             ->and($assignment->event_id)->toBe($event->id)
             ->and($assignment->area_id)->toBe($area->id)
             ->and($assignment->sensor_id)->toBe($sensor->id)
-            ->and($assignment->direction_flipped)->toBe(false)
+            ->and($assignment->direction_flipped)->toBeFalse()
             ->and($assignment->active_from)->toBeInstanceOf(Carbon::class)
             ->and($assignment->active_to)->toBeInstanceOf(Carbon::class);
 
@@ -194,9 +191,7 @@ describe('create', function () {
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->create($attributes);
+        expect(fn () => $this->service->create($attributes))->toThrow(AuthorizationException::class);
     });
 
     it('throws authorization exception when area does not belong to event', function () {
@@ -219,9 +214,7 @@ describe('create', function () {
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->create($attributes);
+        expect(fn () => $this->service->create($attributes))->toThrow(AuthorizationException::class);
     });
 
     it('throws authorization exception when sensor does not belong to current organization', function () {
@@ -245,9 +238,7 @@ describe('create', function () {
             'active_from' => now()->subDays(2)->toDateTimeString(),
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->create($attributes);
+        expect(fn () => $this->service->create($attributes))->toThrow(AuthorizationException::class);
     });
 
     it('throws validation exception when assignment time is outside event time', function () {
@@ -269,9 +260,7 @@ describe('create', function () {
             'active_from' => now()->subDays(2)->toDateTimeString(), // Before event starts
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
-
-        $this->expectException(ValidationException::class);
-        $this->service->create($attributes);
+        expect(fn () => $this->service->create($attributes))->toThrow(ValidationException::class);
     });
 
     it('throws validation exception when assignment active_from equals event end time', function () {
@@ -294,9 +283,7 @@ describe('create', function () {
             'active_from' => $eventEndTime->toDateTimeString(), // Equals event end time
             'active_to' => $eventEndTime->copy()->addHours(1)->toDateTimeString(),
         ];
-
-        $this->expectException(ValidationException::class);
-        $this->service->create($attributes);
+        expect(fn () => $this->service->create($attributes))->toThrow(ValidationException::class);
     });
 
     it('throws validation exception when assignment active_to equals event start time', function () {
@@ -319,9 +306,7 @@ describe('create', function () {
             'active_from' => $eventStartTime->copy()->subHours(1)->toDateTimeString(),
             'active_to' => $eventStartTime->toDateTimeString(), // Equals event start time
         ];
-
-        $this->expectException(ValidationException::class);
-        $this->service->create($attributes);
+        expect(fn () => $this->service->create($attributes))->toThrow(ValidationException::class);
     });
 
     it('validates that time boundary error messages contain both active_from and active_to fields', function () {
@@ -488,7 +473,7 @@ describe('update', function () {
             ->and($updatedAssignment->event_id)->toBe($event->id)
             ->and($updatedAssignment->area_id)->toBe($area->id)
             ->and($updatedAssignment->sensor_id)->toBe($sensor->id)
-            ->and($updatedAssignment->direction_flipped)->toBe(true);
+            ->and($updatedAssignment->direction_flipped)->toBeTrue();
 
         $this->assertDatabaseHas('peoplecount_assignments', [
             'id' => $assignment->id,
@@ -537,9 +522,7 @@ describe('update', function () {
             'active_from' => now()->subDays(2)->toDateTimeString(), // Overlaps with first assignment
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
-
-        $this->expectException(ValidationException::class);
-        $this->service->update($assignment2, $attributes);
+        expect(fn () => $this->service->update($assignment2, $attributes))->toThrow(ValidationException::class);
     });
 
     it('throws authorization exception when updating with event from different organization', function () {
@@ -579,9 +562,7 @@ describe('update', function () {
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->update($assignment, $attributes);
+        expect(fn () => $this->service->update($assignment, $attributes))->toThrow(AuthorizationException::class);
     });
 
     it('throws authorization exception when updating with area from different event', function () {
@@ -619,9 +600,7 @@ describe('update', function () {
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->update($assignment, $attributes);
+        expect(fn () => $this->service->update($assignment, $attributes))->toThrow(AuthorizationException::class);
     });
 
     it('throws authorization exception when updating with sensor from different organization', function () {
@@ -656,9 +635,7 @@ describe('update', function () {
             'active_from' => now()->subDays(1)->toDateTimeString(),
             'active_to' => now()->addDays(1)->toDateTimeString(),
         ];
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->update($assignment, $attributes);
+        expect(fn () => $this->service->update($assignment, $attributes))->toThrow(AuthorizationException::class);
     });
 
     it('throws validation exception when updating with time outside event boundaries', function () {
@@ -690,9 +667,7 @@ describe('update', function () {
             'active_from' => now()->subDays(1)->toDateTimeString(), // Before event starts
             'active_to' => now()->addDays(2)->toDateTimeString(),
         ];
-
-        $this->expectException(ValidationException::class);
-        $this->service->update($assignment, $attributes);
+        expect(fn () => $this->service->update($assignment, $attributes))->toThrow(ValidationException::class);
     });
 });
 
@@ -703,9 +678,7 @@ describe('verifyEventBelongsToCurrentOrganization', function () {
         $event = Event::factory()->for($org2, 'organization')->create();
 
         setPermissionsOrgId($org1->id);
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->verifyEventBelongsToCurrentOrganization($event->id);
+        expect(fn () => $this->service->verifyEventBelongsToCurrentOrganization($event->id))->toThrow(AuthorizationException::class);
     });
 
     it('passes when event belongs to current organization', function () {
@@ -718,7 +691,7 @@ describe('verifyEventBelongsToCurrentOrganization', function () {
         $this->service->verifyEventBelongsToCurrentOrganization($event->id);
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 
     it('passes for any event when organization is global', function () {
@@ -731,7 +704,7 @@ describe('verifyEventBelongsToCurrentOrganization', function () {
         $this->service->verifyEventBelongsToCurrentOrganization($event->id);
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 });
 
@@ -742,9 +715,7 @@ describe('verifySensorBelongsToCurrentOrganization', function () {
         $sensor = Sensor::factory()->withOrganization($org2)->create();
 
         setPermissionsOrgId($org1->id);
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->verifySensorBelongsToCurrentOrganization($sensor->id);
+        expect(fn () => $this->service->verifySensorBelongsToCurrentOrganization($sensor->id))->toThrow(AuthorizationException::class);
     });
 
     it('passes when sensor belongs to current organization', function () {
@@ -757,7 +728,7 @@ describe('verifySensorBelongsToCurrentOrganization', function () {
         $this->service->verifySensorBelongsToCurrentOrganization($sensor->id);
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 
     it('passes for any sensor when organization is global', function () {
@@ -770,7 +741,7 @@ describe('verifySensorBelongsToCurrentOrganization', function () {
         $this->service->verifySensorBelongsToCurrentOrganization($sensor->id);
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 });
 
@@ -786,7 +757,7 @@ describe('verifyAssignmentBelongsToCurrentOrganization', function () {
 
         $this->service->verifyAssignmentBelongsToCurrentOrganization($assignment);
 
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 
     it('throws when assignment belongs to another organization', function () {
@@ -798,9 +769,7 @@ describe('verifyAssignmentBelongsToCurrentOrganization', function () {
         $assignment = Assignment::factory()->for($event)->for($area)->for($sensor)->create();
 
         setPermissionsOrgId($org->id);
-
-        $this->expectException(AuthorizationException::class);
-        $this->service->verifyAssignmentBelongsToCurrentOrganization($assignment);
+        expect(fn () => $this->service->verifyAssignmentBelongsToCurrentOrganization($assignment))->toThrow(AuthorizationException::class);
     });
 });
 
@@ -873,15 +842,12 @@ describe('verifySensorAssignableToEvent', function () {
         $sensor = Sensor::factory()->withOrganization($org)->create(['archived_at' => now()]);
 
         setPermissionsOrgId($org->id);
-
-        $this->expectException(ValidationException::class);
-
-        $this->service->verifySensorAssignableToEvent(
+        expect(fn () => $this->service->verifySensorAssignableToEvent(
             $sensor->id,
             $event->id,
             now()->toDateTimeString(),
             now()->addHour()->toDateTimeString()
-        );
+        ))->toThrow(ValidationException::class);
     });
 });
 
@@ -915,7 +881,7 @@ describe('verifyNoOverlappingAssignments', function () {
         );
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 
     it('throws when new assignment starts during an existing assignment', function () {
@@ -936,15 +902,13 @@ describe('verifyNoOverlappingAssignments', function () {
             ]);
 
         setPermissionsOrgId($org->id);
-
-        $this->expectException(ValidationException::class);
-        $this->service->verifyNoOverlappingAssignments(
+        expect(fn () => $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
             false,
             now()->subDays(1)->toDateTimeString(), // Starts during existing assignment
             now()->addDays(5)->toDateTimeString()
-        );
+        ))->toThrow(ValidationException::class);
     });
 
     it('throws when new assignment ends during an existing assignment', function () {
@@ -965,15 +929,13 @@ describe('verifyNoOverlappingAssignments', function () {
             ]);
 
         setPermissionsOrgId($org->id);
-
-        $this->expectException(ValidationException::class);
-        $this->service->verifyNoOverlappingAssignments(
+        expect(fn () => $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
             false,
             now()->subDays(5)->toDateTimeString(),
             now()->addDays(1)->toDateTimeString() // Ends during existing assignment
-        );
+        ))->toThrow(ValidationException::class);
     });
 
     it('throws when new assignment completely contains an existing assignment', function () {
@@ -994,15 +956,13 @@ describe('verifyNoOverlappingAssignments', function () {
             ]);
 
         setPermissionsOrgId($org->id);
-
-        $this->expectException(ValidationException::class);
-        $this->service->verifyNoOverlappingAssignments(
+        expect(fn () => $this->service->verifyNoOverlappingAssignments(
             null,
             $sensor->id,
             false,
             now()->subDays(5)->toDateTimeString(), // Starts before existing assignment
             now()->addDays(5)->toDateTimeString()  // Ends after existing assignment
-        );
+        ))->toThrow(ValidationException::class);
     });
 
     it('passes when assignments have same time but different directions', function () {
@@ -1034,7 +994,7 @@ describe('verifyNoOverlappingAssignments', function () {
         );
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 
     it('excludes current assignment when updating', function () {
@@ -1066,6 +1026,6 @@ describe('verifyNoOverlappingAssignments', function () {
         );
 
         // If we get here, the test passes
-        $this->assertTrue(true);
+        expect(true)->toBeTrue();
     });
 });

@@ -5,10 +5,7 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\Event;
 use App\Services\Peoplecount\EventService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-
-uses(RefreshDatabase::class);
 
 covers(EventService::class);
 
@@ -196,7 +193,7 @@ describe('getEventWithRelations', function () {
             ->and($result->id)->toBe($event->id)
             ->and($result->relationLoaded('areas'))->toBeTrue()
             ->and($result->relationLoaded('assignments'))->toBeTrue()
-            ->and($result->areas)->toHaveCount(0)
-            ->and($result->assignments)->toHaveCount(0);
+            ->and($result->areas)->toBeEmpty()
+            ->and($result->assignments)->toBeEmpty();
     });
 });

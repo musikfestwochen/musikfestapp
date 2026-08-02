@@ -148,6 +148,6 @@ it('reports whether each listed sensor has an active token', function () {
 
     $sensors = $this->service->getSensors($this->organization);
 
-    expect((bool) $sensors->firstWhere('id', $sensorWithToken->id)?->has_active_token)->toBeTrue()
-        ->and((bool) $sensors->firstWhere('id', $sensorWithoutToken->id)?->has_active_token)->toBeFalse();
+    expect($sensors->firstWhere('id', $sensorWithToken->id)?->has_active_token)->toBeTruthy()
+        ->and($sensors->firstWhere('id', $sensorWithoutToken->id)?->has_active_token)->toBeFalsy();
 });

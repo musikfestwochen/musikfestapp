@@ -2,11 +2,8 @@
 
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
@@ -131,6 +128,7 @@ it('attaches an existing user when creating by email for an organization without
         ]);
 
     $response->assertRedirect(route('orgmgmt.users.index', ['organization' => $org->slug]));
+
     expect(User::query()->where('email', 'existing@example.com')->count())->toBe(1);
     $this->assertDatabaseHas('users', [
         'id' => $existingUser->id,

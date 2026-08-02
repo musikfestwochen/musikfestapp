@@ -4,11 +4,8 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\OrganizationSelectionService;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Permission;
-
-uses(RefreshDatabase::class);
 
 covers(OrganizationSelectionService::class);
 
@@ -29,9 +26,9 @@ describe('OrganizationSelectionService', function () {
         $user->givePermissionTo('admin.organizations.index');
         Auth::shouldReceive('user')->andReturn($user);
         $result = $this->service->getOrganizationsForUser();
-        expect($result->pluck('slug'))->toContain('admin');
-        expect($result->pluck('id'))->toContain(GLOBAL_ORG_ID);
-        expect($result->pluck('id'))->toContain($orgs[0]->id);
+        expect($result->pluck('slug'))->toContain('admin')
+            ->and($result->pluck('id'))->toContain(GLOBAL_ORG_ID)
+            ->toContain($orgs[0]->id);
     });
 
     it('returns only user orgs for non-admin user', function () {
@@ -95,9 +92,9 @@ describe('OrganizationSelectionService', function () {
         $user->givePermissionTo('admin.organizations.index');
         Auth::shouldReceive('user')->andReturn($user);
         $result = $this->service->getOrganizationsForUser();
-        expect($result)->not->toBeEmpty();
-        expect($result->first()->slug)->toBe('admin');
-        expect($result->first()->id)->toBe(GLOBAL_ORG_ID);
+        expect($result)->not->toBeEmpty()
+            ->and($result->first()->slug)->toBe('admin')
+            ->and($result->first()->id)->toBe(GLOBAL_ORG_ID);
     });
 
     it('properly creates admin organization with correct properties', function () {
@@ -112,8 +109,8 @@ describe('OrganizationSelectionService', function () {
 
         // Test that admin org has correct properties
         expect($adminOrg->id)->toBe(GLOBAL_ORG_ID);
-        expect($adminOrg->name)->toBe('Administration');
-        expect($adminOrg->slug)->toBe('admin');
+        expect($adminOrg->name)->toBe('Administration')
+            ->and($adminOrg->slug)->toBe('admin');
 
         // Test that the admin org is actually an Organization instance
         expect($adminOrg)->toBeInstanceOf(Organization::class);
@@ -137,8 +134,8 @@ describe('OrganizationSelectionService', function () {
 
         // Admin org should always be first
         expect($result->first()->slug)->toBe('admin');
-        expect($result->first()->id)->toBe(GLOBAL_ORG_ID);
-        expect($result->first()->name)->toBe('Administration');
+        expect($result->first()->id)->toBe(GLOBAL_ORG_ID)
+            ->and($result->first()->name)->toBe('Administration');
 
         // Other organizations should follow
         expect($result->count())->toBe(3); // admin + 2 created orgs
@@ -174,8 +171,8 @@ describe('OrganizationSelectionService', function () {
 
         // Verify the organization is correctly constructed with all required attributes
         expect($adminOrg->id)->toBe(GLOBAL_ORG_ID);
-        expect($adminOrg->name)->toBe('Administration');
-        expect($adminOrg->slug)->toBe('admin');
+        expect($adminOrg->name)->toBe('Administration')
+            ->and($adminOrg->slug)->toBe('admin');
 
         // Test that the model is in a consistent state - both the id property and the internal attributes
         // should reflect the GLOBAL_ORG_ID, which ensures the constructor array item is important
@@ -185,8 +182,6 @@ describe('OrganizationSelectionService', function () {
         // Test that the model behaves correctly for serialization scenarios
         // where the constructor array matters
         $serialized = $adminOrg->toArray();
-        expect($serialized['id'])->toBe(GLOBAL_ORG_ID);
-        expect($serialized['name'])->toBe('Administration');
-        expect($serialized['slug'])->toBe('admin');
+        expect($serialized)->toMatchArray(['id' => GLOBAL_ORG_ID, 'name' => 'Administration', 'slug' => 'admin']);
     });
 });

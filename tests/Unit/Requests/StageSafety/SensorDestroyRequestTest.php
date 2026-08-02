@@ -6,7 +6,7 @@ use App\Models\User;
 covers(SensorDestroyRequest::class);
 
 it('has no input rules', function () {
-    expect((new SensorDestroyRequest)->rules())->toBe([]);
+    expect((new SensorDestroyRequest)->rules())->toBeEmpty();
 });
 
 it('authorizes the sensor destroy permission', function () {

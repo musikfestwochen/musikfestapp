@@ -12,6 +12,7 @@ covers(SensorStoreRequest::class);
 it('defines controlled sensor and scoped identity rules', function () {
     $organization = new Organization;
     $organization->id = 123;
+
     $request = new SensorStoreRequest;
     $request->merge(['manufacturer' => 'broadweigh']);
     $request->setRouteResolver(fn (): object => new class($organization)

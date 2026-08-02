@@ -96,7 +96,7 @@ it('does not run while another aggregation holds the lock', function () {
     $this->mock(AlertService::class)->shouldNotReceive('processAlertsForArea');
 
     try {
-        expect(app(UpdateAreaAggregations::class)->handle())->toBeFalse();
+        expect(resolve(UpdateAreaAggregations::class)->handle())->toBeFalse();
     } finally {
         $lock->release();
     }
@@ -123,7 +123,7 @@ it('updates every area in one aggregation run', function () {
             $alertAreaIds[] = $area->id;
         });
 
-    expect(app(UpdateAreaAggregations::class)->handle())->toBeTrue()
+    expect(resolve(UpdateAreaAggregations::class)->handle())->toBeTrue()
         ->and($aggregatedAreaIds)->toEqualCanonicalizing($areas->pluck('id')->all())
         ->and($alertAreaIds)->toEqualCanonicalizing($areas->pluck('id')->all());
 });
@@ -148,6 +148,6 @@ it('truncates existing aggregated counts before rebuilding', function () {
         ->with(Mockery::type(Area::class))
         ->once();
 
-    expect(app(UpdateAreaAggregations::class)->handle(truncate: true))->toBeTrue()
+    expect(resolve(UpdateAreaAggregations::class)->handle(truncate: true))->toBeTrue()
         ->and(AreaAggregatedCount::query()->count())->toBe(0);
 });

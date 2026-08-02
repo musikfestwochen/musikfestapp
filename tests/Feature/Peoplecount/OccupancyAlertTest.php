@@ -12,12 +12,12 @@ use App\Models\Peoplecount\Event;
 use App\Models\User;
 use App\Notifications\Peoplecount\AreaOccupancyAlert;
 use App\Services\Peoplecount\AlertService;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     // fix time for deterministic assertions
-    Carbon::setTestNow(Carbon::parse('2025-08-13 12:00:00')->utc());
+    Date::setTestNow(Date::parse('2025-08-13 12:00:00')->utc());
 });
 
 function setupEventAreaAndUsers(): array
@@ -26,8 +26,8 @@ function setupEventAreaAndUsers(): array
 
     $event = Event::factory()->create([
         'organization_id' => $org->id,
-        'starts_at' => Carbon::now()->subHour(),
-        'ends_at' => Carbon::now()->addHours(2),
+        'starts_at' => Date::now()->subHour(),
+        'ends_at' => Date::now()->addHours(2),
     ]);
 
     $area = Area::factory()->create([
@@ -46,7 +46,7 @@ function createAgg(Area $area, string $start, string $end, int $count): AreaAggr
 {
     return AreaAggregatedCount::factory()
         ->withArea($area)
-        ->withPeriod(Carbon::parse($start)->utc(), Carbon::parse($end)->utc())
+        ->withPeriod(Date::parse($start)->utc(), Date::parse($end)->utc())
         ->create([
             'count' => $count,
         ]);
@@ -72,7 +72,7 @@ it('sends occupancy alert when latest aggregated count meets threshold', functio
     createAgg($area, '2025-08-13 11:40:00', '2025-08-13 11:50:00', 90);
     createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 120);
 
-    app(AlertService::class)->processAlertsForArea($area);
+    resolve(AlertService::class)->processAlertsForArea($area);
 
     Notification::assertSentTo([$u1, $u2], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n) use ($event, $area): bool {
         expect($n->eventName)->toBe($event->name)
@@ -85,7 +85,7 @@ it('sends occupancy alert when latest aggregated count meets threshold', functio
 
     $alert->refresh();
     expect($alert->last_triggered_at)->not()->toBeNull()
-        ->and($alert->last_triggered_at->equalTo(Carbon::now()))->toBeTrue();
+        ->and($alert->last_triggered_at->equalTo(Date::now()))->toBeTrue();
 });
 
 it('does not send when latest aggregated count is below threshold', function () {
@@ -105,7 +105,7 @@ it('does not send when latest aggregated count is below threshold', function () 
     // Latest below threshold
     createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 150);
 
-    app(AlertService::class)->processAlertsForArea($area);
+    resolve(AlertService::class)->processAlertsForArea($area);
 
     Notification::assertNothingSent();
     $alert->refresh();
@@ -123,14 +123,14 @@ it('respects cooldown and does not re-send within cooldown window', function () 
         'channel' => AlertChannel::Email,
         'cooldown_minutes' => 60,
         'occupancy_alert_threshold' => 50,
-        'last_triggered_at' => Carbon::now()->subMinutes(30), // still in cooldown
+        'last_triggered_at' => Date::now()->subMinutes(30), // still in cooldown
     ]);
     $alert->recipients()->attach([$u1->id, $u2->id]);
 
     // Latest above threshold but within cooldown
     createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 300);
 
-    app(AlertService::class)->processAlertsForArea($area);
+    resolve(AlertService::class)->processAlertsForArea($area);
 
     Notification::assertNothingSent();
 });
@@ -149,7 +149,7 @@ it('requires a drop below threshold since last trigger before re-sending', funct
         'channel' => AlertChannel::Email,
         'cooldown_minutes' => 10,
         'occupancy_alert_threshold' => $threshold,
-        'last_triggered_at' => Carbon::now()->subHours(2),
+        'last_triggered_at' => Date::now()->subHours(2),
     ]);
     $alert->recipients()->attach([$u1->id, $u2->id]);
 
@@ -157,7 +157,7 @@ it('requires a drop below threshold since last trigger before re-sending', funct
     createAgg($area, '2025-08-13 11:40:00', '2025-08-13 11:50:00', 150);
     createAgg($area, '2025-08-13 11:50:00', '2025-08-13 12:00:00', 160);
 
-    app(AlertService::class)->processAlertsForArea($area);
+    resolve(AlertService::class)->processAlertsForArea($area);
 
     // No send because there was no drop below since last trigger
     Notification::assertNothingSent();
@@ -166,7 +166,7 @@ it('requires a drop below threshold since last trigger before re-sending', funct
     createAgg($area, '2025-08-13 12:00:00', '2025-08-13 12:10:00', 80);   // drop below
     createAgg($area, '2025-08-13 12:10:00', '2025-08-13 12:20:00', 130); // back above (latest)
 
-    app(AlertService::class)->processAlertsForArea($area);
+    resolve(AlertService::class)->processAlertsForArea($area);
 
     Notification::assertSentTo([$u1, $u2], AreaOccupancyAlert::class, function (AreaOccupancyAlert $n) use ($threshold): bool {
         expect($n->configuredThreshold)->toBe($threshold)

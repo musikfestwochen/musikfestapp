@@ -89,6 +89,6 @@ test('it supports table only output and removes the disposable sqlite benchmark 
     $sqliteFilesAfter = glob($benchmarkDirectory.'/*.sqlite') ?: [];
     $jsonFilesAfter = glob($benchmarkDirectory.'/peoplecount-benchmark-*.json') ?: [];
 
-    expect($sqliteFilesAfter)->toEqualCanonicalizing($sqliteFilesBefore);
-    expect($jsonFilesAfter)->toEqualCanonicalizing($jsonFilesBefore);
+    expect($sqliteFilesAfter)->toEqualCanonicalizing($sqliteFilesBefore)
+        ->and($jsonFilesAfter)->toEqualCanonicalizing($jsonFilesBefore);
 });

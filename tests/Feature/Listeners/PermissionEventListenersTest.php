@@ -106,7 +106,7 @@ it('handles PermissionDetachedListener when event model is not a User', function
         $this->testPermission->id
     );
 
-    $listener = app(PermissionDetachedListener::class);
+    $listener = resolve(PermissionDetachedListener::class);
 
     // This should not clear cache since model is not a User
     $userId = $listener->getUserId($event);
@@ -126,7 +126,7 @@ it('handles RoleAttachedListener when event model is not a User', function () {
         $this->testRole->id
     );
 
-    $listener = app(RoleAttachedListener::class);
+    $listener = resolve(RoleAttachedListener::class);
 
     // This should return null since model is not a User
     $userId = $listener->getUserId($event);
@@ -145,7 +145,7 @@ it('handles RoleDetachedListener when event model is not a User', function () {
         $this->testRole->id
     );
 
-    $listener = app(RoleDetachedListener::class);
+    $listener = resolve(RoleDetachedListener::class);
 
     // This should return null since model is not a User
     $userId = $listener->getUserId($event);
@@ -159,7 +159,7 @@ it('handles RoleDetachedListener when event model is not a User', function () {
 
 it('handles RoleDetachedListener when getUserId returns null', function () {
     // Test the case where getUserId returns null (covering the 47 line return null)
-    $listener = app(RoleDetachedListener::class);
+    $listener = resolve(RoleDetachedListener::class);
 
     // Create a real RoleDetached event with a Role model (not User)
     $event = new RoleDetachedEvent(

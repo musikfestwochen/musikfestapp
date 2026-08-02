@@ -6,7 +6,7 @@ use App\Models\User;
 covers(SensorTokenUpdateRequest::class);
 
 it('has no input rules', function () {
-    expect((new SensorTokenUpdateRequest)->rules())->toBe([]);
+    expect((new SensorTokenUpdateRequest)->rules())->toBeEmpty();
 });
 
 it('authorizes the sensor update permission', function () {

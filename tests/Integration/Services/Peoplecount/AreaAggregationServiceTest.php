@@ -12,20 +12,17 @@ use App\Services\Peoplecount\AreaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 
 covers(AreaAggregationService::class);
 
-uses(RefreshDatabase::class);
-
 beforeEach(function () {
     // Set a fixed time for consistent testing
-    Carbon::setTestNow('2024-08-15 14:30:00');
+    Date::setTestNow('2024-08-15 14:30:00');
 
     // Mock the AreaService dependency
     $this->areaServiceMock = Mockery::mock(AreaService::class);
@@ -89,8 +86,8 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock event for window configuration
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         // Mock aggregatedCounts relationship for filtering and calculations
@@ -118,8 +115,8 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock aggregatedCounts property access with some data to trigger deletion logic
         $count = Mockery::mock(AreaAggregatedCount::class);
-        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $aggregatedCounts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($aggregatedCounts);
 
@@ -130,8 +127,8 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock event for window configuration
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         // Mock aggregatedCounts relationship for filtering and calculations
@@ -176,8 +173,8 @@ describe('updateAggregatedCounts method', function () {
 
         // Mock event for window configuration
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         // Mock aggregatedCounts relationship for filtering and calculations
@@ -197,16 +194,16 @@ describe('updateAggregatedCounts method', function () {
 describe('calculateMedianWindowSize method', function () {
     it('calculates median for odd number of counts', function () {
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:10:00'));
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
-        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:25:00'));
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:10:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:25:00'));
 
         $count3 = Mockery::mock(AreaAggregatedCount::class);
-        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:25:00'));
-        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:45:00'));
+        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:25:00'));
+        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:45:00'));
 
         $counts = collect([$count1, $count2, $count3]);
 
@@ -217,12 +214,12 @@ describe('calculateMedianWindowSize method', function () {
 
     it('calculates median for even number of counts', function () {
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:10:00'));
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
-        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:10:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:30:00'));
 
         $counts = collect([$count1, $count2]);
 
@@ -235,20 +232,20 @@ describe('calculateMedianWindowSize method', function () {
         // Create 4 counts with different durations: [5, 10, 15, 20]
         // Median should be (10 + 15) / 2 = 12.5
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:05:00')); // 5 minutes
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:05:00')); // 5 minutes
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:05:00'));
-        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00')); // 10 minutes
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:05:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:15:00')); // 10 minutes
 
         $count3 = Mockery::mock(AreaAggregatedCount::class);
-        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
-        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:30:00')); // 15 minutes
+        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:15:00'));
+        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:30:00')); // 15 minutes
 
         $count4 = Mockery::mock(AreaAggregatedCount::class);
-        $count4->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
-        $count4->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:50:00')); // 20 minutes
+        $count4->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:30:00'));
+        $count4->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:50:00')); // 20 minutes
 
         $counts = collect([$count1, $count2, $count3, $count4]);
 
@@ -261,24 +258,24 @@ describe('calculateMedianWindowSize method', function () {
         // Create 5 counts with different durations: [5, 10, 15, 20, 25]
         // Median should be the middle value: 15
         $count1 = Mockery::mock(AreaAggregatedCount::class);
-        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:05:00')); // 5 minutes
+        $count1->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count1->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:05:00')); // 5 minutes
 
         $count2 = Mockery::mock(AreaAggregatedCount::class);
-        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:05:00'));
-        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00')); // 10 minutes
+        $count2->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:05:00'));
+        $count2->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:15:00')); // 10 minutes
 
         $count3 = Mockery::mock(AreaAggregatedCount::class);
-        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
-        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:30:00')); // 15 minutes
+        $count3->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:15:00'));
+        $count3->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:30:00')); // 15 minutes
 
         $count4 = Mockery::mock(AreaAggregatedCount::class);
-        $count4->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:30:00'));
-        $count4->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:50:00')); // 20 minutes
+        $count4->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:30:00'));
+        $count4->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:50:00')); // 20 minutes
 
         $count5 = Mockery::mock(AreaAggregatedCount::class);
-        $count5->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:50:00'));
-        $count5->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 11:15:00')); // 25 minutes
+        $count5->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:50:00'));
+        $count5->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 11:15:00')); // 25 minutes
 
         $counts = collect([$count1, $count2, $count3, $count4, $count5]);
 
@@ -291,8 +288,8 @@ describe('calculateMedianWindowSize method', function () {
 describe('getPastResetTimes method', function () {
     it('filters reset times to only past ones', function () {
         $area = Mockery::mock(Area::class);
-        $pastReset = ['at' => Carbon::parse('2024-08-15 12:00:00')];
-        $futureReset = ['at' => Carbon::parse('2024-08-15 16:00:00')];
+        $pastReset = ['at' => Date::parse('2024-08-15 12:00:00')];
+        $futureReset = ['at' => Date::parse('2024-08-15 16:00:00')];
 
         $this->areaServiceMock->shouldReceive('getAreaResets')
             ->once()
@@ -301,8 +298,8 @@ describe('getPastResetTimes method', function () {
 
         $result = ($this->callProtectedMethod)('getPastResetTimes', $area);
 
-        expect($result)->toHaveCount(1);
-        expect($result->first()['at']->format('H:i'))->toBe('12:00');
+        expect($result)->toHaveCount(1)
+            ->and($result->first()['at']->format('H:i'))->toBe('12:00');
     });
 });
 
@@ -310,17 +307,17 @@ describe('getWindowConfiguration method', function () {
     it('returns correct window configuration', function () {
         $area = Mockery::mock(Area::class);
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 18:00:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 18:00:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         $result = ($this->callProtectedMethod)('getWindowConfiguration', $area);
 
-        expect($result)->toHaveKey('windowSize', 10);
-        expect($result)->toHaveKey('startTime');
-        expect($result)->toHaveKey('endTime');
-        expect($result['startTime']->format('H:i'))->toBe('10:00');
-        expect($result['endTime']->format('H:i'))->toBe('18:00');
+        expect($result)->toHaveKey('windowSize', 10)
+            ->toHaveKey('startTime')
+            ->toHaveKey('endTime')
+            ->and($result['startTime']->format('H:i'))->toBe('10:00')
+            ->and($result['endTime']->format('H:i'))->toBe('18:00');
     });
 });
 
@@ -328,12 +325,12 @@ describe('generateAggregationWindows method', function () {
     it('generates correct number of windows', function () {
         $area = Mockery::mock(Area::class);
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 11:00:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 11:00:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
         $resetTimes = collect();
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, Carbon::parse('2024-08-15 10:00:00'))->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, Date::parse('2024-08-15 10:00:00'))->collect();
 
         expect($result)->toHaveCount(6); // 60 minutes / 10 minute windows = 6 windows
         expect($result->first()['start']->format('H:i'))->toBe('10:00');
@@ -343,30 +340,28 @@ describe('generateAggregationWindows method', function () {
 
 describe('createWindow method', function () {
     it('creates window with correct structure', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
         $config = [
             'windowSize' => 10,
-            'startTime' => Carbon::parse('2024-08-15 10:00:00'),
-            'endTime' => Carbon::parse('2024-08-15 18:00:00'),
+            'startTime' => Date::parse('2024-08-15 10:00:00'),
+            'endTime' => Date::parse('2024-08-15 18:00:00'),
         ];
         $resetTimes = collect();
 
         $result = ($this->callProtectedMethod)('createWindow', $startTime, $config, $resetTimes);
 
-        expect($result)->toHaveKey('start');
-        expect($result)->toHaveKey('end');
-        expect($result)->toHaveKey('reset_value');
-        expect($result['start']->format('H:i'))->toBe('10:00');
-        expect($result['end']->format('H:i'))->toBe('10:10');
-        expect($result['reset_value'])->toBeNull();
+        expect($result)->toHaveKeys(['start', 'end', 'reset_value'])
+            ->and($result['start']->format('H:i'))->toBe('10:00')
+            ->and($result['end']->format('H:i'))->toBe('10:10')
+            ->and($result['reset_value'])->toBeNull();
     });
 });
 
 describe('calculateWindowEnd method', function () {
     it('returns natural window end when no reset within window', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
-        $eventStartTime = Carbon::parse('2024-08-15 10:00:00');
-        $eventEndTime = Carbon::parse('2024-08-15 18:00:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
+        $eventStartTime = Date::parse('2024-08-15 10:00:00');
+        $eventEndTime = Date::parse('2024-08-15 18:00:00');
         $windowSize = 10;
         $resetTimes = collect();
 
@@ -376,12 +371,12 @@ describe('calculateWindowEnd method', function () {
     });
 
     it('returns reset time when reset occurs within window', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
-        $eventStartTime = Carbon::parse('2024-08-15 10:00:00');
-        $eventEndTime = Carbon::parse('2024-08-15 18:00:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
+        $eventStartTime = Date::parse('2024-08-15 10:00:00');
+        $eventEndTime = Date::parse('2024-08-15 18:00:00');
         $windowSize = 10;
         $resetTimes = collect([
-            ['at' => Carbon::parse('2024-08-15 10:05:00')],
+            ['at' => Date::parse('2024-08-15 10:05:00')],
         ]);
 
         $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventStartTime, $eventEndTime, $windowSize, $resetTimes);
@@ -390,12 +385,12 @@ describe('calculateWindowEnd method', function () {
     });
 
     it('returns natural window end when reset is exactly at start time', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
-        $eventStartTime = Carbon::parse('2024-08-15 10:00:00');
-        $eventEndTime = Carbon::parse('2024-08-15 18:00:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
+        $eventStartTime = Date::parse('2024-08-15 10:00:00');
+        $eventEndTime = Date::parse('2024-08-15 18:00:00');
         $windowSize = 10;
         $resetTimes = collect([
-            ['at' => Carbon::parse('2024-08-15 10:00:00')], // Reset exactly at start time
+            ['at' => Date::parse('2024-08-15 10:00:00')], // Reset exactly at start time
         ]);
 
         $result = ($this->callProtectedMethod)('calculateWindowEnd', $startTime, $eventStartTime, $eventEndTime, $windowSize, $resetTimes);
@@ -407,23 +402,23 @@ describe('calculateWindowEnd method', function () {
 
 describe('findResetWithinWindow method', function () {
     it('finds reset within window', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
-        $windowEnd = Carbon::parse('2024-08-15 10:10:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
+        $windowEnd = Date::parse('2024-08-15 10:10:00');
         $resetTimes = collect([
-            ['at' => Carbon::parse('2024-08-15 10:05:00'), 'reset_value' => 100],
+            ['at' => Date::parse('2024-08-15 10:05:00'), 'reset_value' => 100],
         ]);
 
         $result = ($this->callProtectedMethod)('findResetWithinWindow', $startTime, $windowEnd, $resetTimes);
 
-        expect($result)->not->toBeNull();
-        expect($result['reset_value'])->toBe(100);
+        expect($result)->not->toBeNull()
+            ->and($result['reset_value'])->toBe(100);
     });
 
     it('returns null when no reset within window', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
-        $windowEnd = Carbon::parse('2024-08-15 10:10:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
+        $windowEnd = Date::parse('2024-08-15 10:10:00');
         $resetTimes = collect([
-            ['at' => Carbon::parse('2024-08-15 10:15:00')],
+            ['at' => Date::parse('2024-08-15 10:15:00')],
         ]);
 
         $result = ($this->callProtectedMethod)('findResetWithinWindow', $startTime, $windowEnd, $resetTimes);
@@ -434,9 +429,9 @@ describe('findResetWithinWindow method', function () {
 
 describe('getResetValueAtWindowStart method', function () {
     it('returns reset value when reset at window start', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
         $resetTimes = collect([
-            ['at' => Carbon::parse('2024-08-15 10:00:00'), 'reset_value' => 50],
+            ['at' => Date::parse('2024-08-15 10:00:00'), 'reset_value' => 50],
         ]);
 
         $result = ($this->callProtectedMethod)('getResetValueAtWindowStart', $startTime, $resetTimes);
@@ -445,9 +440,9 @@ describe('getResetValueAtWindowStart method', function () {
     });
 
     it('returns null when no reset at window start', function () {
-        $startTime = Carbon::parse('2024-08-15 10:00:00');
+        $startTime = Date::parse('2024-08-15 10:00:00');
         $resetTimes = collect([
-            ['at' => Carbon::parse('2024-08-15 10:05:00'), 'reset_value' => 50],
+            ['at' => Date::parse('2024-08-15 10:05:00'), 'reset_value' => 50],
         ]);
 
         $result = ($this->callProtectedMethod)('getResetValueAtWindowStart', $startTime, $resetTimes);
@@ -460,15 +455,15 @@ describe('generateAggregationWindows future filtering', function () {
     it('filters out future windows', function () {
         $area = Mockery::mock(Area::class);
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 12:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 16:10:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 12:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 16:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), Carbon::parse('2024-08-15 12:00:00'))->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), Date::parse('2024-08-15 12:00:00'))->collect();
 
-        expect($result)->toHaveCount(15);
-        expect($result->first()['start']->format('H:i'))->toBe('12:00');
-        expect($result->last()['start']->format('H:i'))->toBe('14:20');
+        expect($result)->toHaveCount(15)
+            ->and($result->first()['start']->format('H:i'))->toBe('12:00')
+            ->and($result->last()['start']->format('H:i'))->toBe('14:20');
     });
 });
 
@@ -506,8 +501,8 @@ describe('deleteInvalidAggregationRows method', function () {
         $area->shouldReceive('save')->once()->andReturnTrue();
 
         // Mock for deleteRowsWithInvalidWindowSize - median matches config
-        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:10:00'));
 
         $result = ($this->callProtectedMethod)('deleteInvalidAggregationRows', $area, 'abc123');
 
@@ -535,8 +530,8 @@ describe('deleteInvalidAggregationRows method', function () {
         $area->shouldReceive('save')->twice()->andReturnTrue();
 
         // Mock for deleteRowsWithInvalidWindowSize - median differs from config (15 minutes vs 10)
-        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:15:00'));
         $result = ($this->callProtectedMethod)('deleteInvalidAggregationRows', $area, 'abc123');
 
         expect($result)->toBeNull();
@@ -575,8 +570,8 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
 
         // Create counts with different window size (15 minutes instead of 10)
         $count = Mockery::mock(AreaAggregatedCount::class);
-        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:15:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:15:00'));
         $counts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($counts);
 
@@ -594,8 +589,8 @@ describe('deleteRowsWithInvalidWindowSize method', function () {
 
         // Create counts with correct window size (10 minutes)
         $count = Mockery::mock(AreaAggregatedCount::class);
-        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $count->shouldReceive('getAttribute')->with('period_start')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $count->shouldReceive('getAttribute')->with('period_end')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $counts = new EloquentCollection([$count]);
         $area->shouldReceive('getAttribute')->with('aggregatedCounts')->andReturn($counts);
 
@@ -615,14 +610,14 @@ describe('getAggregationWindowChunks method', function () {
 
         // Mock event for window configuration
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('getAggregationWindowChunks', $area, $resetTimes, Carbon::parse('2024-08-15 10:00:00'));
+        $result = ($this->callProtectedMethod)('getAggregationWindowChunks', $area, $resetTimes, Date::parse('2024-08-15 10:00:00'));
 
-        expect($result)->toBeInstanceOf(LazyCollection::class);
-        expect($result->first())->toBeInstanceOf(LazyCollection::class);
+        expect($result)->toBeInstanceOf(LazyCollection::class)
+            ->and($result->first())->toBeInstanceOf(LazyCollection::class);
     });
 
     it('splits reset times into aggregation windows', function () {
@@ -631,31 +626,31 @@ describe('getAggregationWindowChunks method', function () {
 
         // Mock event for window configuration
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:10:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 10:10:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, Carbon::parse('2024-08-15 10:00:00'))->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, $resetTimes, Date::parse('2024-08-15 10:00:00'))->collect();
 
-        expect($result)->toBeInstanceOf(Collection::class);
-        expect($result)->toHaveCount(1); // 10 minute window
+        expect($result)->toBeInstanceOf(Collection::class)
+            ->toHaveCount(1); // 10 minute window
     });
 
     it('filters windows based on recalculation start', function () {
         $area = Mockery::mock(Area::class);
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 09:50:00'));
-        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Carbon::parse('2024-08-15 10:20:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 09:50:00'));
+        $event->shouldReceive('getAttribute')->with('ends_at')->andReturn(Date::parse('2024-08-15 10:20:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
-        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), Carbon::parse('2024-08-15 10:00:00'))->collect();
+        $result = ($this->callProtectedMethod)('generateAggregationWindows', $area, collect(), Date::parse('2024-08-15 10:00:00'))->collect();
 
         expect($result)->toHaveCount(2); // Should filter out the first window
 
         // Check which windows are included
         $resultTimes = $result->map(fn ($window) => $window['start']->format('H:i'))->toArray();
-        expect($resultTimes)->toContain('10:00');
-        expect($resultTimes)->toContain('10:10');
+        expect($resultTimes)->toContain('10:00')
+            ->toContain('10:10');
 
         // Check which windows are excluded
         expect($resultTimes)->not->toContain('09:50');
@@ -669,8 +664,8 @@ describe('calculateAggregatedCountsForWindows method', function () {
         $area->shouldReceive('getAttribute')->with('assignments')->andReturn(new EloquentCollection);
         $windows = collect([
             [
-                'start' => Carbon::parse('2024-08-15 10:00:00'),
-                'end' => Carbon::parse('2024-08-15 10:10:00'),
+                'start' => Date::parse('2024-08-15 10:00:00'),
+                'end' => Date::parse('2024-08-15 10:10:00'),
                 'reset_value' => null,
             ],
         ]);
@@ -687,8 +682,8 @@ describe('calculateAggregatedCountsForWindows method', function () {
         $area->shouldReceive('getAttribute')->with('assignments')->andReturn(new EloquentCollection);
         $windows = collect([
             [
-                'start' => Carbon::parse('2024-08-15 10:00:00'),
-                'end' => Carbon::parse('2024-08-15 10:10:00'),
+                'start' => Date::parse('2024-08-15 10:00:00'),
+                'end' => Date::parse('2024-08-15 10:10:00'),
                 'reset_value' => 50, // Specific reset value provided
             ],
         ]);
@@ -705,8 +700,8 @@ describe('calculateAggregatedCountsForWindows method', function () {
         $area->shouldReceive('getAttribute')->with('assignments')->andReturn(new EloquentCollection);
         $windows = collect([
             [
-                'start' => Carbon::parse('2024-08-15 10:00:00'),
-                'end' => Carbon::parse('2024-08-15 10:10:00'),
+                'start' => Date::parse('2024-08-15 10:00:00'),
+                'end' => Date::parse('2024-08-15 10:10:00'),
                 'reset_value' => null, // No reset value
             ],
         ]);
@@ -719,8 +714,8 @@ describe('calculateAggregatedCountsForWindows method', function () {
 
     it('upserts existing aggregate rows for the same window', function () {
         $area = Area::factory()->create();
-        $start = Carbon::parse('2024-08-15 10:00:00');
-        $end = Carbon::parse('2024-08-15 10:10:00');
+        $start = Date::parse('2024-08-15 10:00:00');
+        $end = Date::parse('2024-08-15 10:10:00');
 
         AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
@@ -738,9 +733,9 @@ describe('calculateAggregatedCountsForWindows method', function () {
             ],
         ]), str_repeat('b', 64), 0);
 
-        expect($result)->toBe(7);
-        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->count())->toBe(1);
-        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->first()->count)->toBe(7);
+        expect($result)->toBe(7)
+            ->and(AreaAggregatedCount::query()->where('area_id', $area->id)->count())->toBe(1)
+            ->and(AreaAggregatedCount::query()->where('area_id', $area->id)->first()->count)->toBe(7);
     });
 });
 
@@ -750,14 +745,14 @@ describe('calculateNetCountsForWindows method', function () {
 
         $result = ($this->callProtectedMethod)('calculateNetCountsForWindows', $area, collect());
 
-        expect($result)->toBeInstanceOf(Collection::class);
-        expect($result)->toBeEmpty();
+        expect($result)->toBeInstanceOf(Collection::class)
+            ->toBeEmpty();
     });
 
     it('ignores interval rows that do not fall into a planned window', function () {
         $event = Event::factory()->create([
-            'starts_at' => Carbon::parse('2024-08-15 10:00:00')->utc(),
-            'ends_at' => Carbon::parse('2024-08-15 10:30:00')->utc(),
+            'starts_at' => Date::parse('2024-08-15 10:00:00')->utc(),
+            'ends_at' => Date::parse('2024-08-15 10:30:00')->utc(),
         ]);
         $area = Area::factory()->create(['event_id' => $event->id]);
         $sensor = Sensor::factory()->create(['organization_id' => $event->organization_id]);
@@ -766,34 +761,34 @@ describe('calculateNetCountsForWindows method', function () {
             'event_id' => $event->id,
             'area_id' => $area->id,
             'sensor_id' => $sensor->id,
-            'active_from' => Carbon::parse('2024-08-15 10:00:00')->utc(),
-            'active_to' => Carbon::parse('2024-08-15 10:30:00')->utc(),
+            'active_from' => Date::parse('2024-08-15 10:00:00')->utc(),
+            'active_to' => Date::parse('2024-08-15 10:30:00')->utc(),
             'direction_flipped' => false,
         ]);
 
         IntervalCount::factory()->create([
             'sensor_id' => $sensor->id,
-            'ts_from' => Carbon::parse('2024-08-15 10:15:00')->utc(),
-            'ts_to' => Carbon::parse('2024-08-15 10:20:00')->utc(),
+            'ts_from' => Date::parse('2024-08-15 10:15:00')->utc(),
+            'ts_to' => Date::parse('2024-08-15 10:20:00')->utc(),
             'count_in' => 10,
             'count_out' => 2,
-            'received_at' => Carbon::parse('2024-08-15 10:20:00')->utc(),
+            'received_at' => Date::parse('2024-08-15 10:20:00')->utc(),
         ]);
 
         $area->load('assignments');
 
         $result = ($this->callProtectedMethod)('calculateNetCountsForWindows', $area, collect([
             [
-                'start' => Carbon::parse('2024-08-15 10:00:00')->utc(),
-                'end' => Carbon::parse('2024-08-15 10:10:00')->utc(),
+                'start' => Date::parse('2024-08-15 10:00:00')->utc(),
+                'end' => Date::parse('2024-08-15 10:10:00')->utc(),
                 'reset_value' => null,
             ],
             [
-                'start' => Carbon::parse('2024-08-15 10:20:00')->utc(),
-                'end' => Carbon::parse('2024-08-15 10:30:00')->utc(),
+                'start' => Date::parse('2024-08-15 10:20:00')->utc(),
+                'end' => Date::parse('2024-08-15 10:30:00')->utc(),
                 'reset_value' => null,
             ],
-        ]), Carbon::parse('2024-08-15 10:30:00')->utc());
+        ]), Date::parse('2024-08-15 10:30:00')->utc());
 
         expect($result->all())->toBe([0, 0]);
     });
@@ -802,11 +797,11 @@ describe('calculateNetCountsForWindows method', function () {
 describe('findWindowIndexForInterval method', function () {
     it('returns null when the interval starts before the first planned window', function () {
         $lookup = [
-            'starts' => [Carbon::parse('2024-08-15 10:00:00')->utc()],
-            'ends' => [Carbon::parse('2024-08-15 10:10:00')->utc()],
+            'starts' => [Date::parse('2024-08-15 10:00:00')->utc()],
+            'ends' => [Date::parse('2024-08-15 10:10:00')->utc()],
         ];
 
-        $result = ($this->callProtectedMethod)('findWindowIndexForInterval', Carbon::parse('2024-08-15 09:59:00')->utc(), $lookup);
+        $result = ($this->callProtectedMethod)('findWindowIndexForInterval', Date::parse('2024-08-15 09:59:00')->utc(), $lookup);
 
         expect($result)->toBeNull();
     });
@@ -846,9 +841,9 @@ describe('writeAggregatedCounts method', function () {
 
         $count = AreaAggregatedCount::query()->where('area_id', $area->id)->first();
 
-        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->count())->toBe(1);
-        expect($count->count)->toBe(9);
-        expect($count->checksum)->toBe(str_repeat('b', 64));
+        expect(AreaAggregatedCount::query()->where('area_id', $area->id)->count())->toBe(1)
+            ->and($count->count)->toBe(9)
+            ->and($count->checksum)->toBe(str_repeat('b', 64));
     });
 });
 
@@ -856,7 +851,7 @@ describe('getAggregationCheckpoint method', function () {
     it('returns default checkpoint when fewer than two existing counts exist', function () {
         $area = Mockery::mock(Area::class);
         $event = Mockery::mock(Event::class);
-        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Carbon::parse('2024-08-15 10:00:00'));
+        $event->shouldReceive('getAttribute')->with('starts_at')->andReturn(Date::parse('2024-08-15 10:00:00'));
         $area->shouldReceive('getAttribute')->with('event')->andReturn($event);
 
         // Create a proper HasMany relationship mock that can handle method chaining
@@ -869,14 +864,14 @@ describe('getAggregationCheckpoint method', function () {
 
         $result = ($this->callProtectedMethod)('getAggregationCheckpoint', $area);
 
-        expect($result['recalculate_from']->format('H:i'))->toBe('10:00');
-        expect($result['initial_count'])->toBe(0);
+        expect($result['recalculate_from']->format('H:i'))->toBe('10:00')
+            ->and($result['initial_count'])->toBe(0);
     });
 
     it('returns recalculation start and initial count from existing counts', function () {
         $area = Mockery::mock(Area::class);
         $latestCount = new AreaAggregatedCount([
-            'period_start' => Carbon::parse('2024-08-15 10:10:00'),
+            'period_start' => Date::parse('2024-08-15 10:10:00'),
         ]);
         $previousCount = new AreaAggregatedCount([
             'count' => 25,
@@ -895,8 +890,8 @@ describe('getAggregationCheckpoint method', function () {
 
         $result = ($this->callProtectedMethod)('getAggregationCheckpoint', $area);
 
-        expect($result['recalculate_from']->format('H:i'))->toBe('10:10');
-        expect($result['initial_count'])->toBe(25);
+        expect($result['recalculate_from']->format('H:i'))->toBe('10:10')
+            ->and($result['initial_count'])->toBe(25);
     });
 });
 
@@ -910,8 +905,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toBeArray();
-        expect($result)->toBeEmpty();
+        expect($result)->toBeArray()
+            ->toBeEmpty();
     });
 
     it('handles area with aggregated counts correctly', function () {
@@ -919,8 +914,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'), // Started 30 minutes ago
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),   // Ends in 30 minutes
+            'starts_at' => Date::parse('2024-08-15 14:00:00'), // Started 30 minutes ago
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),   // Ends in 30 minutes
         ]);
 
         // Create area with aggregated counts
@@ -933,13 +928,13 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $latestCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 50,
-            'period_end' => Carbon::parse('2024-08-15 14:25:00'), // 5 minutes ago
+            'period_end' => Date::parse('2024-08-15 14:25:00'), // 5 minutes ago
         ]);
 
         $oneHourAgoCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 30,
-            'period_end' => Carbon::parse('2024-08-15 13:25:00'), // 1 hour 5 minutes ago
+            'period_end' => Date::parse('2024-08-15 13:25:00'), // 1 hour 5 minutes ago
         ]);
 
         // Mock Cache and AreaService
@@ -956,22 +951,12 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toBeArray();
-        expect($result)->toHaveCount(1);
-        expect($result[0])->toHaveKey('id');
-        expect($result[0])->toHaveKey('name');
-        expect($result[0])->toHaveKey('event_name');
-        expect($result[0])->toHaveKey('count');
-        expect($result[0])->toHaveKey('net_change');
-        expect($result[0])->toHaveKey('net_change_time_ago');
-        expect($result[0])->toHaveKey('debug_counts');
-        expect($result[0])->toHaveKey('last_updated');
-        expect($result[0]['count'])->toBe(50);
-        expect($result[0]['net_change'])->toBe(20); // 50 - 30
+        expect($result)->toBeArray()
+            ->toHaveCount(1)
+            ->and($result[0])->toHaveKeys(['id', 'name', 'event_name', 'count', 'net_change', 'net_change_time_ago', 'debug_counts', 'last_updated'])
+            ->toMatchArray(['count' => 50, 'net_change' => 20]); // 50 - 30
         expect($result[0]['debug_counts'])->toBeArray();
-        expect($result[0]['debug_counts']['in'])->toBe(10);
-        expect($result[0]['debug_counts']['out'])->toBe(5);
-        expect($result[0]['debug_counts']['net'])->toBe(5);
+        expect($result[0]['debug_counts'])->toMatchArray(['in' => 10, 'out' => 5, 'net' => 5]);
     });
 
     it('handles area with no aggregated counts', function () {
@@ -979,8 +964,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         // Create area without aggregated counts
@@ -1003,10 +988,10 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toBeArray();
-        expect($result)->toHaveCount(1);
-        expect($result[0]['count'])->toBe(0);
-        expect($result[0]['net_change'])->toBeNull();
+        expect($result)->toBeArray()
+            ->toHaveCount(1)
+            ->and($result[0]['count'])->toBe(0)
+            ->and($result[0]['net_change'])->toBeNull();
     });
 
     it('handles debug counts calculation failure gracefully', function () {
@@ -1014,8 +999,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         // Create area
@@ -1043,16 +1028,13 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toBeArray();
-        expect($result)->toHaveCount(1);
-        expect($result[0]['debug_counts'])->toBeArray();
-        expect($result[0]['debug_counts']['in'])->toBe(0);
-        expect($result[0]['debug_counts']['out'])->toBe(0);
-        expect($result[0]['debug_counts']['net'])->toBe(0);
-        expect($result[0]['debug_counts']['last_reset_type'])->toBeNull();
-        expect($result[0]['debug_counts']['last_reset_at'])->toBeNull();
-        expect($result[0]['debug_counts']['last_reset_value'])->toBe(0);
-        expect($result[0]['debug_counts']['net_plus_reset'])->toBe(0);
+        expect($result)->toBeArray()
+            ->toHaveCount(1)
+            ->and($result[0]['debug_counts'])->toBeArray()
+            ->toMatchArray(['in' => 0, 'out' => 0, 'net' => 0])
+            ->and($result[0]['debug_counts']['last_reset_type'])->toBeNull()
+            ->and($result[0]['debug_counts']['last_reset_at'])->toBeNull()
+            ->and($result[0]['debug_counts'])->toMatchArray(['last_reset_value' => 0, 'net_plus_reset' => 0]);
     });
 
     it('calculates net change time ago correctly', function () {
@@ -1060,8 +1042,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         // Create area with aggregated counts
@@ -1074,14 +1056,14 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $latestCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 50,
-            'period_end' => Carbon::parse('2024-08-15 14:25:00'), // 5 minutes ago from test time (14:30:00)
+            'period_end' => Date::parse('2024-08-15 14:25:00'), // 5 minutes ago from test time (14:30:00)
         ]);
 
         // Create one hour ago count (more than 1 hour before current test time)
         $oneHourAgoCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 30,
-            'period_end' => Carbon::parse('2024-08-15 13:20:00'), // 1 hour 10 minutes ago from test time (14:30:00)
+            'period_end' => Date::parse('2024-08-15 13:20:00'), // 1 hour 10 minutes ago from test time (14:30:00)
         ]);
 
         // Mock Cache and AreaService
@@ -1097,9 +1079,9 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toBeArray();
-        expect($result)->toHaveCount(1);
-        expect($result[0]['net_change'])->toBe(20); // 50 - 30
+        expect($result)->toBeArray()
+            ->toHaveCount(1)
+            ->and($result[0]['net_change'])->toBe(20); // 50 - 30
         expect($result[0]['net_change_time_ago'])->toBeString(); // Should be a human-readable time difference
     });
 
@@ -1108,8 +1090,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         // Create area
@@ -1166,14 +1148,14 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         // Create events for both organizations
         $event1 = Event::factory()->create([
             'organization_id' => $organization1->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         $event2 = Event::factory()->create([
             'organization_id' => $organization2->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         // Create areas for both events
@@ -1192,18 +1174,16 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         // Query for organization1 should only return area1
         $result = $this->service->getActiveAreaAggregatedCounts($organization1);
 
-        expect($result)->toHaveCount(1);
-        expect($result[0]['id'])->toBe($area1->id);
-        expect($result[0]['name'])->toBe('Area 1');
-        expect($result[0]['event_name'])->toBe($event1->name);
+        expect($result)->toHaveCount(1)
+            ->and($result[0])->toMatchArray(['id' => $area1->id, 'name' => 'Area 1', 'event_name' => $event1->name]);
     });
 
     it('verifies event relationship is loaded correctly', function () {
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
             'name' => 'Test Event Name',
         ]);
 
@@ -1222,16 +1202,16 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toHaveCount(1);
-        expect($result[0]['event_name'])->toBe('Test Event Name');
+        expect($result)->toHaveCount(1)
+            ->and($result[0]['event_name'])->toBe('Test Event Name');
     });
 
     it('verifies aggregated counts are loaded with correct fields', function () {
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         $area = Area::factory()->create(['event_id' => $event->id]);
@@ -1240,7 +1220,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $aggregatedCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 42,
-            'period_end' => Carbon::parse('2024-08-15 14:25:00'),
+            'period_end' => Date::parse('2024-08-15 14:25:00'),
         ]);
 
         $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
@@ -1253,16 +1233,16 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toHaveCount(1);
-        expect($result[0]['count'])->toBe(42);
+        expect($result)->toHaveCount(1)
+            ->and($result[0]['count'])->toBe(42);
     });
 
     it('verifies cache TTL is exactly 30 seconds', function () {
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         $area = Area::factory()->create(['event_id' => $event->id]);
@@ -1297,8 +1277,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         $area = Area::factory()->create(['event_id' => $event->id]);
@@ -1320,24 +1300,24 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toHaveCount(1);
-        expect($result[0]['debug_counts'])->toBe([
-            'in' => 0,
-            'out' => 0,
-            'net' => 0,
-            'last_reset_type' => null,
-            'last_reset_at' => null,
-            'last_reset_value' => 0,
-            'net_plus_reset' => 0,
-        ]);
+        expect($result)->toHaveCount(1)
+            ->and($result[0]['debug_counts'])->toBe([
+                'in' => 0,
+                'out' => 0,
+                'net' => 0,
+                'last_reset_type' => null,
+                'last_reset_at' => null,
+                'last_reset_value' => 0,
+                'net_plus_reset' => 0,
+            ]);
     });
 
     it('handles case where only latestCount exists (no oneHourAgoCount)', function () {
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         $area = Area::factory()->create(['event_id' => $event->id]);
@@ -1346,7 +1326,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $latestCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 50,
-            'period_end' => Carbon::parse('2024-08-15 14:25:00'),
+            'period_end' => Date::parse('2024-08-15 14:25:00'),
         ]);
 
         $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
@@ -1359,21 +1339,21 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toHaveCount(1);
-        expect($result[0]['count'])->toBe(50);
-        expect($result[0]['net_change'])->toBeNull(); // Should be null when no oneHourAgoCount
+        expect($result)->toHaveCount(1)
+            ->and($result[0]['count'])->toBe(50)
+            ->and($result[0]['net_change'])->toBeNull(); // Should be null when no oneHourAgoCount
         expect($result[0]['net_change_time_ago'])->toBeNull(); // Should be null when no oneHourAgoCount
     });
 
     it('verifies diffForHumans is called with true parameter', function () {
         // set locale to English for consistent output
-        Carbon::setLocale('en');
+        Date::setLocale('en');
 
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Carbon::parse('2024-08-15 14:00:00'),
-            'ends_at' => Carbon::parse('2024-08-15 15:00:00'),
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
 
         $area = Area::factory()->create(['event_id' => $event->id]);
@@ -1381,13 +1361,13 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         $latestCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 50,
-            'period_end' => Carbon::parse('2024-08-15 14:25:00'),
+            'period_end' => Date::parse('2024-08-15 14:25:00'),
         ]);
 
         $oneHourAgoCount = AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
             'count' => 30,
-            'period_end' => Carbon::parse('2024-08-15 13:20:00'),
+            'period_end' => Date::parse('2024-08-15 13:20:00'),
         ]);
 
         $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
@@ -1400,7 +1380,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toHaveCount(1);
-        expect($result[0]['net_change_time_ago'])->toBeString();
+        expect($result)->toHaveCount(1)
+            ->and($result[0]['net_change_time_ago'])->toBeString();
     });
 });

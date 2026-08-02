@@ -35,7 +35,7 @@ it('skips phone uniqueness validation when the phone is blank', function () {
         $messages[] = $message;
     });
 
-    expect($messages)->toBe([]);
+    expect($messages)->toBeEmpty();
 });
 
 it('authorizes when user can store users', function () {

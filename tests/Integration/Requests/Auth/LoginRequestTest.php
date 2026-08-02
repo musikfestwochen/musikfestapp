@@ -75,8 +75,8 @@ describe('authentication', function () {
         // Should not throw an exception
         $request->authenticate();
 
-        expect(auth()->check())->toBeTrue();
-        expect(auth()->user()->email)->toBe('test@example.com');
+        expect(auth()->check())->toBeTrue()
+            ->and(auth()->user()->email)->toBe('test@example.com');
     });
 
     it('throws validation exception with invalid credentials', function () {
@@ -92,9 +92,8 @@ describe('authentication', function () {
                 expect($e->errors())->toMatchArray([
                     'email' => [trans('auth.failed')],
                 ]);
-            });
-
-        expect(auth()->check())->toBeFalse();
+            })
+            ->and(auth()->check())->toBeFalse();
     });
 
     it('handles remember option correctly', function () {
@@ -107,8 +106,8 @@ describe('authentication', function () {
         $request = createLoginRequest('remember@example.com', 'password123', true);
         $request->authenticate();
 
-        expect(auth()->check())->toBeTrue();
-        expect(auth()->user()->email)->toBe('remember@example.com');
+        expect(auth()->check())->toBeTrue()
+            ->and(auth()->user()->email)->toBe('remember@example.com');
 
         auth()->logout();
 
@@ -116,8 +115,8 @@ describe('authentication', function () {
         $request = createLoginRequest('remember@example.com', 'password123', false);
         $request->authenticate();
 
-        expect(auth()->check())->toBeTrue();
-        expect(auth()->user()->email)->toBe('remember@example.com');
+        expect(auth()->check())->toBeTrue()
+            ->and(auth()->user()->email)->toBe('remember@example.com');
     });
 
     it('calls rate limiting check during authentication', function () {
@@ -244,8 +243,8 @@ describe('rate limiting', function () {
             ->toThrow(function (ValidationException $e) {
                 expect($e->errors())->toHaveKey('email');
                 $errorMessage = $e->errors()['email'][0];
-                expect($errorMessage)->toContain('Too many login attempts');
-                expect($errorMessage)->toMatch('/\d+ seconds/');
+                expect($errorMessage)->toContain('Too many login attempts')
+                    ->toMatch('/\d+ seconds/');
             });
     });
 });

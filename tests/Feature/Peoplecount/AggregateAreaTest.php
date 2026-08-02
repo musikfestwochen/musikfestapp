@@ -7,12 +7,12 @@ use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Assignment;
 use App\Services\Peoplecount\AreaAggregationService;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 it('correctly calculates the total event numbers', function () {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Calculate expected count from interval counts
     $expectedCount = 0;
@@ -23,7 +23,7 @@ it('correctly calculates the total event numbers', function () {
     }
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -33,7 +33,7 @@ it('correctly calculates the total event numbers', function () {
 it('correctly calculates with flipped direction', function ($sensor_index) {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Calculate expected count from interval counts
     $expectedCount = 0;
@@ -55,7 +55,7 @@ it('correctly calculates with flipped direction', function ($sensor_index) {
     $assignment->save();
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -68,7 +68,7 @@ it('correctly calculates with flipped direction', function ($sensor_index) {
 it('correctly calculates the total event numbers with two flipped directions', function () {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Calculate expected count from interval counts
     $expectedCount = 0;
@@ -88,7 +88,7 @@ it('correctly calculates the total event numbers with two flipped directions', f
     $assignment2->save();
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -99,7 +99,7 @@ it('correctly calculates the total event numbers with different aggregation gran
     // arrange
     $setup = setupPeoplecountBasic(); // must be called before setting config
     config(['peoplecount.aggregation.granularity_minutes' => $granularity_minutes]);
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Calculate expected count from interval counts
     $expectedCount = 0;
@@ -110,7 +110,7 @@ it('correctly calculates the total event numbers with different aggregation gran
     }
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -118,7 +118,7 @@ it('correctly calculates the total event numbers with different aggregation gran
 })->with([1, 5, 10, 15, 30, 60, 180, 24 * 60 + 10]);
 
 it('rebuilds from event start when aggregates are empty even with stale watermark', function () {
-    $eventStart = Carbon::parse('2025-08-02 10:00:00')->utc();
+    $eventStart = Date::parse('2025-08-02 10:00:00')->utc();
     $setup = setupAggregationScenario([
         'granularity_minutes' => 10,
         'event_start' => $eventStart,
@@ -132,14 +132,14 @@ it('rebuilds from event start when aggregates are empty even with stale watermar
 
     $setup['area']->forceFill(['data_watermark' => $eventStart->copy()->addMinutes(15)])->save();
 
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
 
     assertWindowCount($setup['area'], '2025-08-02 10:00:00', '2025-08-02 10:10:00', 5);
     assertWindowCount($setup['area'], '2025-08-02 10:20:00', '2025-08-02 10:30:00', 8);
 });
 
 it('clears data watermark when invalid aggregate rows are deleted', function () {
-    $eventStart = Carbon::parse('2025-08-02 10:00:00')->utc();
+    $eventStart = Date::parse('2025-08-02 10:00:00')->utc();
     $setup = setupAggregationScenario([
         'event_start' => $eventStart,
         'event_end' => $eventStart->copy()->addHour(),
@@ -161,7 +161,7 @@ it('clears data watermark when invalid aggregate rows are deleted', function () 
         AreaAggregationService::class,
     );
 
-    $deleteInvalidRows(app(AreaAggregationService::class), $setup['area']->refresh(), str_repeat('1', 64));
+    $deleteInvalidRows(resolve(AreaAggregationService::class), $setup['area']->refresh(), str_repeat('1', 64));
 
     expect($setup['area']->refresh()->data_watermark)->toBeNull();
 });
@@ -169,7 +169,7 @@ it('clears data watermark when invalid aggregate rows are deleted', function () 
 it('correctly aggregates with single reset at start', function ($offset) {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Calculate expected count from interval counts
     $baseCount = 0;
@@ -191,7 +191,7 @@ it('correctly aggregates with single reset at start', function ($offset) {
     ]);
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -210,7 +210,7 @@ it('correctly aggregates with single reset at start', function ($offset) {
 it('correctly aggregates with single reset after some time', function ($offset) {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Reset time is 3 hours after event start
     $resetTime = $setup['event_start']->copy()->addHours(3);
@@ -248,7 +248,7 @@ it('correctly aggregates with single reset after some time', function ($offset) 
     ]);
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -266,7 +266,7 @@ it('correctly aggregates with single reset after some time', function ($offset) 
 it('correctly ignores previous single resets', function ($offset) {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // First reset time is at event start
     $firstResetTime = $setup['event_start'];
@@ -317,7 +317,7 @@ it('correctly ignores previous single resets', function ($offset) {
     ]);
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -335,7 +335,7 @@ it('correctly ignores previous single resets', function ($offset) {
 it('correctly aggregates with reccurring reset at event start', function () {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Calculate expected count from interval counts
     $baseCount = 0;
@@ -363,7 +363,7 @@ it('correctly aggregates with reccurring reset at event start', function () {
     ]);
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -373,7 +373,7 @@ it('correctly aggregates with reccurring reset at event start', function () {
 it('correctly aggregates with reccurring reset after some time', function () {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Reset time is 3 hours after event start
     $resetTime = $setup['event_start']->copy()->addHours(3);
@@ -414,7 +414,7 @@ it('correctly aggregates with reccurring reset after some time', function () {
     $expectedCount = $countAfterReset + $resetValue;
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -436,12 +436,12 @@ it('correctly aggregates with many calculations', function () {
     // act
     do {
         $testTime = $testTime->addHours(1);
-        Carbon::setTestNow($testTime);
-        AggregateAreaCounts::dispatch();
+        Date::setTestNow($testTime);
+        dispatch(new AggregateAreaCounts);
     } while ($testTime->lt($setup['event_end']));
 
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
-    AggregateAreaCounts::dispatch();
+    Date::setTestNow($setup['event_end']->addMinutes(10));
+    dispatch(new AggregateAreaCounts);
 
     // assert
     $area = $setup['area']->refresh();
@@ -451,7 +451,7 @@ it('correctly aggregates with many calculations', function () {
 it('correctly aggregates with recurring reset in Europe/Zurich timezone', function () {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // Reset time is 3 hours after event start
     $resetTime = $setup['event_start']->copy()->addHours(3);
@@ -492,7 +492,7 @@ it('correctly aggregates with recurring reset in Europe/Zurich timezone', functi
     $expectedCount = $countAfterReset + $resetValue;
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -502,7 +502,7 @@ it('correctly aggregates with recurring reset in Europe/Zurich timezone', functi
 it('correctly aggregates with recurring resets in multiple timezones', function () {
     // arrange
     $setup = setupPeoplecountBasic();
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
+    Date::setTestNow($setup['event_end']->addMinutes(10));
 
     // First reset time is 3 hours after event start
     $firstResetTime = $setup['event_start']->copy()->addHours(3);
@@ -564,7 +564,7 @@ it('correctly aggregates with recurring resets in multiple timezones', function 
     $expectedCount = $countAfterLastReset + $lastResetValue;
 
     // act
-    AggregateAreaCounts::dispatch();
+    dispatch(new AggregateAreaCounts);
     $area = $setup['area']->refresh();
 
     // assert
@@ -586,16 +586,16 @@ it('correctly aggregates with many calculations with many calls', function () {
     // act
     do {
         $testTime = $testTime->addHours(1);
-        Carbon::setTestNow($testTime);
-        AggregateAreaCounts::dispatch();
-        AggregateAreaCounts::dispatch();
-        AggregateAreaCounts::dispatch();
+        Date::setTestNow($testTime);
+        dispatch(new AggregateAreaCounts);
+        dispatch(new AggregateAreaCounts);
+        dispatch(new AggregateAreaCounts);
     } while ($testTime->lt($setup['event_end']));
 
-    Carbon::setTestNow($setup['event_end']->addMinutes(10));
-    AggregateAreaCounts::dispatch();
-    AggregateAreaCounts::dispatch();
-    AggregateAreaCounts::dispatch();
+    Date::setTestNow($setup['event_end']->addMinutes(10));
+    dispatch(new AggregateAreaCounts);
+    dispatch(new AggregateAreaCounts);
+    dispatch(new AggregateAreaCounts);
 
     // assert
     $area = $setup['area']->refresh();

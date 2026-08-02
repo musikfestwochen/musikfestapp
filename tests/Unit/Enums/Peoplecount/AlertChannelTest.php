@@ -7,10 +7,9 @@ describe('AlertChannel enum', function () {
         $cases = AlertChannel::cases();
         expect($cases)->toHaveCount(2);
 
-        $values = array_map(fn ($c) => $c->value, $cases);
-        expect($values)->toContain('vonage', 'email');
-
-        expect(AlertChannel::Vonage->value)->toBe('vonage')
+        $values = array_map(fn (AlertChannel $c) => $c->value, $cases);
+        expect($values)->toContain('vonage', 'email')
+            ->and(AlertChannel::Vonage->value)->toBe('vonage')
             ->and(AlertChannel::Email->value)->toBe('email');
     });
 });

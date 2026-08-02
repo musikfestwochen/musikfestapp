@@ -188,9 +188,7 @@ describe('canGlobally', function () {
             ->andReturn(true);
 
         $result = GlobalPermissionService::canGlobally($user, 'any-ability');
-        expect($result)->toBe(true);
-        expect($result)->not->toBe(false);
-        expect($result)->not->toBeNull();
+        expect($result)->not->not->toBeNull()->toBeTrue()->toBeFalse();
     });
 
     it('returns true when user has the specific global permission', function () {
@@ -292,8 +290,8 @@ describe('canGlobally', function () {
             ->twice()                      // ← now allows 2 calls
             ->andReturn(['foo-*']);
 
-        expect(GlobalPermissionService::canGlobally($user, 'foo-bar'))->toBeTrue();
-        expect(GlobalPermissionService::canGlobally($user, 'bar-foo'))->toBeNull();
+        expect(GlobalPermissionService::canGlobally($user, 'foo-bar'))->toBeTrue()
+            ->and(GlobalPermissionService::canGlobally($user, 'bar-foo'))->toBeNull();
     });
 });
 
@@ -332,9 +330,9 @@ describe('getGlobalPermissionsCacheKey', function () {
         $key1 = GlobalPermissionService::getGlobalPermissionsCacheKey(1);
         $key2 = GlobalPermissionService::getGlobalPermissionsCacheKey(999);
 
-        expect($key1)->toBe(getCacheKey(1));
-        expect($key2)->toBe(getCacheKey(999));
-        expect($key1)->not->toBe($key2);
+        expect($key1)->toBe(getCacheKey(1))
+            ->and($key2)->toBe(getCacheKey(999))
+            ->and($key1)->not->toBe($key2);
     });
 });
 
@@ -342,7 +340,7 @@ describe('getUserGlobalPermissions', function () {
     it('returns empty array for null user', function () {
         $result = GlobalPermissionService::getUserGlobalPermissions(null);
 
-        expect($result)->toBe([]);
+        expect($result)->toBeEmpty();
     });
 
     it('returns empty array for user without ID', function () {
@@ -350,7 +348,7 @@ describe('getUserGlobalPermissions', function () {
 
         $result = GlobalPermissionService::getUserGlobalPermissions($user);
 
-        expect($result)->toBe([]);
+        expect($result)->toBeEmpty();
     });
 
     it('returns cached permissions when available', function () {
@@ -399,7 +397,7 @@ describe('getUserGlobalPermissions', function () {
 
         $result = GlobalPermissionService::getUserGlobalPermissions($user);
 
-        expect($result)->toBe([]);
+        expect($result)->toBeEmpty();
     });
 
     it('does not change context when already in global organization', function () {

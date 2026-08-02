@@ -8,7 +8,7 @@ it('tests if no unwanted routes are exposed', function () {
         || str_starts_with($uri, 'livewire-')
         || str_starts_with($uri, 'livewire/');
 
-    $normalizeRouteUri = static fn (string $uri): string => preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*):[^}]*\}/', '{$1}', $uri) ?? $uri;
+    $normalizeRouteUri = static fn (string $uri): string => preg_replace('/\{([a-zA-Z_]\w*):[^}]*\}/', '{$1}', $uri) ?? $uri;
 
     $allowedRoutes = [
         ['method' => 'GET|HEAD', 'uri' => '/'],
@@ -195,7 +195,7 @@ it('tests if no unwanted routes are exposed', function () {
         ->reject(fn (array $route): bool => $shouldIgnoreRoute($route['uri']))
         ->sortBy(['method', 'uri'])
         ->values()
-        ->toArray();
+        ->all();
 
     Artisan::call('route:list --json');
     $output = json_decode(Artisan::output(), true);
@@ -211,6 +211,6 @@ it('tests if no unwanted routes are exposed', function () {
         ->sortBy(['method', 'uri'])
         ->values();
 
-    expect($output->toArray())->toEqualCanonicalizing($allowedRoutes)->and($output->toArray())->not()->toBeEmpty()
+    expect($output->all())->toEqualCanonicalizing($allowedRoutes)->and($output->all())->not()->toBeEmpty()
         ->and($output->count())->toEqual(count($output));
 });

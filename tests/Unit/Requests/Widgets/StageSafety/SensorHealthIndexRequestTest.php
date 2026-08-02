@@ -6,7 +6,7 @@ use App\Models\User;
 covers(SensorHealthIndexRequest::class);
 
 it('has no input rules', function () {
-    expect((new SensorHealthIndexRequest)->rules())->toBe([]);
+    expect((new SensorHealthIndexRequest)->rules())->toBeEmpty();
 });
 
 it('authorizes users with the monitoring permission', function () {

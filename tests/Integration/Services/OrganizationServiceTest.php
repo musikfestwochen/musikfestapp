@@ -2,10 +2,7 @@
 
 use App\Models\Organization;
 use App\Services\OrganizationService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-
-uses(RefreshDatabase::class);
 
 covers(OrganizationService::class);
 

@@ -94,8 +94,8 @@ it('can store a new alert with recipients and redirects back to area edit', func
 
     /** @var Alert $alert */
     $alert = Alert::query()->where('area_id', $area->id)->first();
-    expect($alert)->not()->toBeNull();
-    expect($alert->recipients)->toHaveCount(2);
+    expect($alert)->not()->toBeNull()
+        ->and($alert->recipients)->toHaveCount(2);
 });
 
 it('rejects recipients outside the organization on store', function () {
@@ -206,10 +206,10 @@ it('can update an existing alert including recipients', function () {
         ]));
 
     $alert->refresh();
-    expect($alert->channel)->toBe(AlertChannel::Vonage);
-    expect($alert->cooldown_minutes)->toBe(600);
-    expect($alert->occupancy_alert_threshold)->toBe(500);
-    expect($alert->recipients()->pluck('users.id')->all())->toBe([$u2->id]);
+    expect($alert->channel)->toBe(AlertChannel::Vonage)
+        ->and($alert->cooldown_minutes)->toBe(600)
+        ->and($alert->occupancy_alert_threshold)->toBe(500)
+        ->and($alert->recipients()->pluck('users.id')->all())->toBe([$u2->id]);
 });
 
 it('rejects recipients outside the organization on update', function () {

@@ -1,10 +1,8 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Inertia\Testing\AssertableInertia as Assert;
-
-uses(RefreshDatabase::class);
 
 describe('Appearance settings page shares eastereggs_activated', function () {
     it('includes eastereggs_activated in Inertia props and reflects DB state', function () {
@@ -16,7 +14,7 @@ describe('Appearance settings page shares eastereggs_activated', function () {
 
         $response = $this->get(route('appearance'));
 
-        $response->assertInertia(fn (Assert $page) => $page
+        $response->assertInertia(fn (Assert $page): AssertableInertia => $page
             ->component('settings/Appearance')
             ->where('auth.user.eastereggs_activated', false)
         );
@@ -40,7 +38,7 @@ describe('Appearance settings page shares eastereggs_activated', function () {
 
         // Inertia share reflects
         $response = $this->get(route('appearance'));
-        $response->assertInertia(fn (Assert $page) => $page
+        $response->assertInertia(fn (Assert $page): AssertableInertia => $page
             ->component('settings/Appearance')
             ->where('auth.user.eastereggs_activated', true)
         );

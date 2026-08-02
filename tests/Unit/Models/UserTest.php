@@ -50,9 +50,9 @@ it('has many area single resets', function () {
     $user = new User;
     $relation = $user->areaSingleResets();
 
-    expect($relation)->toBeInstanceOf(HasMany::class);
-    expect($relation->getRelated())->toBeInstanceOf(AreaSingleReset::class);
-    expect($relation->getForeignKeyName())->toBe('created_by');
+    expect($relation)->toBeInstanceOf(HasMany::class)
+        ->and($relation->getRelated())->toBeInstanceOf(AreaSingleReset::class)
+        ->and($relation->getForeignKeyName())->toBe('created_by');
 });
 
 it('phone mutator removes spaces and formatting', function () {

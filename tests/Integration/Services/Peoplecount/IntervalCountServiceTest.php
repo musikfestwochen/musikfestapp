@@ -4,11 +4,8 @@ use App\Models\Organization;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
 use App\Services\Peoplecount\IntervalCountService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
-
-uses(RefreshDatabase::class);
 
 covers(IntervalCountService::class);
 
@@ -60,7 +57,7 @@ describe('processIntervalCount', function () {
     it('stores received_at timestamp when interval arrives', function () {
         $timezone = (string) config('app.timezone');
 
-        Carbon::setTestNow(Carbon::parse('2026-01-01 10:15:00', $timezone));
+        Date::setTestNow(Date::parse('2026-01-01 10:15:00', $timezone));
 
         try {
             $org = Organization::factory()->create();
@@ -100,7 +97,7 @@ describe('processIntervalCount', function () {
                 ->and($intervalCount->received_at)->not->toBeNull()
                 ->and($intervalCount->received_at->toIso8601String())->toBe('2026-01-01T10:15:00+00:00');
         } finally {
-            Carbon::setTestNow();
+            Date::setTestNow();
         }
     });
 
@@ -134,7 +131,7 @@ describe('processIntervalCount', function () {
         ];
 
         try {
-            Carbon::setTestNow(Carbon::parse('2026-01-01 10:02:00', $timezone));
+            Date::setTestNow(Date::parse('2026-01-01 10:02:00', $timezone));
             $this->service->processIntervalCount($sensor, $payload);
 
             $payload['data']['measurements'][0]['items'] = [
@@ -142,10 +139,10 @@ describe('processIntervalCount', function () {
                 ['direction' => 'out', 'count' => 3],
             ];
 
-            Carbon::setTestNow(Carbon::parse('2026-01-01 10:03:00', $timezone));
+            Date::setTestNow(Date::parse('2026-01-01 10:03:00', $timezone));
             $result = $this->service->processIntervalCount($sensor, $payload);
         } finally {
-            Carbon::setTestNow();
+            Date::setTestNow();
         }
 
         $intervalCount = IntervalCount::query()->sole();
@@ -158,7 +155,7 @@ describe('processIntervalCount', function () {
 
     it('logs warning when interval arrives more than one minute late', function () {
         $timezone = (string) config('app.timezone');
-        Carbon::setTestNow(Carbon::parse('2026-01-01 10:15:00', $timezone));
+        Date::setTestNow(Date::parse('2026-01-01 10:15:00', $timezone));
         Log::spy();
 
         try {
@@ -193,15 +190,13 @@ describe('processIntervalCount', function () {
 
             Log::shouldHaveReceived('warning')->once();
         } finally {
-            Carbon::setTestNow();
+            Date::setTestNow();
         }
     });
 
     it('throws on unsupported vendor with correct message content', function () {
         $sensor = Sensor::factory()->create(['vendor' => 'Unknown']);
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Unsupported sensor vendor: Unknown');
-        $this->service->processIntervalCount($sensor, []);
+        expect(fn () => $this->service->processIntervalCount($sensor, []))->toThrow(Exception::class, 'Unsupported sensor vendor: Unknown');
     });
 
     it('throws on Axis API name mismatch', function () {
@@ -213,10 +208,7 @@ describe('processIntervalCount', function () {
             'sensor' => ['serial' => 'SN123'],
             'data' => ['utcFrom' => now()->toIso8601String(), 'utcTo' => now()->toIso8601String(), 'measurements' => []],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Unsupported Axis API version or name.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Unsupported Axis API version or name.');
     });
 
     it('throws on Axis API version mismatch', function () {
@@ -228,10 +220,7 @@ describe('processIntervalCount', function () {
             'sensor' => ['serial' => 'SN123'],
             'data' => ['utcFrom' => now()->toIso8601String(), 'utcTo' => now()->toIso8601String(), 'measurements' => []],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Unsupported Axis API version or name.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Unsupported Axis API version or name.');
     });
 
     it('throws on sensor serial mismatch with exact message', function () {
@@ -243,10 +232,7 @@ describe('processIntervalCount', function () {
             'sensor' => ['serial' => 'XYZ999'],
             'data' => ['utcFrom' => now()->toIso8601String(), 'utcTo' => now()->toIso8601String(), 'measurements' => []],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Sensor serial mismatch: expected ABC123, got XYZ999');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Sensor serial mismatch: expected ABC123, got XYZ999');
     });
 
     it('throws on missing sensor serial with exact message', function () {
@@ -258,10 +244,7 @@ describe('processIntervalCount', function () {
             'sensor' => [],
             'data' => ['utcFrom' => now()->toIso8601String(), 'utcTo' => now()->toIso8601String(), 'measurements' => []],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Sensor serial mismatch: expected ABC123, got missing');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Sensor serial mismatch: expected ABC123, got missing');
     });
 
     it('returns 0 for empty measurements array', function () {
@@ -297,11 +280,8 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
         // This should fail because measurement-level utcFrom is missing
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Missing required UTC timestamps in measurement data.');
     });
 
     it('throws when utcTo is missing at measurement level', function () {
@@ -323,11 +303,8 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
         // This should fail because measurement-level utcTo is missing
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Missing required UTC timestamps in measurement data.');
     });
 
     it('throws when both utcFrom and utcTo are missing at measurement level', function () {
@@ -348,11 +325,8 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
         // This should fail because measurement-level timestamps are missing
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Missing required UTC timestamps in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Missing required UTC timestamps in measurement data.');
     });
 
     it('throws when measurements is not an array', function () {
@@ -368,10 +342,7 @@ describe('processIntervalCount', function () {
                 'measurements' => 'not an array',
             ],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid Axis data structure: measurements must be an array.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Invalid Axis data structure: measurements must be an array.');
     });
 
     it('processes multiple people-counts measurements', function () {
@@ -441,10 +412,7 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Invalid utcFrom timestamp in measurement data.');
     });
 
     it('throws when utcFrom is empty string', function () {
@@ -468,10 +436,7 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Invalid utcFrom timestamp in measurement data.');
     });
 
     it('throws when utcFrom has timezone suffix but invalid date format', function () {
@@ -495,10 +460,7 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Invalid utcFrom timestamp in measurement data.');
     });
 
     it('throws when utcFrom is whitespace-only string', function () {
@@ -522,10 +484,7 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Invalid utcFrom timestamp in measurement data.');
     });
 
     it('throws when utcFrom is not a string', function () {
@@ -549,10 +508,7 @@ describe('processIntervalCount', function () {
                 ],
             ],
         ];
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Invalid utcFrom timestamp in measurement data.');
-        $this->service->processIntervalCount($sensor, $data);
+        expect(fn () => $this->service->processIntervalCount($sensor, $data))->toThrow(Exception::class, 'Invalid utcFrom timestamp in measurement data.');
     });
 
     it('accepts utcFrom with surrounding whitespace when timezone suffix is valid', function () {
@@ -776,12 +732,9 @@ describe('extractCountsFromItems', function () {
             ['direction' => 'out'], // should default to 0, not 1 or -1
         ];
         $result = callExtractCountsFromItems($this->service, $items);
-        expect($result['countIn'])->toBe(0);
-        expect($result['countOut'])->toBe(0);
-        expect($result['countIn'])->not->toBe(1);
-        expect($result['countIn'])->not->toBe(-1);
-        expect($result['countOut'])->not->toBe(1);
-        expect($result['countOut'])->not->toBe(-1);
+        expect($result)->toMatchArray(['countIn' => 0, 'countOut' => 0])
+            ->and($result['countIn'])->not->toBe(1)->not->toBe(-1)
+            ->and($result['countOut'])->not->toBe(1)->not->toBe(-1);
     });
 
     it('verifies null direction defaults to empty string and does not match in', function () {
@@ -789,8 +742,8 @@ describe('extractCountsFromItems', function () {
             ['direction' => null, 'count' => 10], // null should default to '', not match 'in'
         ];
         $result = callExtractCountsFromItems($this->service, $items);
-        expect($result['countIn'])->toBe(0); // Should be 0 because null ?? '' !== 'in'
-        expect($result['countOut'])->toBe(0);
+        // Should be 0 because null ?? '' !== 'in'
+        expect($result)->toMatchArray(['countIn' => 0, 'countOut' => 0]);
     });
 
     it('verifies null direction defaults to empty string and does not match out', function () {
@@ -798,8 +751,7 @@ describe('extractCountsFromItems', function () {
             ['direction' => null, 'count' => 15], // null should default to '', not match 'out'
         ];
         $result = callExtractCountsFromItems($this->service, $items);
-        expect($result['countIn'])->toBe(0);
-        expect($result['countOut'])->toBe(0); // Should be 0 because null ?? '' !== 'out'
+        expect($result)->toMatchArray(['countIn' => 0, 'countOut' => 0]); // Should be 0 because null ?? '' !== 'out'
     });
 
     it('verifies missing direction defaults to empty string and does not match in', function () {
@@ -807,8 +759,8 @@ describe('extractCountsFromItems', function () {
             ['count' => 20], // missing direction should default to '', not match 'in'
         ];
         $result = callExtractCountsFromItems($this->service, $items);
-        expect($result['countIn'])->toBe(0); // Should be 0 because (missing) ?? '' !== 'in'
-        expect($result['countOut'])->toBe(0);
+        // Should be 0 because (missing) ?? '' !== 'in'
+        expect($result)->toMatchArray(['countIn' => 0, 'countOut' => 0]);
     });
 
     it('verifies missing direction defaults to empty string and does not match out', function () {
@@ -816,8 +768,7 @@ describe('extractCountsFromItems', function () {
             ['count' => 25], // missing direction should default to '', not match 'out'
         ];
         $result = callExtractCountsFromItems($this->service, $items);
-        expect($result['countIn'])->toBe(0);
-        expect($result['countOut'])->toBe(0); // Should be 0 because (missing) ?? '' !== 'out'
+        expect($result)->toMatchArray(['countIn' => 0, 'countOut' => 0]); // Should be 0 because (missing) ?? '' !== 'out'
     });
 
     it('verifies empty string direction does not match in or out', function () {
@@ -825,7 +776,7 @@ describe('extractCountsFromItems', function () {
             ['direction' => '', 'count' => 30], // empty string should not match 'in' or 'out'
         ];
         $result = callExtractCountsFromItems($this->service, $items);
-        expect($result['countIn'])->toBe(0); // Should be 0 because '' !== 'in'
-        expect($result['countOut'])->toBe(0); // Should be 0 because '' !== 'out'
+        // Should be 0 because '' !== 'in'
+        expect($result)->toMatchArray(['countIn' => 0, 'countOut' => 0]); // Should be 0 because '' !== 'out'
     });
 });

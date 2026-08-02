@@ -6,7 +6,7 @@ use App\Models\User;
 covers(SensorCreateRequest::class);
 
 it('has no input rules', function () {
-    expect((new SensorCreateRequest)->rules())->toBe([]);
+    expect((new SensorCreateRequest)->rules())->toBeEmpty();
 });
 
 it('authorizes the sensor create permission', function () {

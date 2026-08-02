@@ -3,11 +3,8 @@
 use App\Http\Requests\Orgmgmt\UserDestroyRequest;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 covers(UserDestroyRequest::class);
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->request = new UserDestroyRequest;
@@ -15,7 +12,7 @@ beforeEach(function () {
 });
 
 it('has correct rules', function () {
-    expect($this->request->rules())->toBe([]);
+    expect($this->request->rules())->toBeEmpty();
 });
 
 it('authorizes when user can destroy users', function () {

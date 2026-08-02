@@ -1,16 +1,15 @@
 <?php
 
 use App\Casts\BinaryHexCast;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 
 covers(BinaryHexCast::class);
 
 function createMockModel(): Model
 {
-    return new class extends Model
-    {
-        protected $table = 'test_table';
-    };
+    return new #[Table(name: 'test_table')]
+    class extends Model {};
 }
 
 it('converts binary data to hex string in get method', function () {

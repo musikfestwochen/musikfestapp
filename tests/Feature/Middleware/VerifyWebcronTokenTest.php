@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\VerifyWebcronToken;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -9,8 +8,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Set up test configuration
@@ -40,8 +37,8 @@ it('allows requests with valid token and allowed IP', function () {
         return new Response('Success', 200);
     });
 
-    expect($response->getStatusCode())->toBe(200);
-    expect($response->getContent())->toBe('Success');
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->getContent())->toBe('Success');
 });
 
 it('blocks requests with invalid token', function () {
@@ -59,13 +56,9 @@ it('blocks requests with invalid token', function () {
         'REMOTE_ADDR' => '127.0.0.1',
         'HTTP_X_WEBCRON_TOKEN' => 'invalid-token',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'Invalid webcron token provided. Please check your configuration.');
 });
 
 it('blocks requests with missing token', function () {
@@ -82,13 +75,9 @@ it('blocks requests with missing token', function () {
     $request = Request::create('/api/webcron', 'POST', [], [], [], [
         'REMOTE_ADDR' => '127.0.0.1',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'Invalid webcron token provided. Please check your configuration.');
 });
 
 it('blocks requests from disallowed IP addresses', function () {
@@ -106,13 +95,9 @@ it('blocks requests from disallowed IP addresses', function () {
         'REMOTE_ADDR' => '127.0.0.1', // Not in allowed list
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('IP address not allowed');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'IP address not allowed');
 });
 
 it('blocks all requests when API is unavailable', function () {
@@ -128,13 +113,9 @@ it('blocks all requests when API is unavailable', function () {
         'REMOTE_ADDR' => '127.0.0.1',
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('IP address not allowed');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'IP address not allowed');
 });
 
 it('blocks all requests when API returns invalid data', function () {
@@ -152,13 +133,9 @@ it('blocks all requests when API returns invalid data', function () {
         'REMOTE_ADDR' => '127.0.0.1',
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('IP address not allowed');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'IP address not allowed');
 });
 
 it('uses cached IP addresses on subsequent requests', function () {
@@ -195,8 +172,8 @@ it('uses cached IP addresses on subsequent requests', function () {
         return new Response('Success', 200);
     });
 
-    expect($response1->getStatusCode())->toBe(200);
-    expect($response2->getStatusCode())->toBe(200);
+    expect($response1->getStatusCode())->toBe(200)
+        ->and($response2->getStatusCode())->toBe(200);
 
     // Verify no additional HTTP calls were made
     Http::assertNothingSent();
@@ -217,13 +194,9 @@ it('handles network timeouts gracefully', function () {
         'REMOTE_ADDR' => '127.0.0.1',
         'HTTP_X_WEBCRON_TOKEN' => 'test-secret-token',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('IP address not allowed');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'IP address not allowed');
 });
 
 it('works with the actual webcron route', function () {
@@ -287,11 +260,7 @@ it('handles short tokens correctly in maskToken method', function () {
         'REMOTE_ADDR' => '127.0.0.1',
         'HTTP_X_WEBCRON_TOKEN' => 'bad',
     ]);
-
-    $this->expectException(HttpException::class);
-    $this->expectExceptionMessage('Invalid webcron token provided. Please check your configuration.');
-
-    $middleware->handle($request, function ($req): Response {
+    expect(fn (): Response => $middleware->handle($request, function ($req): Response {
         return new Response('Success', 200);
-    });
+    }))->toThrow(HttpException::class, 'Invalid webcron token provided. Please check your configuration.');
 });

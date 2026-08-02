@@ -2,10 +2,8 @@
 
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Inertia\Testing\AssertableInertia as Assert;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
@@ -21,7 +19,7 @@ it('renders module dashboards for module viewers', function (string $role, strin
     $this->actingAs($viewer)
         ->get(route($routeName, ['organization' => $organization]))
         ->assertSuccessful()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): AssertableInertia => $page
             ->component($component)
             ->where('organization.id', $organization->id)
             ->where('organization.slug', $organization->slug)

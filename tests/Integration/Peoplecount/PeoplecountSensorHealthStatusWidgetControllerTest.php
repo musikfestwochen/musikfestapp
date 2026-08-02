@@ -7,14 +7,14 @@ use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
 it('returns sensor health payload for an organization', function () {
-    Carbon::setTestNow('2025-08-09 18:00:00');
+    Date::setTestNow('2025-08-09 18:00:00');
 
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -32,23 +32,23 @@ it('returns sensor health payload for an organization', function () {
 
     // Assignments active now
     Assignment::factory()->withSensor($healthySensor)->create([
-        'active_from' => Carbon::now()->subHour(),
-        'active_to' => Carbon::now()->addHour(),
+        'active_from' => Date::now()->subHour(),
+        'active_to' => Date::now()->addHour(),
     ]);
     Assignment::factory()->withSensor($suspiciousSensor)->create([
-        'active_from' => Carbon::now()->subHour(),
-        'active_to' => Carbon::now()->addHour(),
+        'active_from' => Date::now()->subHour(),
+        'active_to' => Date::now()->addHour(),
     ]);
     Assignment::factory()->withSensor($unhealthySensor)->create([
-        'active_from' => Carbon::now()->subHour(),
-        'active_to' => Carbon::now()->addHour(),
+        'active_from' => Date::now()->subHour(),
+        'active_to' => Date::now()->addHour(),
     ]);
 
     // Interval counts: healthy = recent and some non-zero
     IntervalCount::factory()->create([
         'sensor_id' => $healthySensor->id,
-        'ts_from' => Carbon::now()->subMinutes(1)->subSeconds(30),
-        'ts_to' => Carbon::now()->subMinute(),
+        'ts_from' => Date::now()->subMinutes(1)->subSeconds(30),
+        'ts_to' => Date::now()->subMinute(),
         'count_in' => 2,
         'count_out' => 0,
     ]);
@@ -57,8 +57,8 @@ it('returns sensor health payload for an organization', function () {
     foreach (range(1, 5) as $i) {
         IntervalCount::factory()->create([
             'sensor_id' => $suspiciousSensor->id,
-            'ts_from' => Carbon::now()->subMinutes(1)->subSeconds(50 - $i),
-            'ts_to' => Carbon::now()->subMinutes(1)->subSeconds(45 - $i),
+            'ts_from' => Date::now()->subMinutes(1)->subSeconds(50 - $i),
+            'ts_to' => Date::now()->subMinutes(1)->subSeconds(45 - $i),
             'count_in' => 0,
             'count_out' => 0,
         ]);
@@ -67,8 +67,8 @@ it('returns sensor health payload for an organization', function () {
     // unhealthy = not recent (older than 2 minutes)
     IntervalCount::factory()->create([
         'sensor_id' => $unhealthySensor->id,
-        'ts_from' => Carbon::now()->subMinutes(5),
-        'ts_to' => Carbon::now()->subMinutes(3),
+        'ts_from' => Date::now()->subMinutes(5),
+        'ts_to' => Date::now()->subMinutes(3),
         'count_in' => 10,
         'count_out' => 10,
     ]);
@@ -90,11 +90,11 @@ it('returns sensor health payload for an organization', function () {
             ->etc()
         );
 
-    Carbon::setTestNow();
+    Date::setTestNow();
 });
 
 it('returns empty health payload when no active assignments exist', function () {
-    Carbon::setTestNow('2025-08-09 18:00:00');
+    Date::setTestNow('2025-08-09 18:00:00');
 
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
@@ -113,7 +113,7 @@ it('returns empty health payload when no active assignments exist', function () 
             'unhealthy' => [],
         ]);
 
-    Carbon::setTestNow();
+    Date::setTestNow();
 });
 
 it('returns 403 when user does not have permission', function () {

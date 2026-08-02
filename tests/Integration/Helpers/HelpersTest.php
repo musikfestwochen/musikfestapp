@@ -4,8 +4,8 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\PermissionRegistrar;
 
 it('defines GLOBAL_ORG_ID constant', function () {
-    expect(defined('GLOBAL_ORG_ID'))->toBeTrue();
-    expect(GLOBAL_ORG_ID)->toBe(0);
+    expect(defined('GLOBAL_ORG_ID'))->toBeTrue()
+        ->and(GLOBAL_ORG_ID)->toBe(0);
 });
 
 it('can set permissions org id with integer', function () {
@@ -49,7 +49,7 @@ it('can set permissions org id with model', function () {
 it('can get permissions org id', function () {
     // Set a known value first
     $testOrgId = 999;
-    app(PermissionRegistrar::class)->setPermissionsTeamId($testOrgId);
+    resolve(PermissionRegistrar::class)->setPermissionsTeamId($testOrgId);
 
     $result = getPermissionsOrgId();
 

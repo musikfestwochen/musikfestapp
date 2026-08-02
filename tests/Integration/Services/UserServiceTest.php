@@ -3,13 +3,11 @@
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\UserService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-
-uses(RefreshDatabase::class);
 
 covers(UserService::class);
 
@@ -99,7 +97,7 @@ describe('getUsers', function () {
         expect($result->count())->toBe(0);
     });
 
-    it('uses strict comparison for GLOBAL_ORG_ID check', function ($orgId, $expectedCount) {
+    it('uses strict comparison for GLOBAL_ORG_ID check', function (Model|int|string|null $orgId, $expectedCount) {
         // Test that string "0" is not treated as integer 0
         setPermissionsOrgId($orgId); // String zero instead of integer zero
 
@@ -262,7 +260,7 @@ describe('getOrganizationUsersWithRoles', function () {
         $users = User::factory()->count(3)->create();
         $organization->users()->attach($users->pluck('id'));
         setPermissionsOrgId($organization->id);
-        $users->each(fn (User $user) => $user->assignRole('PeopleCountViewer'));
+        $users->each(fn (User $user): User => $user->assignRole('PeopleCountViewer'));
 
         DB::flushQueryLog();
         DB::enableQueryLog();

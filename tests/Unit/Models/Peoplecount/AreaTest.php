@@ -30,15 +30,15 @@ it('uses timestamps', function () {
 
 it('uses soft deletes', function () {
     $model = new Area;
-    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeTrue();
+    expect(class_uses_recursive($model))->toContain(SoftDeletes::class);
 });
 
 it('belongs to an event', function () {
     $model = new Area;
     $relation = $model->event();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Event::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Event::class);
 });
 
 it('has many alerts', function () {

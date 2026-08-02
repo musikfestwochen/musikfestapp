@@ -32,32 +32,32 @@ it('uses timestamps', function () {
 
 it('does not use soft deletes', function () {
     $model = new AreaSingleReset;
-    expect(in_array(SoftDeletes::class, class_uses_recursive($model)))->toBeFalse();
+    expect(class_uses_recursive($model))->not->toContain(SoftDeletes::class);
 });
 
 it('has correct casts', function () {
     $model = new AreaSingleReset;
     $casts = $model->getCasts();
 
-    expect($casts)->toHaveKey('effective_at');
-    expect($casts['effective_at'])->toBe('datetime');
+    expect($casts)->toHaveKey('effective_at')
+        ->and($casts['effective_at'])->toBe('datetime');
 });
 
 it('belongs to an area', function () {
     $model = new AreaSingleReset;
     $relation = $model->area();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(Area::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(Area::class);
 });
 
 it('belongs to a user (created by)', function () {
     $model = new AreaSingleReset;
     $relation = $model->createdBy();
 
-    expect($relation)->toBeInstanceOf(BelongsTo::class);
-    expect($relation->getRelated())->toBeInstanceOf(User::class);
-    expect($relation->getForeignKeyName())->toBe('created_by');
+    expect($relation)->toBeInstanceOf(BelongsTo::class)
+        ->and($relation->getRelated())->toBeInstanceOf(User::class)
+        ->and($relation->getForeignKeyName())->toBe('created_by');
 });
 
 it('has factory', function () {

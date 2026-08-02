@@ -15,7 +15,7 @@ beforeEach(function () {
 
 it('has correct rules', function () {
     $request = new AreaSingleResetDestroyRequest;
-    expect($request->rules())->toBe([]);
+    expect($request->rules())->toBeEmpty();
 });
 
 it('authorizes when user can destroy area resets', function () {

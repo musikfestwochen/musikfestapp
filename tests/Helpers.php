@@ -9,7 +9,7 @@ use App\Models\Peoplecount\Event;
 use App\Models\Peoplecount\IntervalCount;
 use App\Models\Peoplecount\Sensor;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 function setupPeoplecountBasic(): array
 {
@@ -22,7 +22,7 @@ function setupPeoplecountBasic(): array
     ]);
 
     // Create an event with 24h duration (hardcoded times)
-    $eventStart = Carbon::parse('2025-08-02 10:00:00')->utc();
+    $eventStart = Date::parse('2025-08-02 10:00:00')->utc();
     $eventEnd = $eventStart->copy()->addHours(24);
 
     $event = Event::factory()->create([
@@ -154,7 +154,7 @@ function setupAggregationScenario(array $config = []): array
 
     $organization = Organization::factory()->create();
 
-    $eventStart = $config['event_start'] ?? Carbon::parse('2025-08-02 10:00:00')->utc();
+    $eventStart = $config['event_start'] ?? Date::parse('2025-08-02 10:00:00')->utc();
     $eventEnd = $config['event_end'] ?? $eventStart->copy()->addHours(1);
 
     $event = Event::factory()->create([
@@ -224,7 +224,7 @@ function setupAggregationScenario(array $config = []): array
     }
 
     if (isset($config['now'])) {
-        Carbon::setTestNow($config['now']);
+        Date::setTestNow($config['now']);
     }
 
     return [
@@ -242,11 +242,10 @@ function setupAggregationScenario(array $config = []): array
 function assertWindowCount(Area $area, string $periodStart, string $periodEnd, int $expectedCount): void
 {
     $found = $area->aggregatedCounts()
-        ->where('period_start', Carbon::parse($periodStart)->utc())
-        ->where('period_end', Carbon::parse($periodEnd)->utc())
+        ->where('period_start', Date::parse($periodStart)->utc())
+        ->where('period_end', Date::parse($periodEnd)->utc())
         ->first();
 
-    expect($found)->not->toBeNull("Expected aggregated count window {$periodStart} to {$periodEnd} to exist");
-
-    expect($found->count)->toBe($expectedCount, "Expected cumulative count of {$expectedCount} for window {$periodStart} to {$periodEnd}, got {$found->count}");
+    expect($found)->not->toBeNull(sprintf('Expected aggregated count window %s to %s to exist', $periodStart, $periodEnd))
+        ->and($found->count)->toBe($expectedCount, sprintf('Expected cumulative count of %d for window %s to %s, got %d', $expectedCount, $periodStart, $periodEnd, $found->count));
 }

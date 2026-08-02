@@ -11,15 +11,15 @@ use App\Models\Organization;
 use App\Models\StageSafety\Reading;
 use App\Models\StageSafety\Sensor;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-    Carbon::setTestNow('2026-07-25 12:00:00 UTC');
+    Date::setTestNow('2026-07-25 12:00:00 UTC');
 });
 
 afterEach(function () {
-    Carbon::setTestNow();
+    Date::setTestNow();
 });
 
 it('allows a Stage Safety viewer to access all monitoring endpoints', function () {

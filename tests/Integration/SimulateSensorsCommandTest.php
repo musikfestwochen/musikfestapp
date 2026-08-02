@@ -160,13 +160,13 @@ test('it generates asynchronous pseudo-random stage-safety readings', function (
         $averageTimes = Reading::query()
             ->whereBelongsTo($sensor)
             ->where('kind', ReadingKind::WindAverage)
-            ->orderBy('observed_at')
+            ->oldest('observed_at')
             ->pluck('observed_at')
             ->map(fn (string $timestamp): CarbonImmutable => CarbonImmutable::parse($timestamp));
         $gustTimes = Reading::query()
             ->whereBelongsTo($sensor)
             ->where('kind', ReadingKind::WindGust)
-            ->orderBy('observed_at')
+            ->oldest('observed_at')
             ->pluck('observed_at')
             ->map(fn (string $timestamp): CarbonImmutable => CarbonImmutable::parse($timestamp));
 

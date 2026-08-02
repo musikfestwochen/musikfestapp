@@ -1,10 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-
-uses(RefreshDatabase::class);
 
 it('seeds and updates role metadata', function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
