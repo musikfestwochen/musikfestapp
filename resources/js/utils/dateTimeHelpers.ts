@@ -199,9 +199,8 @@ function getWallClockPartsInTimezone(date: Date, timezone: string): TimezoneWall
 /**
  * Convert a wall-clock time in a specific timezone to a UTC instant.
  * Iteratively corrects the timezone offset by reading back the candidate
- * instant in the target timezone. For nonexistent wall times (DST
- * spring-forward gap) the iteration does not converge and the last
- * approximation is returned (pre-gap instant).
+ * instant in the target timezone. Nonexistent wall times during DST
+ * spring-forward move to the first valid minute after the gap.
  */
 function wallTimeInTimezoneToUtc(year: number, month: number, day: number, hour: number, minute: number, timezone: string): Date {
     const target = Date.UTC(year, month - 1, day, hour, minute);
@@ -211,9 +210,29 @@ function wallTimeInTimezoneToUtc(year: number, month: number, day: number, hour:
         const parts = getWallClockPartsInTimezone(new Date(utc), timezone);
         const readBack = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
         if (readBack === target) {
-            break;
+            return new Date(utc);
         }
         utc -= readBack - target;
+    }
+
+    // Resolve a spring-forward gap to its first valid local minute.
+    for (let i = 0; i < 24 * 60; i++) {
+        const parts = getWallClockPartsInTimezone(new Date(utc), timezone);
+        const readBack = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+
+        if (readBack >= target) {
+            while (utc > 0) {
+                const previousUtc = utc - 60000;
+                const previous = getWallClockPartsInTimezone(new Date(previousUtc), timezone);
+                const previousReadBack = Date.UTC(previous.year, previous.month - 1, previous.day, previous.hour, previous.minute);
+                if (previousReadBack < target) {
+                    return new Date(utc);
+                }
+                utc = previousUtc;
+            }
+        }
+
+        utc += 60000;
     }
 
     return new Date(utc);
@@ -227,7 +246,17 @@ export function getNextDailyOccurrence(resetTime: string, timezone: string, coun
     const [hours, minutes] = resetTime.split(':').map(Number);
 
     // Validate time format
-    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    if (
+        isNaN(hours) ||
+        isNaN(minutes) ||
+        hours < 0 ||
+        hours > 23 ||
+        minutes < 0 ||
+        minutes > 59 ||
+        !Number.isFinite(count) ||
+        !Number.isInteger(count) ||
+        count <= 0
+    ) {
         return [];
     }
 

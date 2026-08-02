@@ -319,6 +319,14 @@ describe('Time Format Functions', () => {
             expect(occurrences).toHaveLength(2);
         });
 
+        it('should reject non-positive, fractional, and infinite counts', () => {
+            expect(getNextDailyOccurrence('08:00', 'UTC', 0)).toEqual([]);
+            expect(getNextDailyOccurrence('08:00', 'UTC', -1)).toEqual([]);
+            expect(getNextDailyOccurrence('08:00', 'UTC', 1.5)).toEqual([]);
+            expect(getNextDailyOccurrence('08:00', 'UTC', Infinity)).toEqual([]);
+            expect(getNextDailyOccurrence('08:00', 'UTC', NaN)).toEqual([]);
+        });
+
         it('should handle edge case times', () => {
             const occurrences = getNextDailyOccurrence('00:00', 'UTC', 1);
             expect(occurrences).toHaveLength(1);
@@ -366,6 +374,17 @@ describe('Time Format Functions', () => {
                 ]);
             });
 
+            it('should move nonexistent spring-forward times to the first valid local minute', () => {
+                // 02:30 does not exist in Europe/Zurich on 2024-03-31.
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-03-30T12:00:00Z'));
+
+                const [occurrence] = getNextDailyOccurrence('02:30', 'Europe/Zurich', 1);
+
+                expect(occurrence.toISOString()).toBe('2024-03-31T01:00:00.000Z');
+                expect(wallTimeIn(occurrence, 'Europe/Zurich')).toBe('03:00');
+            });
+
             it('should keep UTC instants aligned across DST fall-back', () => {
                 // Europe/Zurich falls back CEST -> CET on 2024-10-27
                 vi.useFakeTimers();
@@ -378,6 +397,17 @@ describe('Time Format Functions', () => {
                     '2024-10-27T08:00:00.000Z', // CET (UTC+1)
                     '2024-10-28T08:00:00.000Z', // CET (UTC+1)
                 ]);
+            });
+
+            it('should deterministically use the second occurrence of an ambiguous fall-back time', () => {
+                // 02:30 occurs twice in Europe/Zurich on 2024-10-27.
+                vi.useFakeTimers();
+                vi.setSystemTime(new Date('2024-10-26T12:00:00Z'));
+
+                const [occurrence] = getNextDailyOccurrence('02:30', 'Europe/Zurich', 1);
+
+                expect(occurrence.toISOString()).toBe('2024-10-27T01:30:00.000Z');
+                expect(wallTimeIn(occurrence, 'Europe/Zurich')).toBe('02:30');
             });
 
             it('should skip today when the reset time already passed in the target timezone', () => {
