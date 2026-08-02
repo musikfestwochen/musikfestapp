@@ -21,6 +21,7 @@ use App\Services\Peoplecount\IntervalCountService;
 use App\Services\Peoplecount\SensorService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -57,6 +58,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::automaticallyEagerLoadRelationships();
+
+        // Reject unknown fields in all FormRequests globally (#115)
+        FormRequest::failOnUnknownFields();
 
         URL::forceHttps(app()->isProduction());
 

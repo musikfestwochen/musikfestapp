@@ -81,6 +81,21 @@ it('rejects non-ISO 8601 UTC datetimes when creating an event', function () {
     $response->assertSessionHasErrors(['starts_at', 'ends_at']);
 });
 
+it('rejects unknown fields when creating an event', function () {
+    $admin = User::factory()->globalAdmin()->create();
+    $org = Organization::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->post(route('peoplecount.events.store', ['organization' => $org->slug]), [
+            'name' => 'Test Event',
+            'starts_at' => now()->toIso8601ZuluString('millisecond'),
+            'ends_at' => now()->addDays(3)->toIso8601ZuluString('millisecond'),
+            'unexpected_field' => 'nope',
+        ]);
+
+    $response->assertSessionHasErrors(['unexpected_field']);
+});
+
 it('shows the edit event form for an organization event', function () {
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();

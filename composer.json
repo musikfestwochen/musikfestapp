@@ -101,13 +101,13 @@
             "npm run typecheck"
         ],
         "test:coverage": [
-            "pest --coverage --parallel --min=100"
+            "pest --coverage --parallel --min=100 --no-tia"
         ],
         "test:coverage:ci": [
             "pest --ci --coverage --parallel --min=100"
         ],
         "test:coverage:ai": [
-            "pest --coverage --parallel --min=100 --compact --no-progress --coverage-text=storage/logs/precommit-ai-coverage.txt --only-summary-for-coverage-text"
+            "pest --coverage --parallel --min=100 --no-tia --compact --no-progress --coverage-text=storage/logs/precommit-ai-coverage.txt --only-summary-for-coverage-text"
         ],
         "test:types": [
             "pest --type-coverage --parallel --min=100"

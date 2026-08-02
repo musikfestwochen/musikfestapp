@@ -24,8 +24,8 @@ it('has correct rules', function () {
         ->and($rules['sensor_id'])->toBe(['required', 'integer', 'exists:peoplecount_sensors,id'])
         ->and($rules['label'])->toBe(['nullable', 'string', 'max:255'])
         ->and($rules['direction_flipped'])->toBe(['required', 'boolean'])
-        ->and($rules['active_from'])->toBe(['required', 'date', 'before:active_to'])
-        ->and($rules['active_to'])->toBe(['required', 'date', 'after:active_from']);
+        ->and($rules['active_from'])->toBe(['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'before:active_to'])
+        ->and($rules['active_to'])->toBe(['required', 'date_format:Y-m-d\TH:i:s.v\Z', 'after:active_from']);
 
 });
 
