@@ -9,7 +9,6 @@ use App\Models\Peoplecount\Area;
 use App\Models\Peoplecount\AreaAggregatedCount;
 use App\Models\Peoplecount\Assignment;
 use App\Models\Peoplecount\IntervalCount;
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -20,7 +19,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 use RuntimeException;
 
@@ -659,72 +657,62 @@ class AreaAggregationService
             $now = Date::now()->setTimezone($timezone);
             $oneHourAgo = $now->copy()->subHour();
 
-            // Get all events and areas in a single query
+            $latestCountQuery = AreaAggregatedCount::query()
+                ->whereColumn('area_id', 'peoplecount_areas.id')
+                ->latest('period_end')
+                ->limit(1);
+            $oneHourAgoCountQuery = AreaAggregatedCount::query()
+                ->whereColumn('area_id', 'peoplecount_areas.id')
+                ->where('period_end', '<=', $oneHourAgo)
+                ->latest('period_end')
+                ->limit(1);
+
             $areas = Area::query()
+                ->select(['peoplecount_areas.id', 'peoplecount_areas.name', 'peoplecount_areas.event_id'])
+                ->addSelect([
+                    'latest_count' => (clone $latestCountQuery)->select('count'),
+                    'latest_period_end' => (clone $latestCountQuery)->select('period_end'),
+                    'one_hour_ago_count' => (clone $oneHourAgoCountQuery)->select('count'),
+                    'one_hour_ago_period_end' => (clone $oneHourAgoCountQuery)->select('period_end'),
+                ])
                 ->whereHas('event', function (Builder $query) use ($organization, $now) {
                     $query->where('organization_id', $organization->id)
                         ->where('starts_at', '<=', $now)
                         ->where('ends_at', '>=', $now);
                 })
-                ->with([
-                    'event:id,name',
-                    'aggregatedCounts' => function (Relation $query) {
-                        $query->select(['id', 'area_id', 'count', 'period_end'])
-                            ->latest('period_end');
-                    },
-                ])
-                ->get(['id', 'name', 'event_id']);
+                ->with('event:id,name')
+                ->get();
 
             /** @var \Illuminate\Database\Eloquent\Collection<int, Area> $areas */
-            return $areas->map(function (Area $area) use ($now, $oneHourAgo): array {
-                // Get the latest count and find the last count that ended at least one hour ago
-                /** @var AreaAggregatedCount|null $latestCount */
-                $latestCount = $area->aggregatedCounts->first();
-                /** @var AreaAggregatedCount|null $oneHourAgoCount */
-                $oneHourAgoCount = $area->aggregatedCounts
-                    ->where('period_end', '<=', $oneHourAgo)
-                    ->sortByDesc('period_end')
-                    ->first();
-
-                // Calculate debug counts with graceful fallback
-                try {
-                    $debugCounts = $this->areaService->calculateAreaDebugCounts($area);
-                } catch (Exception $exception) {
-                    Log::error(sprintf('Failed to calculate area counts for area %d: ', $area->id).$exception->getMessage());
-                    $debugCounts = [
-                        'in' => 0,
-                        'out' => 0,
-                        'net' => 0,
-                        'last_reset_type' => null,
-                        'last_reset_at' => null,
-                        'last_reset_value' => 0,
-                        'net_plus_reset' => 0,
-                    ];
-                }
+            return $areas->map(function (Area $area) use ($now): array {
+                $latestCount = $area->getAttribute('latest_count');
+                $latestPeriodEnd = $area->getAttribute('latest_period_end');
+                $oneHourAgoCount = $area->getAttribute('one_hour_ago_count');
+                $oneHourAgoPeriodEnd = $area->getAttribute('one_hour_ago_period_end');
 
                 $netChange = null;
                 $netChangeTimeAgo = null;
 
-                if ($latestCount && $oneHourAgoCount) {
-                    $netChange = $latestCount->count - $oneHourAgoCount->count;
-                    $netChangeTimeAgo = Date::parse($latestCount->period_end)
-                        ->diffForHumans(Date::parse($oneHourAgoCount->period_end), ['syntax' => true]);
+                if ($latestCount !== null && $latestPeriodEnd !== null && $oneHourAgoCount !== null && $oneHourAgoPeriodEnd !== null) {
+                    $netChange = (int) $latestCount - (int) $oneHourAgoCount;
+                    $netChangeTimeAgo = Date::parse((string) $latestPeriodEnd)
+                        ->diffForHumans(Date::parse((string) $oneHourAgoPeriodEnd), ['syntax' => true]);
                 }
 
                 $lastUpdated = null;
 
-                if ($latestCount) {
-                    $lastUpdated = ($latestCount->period_end->greaterThan($now) ? $now : $latestCount->period_end)->toIso8601String();
+                if ($latestPeriodEnd !== null) {
+                    $latestPeriodEnd = Date::parse((string) $latestPeriodEnd);
+                    $lastUpdated = ($latestPeriodEnd->greaterThan($now) ? $now : $latestPeriodEnd)->toIso8601String();
                 }
 
                 return [
                     'id' => $area->id,
                     'name' => $area->name,
                     'event_name' => $area->event->name,
-                    'count' => $latestCount->count ?? 0,
+                    'count' => $latestCount !== null ? (int) $latestCount : 0,
                     'net_change' => $netChange,
                     'net_change_time_ago' => $netChangeTimeAgo,
-                    'debug_counts' => $debugCounts,
                     'last_updated' => $lastUpdated,
                 ];
             })->all();

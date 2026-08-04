@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\LazyCollection;
 
 covers(AreaAggregationService::class);
@@ -897,490 +897,139 @@ describe('getAggregationCheckpoint method', function () {
 
 describe('getActiveAreaAggregatedCounts method - integration tests', function () {
     it('returns empty array when no active events exist', function () {
-        // Create organization but no active events
         $organization = Organization::factory()->create();
 
-        // Mock AreaService for debug counts
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')->never();
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toBeArray()
-            ->toBeEmpty();
+        expect($this->service->getActiveAreaAggregatedCounts($organization))->toBeEmpty();
     });
 
-    it('handles area with aggregated counts correctly', function () {
-        // Create organization and active event
+    it('retrieves latest and one-hour counts without loading aggregate history', function () {
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'), // Started 30 minutes ago
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),   // Ends in 30 minutes
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
-
-        // Create area with aggregated counts
         $area = Area::factory()->create([
             'event_id' => $event->id,
             'name' => 'Test Area',
         ]);
 
-        // Create aggregated counts
-        $latestCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 50,
-            'period_end' => Date::parse('2024-08-15 14:25:00'), // 5 minutes ago
-        ]);
+        foreach ([
+            ['period_end' => '2024-08-15 13:20:00', 'count' => 30],
+            ['period_end' => '2024-08-15 13:30:00', 'count' => 35],
+            ['period_end' => '2024-08-15 14:00:00', 'count' => 45],
+            ['period_end' => '2024-08-15 14:25:00', 'count' => 50],
+        ] as $count) {
+            AreaAggregatedCount::factory()->create([
+                'area_id' => $area->id,
+                'period_start' => Date::parse($count['period_end'])->subMinute(),
+                'period_end' => Date::parse($count['period_end']),
+                'count' => $count['count'],
+            ]);
+        }
 
-        $oneHourAgoCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 30,
-            'period_end' => Date::parse('2024-08-15 13:25:00'), // 1 hour 5 minutes ago
-        ]);
-
-        // Mock Cache and AreaService
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->with(Mockery::type(Area::class))
-            ->andReturn(['in' => 10, 'out' => 5, 'net' => 5]);
+        Cache::shouldReceive('remember')->once()->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
 
-        expect($result)->toBeArray()
-            ->toHaveCount(1)
-            ->and($result[0])->toHaveKeys(['id', 'name', 'event_name', 'count', 'net_change', 'net_change_time_ago', 'debug_counts', 'last_updated'])
-            ->toMatchArray(['count' => 50, 'net_change' => 20]); // 50 - 30
-        expect($result[0]['debug_counts'])->toBeArray();
-        expect($result[0]['debug_counts'])->toMatchArray(['in' => 10, 'out' => 5, 'net' => 5]);
+        expect($result)->toHaveCount(1)
+            ->and($result[0])->toMatchArray([
+                'id' => $area->id,
+                'name' => 'Test Area',
+                'event_name' => $event->name,
+                'count' => 50,
+                'net_change' => 15,
+            ])
+            ->not->toHaveKey('debug_counts')
+            ->and($result[0]['net_change_time_ago'])->toBeString()
+            ->and($result[0]['last_updated'])->toBe(Date::parse('2024-08-15 14:25:00')->toIso8601String())
+            ->and($queries)->toHaveCount(2);
     });
 
     it('handles area with no aggregated counts', function () {
-        // Create organization and active event
         $organization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
             'starts_at' => Date::parse('2024-08-15 14:00:00'),
             'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
+        Area::factory()->create(['event_id' => $event->id]);
 
-        // Create area without aggregated counts
-        $area = Area::factory()->create([
-            'event_id' => $event->id,
-            'name' => 'Empty Area',
-        ]);
-
-        // Mock Cache and AreaService
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->with(Mockery::type(Area::class))
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
+        Cache::shouldReceive('remember')->once()->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toBeArray()
-            ->toHaveCount(1)
+        expect($result)->toHaveCount(1)
             ->and($result[0]['count'])->toBe(0)
-            ->and($result[0]['net_change'])->toBeNull();
+            ->and($result[0]['net_change'])->toBeNull()
+            ->and($result[0]['net_change_time_ago'])->toBeNull()
+            ->and($result[0]['last_updated'])->toBeNull();
     });
 
-    it('handles debug counts calculation failure gracefully', function () {
-        // Create organization and active event
+    it('only returns areas belonging to the organization', function () {
         $organization = Organization::factory()->create();
+        $otherOrganization = Organization::factory()->create();
         $event = Event::factory()->create([
             'organization_id' => $organization->id,
             'starts_at' => Date::parse('2024-08-15 14:00:00'),
             'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
-
-        // Create area
-        $area = Area::factory()->create([
-            'event_id' => $event->id,
-            'name' => 'Problem Area',
-        ]);
-
-        // Mock Cache to return computed payload closure
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        // Make areaService calculation throw
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andThrow(new Exception('Specific error'));
-
-        // Mock Log facade
-        Log::shouldReceive('error')
-            ->once()
-            ->with(Mockery::pattern('/Failed to calculate area counts for area \\d+: Specific error/'));
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toBeArray()
-            ->toHaveCount(1)
-            ->and($result[0]['debug_counts'])->toBeArray()
-            ->toMatchArray(['in' => 0, 'out' => 0, 'net' => 0])
-            ->and($result[0]['debug_counts']['last_reset_type'])->toBeNull()
-            ->and($result[0]['debug_counts']['last_reset_at'])->toBeNull()
-            ->and($result[0]['debug_counts'])->toMatchArray(['last_reset_value' => 0, 'net_plus_reset' => 0]);
-    });
-
-    it('calculates net change time ago correctly', function () {
-        // Create organization and active event
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
+        $otherEvent = Event::factory()->create([
+            'organization_id' => $otherOrganization->id,
             'starts_at' => Date::parse('2024-08-15 14:00:00'),
             'ends_at' => Date::parse('2024-08-15 15:00:00'),
         ]);
-
-        // Create area with aggregated counts
-        $area = Area::factory()->create([
-            'event_id' => $event->id,
-            'name' => 'Time Test Area',
-        ]);
-
-        // Create latest aggregated count (most recent)
-        $latestCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 50,
-            'period_end' => Date::parse('2024-08-15 14:25:00'), // 5 minutes ago from test time (14:30:00)
-        ]);
-
-        // Create one hour ago count (more than 1 hour before current test time)
-        $oneHourAgoCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 30,
-            'period_end' => Date::parse('2024-08-15 13:20:00'), // 1 hour 10 minutes ago from test time (14:30:00)
-        ]);
-
-        // Mock Cache and AreaService
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toBeArray()
-            ->toHaveCount(1)
-            ->and($result[0]['net_change'])->toBe(20); // 50 - 30
-        expect($result[0]['net_change_time_ago'])->toBeString(); // Should be a human-readable time difference
-    });
-
-    it('throws RuntimeException when area has no event - real integration test', function () {
-        // Create organization and active event
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
-        // Create area
-        $area = Area::factory()->create([
-            'event_id' => $event->id,
-            'name' => 'Test Area',
-        ]);
-
-        // Now delete the event to create the scenario where area exists but event is null
-        // This simulates a race condition or data inconsistency
-        $event->delete();
-
-        // Mock AreaService for debug counts (won't be called due to exception)
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')->never();
-
-        // This should trigger line 362: RuntimeException when area.event is null
-        // expect(fn() => $this->service->getActiveAreaAggregatedCounts($organization))
-        //    ->toThrow(RuntimeException::class, "Area {$area->id} has no associated event");
-    });
-
-    it('handles main exception and logs error', function () {
-        // Create organization
-        $organization = Organization::factory()->create();
-
-        // Create a service that will throw an exception during the main execution
-        $testService = new class($this->areaServiceMock) extends AreaAggregationService
-        {
-            public function getActiveAreaAggregatedCounts(Organization $organization): array
-            {
-                try {
-                    // Simulate an exception in the main try block
-                    throw new Exception('Database connection failed');
-                } catch (Exception $exception) {
-                    Log::error('Failed to get active area counts: '.$exception->getMessage());
-                    throw $exception;
-                }
-            }
-        };
-
-        // Mock Log facade
-        Log::shouldReceive('error')
-            ->once()
-            ->with('Failed to get active area counts: Database connection failed');
-
-        expect(fn (): array => $testService->getActiveAreaAggregatedCounts($organization))
-            ->toThrow(Exception::class, 'Database connection failed');
-    });
-
-    it('verifies query structure with organization filter', function () {
-        // Create two organizations
-        $organization1 = Organization::factory()->create();
-        $organization2 = Organization::factory()->create();
-
-        // Create events for both organizations
-        $event1 = Event::factory()->create([
-            'organization_id' => $organization1->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
-        $event2 = Event::factory()->create([
-            'organization_id' => $organization2->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
-        // Create areas for both events
-        $area1 = Area::factory()->create(['event_id' => $event1->id, 'name' => 'Area 1']);
-        $area2 = Area::factory()->create(['event_id' => $event2->id, 'name' => 'Area 2']);
-
-        // Mock AreaService
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        Cache::shouldReceive('remember')->once()->andReturnUsing(function ($key, $ttl, $callback) {
-            return $callback();
-        });
-
-        // Query for organization1 should only return area1
-        $result = $this->service->getActiveAreaAggregatedCounts($organization1);
-
-        expect($result)->toHaveCount(1)
-            ->and($result[0])->toMatchArray(['id' => $area1->id, 'name' => 'Area 1', 'event_name' => $event1->name]);
-    });
-
-    it('verifies event relationship is loaded correctly', function () {
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-            'name' => 'Test Event Name',
-        ]);
-
-        $area = Area::factory()->create([
-            'event_id' => $event->id,
-            'name' => 'Test Area',
-        ]);
-
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        Cache::shouldReceive('remember')->once()->andReturnUsing(function ($key, $ttl, $callback) {
-            return $callback();
-        });
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toHaveCount(1)
-            ->and($result[0]['event_name'])->toBe('Test Event Name');
-    });
-
-    it('verifies aggregated counts are loaded with correct fields', function () {
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
         $area = Area::factory()->create(['event_id' => $event->id]);
+        Area::factory()->create(['event_id' => $otherEvent->id]);
 
-        // Create aggregated count with specific fields
-        $aggregatedCount = AreaAggregatedCount::factory()->create([
+        Cache::shouldReceive('remember')->once()->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
+
+        $result = $this->service->getActiveAreaAggregatedCounts($organization);
+
+        expect($result)->toHaveCount(1)
+            ->and($result[0]['id'])->toBe($area->id);
+    });
+
+    it('returns no net change when no one-hour count exists', function () {
+        $organization = Organization::factory()->create();
+        $event = Event::factory()->create([
+            'organization_id' => $organization->id,
+            'starts_at' => Date::parse('2024-08-15 14:00:00'),
+            'ends_at' => Date::parse('2024-08-15 15:00:00'),
+        ]);
+        $area = Area::factory()->create(['event_id' => $event->id]);
+        AreaAggregatedCount::factory()->create([
             'area_id' => $area->id,
-            'count' => 42,
+            'period_start' => Date::parse('2024-08-15 14:24:00'),
             'period_end' => Date::parse('2024-08-15 14:25:00'),
+            'count' => 50,
         ]);
 
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        Cache::shouldReceive('remember')->once()->andReturnUsing(function ($key, $ttl, $callback) {
-            return $callback();
-        });
+        Cache::shouldReceive('remember')->once()->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
 
         $result = $this->service->getActiveAreaAggregatedCounts($organization);
 
-        expect($result)->toHaveCount(1)
-            ->and($result[0]['count'])->toBe(42);
+        expect($result[0]['count'])->toBe(50)
+            ->and($result[0]['net_change'])->toBeNull()
+            ->and($result[0]['net_change_time_ago'])->toBeNull();
     });
 
-    it('verifies cache TTL is exactly 30 seconds', function () {
+    it('caches counts for five seconds', function () {
         $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
 
-        $area = Area::factory()->create(['event_id' => $event->id]);
-
-        // Mock Cache to verify TTL
         Cache::shouldReceive('remember')
             ->once()
             ->with(
                 'org_active_area_counts:'.$organization->id,
-                Mockery::on(function ($ttl): bool {
-                    // Verify TTL is exactly 30 seconds from now
-                    $expectedTime = now()->addSeconds(5);
-
-                    return abs($ttl->diffInSeconds($expectedTime)) <= 1;
-                }),
-                Mockery::type('Closure')
+                Mockery::on(fn ($ttl): bool => abs($ttl->diffInSeconds(now()->addSeconds(5))) <= 1),
+                Mockery::type('Closure'),
             )
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
+            ->andReturn([]);
 
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toHaveCount(1);
-    });
-
-    it('verifies exact error message format when calculateAreaCounts fails', function () {
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
-        $area = Area::factory()->create(['event_id' => $event->id]);
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
-        // Verify exact error message format
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andThrow(new Exception('Specific error message'));
-
-        Log::shouldReceive('error')
-            ->once()
-            ->with(sprintf('Failed to calculate area counts for area %d: Specific error message', $area->id));
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toHaveCount(1)
-            ->and($result[0]['debug_counts'])->toBe([
-                'in' => 0,
-                'out' => 0,
-                'net' => 0,
-                'last_reset_type' => null,
-                'last_reset_at' => null,
-                'last_reset_value' => 0,
-                'net_plus_reset' => 0,
-            ]);
-    });
-
-    it('handles case where only latestCount exists (no oneHourAgoCount)', function () {
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
-        $area = Area::factory()->create(['event_id' => $event->id]);
-
-        // Create only latest count (no count from one hour ago)
-        $latestCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 50,
-            'period_end' => Date::parse('2024-08-15 14:25:00'),
-        ]);
-
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        Cache::shouldReceive('remember')->once()->andReturnUsing(function ($key, $ttl, $callback) {
-            return $callback();
-        });
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toHaveCount(1)
-            ->and($result[0]['count'])->toBe(50)
-            ->and($result[0]['net_change'])->toBeNull(); // Should be null when no oneHourAgoCount
-        expect($result[0]['net_change_time_ago'])->toBeNull(); // Should be null when no oneHourAgoCount
-    });
-
-    it('verifies diffForHumans is called with true parameter', function () {
-        // set locale to English for consistent output
-        Date::setLocale('en');
-
-        $organization = Organization::factory()->create();
-        $event = Event::factory()->create([
-            'organization_id' => $organization->id,
-            'starts_at' => Date::parse('2024-08-15 14:00:00'),
-            'ends_at' => Date::parse('2024-08-15 15:00:00'),
-        ]);
-
-        $area = Area::factory()->create(['event_id' => $event->id]);
-
-        $latestCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 50,
-            'period_end' => Date::parse('2024-08-15 14:25:00'),
-        ]);
-
-        $oneHourAgoCount = AreaAggregatedCount::factory()->create([
-            'area_id' => $area->id,
-            'count' => 30,
-            'period_end' => Date::parse('2024-08-15 13:20:00'),
-        ]);
-
-        $this->areaServiceMock->shouldReceive('calculateAreaDebugCounts')
-            ->once()
-            ->andReturn(['in' => 0, 'out' => 0, 'net' => 0]);
-
-        Cache::shouldReceive('remember')->once()->andReturnUsing(function ($key, $ttl, $callback) {
-            return $callback();
-        });
-
-        $result = $this->service->getActiveAreaAggregatedCounts($organization);
-
-        expect($result)->toHaveCount(1)
-            ->and($result[0]['net_change_time_ago'])->toBeString();
+        expect($this->service->getActiveAreaAggregatedCounts($organization))->toBeEmpty();
     });
 });
