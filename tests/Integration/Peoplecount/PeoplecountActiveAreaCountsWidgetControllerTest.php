@@ -59,7 +59,8 @@ it('returns active area counts for an organization', function () {
         ->assertJsonPath('0.name', 'Test Area')
         ->assertJsonPath('0.event_name', $event->name)
         ->assertJsonPath('0.count', 42)
-        ->assertJsonPath('0.last_updated', Date::now()->toIso8601String());
+        ->assertJsonPath('0.last_updated', Date::now()->toIso8601String())
+        ->assertJsonMissingPath('0.debug_counts');
 
     // Reset the fixed time
     Date::setTestNow();

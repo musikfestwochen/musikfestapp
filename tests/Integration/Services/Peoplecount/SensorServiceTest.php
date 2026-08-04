@@ -442,6 +442,34 @@ describe('getAssignedSensorsHealthStatus', function () {
             ->and($result['last_updated'])->toBeString();
     });
 
+    it('uses the assignment label only when one assignment is active', function () {
+        $org = Organization::factory()->create();
+        $sensor = Sensor::factory()->withOrganization($org)->create(['name' => 'Physical Sensor']);
+        Assignment::factory()->withSensor($sensor)->create([
+            'label' => 'Main Entrance',
+            'active_from' => Date::now()->subHour(),
+            'active_to' => Date::now()->addHour(),
+        ]);
+
+        $singleAssignmentResult = $this->service->getAssignedSensorsHealthStatus($org);
+
+        expect($singleAssignmentResult['unhealthy'][0]['label'])->toBe('Main Entrance');
+
+        Cache::clear();
+        Assignment::factory()->withSensor($sensor)->create([
+            'label' => 'Main Entrance Flipped',
+            'direction_flipped' => true,
+            'active_from' => Date::now()->subHour(),
+            'active_to' => Date::now()->addHour(),
+        ]);
+
+        $multipleAssignmentsResult = $this->service->getAssignedSensorsHealthStatus($org);
+
+        expect($multipleAssignmentsResult['total'])->toBe(1)
+            ->and($multipleAssignmentsResult['unhealthy'][0]['label'])->toBeNull()
+            ->and($multipleAssignmentsResult['unhealthy'][0]['name'])->toBe('Physical Sensor');
+    });
+
     it('caches the result for a short time', function () {
         $org = Organization::factory()->create();
         $sensor = Sensor::factory()->withOrganization($org)->create(['serial' => 'C-1']);

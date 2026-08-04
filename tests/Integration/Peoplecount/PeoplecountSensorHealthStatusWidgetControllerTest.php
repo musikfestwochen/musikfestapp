@@ -36,6 +36,7 @@ it('returns sensor health payload for an organization', function () {
         'active_to' => Date::now()->addHour(),
     ]);
     Assignment::factory()->withSensor($suspiciousSensor)->create([
+        'label' => 'Main Entrance',
         'active_from' => Date::now()->subHour(),
         'active_to' => Date::now()->addHour(),
     ]);
@@ -86,6 +87,7 @@ it('returns sensor health payload for an organization', function () {
             ->where('all_healthy', false)
             ->where('healthy.0.serial', 'H-1')
             ->where('suspicious.0.serial', 'S-1')
+            ->where('suspicious.0.label', 'Main Entrance')
             ->where('unhealthy.0.serial', 'U-1')
             ->etc()
         );

@@ -99,17 +99,16 @@ class SensorService
             $recentThreshold = $now->copy()->subMinutes(2);
 
             // Find sensors currently assigned to this organization's events.
-            $assignedSensorIds = Assignment::query()
+            $activeAssignmentsBySensor = Assignment::query()
                 ->whereBetween('active_from', ['1900-01-01', $now])
                 ->where('active_to', '>=', $now)
                 ->whereHas('event', function (Builder $query) use ($organization): void {
                     $query->where('organization_id', $organization->id);
                 })
-                ->pluck('sensor_id')
-                ->unique()
-                ->values();
+                ->get(['sensor_id', 'label'])
+                ->groupBy('sensor_id');
 
-            if ($assignedSensorIds->isEmpty()) {
+            if ($activeAssignmentsBySensor->isEmpty()) {
                 return [
                     'last_updated' => $now->toIso8601String(),
                     'total' => 0,
@@ -122,7 +121,7 @@ class SensorService
 
             // Load sensors that are currently assigned within the organization's events
             $sensors = Sensor::query()
-                ->whereIn('id', $assignedSensorIds)
+                ->whereIn('id', $activeAssignmentsBySensor->keys())
                 ->get(['id', 'vendor', 'model', 'serial', 'name']);
 
             $healthy = [];
@@ -130,6 +129,8 @@ class SensorService
             $unhealthy = [];
 
             foreach ($sensors as $sensor) {
+                $activeAssignments = $activeAssignmentsBySensor->get($sensor->id);
+
                 // Fetch last 10 interval counts ordered by ts_to desc
                 /** @var Collection<int, IntervalCount> $counts */
                 $counts = IntervalCount::query()
@@ -150,6 +151,7 @@ class SensorService
                     'vendor' => $sensor->vendor,
                     'model' => $sensor->model,
                     'name' => $sensor->name,
+                    'label' => $activeAssignments?->count() === 1 ? $activeAssignments->first()?->label : null,
                     'latest_ts' => $latest ? $latest->ts_to->toIso8601String() : null,
                     'interval_counts' => $counts->map(function (IntervalCount $c): array {
                         return [
