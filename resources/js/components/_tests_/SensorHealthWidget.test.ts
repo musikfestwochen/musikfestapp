@@ -25,7 +25,7 @@ const peoplecountPayload = {
     total: 1,
     all_healthy: false,
     healthy: [],
-    suspicious: [{ id: 1, serial: 'PC-1', vendor: 'Axis', model: 'P8815-2', name: null, latest_ts: '2026-07-25T12:00:00Z' }],
+    suspicious: [{ id: 1, serial: 'PC-1', vendor: 'Axis', model: 'P8815-2', name: null, label: null, latest_ts: '2026-07-25T12:00:00Z' }],
     unhealthy: [],
 };
 const stageSafetyPayload = {
@@ -107,6 +107,21 @@ describe('combined sensor health widget', () => {
         expect(wrapper.text()).toContain('Peoplecount');
         expect(wrapper.text()).not.toContain('Stage Safety');
         expect(wrapper.text()).toContain('Latest data:');
+    });
+
+    it('prefers a single assignment label over the sensor name', async () => {
+        mocks.peoplecountGet.mockResolvedValue({
+            ...peoplecountPayload,
+            suspicious: [{ ...peoplecountPayload.suspicious[0], name: 'Physical Sensor', label: 'Main Entrance' }],
+        });
+
+        const wrapper = mount(SensorHealthWidget, {
+            props: { organization, showPeoplecount: true, showStageSafety: false },
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain('Main Entrance · PC-1');
+        expect(wrapper.text()).not.toContain('Physical Sensor');
     });
 
     it('keeps one source visible when the other source fails', async () => {

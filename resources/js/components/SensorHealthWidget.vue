@@ -17,6 +17,7 @@ interface PeoplecountHealthSensor {
     vendor: string;
     model: string;
     name: string | null;
+    label: string | null;
     latest_ts: string | null;
 }
 
@@ -73,7 +74,7 @@ const latestDataAt = computed(() => {
 });
 
 function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
-    return sensor.name || `${sensor.vendor} ${sensor.model}`;
+    return sensor.label || sensor.name || `${sensor.vendor} ${sensor.model}`;
 }
 </script>
 
