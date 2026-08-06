@@ -16,6 +16,49 @@ export interface WidgetChartSeries {
     dash?: number[];
 }
 
+export interface WidgetChartValue {
+    date: Date;
+    value: number;
+}
+
+export interface WidgetChartStatistics {
+    count: number;
+    minimum: WidgetChartValue;
+    maximum: WidgetChartValue;
+    average: number;
+}
+
+export function calculateWidgetChartStatistics(values: WidgetChartValue[]): WidgetChartStatistics | null {
+    const validValues = values.filter((point) => Number.isFinite(point.value) && Number.isFinite(point.date.getTime()));
+
+    if (validValues.length === 0) {
+        return null;
+    }
+
+    let minimum = validValues[0];
+    let maximum = validValues[0];
+    let total = 0;
+
+    for (const point of validValues) {
+        if (point.value < minimum.value || (point.value === minimum.value && point.date < minimum.date)) {
+            minimum = point;
+        }
+
+        if (point.value > maximum.value || (point.value === maximum.value && point.date > maximum.date)) {
+            maximum = point;
+        }
+
+        total += point.value;
+    }
+
+    return {
+        count: validValues.length,
+        minimum,
+        maximum,
+        average: total / validValues.length,
+    };
+}
+
 export const WIDGET_CHART_COLORS = [
     'var(--color-chart-1)',
     'var(--color-chart-2)',

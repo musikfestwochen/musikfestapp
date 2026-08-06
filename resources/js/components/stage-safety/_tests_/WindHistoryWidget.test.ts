@@ -31,6 +31,8 @@ vi.mock('@unovis/vue', () => ({
         template: '<div class="series-line" />',
     },
     VisAxis: { template: '<div />' },
+    VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div />' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: {
         name: 'VisCrosshair',
@@ -79,6 +81,12 @@ const stubs = {
     ChartContainer: { name: 'ChartContainer', props: ['config'], template: '<div><slot /></div>' },
     ChartTooltip: { template: '<div />' },
     ChartCrosshair: { name: 'ChartCrosshair', props: ['color'], template: '<div />' },
+    Switch: {
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template:
+            '<button aria-label="Show chart statistics" :aria-pressed="modelValue" @click="$emit(\'update:modelValue\', !modelValue)">Statistics</button>',
+    },
 };
 
 describe('WindHistoryWidget', () => {
@@ -153,6 +161,30 @@ describe('WindHistoryWidget', () => {
 
         expect(mocks.request.from).toBe('2026-07-25T11:30:00.000Z');
         expect(mocks.request.to).toBe('2026-07-25T12:00:00.000Z');
+    });
+
+    it('calculates statistics in km/h and annotates an isolated series', async () => {
+        mocks.get.mockResolvedValue(history);
+        const wrapper = mount(WindHistoryWidget, { props: { organization }, global: { stubs } });
+        await flushPromises();
+
+        await wrapper.get('[aria-label="Show chart statistics"]').trigger('click');
+
+        expect(wrapper.get('[data-series="sensor_1_wind_average"]').text()).toContain('18.0 km/h');
+        expect(wrapper.get('[data-series="sensor_1_wind_average"]').text()).toContain('19.8 km/h');
+        expect(wrapper.get('[data-series="sensor_1_wind_average"]').text()).toContain('21.6 km/h');
+        expect(wrapper.findComponent({ name: 'VisPlotline' }).exists()).toBe(false);
+
+        await wrapper.get('[data-series="sensor_1_wind_average"]').trigger('click');
+
+        expect(wrapper.getComponent({ name: 'VisPlotline' }).props('value')).toBeCloseTo(19.8);
+        expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 19.8 km/h');
+        const markers = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
+        expect(markers.map((marker) => marker.label)).toEqual(['Min 18.0 km/h', 'Max 21.6 km/h']);
+
+        await wrapper.get('[data-series="sensor_1_wind_gust"]').trigger('click');
+        const singleMarker = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
+        expect(singleMarker.map((marker) => marker.label)).toEqual(['Min / max 28.8 km/h']);
     });
 
     it('isolates a legend series and restores all when selected again', async () => {

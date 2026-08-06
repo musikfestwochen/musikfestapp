@@ -29,6 +29,8 @@ vi.mock('@unovis/vue', () => ({
         template: '<div class="series-line" />',
     },
     VisAxis: { template: '<div />' },
+    VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div />' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: {
         name: 'VisCrosshair',
@@ -76,6 +78,12 @@ const stubs = {
     ChartContainer: { name: 'ChartContainer', props: ['config'], template: '<div><slot /></div>' },
     ChartTooltip: { template: '<div />' },
     ChartCrosshair: { name: 'ChartCrosshair', props: ['color'], template: '<div />' },
+    Switch: {
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template:
+            '<button aria-label="Show chart statistics" :aria-pressed="modelValue" @click="$emit(\'update:modelValue\', !modelValue)">Statistics</button>',
+    },
 };
 
 describe('LqiHistoryWidget', () => {
@@ -139,5 +147,25 @@ describe('LqiHistoryWidget', () => {
 
         expect(mocks.request.from).toBe('2026-07-25T11:30:00.000Z');
         expect(mocks.request.to).toBe('2026-07-25T12:00:00.000Z');
+    });
+
+    it('shows percentage statistics and annotates an isolated sensor', async () => {
+        mocks.get.mockResolvedValue(history);
+        const wrapper = mount(LqiHistoryWidget, { props: { organization }, global: { stubs } });
+        await flushPromises();
+
+        await wrapper.get('[aria-label="Show chart statistics"]').trigger('click');
+
+        expect(wrapper.get('[data-series="sensor_1_lqi"]').text()).toContain('0.0%');
+        expect(wrapper.get('[data-series="sensor_1_lqi"]').text()).toContain('25.4%');
+        expect(wrapper.get('[data-series="sensor_1_lqi"]').text()).toContain('50.9%');
+        expect(wrapper.findComponent({ name: 'VisPlotline' }).exists()).toBe(false);
+
+        await wrapper.get('[data-series="sensor_1_lqi"]').trigger('click');
+
+        expect(wrapper.getComponent({ name: 'VisPlotline' }).props('value')).toBeCloseTo(25.4487179487);
+        expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 25.4%');
+        const markers = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
+        expect(markers.map((marker) => marker.label)).toEqual(['Min 0.0%', 'Max 50.9%']);
     });
 });
