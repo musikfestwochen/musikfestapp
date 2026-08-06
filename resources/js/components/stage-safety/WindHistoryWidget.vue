@@ -279,7 +279,7 @@ watch(chartData, () => void syncCrosshair());
                 :series="chartSeries"
                 :hidden-series-keys="hiddenSeriesKeys"
                 :statistics-enabled="statisticsEnabled"
-                :statistics="statistics"
+                :statistics="statisticsEnabled ? statistics : undefined"
                 :format-value="formatWind"
                 @select="selectSeries"
             />
