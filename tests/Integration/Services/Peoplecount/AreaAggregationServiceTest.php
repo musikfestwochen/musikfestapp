@@ -945,7 +945,8 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
                 'net_change' => 15,
             ])
             ->not->toHaveKey('debug_counts')
-            ->and($result[0]['net_change_time_ago'])->toBeString()
+            ->not->toHaveKey('net_change_time_ago')
+            ->and($result[0]['net_change_period_seconds'])->toBe(3300)
             ->and($result[0]['last_updated'])->toBe(Date::parse('2024-08-15 14:25:00')->toIso8601String())
             ->and($queries)->toHaveCount(2);
     });
@@ -966,7 +967,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
         expect($result)->toHaveCount(1)
             ->and($result[0]['count'])->toBe(0)
             ->and($result[0]['net_change'])->toBeNull()
-            ->and($result[0]['net_change_time_ago'])->toBeNull()
+            ->and($result[0]['net_change_period_seconds'])->toBeNull()
             ->and($result[0]['last_updated'])->toBeNull();
     });
 
@@ -1015,7 +1016,7 @@ describe('getActiveAreaAggregatedCounts method - integration tests', function ()
 
         expect($result[0]['count'])->toBe(50)
             ->and($result[0]['net_change'])->toBeNull()
-            ->and($result[0]['net_change_time_ago'])->toBeNull();
+            ->and($result[0]['net_change_period_seconds'])->toBeNull();
     });
 
     it('caches counts for five seconds', function () {

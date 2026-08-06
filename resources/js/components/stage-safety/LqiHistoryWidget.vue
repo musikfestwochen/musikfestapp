@@ -17,7 +17,7 @@ import {
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyLqiHistoryPayload } from '@/types';
-import { APP_LOCALE } from '@/utils/dateTimeHelpers';
+import { DATE_TIME_LOCALE, formatChartTick, formatChartTooltip } from '@/utils/dateTimeHelpers';
 import { stageSafetySensorName } from '@/utils/stageSafety';
 import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, Position, type Crosshair } from '@unovis/ts';
 import { VisAxis, VisLine, VisPlotline, VisScatter, VisXYContainer } from '@unovis/vue';
@@ -98,7 +98,7 @@ const hasData = computed(() => chartData.value.length > 0);
 const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
 const crosshairRef = ref<{ component: Crosshair<ChartDataPoint> } | null>(null);
-const percentageFormatter = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const percentageFormatter = new Intl.NumberFormat(DATE_TIME_LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const focusedSeries = computed(() => (statisticsEnabled.value && visibleChartSeries.value.length === 1 ? visibleChartSeries.value[0] : null));
 const focusedStatistics = computed(() => (focusedSeries.value ? statistics.value[focusedSeries.value.key] : null));
 const statisticMarkers = computed<StatisticMarker[]>(() => {
@@ -129,13 +129,7 @@ function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: 
         config: chartConfig.value,
         x,
         indicator: 'line',
-        labelFormatter: (value: number | Date) =>
-            new Date(typeof value === 'number' ? value : value.getTime()).toLocaleString(APP_LOCALE, {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-            }),
+        labelFormatter: (value: number | Date) => formatChartTooltip(value),
     });
 
     render(vnode, container);
@@ -157,11 +151,7 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
-    if (widgetTimeRangeShowsDate(timeRange.value)) {
-        return new Date(value).toLocaleString(APP_LOCALE, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    }
-
-    return new Date(value).toLocaleTimeString(APP_LOCALE, { hour: '2-digit', minute: '2-digit' });
+    return formatChartTick(value, widgetTimeRangeShowsDate(timeRange.value));
 }
 
 function formatPercentageTick(value: number): string {

@@ -3,7 +3,7 @@ import Heading from '@/components/Heading.vue';
 import AssignmentForm from '@/components/peoplecount/assignments/AssignmentForm.vue';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Head } from '@inertiajs/vue3';
 
 const props = defineProps<{
@@ -49,8 +49,8 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         <h3 class="text-lg font-semibold">Event</h3>
                         <div class="mt-2 space-y-2">
                             <p><span class="font-medium">Name:</span> {{ assignment.event.name }}</p>
-                            <p><span class="font-medium">Start:</span> {{ formatLocalDateTime(assignment.event.starts_at) }}</p>
-                            <p><span class="font-medium">End:</span> {{ formatLocalDateTime(assignment.event.ends_at) }}</p>
+                            <p><span class="font-medium">Start:</span> {{ formatDateTime(assignment.event.starts_at) }}</p>
+                            <p><span class="font-medium">End:</span> {{ formatDateTime(assignment.event.ends_at) }}</p>
                         </div>
                     </div>
 
@@ -84,8 +84,8 @@ const breadcrumbItems: BreadcrumbItem[] = [
                                     {{ assignment.direction_flipped ? 'Flipped' : 'Normal' }}
                                 </span>
                             </p>
-                            <p><span class="font-medium">Active From:</span> {{ formatLocalDateTime(assignment.active_from) }}</p>
-                            <p><span class="font-medium">Active To:</span> {{ formatLocalDateTime(assignment.active_to) }}</p>
+                            <p><span class="font-medium">Active From:</span> {{ formatDateTime(assignment.active_from) }}</p>
+                            <p><span class="font-medium">Active To:</span> {{ formatDateTime(assignment.active_to) }}</p>
                         </div>
                     </div>
                 </div>

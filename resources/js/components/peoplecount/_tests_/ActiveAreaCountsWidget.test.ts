@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ActiveAreaCountsWidget from '../ActiveAreaCountsWidget.vue';
 
 const mocks = vi.hoisted(() => ({
+    formatDuration: vi.fn(() => '1h'),
     get: vi.fn(),
     request: { processing: false, get: vi.fn() },
     useIntervalFn: vi.fn(),
@@ -15,6 +16,11 @@ vi.mock('@inertiajs/vue3', () => ({
 
 vi.mock('@vueuse/core', () => ({
     useIntervalFn: mocks.useIntervalFn,
+}));
+
+vi.mock('@/utils/dateTimeHelpers', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/utils/dateTimeHelpers')>()),
+    formatDuration: mocks.formatDuration,
 }));
 
 describe('ActiveAreaCountsWidget', () => {
@@ -31,7 +37,7 @@ describe('ActiveAreaCountsWidget', () => {
             event_name: 'Event 1',
             count: 42,
             net_change: 5,
-            net_change_time_ago: '30 seconds ago',
+            net_change_period_seconds: 3600,
             last_updated: '2025-08-04T22:00:00Z',
         },
         {
@@ -40,7 +46,7 @@ describe('ActiveAreaCountsWidget', () => {
             event_name: 'Event 2',
             count: 123,
             net_change: -3,
-            net_change_time_ago: '45 seconds ago',
+            net_change_period_seconds: 3600,
             last_updated: '2025-08-04T22:00:00Z',
         },
     ];
@@ -118,11 +124,15 @@ describe('ActiveAreaCountsWidget', () => {
         expect(areaItems[0].find('.font-medium').text()).toBe('Area 1');
         expect(areaItems[0].find('.text-muted-foreground').text()).toBe('Event 1');
         expect(areaItems[0].find('.count-display').text()).toBe('42');
+        expect(areaItems[0].find('.net-change').text()).toContain('+5(1h)');
 
         // Check second area
         expect(areaItems[1].find('.font-medium').text()).toBe('Area 2');
         expect(areaItems[1].find('.text-muted-foreground').text()).toBe('Event 2');
         expect(areaItems[1].find('.count-display').text()).toBe('123');
+        expect(areaItems[1].find('.net-change').text()).toContain('-3(1h)');
+
+        expect(mocks.formatDuration).toHaveBeenCalledWith(3_600_000, { style: 'short' });
 
         expect(wrapper.text()).toContain('Latest data:');
         expect(wrapper.get('time').attributes('datetime')).toBe('2025-08-04T22:00:00.000Z');

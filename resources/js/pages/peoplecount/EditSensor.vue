@@ -13,7 +13,7 @@ import { useConfirmDialog } from '@/composables/useConfirmDialog';
 import { usePermissions } from '@/composables/usePermissions';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import { BreadcrumbItem, Organization, PeoplecountSensor, PeoplecountSensorFormData, PeoplecountSensorShare } from '@/types';
-import { formatLocalDateTime, getUTCStringFromLocal } from '@/utils/dateTimeHelpers';
+import { datetimeLocalToUTCString, formatDateTime, utcStringToDatetimeLocal } from '@/utils/dateTimeHelpers';
 import { Head, Link, router, useForm, useHttp } from '@inertiajs/vue3';
 import { Archive, KeyRound, LoaderCircle, RotateCcw, Trash2, Undo2 } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -51,13 +51,6 @@ const editShareForm = useForm({
     starts_at: '',
     ends_at: '',
 });
-
-const formatDateTimeLocal = (value: string) => {
-    const date = new Date(value);
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-
-    return localDate.toISOString().slice(0, 16);
-};
 
 const submitSensor = () => {
     sensorForm.put(
@@ -111,8 +104,8 @@ const submitShare = () => {
     shareForm
         .transform((data) => ({
             ...data,
-            starts_at: getUTCStringFromLocal(new Date(data.starts_at)),
-            ends_at: getUTCStringFromLocal(new Date(data.ends_at)),
+            starts_at: datetimeLocalToUTCString(data.starts_at),
+            ends_at: datetimeLocalToUTCString(data.ends_at),
         }))
         .post(
             route('peoplecount.sensors.shares.store', {
@@ -130,8 +123,8 @@ const editShare = (share: PeoplecountSensorShare) => {
     editingShareId.value = share.id;
     editShareForm.clearErrors();
     editShareForm.borrower_organization_id = share.borrower_organization_id.toString();
-    editShareForm.starts_at = formatDateTimeLocal(share.starts_at);
-    editShareForm.ends_at = formatDateTimeLocal(share.ends_at);
+    editShareForm.starts_at = utcStringToDatetimeLocal(share.starts_at);
+    editShareForm.ends_at = utcStringToDatetimeLocal(share.ends_at);
 };
 
 const cancelEditShare = () => {
@@ -144,8 +137,8 @@ const updateShare = (share: PeoplecountSensorShare) => {
     editShareForm
         .transform((data) => ({
             ...data,
-            starts_at: getUTCStringFromLocal(new Date(data.starts_at)),
-            ends_at: getUTCStringFromLocal(new Date(data.ends_at)),
+            starts_at: datetimeLocalToUTCString(data.starts_at),
+            ends_at: datetimeLocalToUTCString(data.ends_at),
         }))
         .put(
             route('peoplecount.sensors.shares.update', {
@@ -241,7 +234,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     <div>
                         <Heading description="Hide retired sensors without breaking assignments or history" title="Archive" />
                         <p v-if="props.sensor.archived_at" class="text-muted-foreground mt-2 text-sm">
-                            Archived {{ formatLocalDateTime(props.sensor.archived_at) }}
+                            Archived {{ formatDateTime(props.sensor.archived_at) }}
                         </p>
                     </div>
 
@@ -354,7 +347,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                             <div class="text-sm">
                                 <p class="font-medium">{{ share.borrower_organization?.name ?? 'Unknown organization' }}</p>
                                 <p class="text-muted-foreground">
-                                    {{ formatLocalDateTime(share.starts_at) }} to {{ formatLocalDateTime(share.ends_at) }} ·
+                                    {{ formatDateTime(share.starts_at) }} to {{ formatDateTime(share.ends_at) }} ·
                                     {{ share.assignments_count ?? 0 }} assignments
                                 </p>
                             </div>

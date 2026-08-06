@@ -1,366 +1,137 @@
-/** Date and time formatting and conversion helpers. */
+export const DATE_TIME_LOCALE = 'de-CH';
+export const RELATIVE_TIME_LOCALE = 'en';
 
-export const APP_LOCALE = 'en-US';
+type DateTimeInput = Date | number | string;
+type DurationStyle = 'long' | 'short';
 
-/**
- * Format a date/time in the user's local timezone
- * Format: dd.mm.yy, hh:mm (24h format, no timezone info)
- */
-export function formatLocalDateTime(utcString: string, options?: Intl.DateTimeFormatOptions): string {
-    const date = new Date(utcString);
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+const relativeFormatter = new Intl.RelativeTimeFormat(RELATIVE_TIME_LOCALE, { numeric: 'auto' });
 
-    // If custom options are provided, use them with the old behavior for backward compatibility
-    if (options) {
-        const defaultOptions: Intl.DateTimeFormatOptions = {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZoneName: 'short',
-        };
-        return date.toLocaleString(APP_LOCALE, { ...defaultOptions, ...options });
+function dateValue(value: DateTimeInput): Date | null {
+    const date = value instanceof Date ? value : new Date(value);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatter(options: Intl.DateTimeFormatOptions, timeZone?: string): Intl.DateTimeFormat {
+    const resolvedOptions = { ...options, hourCycle: 'h23' as const, timeZone };
+    const key = JSON.stringify(resolvedOptions);
+    const cached = formatterCache.get(key);
+
+    if (cached) {
+        return cached;
     }
 
-    // Default format: dd.mm.yy, hh:mm (24h format, no timezone)
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const created = new Intl.DateTimeFormat(DATE_TIME_LOCALE, resolvedOptions);
+    formatterCache.set(key, created);
 
-    return `${day}.${month}.${year}, ${hours}:${minutes}`;
+    return created;
 }
 
-/**
- * Format a date/time in a long format (e.g., "Monday, January 1, 2024 at 6:00 PM PST")
- */
-export function formatLocalDateTimeLong(utcString: string): string {
-    return formatLocalDateTime(utcString, {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short',
-    });
+function format(value: DateTimeInput, options: Intl.DateTimeFormatOptions, timeZone?: string): string {
+    const date = dateValue(value);
+
+    return date ? formatter(options, timeZone).format(date) : 'N/A';
 }
 
-/**
- * Format a date/time with short date and time styles
- */
-export function formatTimestamp(utcString: string): string {
-    const date = new Date(utcString);
-    return date.toLocaleString(APP_LOCALE, {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    });
+export function formatDate(value: DateTimeInput, timeZone?: string): string {
+    return format(value, { day: '2-digit', month: '2-digit', year: 'numeric' }, timeZone);
 }
 
-/**
- * Convert local Date objects to UTC ISO strings for backend
- */
-export function getUTCStringFromLocal(localDate: Date | null): string {
-    if (!localDate) return '';
-    return localDate.toISOString();
+export function formatDateTime(value: DateTimeInput, timeZone?: string): string {
+    return format(value, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }, timeZone);
 }
 
-/**
- * Convert UTC ISO strings to local Date objects
- */
-export function getLocalDateFromUTC(utcString?: string): Date | null {
-    if (!utcString) return null;
-    return new Date(utcString);
+export function formatDateTimeWithSeconds(value: DateTimeInput, timeZone?: string): string {
+    return format(
+        value,
+        { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' },
+        timeZone,
+    ).replace(',', '');
 }
 
-/**
- * Convert UTC date/time strings to datetime-local input values.
- */
+export function formatTime(value: DateTimeInput, timeZone?: string): string {
+    return format(value, { hour: '2-digit', minute: '2-digit' }, timeZone);
+}
+
+export function formatChartTick(value: DateTimeInput, showDate: boolean): string {
+    return showDate ? format(value, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : formatTime(value);
+}
+
+export function formatChartTooltip(value: DateTimeInput): string {
+    return format(value, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+export function formatRelativeTime(value: DateTimeInput, now = Date.now()): string {
+    const date = dateValue(value);
+
+    if (!date) {
+        return 'N/A';
+    }
+
+    const diffSeconds = Math.round((date.getTime() - now) / 1000);
+    if (Math.abs(diffSeconds) < 60) {
+        return relativeFormatter.format(diffSeconds, 'second');
+    }
+
+    if (Math.abs(diffSeconds) < 3600) {
+        return relativeFormatter.format(Math.round(diffSeconds / 60), 'minute');
+    }
+
+    if (Math.abs(diffSeconds) < 86400) {
+        return relativeFormatter.format(Math.round(diffSeconds / 3600), 'hour');
+    }
+
+    return relativeFormatter.format(Math.round(diffSeconds / 86400), 'day');
+}
+
+export function formatDuration(milliseconds: number, options: { style?: DurationStyle } = {}): string {
+    const style = options.style ?? 'long';
+    let seconds = Math.max(0, Math.round(milliseconds / 1000));
+    const units = [
+        { seconds: 86400, short: 'd', long: 'day' },
+        { seconds: 3600, short: 'h', long: 'hour' },
+        { seconds: 60, short: 'm', long: 'minute' },
+        { seconds: 1, short: 's', long: 'second' },
+    ];
+    const parts: string[] = [];
+
+    for (const unit of units) {
+        const value = Math.floor(seconds / unit.seconds);
+
+        if (value === 0) {
+            continue;
+        }
+
+        parts.push(style === 'short' ? `${value}${unit.short}` : `${value} ${unit.long}${value === 1 ? '' : 's'}`);
+        seconds %= unit.seconds;
+
+        if (parts.length === 2) {
+            break;
+        }
+    }
+
+    return parts.join(' ') || (style === 'short' ? '0s' : '0 seconds');
+}
+
 export function utcStringToDatetimeLocal(utcString?: string): string {
-    if (!utcString) return '';
+    if (!utcString) {
+        return '';
+    }
 
-    const date = new Date(utcString);
+    const date = dateValue(utcString);
 
-    if (Number.isNaN(date.getTime())) return '';
-
-    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    return date ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
 }
 
-/**
- * Convert datetime-local input values to UTC ISO strings for backend storage.
- */
 export function datetimeLocalToUTCString(datetimeLocal: string): string {
-    if (!datetimeLocal) return '';
+    if (!datetimeLocal) {
+        return '';
+    }
 
-    const date = new Date(datetimeLocal);
-
-    if (Number.isNaN(date.getTime())) return '';
-
-    return date.toISOString();
+    return dateValue(datetimeLocal)?.toISOString() ?? '';
 }
 
-/**
- * Get the user's current timezone
- */
 export function getUserTimezone(): string {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-/**
- * Convert a date from one timezone to another
- */
-export function convertTimezone(date: Date, fromTimezone: string, toTimezone: string): Date {
-    // Create a date string in the source timezone
-    const utcDate = new Date(date.toLocaleString(APP_LOCALE, { timeZone: 'UTC' }));
-    const sourceDate = new Date(date.toLocaleString(APP_LOCALE, { timeZone: fromTimezone }));
-    const diff = utcDate.getTime() - sourceDate.getTime();
-
-    // Apply the difference and convert to target timezone
-    const targetDate = new Date(date.getTime() + diff);
-    return new Date(targetDate.toLocaleString(APP_LOCALE, { timeZone: toTimezone }));
-}
-
-/**
- * Format a date in a specific timezone
- */
-export function formatDateInTimezone(date: Date, timezone: string, options?: Intl.DateTimeFormatOptions): string {
-    const defaultOptions: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: timezone,
-        timeZoneName: 'short',
-    };
-
-    return date.toLocaleString(APP_LOCALE, { ...defaultOptions, ...options });
-}
-
-/**
- * Validate HH:MM format using regex
- */
-export function validateResetTime(timeString: string): { isValid: boolean; error?: string } {
-    if (!timeString || timeString.trim() === '') {
-        return {
-            isValid: false,
-            error: 'Time string cannot be empty',
-        };
-    }
-
-    // Validate HH:MM format: /^([01][0-9]|2[0-3]):[0-5][0-9]$/
-    const timeRegex = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
-
-    if (!timeRegex.test(timeString)) {
-        return {
-            isValid: false,
-            error: 'Time must be in HH:MM format (24-hour)',
-        };
-    }
-
-    return { isValid: true };
-}
-
-/**
- * Convert daily reset time and timezone to human-readable text
- */
-export function dailyResetToText(resetTime: string, timezone: string): string {
-    return `Daily at ${resetTime} (${timezone})`;
-}
-
-/**
- * Format a date for display in forms (YYYY-MM-DD format)
- */
-export function formatDateForInput(date: Date): string {
-    return date.toISOString().split('T')[0];
-}
-
-/**
- * Format a time for display in forms (HH:MM format)
- */
-export function formatTimeForInput(date: Date): string {
-    return date.toTimeString().slice(0, 5);
-}
-
-/**
- * Combine date and time strings into a Date object
- */
-export function combineDateAndTime(dateString: string, timeString: string): Date {
-    return new Date(`${dateString}T${timeString}:00`);
-}
-
-/**
- * Check if a date is today
- */
-export function isToday(date: Date): boolean {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-}
-
-/**
- * Check if a date is in the past
- */
-export function isPast(date: Date): boolean {
-    return date < new Date();
-}
-
-/**
- * Check if a date is in the future
- */
-export function isFuture(date: Date): boolean {
-    return date > new Date();
-}
-
-/**
- * Get relative time string (e.g., "2 hours ago", "in 3 days")
- */
-export function getRelativeTime(date: Date): string {
-    const diffSeconds = Math.round((date.getTime() - Date.now()) / 1000);
-    const formatter = new Intl.RelativeTimeFormat(APP_LOCALE, { numeric: 'auto' });
-
-    if (Math.abs(diffSeconds) < 60) return formatter.format(diffSeconds, 'second');
-    if (Math.abs(diffSeconds) < 3600) return formatter.format(Math.round(diffSeconds / 60), 'minute');
-    if (Math.abs(diffSeconds) < 86400) return formatter.format(Math.round(diffSeconds / 3600), 'hour');
-
-    return formatter.format(Math.round(diffSeconds / 86400), 'day');
-}
-
-/**
- * Date and Time Helper Class
- * Provides utility methods for date and time formatting and conversion
- */
-export class DateTimeHelper {
-    /**
-     * Format a date/time in the user's local timezone
-     */
-    static formatLocalDateTime(utcString: string, options?: Intl.DateTimeFormatOptions): string {
-        return formatLocalDateTime(utcString, options);
-    }
-
-    /**
-     * Format a date/time in a long format
-     */
-    static formatLocalDateTimeLong(utcString: string): string {
-        return formatLocalDateTimeLong(utcString);
-    }
-
-    /**
-     * Format a date/time with short date and time styles
-     */
-    static formatTimestamp(utcString: string): string {
-        return formatTimestamp(utcString);
-    }
-
-    /**
-     * Convert local Date objects to UTC ISO strings for backend
-     */
-    static getUTCStringFromLocal(localDate: Date | null): string {
-        return getUTCStringFromLocal(localDate);
-    }
-
-    /**
-     * Convert UTC ISO strings to local Date objects
-     */
-    static getLocalDateFromUTC(utcString?: string): Date | null {
-        return getLocalDateFromUTC(utcString);
-    }
-
-    /**
-     * Convert UTC date/time strings to datetime-local input values.
-     */
-    static utcStringToDatetimeLocal(utcString?: string): string {
-        return utcStringToDatetimeLocal(utcString);
-    }
-
-    /**
-     * Convert datetime-local input values to UTC ISO strings for backend storage.
-     */
-    static datetimeLocalToUTCString(datetimeLocal: string): string {
-        return datetimeLocalToUTCString(datetimeLocal);
-    }
-
-    /**
-     * Get the user's current timezone
-     */
-    static getUserTimezone(): string {
-        return getUserTimezone();
-    }
-
-    /**
-     * Convert a date from one timezone to another
-     */
-    static convertTimezone(date: Date, fromTimezone: string, toTimezone: string): Date {
-        return convertTimezone(date, fromTimezone, toTimezone);
-    }
-
-    /**
-     * Format a date in a specific timezone
-     */
-    static formatDateInTimezone(date: Date, timezone: string, options?: Intl.DateTimeFormatOptions): string {
-        return formatDateInTimezone(date, timezone, options);
-    }
-
-    /**
-     * Validate HH:MM format using regex
-     */
-    static validateResetTime(timeString: string): { isValid: boolean; error?: string } {
-        return validateResetTime(timeString);
-    }
-
-    /**
-     * Convert daily reset time and timezone to human-readable text
-     */
-    static dailyResetToText(resetTime: string, timezone: string): string {
-        return dailyResetToText(resetTime, timezone);
-    }
-
-    /**
-     * Format a date for display in forms (YYYY-MM-DD format)
-     */
-    static formatDateForInput(date: Date): string {
-        return formatDateForInput(date);
-    }
-
-    /**
-     * Format a time for display in forms (HH:MM format)
-     */
-    static formatTimeForInput(date: Date): string {
-        return formatTimeForInput(date);
-    }
-
-    /**
-     * Combine date and time strings into a Date object
-     */
-    static combineDateAndTime(dateString: string, timeString: string): Date {
-        return combineDateAndTime(dateString, timeString);
-    }
-
-    /**
-     * Check if a date is today
-     */
-    static isToday(date: Date): boolean {
-        return isToday(date);
-    }
-
-    /**
-     * Check if a date is in the past
-     */
-    static isPast(date: Date): boolean {
-        return isPast(date);
-    }
-
-    /**
-     * Check if a date is in the future
-     */
-    static isFuture(date: Date): boolean {
-        return isFuture(date);
-    }
-
-    /**
-     * Get relative time string (e.g., "2 hours ago", "in 3 days")
-     */
-    static getRelativeTime(date: Date): string {
-        return getRelativeTime(date);
-    }
 }

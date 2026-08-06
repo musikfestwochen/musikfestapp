@@ -2,7 +2,7 @@ import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountEvent } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { getEventDuration, getEventStatus } from '@/utils/eventHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
@@ -53,7 +53,7 @@ export function eventsColumns(organization: Organization): ColumnDef<Peoplecount
                 }),
             cell: ({ row }) => {
                 const startsAt = row.getValue('starts_at') as string;
-                return h('div', { class: 'text-sm' }, formatLocalDateTime(startsAt));
+                return h('div', { class: 'text-sm' }, formatDateTime(startsAt));
             },
             enableSorting: true,
             enableHiding: true,
@@ -67,7 +67,7 @@ export function eventsColumns(organization: Organization): ColumnDef<Peoplecount
                 }),
             cell: ({ row }) => {
                 const endsAt = row.getValue('ends_at') as string;
-                return h('div', { class: 'text-sm' }, formatLocalDateTime(endsAt));
+                return h('div', { class: 'text-sm' }, formatDateTime(endsAt));
             },
             enableSorting: true,
             enableHiding: true,

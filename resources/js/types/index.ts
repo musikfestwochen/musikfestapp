@@ -321,6 +321,7 @@ export interface PeoplecountAreaRecurringReset {
     reset_value: number;
     reset_time: string;
     timezone: string;
+    next_occurrence: string; // ISO 8601 date-time string (UTC)
     notes?: string;
     created_at: string;
     updated_at: string;

@@ -2,7 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PeoplecountAssignment } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Users } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -53,8 +53,8 @@ const getSubtitle = () => {
                 <Badge v-if="assignment.direction_flipped" variant="destructive"> direction flipped </Badge>
 
                 <div class="text-muted-foreground text-xs">
-                    <p><strong>Active from:</strong> {{ formatLocalDateTime(assignment.active_from) }}</p>
-                    <p><strong>Active to:</strong> {{ formatLocalDateTime(assignment.active_to) }}</p>
+                    <p><strong>Active from:</strong> {{ formatDateTime(assignment.active_from) }}</p>
+                    <p><strong>Active to:</strong> {{ formatDateTime(assignment.active_to) }}</p>
                 </div>
             </div>
         </CardContent>
