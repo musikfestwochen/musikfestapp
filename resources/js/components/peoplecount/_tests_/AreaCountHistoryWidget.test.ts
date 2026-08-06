@@ -270,6 +270,12 @@ describe('AreaCountHistoryWidget', () => {
         expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-count-history.index');
         expect(mocks.request.from).toBe('2025-08-04T21:38:00.000Z');
         expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
+
+        await wrapper.find('[data-testid="range-select"]').setValue('yesterday');
+        await flushPromises();
+
+        expect(mocks.request.from).toBe(new Date(2025, 7, 4).toISOString());
+        expect(mocks.request.to).toBe(new Date(2025, 7, 5).toISOString());
     });
 
     it('queues a range change while a request is active', async () => {

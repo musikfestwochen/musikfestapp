@@ -161,6 +161,12 @@ describe('WindHistoryWidget', () => {
 
         expect(mocks.request.from).toBe('2026-07-25T11:30:00.000Z');
         expect(mocks.request.to).toBe('2026-07-25T12:00:00.000Z');
+
+        await wrapper.get('[data-testid="range-select"]').setValue('yesterday');
+        await flushPromises();
+
+        expect(mocks.request.from).toBe(new Date(2026, 6, 24).toISOString());
+        expect(mocks.request.to).toBe(new Date(2026, 6, 25).toISOString());
     });
 
     it('calculates statistics in km/h and annotates an isolated series', async () => {

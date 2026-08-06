@@ -12,7 +12,7 @@ use Illuminate\Validation\Validator;
 
 class HistoryIndexRequest extends FormRequest
 {
-    public const int MAX_RANGE_HOURS = 24;
+    public const int MAX_RANGE_HOURS = 25;
 
     /**
      * Determine if the user is authorized to make this request.

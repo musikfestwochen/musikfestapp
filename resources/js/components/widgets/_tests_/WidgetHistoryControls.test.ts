@@ -30,5 +30,6 @@ describe('WidgetHistoryControls', () => {
         await wrapper.get('[role="switch"]').trigger('click');
         expect(wrapper.emitted('update:statisticsEnabled')).toEqual([[true]]);
         expect(wrapper.get('label').attributes('for')).toBe(wrapper.get('[role="switch"]').attributes('id'));
+        expect(wrapper.get('[role="switch"]').element.parentElement?.classList).not.toContain('border');
     });
 });

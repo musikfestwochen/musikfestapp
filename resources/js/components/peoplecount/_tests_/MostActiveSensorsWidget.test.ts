@@ -141,6 +141,18 @@ describe('MostActiveSensorsWidget', () => {
                 .find((button) => button.text() === '30m')!
                 .attributes('aria-pressed'),
         ).toBe('false');
+        expect(
+            wrapper
+                .findAll('button')
+                .find((button) => button.text() === '10m')!
+                .classes(),
+        ).toEqual(expect.arrayContaining(['border', 'border-foreground/60']));
+        expect(
+            wrapper
+                .findAll('button')
+                .find((button) => button.text() === '30m')!
+                .classes(),
+        ).not.toContain('border');
 
         // Click 30m -> sensor with Total 4 should be first
         await wrapper

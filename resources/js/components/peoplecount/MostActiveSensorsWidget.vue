@@ -81,34 +81,34 @@ watch(
         <template #actions>
             <div class="flex flex-wrap items-center gap-1">
                 <Button
-                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '10m' }"
+                    :class="{ 'border-foreground/60 border': selectedRange === '10m' }"
                     :aria-pressed="selectedRange === '10m'"
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     @click="selectedRange = '10m'"
                     >10m</Button
                 >
                 <Button
-                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '30m' }"
+                    :class="{ 'border-foreground/60 border': selectedRange === '30m' }"
                     :aria-pressed="selectedRange === '30m'"
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     @click="selectedRange = '30m'"
                     >30m</Button
                 >
                 <Button
-                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '1h' }"
+                    :class="{ 'border-foreground/60 border': selectedRange === '1h' }"
                     :aria-pressed="selectedRange === '1h'"
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     @click="selectedRange = '1h'"
                     >1h</Button
                 >
                 <Button
-                    :class="{ 'bg-primary text-primary-foreground': selectedRange === '2h' }"
+                    :class="{ 'border-foreground/60 border': selectedRange === '2h' }"
                     :aria-pressed="selectedRange === '2h'"
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     @click="selectedRange = '2h'"
                     >2h</Button
                 >

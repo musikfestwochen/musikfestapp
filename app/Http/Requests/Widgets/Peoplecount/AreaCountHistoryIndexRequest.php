@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Date;
 
 class AreaCountHistoryIndexRequest extends FormRequest
 {
-    public const int MAX_RANGE_HOURS = 24;
+    public const int MAX_RANGE_HOURS = 25;
 
     public function authorize(): bool
     {

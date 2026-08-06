@@ -23,7 +23,7 @@ const statisticsId = useId();
         <div class="min-w-0 flex-1 sm:flex-none">
             <WidgetTimeRangeSelect :model-value="timeRange" @update:model-value="emit('update:timeRange', $event)" />
         </div>
-        <div class="flex h-10 shrink-0 items-center gap-2 rounded-md border px-2">
+        <div class="flex h-10 shrink-0 items-center gap-2 px-1">
             <Label :for="statisticsId" class="cursor-pointer">Statistics</Label>
             <Switch
                 :id="statisticsId"

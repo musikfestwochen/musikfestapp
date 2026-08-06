@@ -8,7 +8,7 @@ const stubs = {
         emits: ['update:modelValue'],
         template: '<select data-testid="range" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot /></select>',
     },
-    SelectTrigger: { template: '<div><slot /></div>' },
+    SelectTrigger: { name: 'SelectTrigger', template: '<div><slot /></div>' },
     SelectValue: { template: '<div />' },
     SelectContent: { template: '<div><slot /></div>' },
     SelectItem: { props: ['value'], template: '<option :value="value"><slot /></option>' },
@@ -28,7 +28,15 @@ describe('WidgetTimeRangeSelect', () => {
             ['6h', 'Last 6 hours'],
             ['12h', 'Last 12 hours'],
             ['24h', 'Last 24 hours'],
+            ['today', 'Today'],
+            ['yesterday', 'Yesterday'],
+            ['day-before-yesterday', 'Day before yesterday'],
+            ['this-day-last-week', 'This day last week'],
         ]);
+
+        expect(wrapper.getComponent({ name: 'SelectTrigger' }).classes()).toEqual(
+            expect.arrayContaining(['border-transparent', 'bg-transparent', 'shadow-none']),
+        );
     });
 
     it('emits the selected range', async () => {

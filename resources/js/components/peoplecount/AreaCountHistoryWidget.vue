@@ -7,7 +7,8 @@ import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import {
     calculateWidgetChartStatistics,
     WIDGET_CHART_COLORS,
-    WIDGET_TIME_RANGE_MINUTES,
+    widgetTimeRangeParams,
+    widgetTimeRangeShowsDate,
     type WidgetChartSeries,
     type WidgetChartStatistics,
     type WidgetChartValue,
@@ -66,9 +67,7 @@ const {
 });
 
 function timeParams(): { from: string; to: string } {
-    const to = new Date();
-    const from = new Date(to.getTime() - WIDGET_TIME_RANGE_MINUTES[timeRange.value] * 60 * 1000);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return widgetTimeRangeParams(timeRange.value);
 }
 
 function shortenName(name: string, maxLength = 18): string {
@@ -138,7 +137,7 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
-    if (WIDGET_TIME_RANGE_MINUTES[timeRange.value] >= WIDGET_TIME_RANGE_MINUTES['12h']) {
+    if (widgetTimeRangeShowsDate(timeRange.value)) {
         return new Date(value).toLocaleString(APP_LOCALE, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
