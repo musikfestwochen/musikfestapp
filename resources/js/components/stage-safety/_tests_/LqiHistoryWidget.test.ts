@@ -129,6 +129,7 @@ describe('LqiHistoryWidget', () => {
         expect(lines.every((line) => line.props('curveType') === CurveType.MonotoneX)).toBe(true);
 
         const crosshair = wrapper.findComponent({ name: 'VisCrosshair' });
+        expect(mocks.crosshair.setData).toHaveBeenCalledWith(expect.arrayContaining(firstRows));
         const template = crosshair.props('template') as (datum: Record<string, number | Date>, x: Date) => string;
         expect(template(firstRows[1], firstRows[1].date as Date)).toContain('50.9%');
         expect(wrapper.get('time').attributes('datetime')).toBe('2026-07-25T11:40:00.000Z');

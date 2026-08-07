@@ -142,7 +142,7 @@ function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: 
 }
 
 async function syncCrosshair(): Promise<void> {
-    // Unovis creates the exposed Crosshair one tick after its Vue wrapper mounts.
+    // The Vue wrapper omits its typed data prop at runtime and creates the core Crosshair in its own nextTick callback.
     await nextTick();
     await nextTick();
     crosshairRef.value?.component.setData(chartData.value);
