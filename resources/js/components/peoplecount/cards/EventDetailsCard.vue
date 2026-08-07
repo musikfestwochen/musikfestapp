@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PeoplecountEvent } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Calendar } from 'lucide-vue-next';
 
 defineProps<{
@@ -19,8 +19,8 @@ defineProps<{
         </CardHeader>
         <CardContent>
             <div class="text-muted-foreground space-y-2 text-sm">
-                <p><strong>Start:</strong> {{ formatLocalDateTime(event.starts_at) }}</p>
-                <p><strong>End:</strong> {{ formatLocalDateTime(event.ends_at) }}</p>
+                <p><strong>Start:</strong> {{ formatDateTime(event.starts_at) }}</p>
+                <p><strong>End:</strong> {{ formatDateTime(event.ends_at) }}</p>
             </div>
         </CardContent>
     </Card>

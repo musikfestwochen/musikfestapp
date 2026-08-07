@@ -40,6 +40,12 @@ it('returns active area counts for an organization', function () {
         'period_end' => Date::now(),
         'count' => 42,
     ]);
+    AreaAggregatedCount::factory()->create([
+        'area_id' => $area->id,
+        'period_start' => Date::now()->subMinutes(61),
+        'period_end' => Date::now()->subHour(),
+        'count' => 30,
+    ]);
 
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-aggregation.index', ['organization' => $org->slug]));
@@ -52,6 +58,8 @@ it('returns active area counts for an organization', function () {
                 'name',
                 'event_name',
                 'count',
+                'net_change',
+                'net_change_period_seconds',
                 'last_updated',
             ],
         ])
@@ -59,7 +67,10 @@ it('returns active area counts for an organization', function () {
         ->assertJsonPath('0.name', 'Test Area')
         ->assertJsonPath('0.event_name', $event->name)
         ->assertJsonPath('0.count', 42)
+        ->assertJsonPath('0.net_change', 12)
+        ->assertJsonPath('0.net_change_period_seconds', 3600)
         ->assertJsonPath('0.last_updated', Date::now()->toIso8601String())
+        ->assertJsonMissingPath('0.net_change_time_ago')
         ->assertJsonMissingPath('0.debug_counts');
 
     // Reset the fixed time

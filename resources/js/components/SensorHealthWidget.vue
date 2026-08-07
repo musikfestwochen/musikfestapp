@@ -5,7 +5,7 @@ import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetySensorHealthPayload } from '@/types';
-import { getRelativeTime } from '@/utils/dateTimeHelpers';
+import { formatRelativeTime } from '@/utils/dateTimeHelpers';
 import { stageSafetySensorName } from '@/utils/stageSafety';
 import { useHttp } from '@inertiajs/vue3';
 import { Activity } from 'lucide-vue-next';
@@ -132,9 +132,7 @@ function peoplecountSensorName(sensor: PeoplecountHealthSensor): string {
                         <div class="min-w-0">
                             <p class="truncate">{{ stageSafetySensorName(sensor) }}</p>
                             <p class="text-muted-foreground text-xs">
-                                {{
-                                    sensor.latest_observed_at ? `Observed ${getRelativeTime(new Date(sensor.latest_observed_at))}` : 'Never observed'
-                                }}
+                                {{ sensor.latest_observed_at ? `Observed ${formatRelativeTime(sensor.latest_observed_at)}` : 'Never observed' }}
                             </p>
                         </div>
                         <Badge :variant="sensor.status === 'stale' ? 'destructive' : 'secondary'">{{ sensor.status.replace('_', ' ') }}</Badge>

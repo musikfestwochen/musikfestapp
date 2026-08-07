@@ -2,7 +2,7 @@ import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
-import { APP_LOCALE, formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Edit, Trash2 } from 'lucide-vue-next';
@@ -31,7 +31,7 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
                 }),
             cell: ({ row }) => {
                 const reset = row.original;
-                return h('div', { class: 'text-sm' }, formatLocalDateTime(reset.effective_at));
+                return h('div', { class: 'text-sm' }, formatDateTime(reset.effective_at));
             },
             enableSorting: true,
             enableHiding: true,
@@ -149,36 +149,7 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
                 }),
             cell: ({ row }) => {
                 const reset = row.original;
-                try {
-                    // Calculate next daily occurrence
-                    const now = new Date();
-                    const [hours, minutes] = reset.reset_time.split(':').map(Number);
-
-                    // Create today's reset time in the specified timezone
-                    const today = new Date();
-                    today.setHours(hours, minutes, 0, 0);
-
-                    // If today's reset time has passed, use tomorrow
-                    const nextOccurrence =
-                        now.getHours() > hours || (now.getHours() === hours && now.getMinutes() >= minutes)
-                            ? new Date(today.getTime() + 24 * 60 * 60 * 1000)
-                            : today;
-
-                    // Format the occurrence in the stored timezone
-                    const formatter = new Intl.DateTimeFormat(APP_LOCALE, {
-                        timeZone: reset.timezone || 'UTC',
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false,
-                    });
-                    const formattedTime = formatter.format(nextOccurrence);
-                    return h('div', { class: 'text-sm' }, formattedTime);
-                } catch {
-                    return h('div', { class: 'text-sm text-red-600' }, 'Invalid schedule');
-                }
+                return h('div', { class: 'text-sm' }, formatDateTime(reset.next_occurrence));
             },
             enableSorting: false,
             enableHiding: true,

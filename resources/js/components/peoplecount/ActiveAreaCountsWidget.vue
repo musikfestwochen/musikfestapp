@@ -3,6 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import WidgetNotice from '@/components/widgets/WidgetNotice.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
+import { formatDuration } from '@/utils/dateTimeHelpers';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -13,7 +14,7 @@ interface AreaCount {
     event_name: string;
     count: number;
     net_change: number | null;
-    net_change_time_ago: string | null;
+    net_change_period_seconds: number | null;
     last_updated: string | null;
 }
 
@@ -79,7 +80,9 @@ const isDataStale = computed(() => {
                     >
                         <span v-if="area.net_change > 0">+{{ area.net_change }}</span>
                         <span v-else>{{ area.net_change }}</span>
-                        <span class="text-muted-foreground ml-1 text-xs">({{ area.net_change_time_ago }})</span>
+                        <span v-if="area.net_change_period_seconds !== null" class="text-muted-foreground ml-1 text-xs"
+                            >({{ formatDuration(area.net_change_period_seconds * 1000, { style: 'short' }) }})</span
+                        >
                     </div>
                     <div v-else class="text-xs text-gray-500">No net change data</div>
                 </div>

@@ -10,10 +10,12 @@ use App\Http\Requests\Peoplecount\AreaStoreRequest;
 use App\Http\Requests\Peoplecount\AreaUpdateRequest;
 use App\Models\Organization;
 use App\Models\Peoplecount\Area;
+use App\Models\Peoplecount\AreaRecurringReset;
 use App\Models\Peoplecount\AreaSingleReset;
 use App\Models\Peoplecount\Event;
 use App\Models\User;
 use Database\Factories\Peoplecount\AlertFactory;
+use Illuminate\Support\Facades\Date;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -90,6 +92,8 @@ it('can create an area for an organization event', function () {
 });
 
 it('shows the edit area form for an organization area with alert options and lazy alerts', function () {
+    Date::setTestNow('2024-01-15 06:00:00 UTC');
+
     $admin = User::factory()->globalAdmin()->create();
     $org = Organization::factory()->create();
     $event = Event::factory()->create([
@@ -116,6 +120,11 @@ it('shows the edit area form for an organization area with alert options and laz
         'area_id' => $area->id,
         'created_by' => $admin->id,
     ]);
+    AreaRecurringReset::factory()->create([
+        'area_id' => $area->id,
+        'reset_time' => '08:00',
+        'timezone' => 'Europe/Zurich',
+    ]);
 
     // Create a couple of alerts to be returned on partial reload
     $alert1 = AlertFactory::new()->create([
@@ -140,6 +149,7 @@ it('shows the edit area form for an organization area with alert options and laz
                 ->where('event_id', $event->id)
                 ->has('event')
                 ->has('assignments')
+                ->where('area_recurring_resets.0.next_occurrence', '2024-01-15T07:00:00.000000Z')
                 ->etc()
             )
             ->has('events', 1)

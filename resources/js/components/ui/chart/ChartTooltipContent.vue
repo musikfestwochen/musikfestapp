@@ -3,6 +3,13 @@ import type { HTMLAttributes } from "vue"
 import type { ChartConfig } from "."
 import { computed } from "vue"
 import { cn } from "@/lib/utils"
+import { DATE_TIME_LOCALE } from "@/utils/dateTimeHelpers"
+
+const numberFormatter = new Intl.NumberFormat(DATE_TIME_LOCALE)
+
+function formatValue(value: unknown): string {
+  return typeof value === "number" ? numberFormatter.format(value) : String(value)
+}
 
 const props = withDefaults(defineProps<{
   hideLabel?: boolean
@@ -95,7 +102,7 @@ const tooltipLabel = computed(() => {
               </span>
             </div>
             <span v-if="value !== undefined && value !== null" class="text-foreground font-mono font-medium tabular-nums">
-              {{ value.toLocaleString() }}
+              {{ formatValue(value) }}
             </span>
           </div>
         </div>

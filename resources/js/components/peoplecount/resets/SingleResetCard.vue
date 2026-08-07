@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Organization, PeoplecountArea, PeoplecountAreaSingleReset } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { Plus, RotateCcw } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -27,7 +27,7 @@ const latestReset = computed(() => {
 // Format the effective date
 const formattedEffectiveDate = computed(() => {
     if (!latestReset.value) return 'No resets yet';
-    return formatLocalDateTime(latestReset.value.effective_at);
+    return formatDateTime(latestReset.value.effective_at);
 });
 </script>
 

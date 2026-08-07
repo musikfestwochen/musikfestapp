@@ -691,12 +691,12 @@ class AreaAggregationService
                 $oneHourAgoPeriodEnd = $area->getAttribute('one_hour_ago_period_end');
 
                 $netChange = null;
-                $netChangeTimeAgo = null;
+                $netChangePeriodSeconds = null;
 
                 if ($latestCount !== null && $latestPeriodEnd !== null && $oneHourAgoCount !== null && $oneHourAgoPeriodEnd !== null) {
                     $netChange = (int) $latestCount - (int) $oneHourAgoCount;
-                    $netChangeTimeAgo = Date::parse((string) $latestPeriodEnd)
-                        ->diffForHumans(Date::parse((string) $oneHourAgoPeriodEnd), ['syntax' => true]);
+                    $netChangePeriodSeconds = (int) Date::parse((string) $latestPeriodEnd)
+                        ->diffInSeconds(Date::parse((string) $oneHourAgoPeriodEnd), true);
                 }
 
                 $lastUpdated = null;
@@ -712,7 +712,7 @@ class AreaAggregationService
                     'event_name' => $area->event->name,
                     'count' => $latestCount !== null ? (int) $latestCount : 0,
                     'net_change' => $netChange,
-                    'net_change_time_ago' => $netChangeTimeAgo,
+                    'net_change_period_seconds' => $netChangePeriodSeconds,
                     'last_updated' => $lastUpdated,
                 ];
             })->all();

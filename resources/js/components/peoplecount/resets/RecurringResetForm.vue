@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset } from '@/types';
+import { getUserTimezone } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
 import { Check, ChevronsUpDown, LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -31,7 +32,7 @@ const props = defineProps<{
 const form = useForm({
     reset_value: props.recurringReset?.reset_value || '',
     reset_time: props.recurringReset?.reset_time || '',
-    timezone: props.recurringReset?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timezone: props.recurringReset?.timezone || getUserTimezone(),
     notes: props.recurringReset?.notes || '',
 });
 

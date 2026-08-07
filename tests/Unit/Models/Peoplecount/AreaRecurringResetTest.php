@@ -70,6 +70,18 @@ it('gets next daily occurrence', function () {
     Carbon::setTestNow();
 });
 
+it('serializes next occurrence as a UTC ISO 8601 instant', function () {
+    Carbon::setTestNow('2024-03-30 23:30:00 UTC');
+
+    $model = new AreaRecurringReset;
+    $model->reset_time = '03:00';
+    $model->timezone = 'Europe/Zurich';
+
+    expect($model->toArray()['next_occurrence'])->toBe('2024-03-31T01:00:00.000000Z');
+
+    Carbon::setTestNow();
+});
+
 it('gets next daily occurrence for tomorrow if time has passed today', function () {
     // Freeze time at 10:30 UTC - well after midnight, so next occurrence should be tomorrow
     Carbon::setTestNow('2024-01-15 10:30:00');

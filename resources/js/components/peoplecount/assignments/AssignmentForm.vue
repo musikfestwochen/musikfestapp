@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Organization, PeoplecountAssignment, PeoplecountEvent, PeoplecountSensor } from '@/types';
-import { datetimeLocalToUTCString, utcStringToDatetimeLocal } from '@/utils/dateTimeHelpers';
+import { datetimeLocalToUTCString, formatDateTime, utcStringToDatetimeLocal } from '@/utils/dateTimeHelpers';
 import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
@@ -47,6 +47,9 @@ const selectedEvent = computed(() => props.events.find((event) => event.id === p
 
 const eventStartsAt = computed(() => utcStringToDatetimeLocal(selectedEvent.value?.starts_at));
 const eventEndsAt = computed(() => utcStringToDatetimeLocal(selectedEvent.value?.ends_at));
+const eventRangeLabel = computed(() =>
+    selectedEvent.value ? `${formatDateTime(selectedEvent.value.starts_at)} to ${formatDateTime(selectedEvent.value.ends_at)}` : '',
+);
 
 const hasValidDateRange = () => Boolean(form.active_from && form.active_to && form.active_from < form.active_to);
 const isWithinEventRange = () => !selectedEvent.value || (form.active_from >= eventStartsAt.value && form.active_to <= eventEndsAt.value);
@@ -163,7 +166,7 @@ const submit = () => {
                     Active to must be after active from.
                 </p>
                 <p v-if="selectedEvent && hasValidDateRange() && !isWithinEventRange()" class="text-destructive text-sm sm:col-span-2">
-                    Assignment must be within the selected event: {{ eventStartsAt }} to {{ eventEndsAt }}.
+                    Assignment must be within the selected event: {{ eventRangeLabel }}.
                 </p>
             </div>
 

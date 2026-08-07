@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useConfirmDialog } from '@/composables/useConfirmDialog';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -116,7 +116,7 @@ const rows = computed(() => props.alerts || []);
                     <TableCell>{{ recipientsDisplay(alert.recipients) }}</TableCell>
                     <TableCell>{{ alert.creator?.name ?? '—' }}</TableCell>
                     <TableCell>
-                        <span v-if="alert.last_triggered_at">{{ formatLocalDateTime(alert.last_triggered_at) }}</span>
+                        <span v-if="alert.last_triggered_at">{{ formatDateTime(alert.last_triggered_at) }}</span>
                         <span v-else>—</span>
                     </TableCell>
                     <TableCell class="whitespace-nowrap">

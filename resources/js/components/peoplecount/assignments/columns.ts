@@ -2,7 +2,7 @@ import ConfirmActionButton from '@/components/ConfirmActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountAssignment } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
 import { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
@@ -104,7 +104,7 @@ export function assignmentsColumns(organization: Organization): ColumnDef<People
                 }),
             cell: ({ row }) => {
                 const activeFrom = row.getValue('active_from') as string;
-                return h('div', { class: 'text-sm' }, formatLocalDateTime(activeFrom));
+                return h('div', { class: 'text-sm' }, formatDateTime(activeFrom));
             },
             enableSorting: true,
             enableHiding: true,
@@ -118,7 +118,7 @@ export function assignmentsColumns(organization: Organization): ColumnDef<People
                 }),
             cell: ({ row }) => {
                 const activeTo = row.getValue('active_to') as string;
-                return h('div', { class: 'text-sm' }, formatLocalDateTime(activeTo));
+                return h('div', { class: 'text-sm' }, formatDateTime(activeTo));
             },
             enableSorting: true,
             enableHiding: true,

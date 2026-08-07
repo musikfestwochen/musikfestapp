@@ -9,7 +9,7 @@ import { useConfirmDialog } from '@/composables/useConfirmDialog';
 import { usePermissions } from '@/composables/usePermissions';
 import Layout from '@/layouts/orgmgmt/Layout.vue';
 import type { BreadcrumbItem, Organization, StageSafetySensor, StageSafetySensorFormData, StageSafetySensorType } from '@/types';
-import { formatLocalDateTime } from '@/utils/dateTimeHelpers';
+import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Head, Link, router, useForm, useHttp } from '@inertiajs/vue3';
 import { Archive, KeyRound, RotateCcw, Trash2, Undo2 } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -163,9 +163,7 @@ function acknowledgeToken(): void {
                 <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                     <div>
                         <Heading description="Hide retired sensors and revoke their API tokens" title="Archive" />
-                        <p v-if="sensor.archived_at" class="text-muted-foreground mt-2 text-sm">
-                            Archived {{ formatLocalDateTime(sensor.archived_at) }}
-                        </p>
+                        <p v-if="sensor.archived_at" class="text-muted-foreground mt-2 text-sm">Archived {{ formatDateTime(sensor.archived_at) }}</p>
                     </div>
 
                     <Link
