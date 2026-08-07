@@ -106,7 +106,7 @@ export function widgetChartStatisticMarkers(
         return [];
     }
 
-    const label = (kind: string, point: WidgetChartValue): string => `${kind} ${formatValue(point.value)}  |  ${formatChartTooltip(point.date)}`;
+    const label = (kind: string, point: WidgetChartValue): string => `${kind} ${formatValue(point.value)} | ${formatChartTooltip(point.date)}`;
 
     if (statistics.minimum.date.getTime() === statistics.maximum.date.getTime()) {
         return [{ ...statistics.minimum, label: label('Min / max', statistics.minimum), position: Position.Top }];

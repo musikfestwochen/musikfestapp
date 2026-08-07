@@ -54,8 +54,8 @@ describe('widgetChartStatisticMarkers', () => {
             { value: 20, position: Position.Bottom },
         ]);
         expect(markers.map((marker) => marker.label)).toEqual([
-            expect.stringMatching(/^Min 10\.0 km\/h  \|  .+$/),
-            expect.stringMatching(/^Max 20\.0 km\/h  \|  .+$/),
+            expect.stringMatching(/^Min 10\.0 km\/h \| .+$/),
+            expect.stringMatching(/^Max 20\.0 km\/h \| .+$/),
         ]);
     });
 
@@ -73,7 +73,7 @@ describe('widgetChartStatisticMarkers', () => {
 
         expect(markers).toHaveLength(1);
         expect(markers[0]).toMatchObject({ value: 10, position: Position.Top });
-        expect(markers[0].label).toMatch(/^Min \/ max 10  \|  .+$/);
+        expect(markers[0].label).toMatch(/^Min \/ max 10 \| .+$/);
         expect(widgetChartStatisticMarkers(null, String)).toEqual([]);
     });
 });

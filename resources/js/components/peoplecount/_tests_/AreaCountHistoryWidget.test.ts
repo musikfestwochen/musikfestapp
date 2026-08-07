@@ -170,7 +170,7 @@ describe('AreaCountHistoryWidget', () => {
         await flushPromises();
 
         const lines = wrapper.findAllComponents({ name: 'VisLine' });
-        const rows = lines[0].props('data') as Array<Record<string, number | Date | undefined>>;
+        const rows = wrapper.findComponent({ name: 'VisXYContainer' }).props('data') as Array<Record<string, number | Date | undefined>>;
         expect(lines).toHaveLength(2);
         expect(lines[0].props('color')).toBe('var(--color-chart-1)');
         expect(lines[1].props('color')).toBe('var(--color-chart-2)');
@@ -210,8 +210,9 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 12.5');
 
         const scatter = wrapper.getComponent({ name: 'VisScatter' });
-        const markers = scatter.props('data') as Array<{ label: string }>;
-        expect(markers.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min 10  \|  .+$/), expect.stringMatching(/^Max 15  \|  .+$/)]);
+        const rows = wrapper.getComponent({ name: 'VisXYContainer' }).props('data') as Array<{ statistic?: { label: string } }>;
+        const markers = rows.flatMap((point) => (point.statistic ? [point.statistic] : []));
+        expect(markers.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min 10 \| .+$/), expect.stringMatching(/^Max 15 \| .+$/)]);
         expect(scatter.props('color')).toBe('hsl(var(--foreground))');
     });
 

@@ -175,8 +175,8 @@ describe('LqiHistoryWidget', () => {
         const scatter = wrapper.getComponent({ name: 'VisScatter' });
         const markers = scatter.props('data') as Array<{ label: string }>;
         expect(markers.map((marker) => marker.label)).toEqual([
-            expect.stringMatching(/^Min 0\.0%  \|  .+$/),
-            expect.stringMatching(/^Max 50\.9%  \|  .+$/),
+            expect.stringMatching(/^Min 0\.0% \| .+$/),
+            expect.stringMatching(/^Max 50\.9% \| .+$/),
         ]);
         expect(scatter.props('color')).toBe('hsl(var(--foreground))');
     });

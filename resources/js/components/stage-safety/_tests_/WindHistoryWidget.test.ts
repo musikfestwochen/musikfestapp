@@ -189,14 +189,14 @@ describe('WindHistoryWidget', () => {
         const scatter = wrapper.getComponent({ name: 'VisScatter' });
         const markers = scatter.props('data') as Array<{ label: string }>;
         expect(markers.map((marker) => marker.label)).toEqual([
-            expect.stringMatching(/^Min 18\.0 km\/h  \|  .+$/),
-            expect.stringMatching(/^Max 21\.6 km\/h  \|  .+$/),
+            expect.stringMatching(/^Min 18\.0 km\/h \| .+$/),
+            expect.stringMatching(/^Max 21\.6 km\/h \| .+$/),
         ]);
         expect(scatter.props('color')).toBe('hsl(var(--foreground))');
 
         await wrapper.get('[data-series="sensor_1_wind_gust"]').trigger('click');
         const singleMarker = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
-        expect(singleMarker.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min \/ max 28\.8 km\/h  \|  .+$/)]);
+        expect(singleMarker.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min \/ max 28\.8 km\/h \| .+$/)]);
     });
 
     it('isolates a legend series and restores all when selected again', async () => {
