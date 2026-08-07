@@ -11,6 +11,7 @@ import {
     widgetTimeRangeParams,
     widgetTimeRangeShowsDate,
     type WidgetChartSeries,
+    type WidgetChartStatisticMarker,
     type WidgetChartStatistics,
     type WidgetTimeRange,
 } from '@/components/widgets/widgetChart';
@@ -187,12 +188,12 @@ watch(chartData, () => void syncCrosshair());
                     <VisScatter
                         v-if="focusedSeries && statisticMarkers.length"
                         :data="statisticMarkers"
-                        :x="(point) => point.date.getTime()"
-                        :y="(point) => point.value"
+                        :x="(point: WidgetChartStatisticMarker) => point.date.getTime()"
+                        :y="(point: WidgetChartStatisticMarker) => point.value"
                         color="hsl(var(--foreground))"
-                        :label="(point) => point.label"
+                        :label="(point: WidgetChartStatisticMarker) => point.label"
                         label-color="hsl(var(--foreground))"
-                        :label-position="(point) => point.position"
+                        :label-position="(point: WidgetChartStatisticMarker) => point.position"
                         :label-hide-overlapping="false"
                         :size="8"
                         stroke-color="hsl(var(--background))"
