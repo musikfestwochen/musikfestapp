@@ -30,7 +30,7 @@ describe('WidgetShell', () => {
         expect(wrapper.text()).toContain('Latest data:');
         expect(wrapper.get('time').attributes('datetime')).toBe(lastUpdated.toISOString());
         expect(wrapper.get('time').text()).toBe('29.07.2026 13:57:30');
-        expect(wrapper.get('time').element.closest('.pt-4')).not.toBeNull();
+        expect(wrapper.get('time').element.closest('.pt-2')).not.toBeNull();
     });
 
     it('omits optional elements and uses one grid cell by default', () => {
@@ -45,5 +45,18 @@ describe('WidgetShell', () => {
         const wrapper = mount(WidgetShell, { props: { title: 'Wind History', span: 'full' } });
 
         expect(wrapper.classes()).toContain('col-span-full');
+    });
+
+    it('uses narrower mobile padding and full-width mobile actions', () => {
+        const wrapper = mount(WidgetShell, {
+            props: { title: 'History' },
+            slots: { actions: '<button>Action</button>' },
+        });
+
+        expect(wrapper.findComponent({ name: 'CardHeader' }).classes()).toEqual(expect.arrayContaining(['px-4', 'sm:px-6']));
+        expect(wrapper.findComponent({ name: 'CardHeader' }).classes()).toEqual(expect.arrayContaining(['pt-4', 'sm:pt-6', 'pb-3', 'sm:pb-4']));
+        expect(wrapper.findComponent({ name: 'CardContent' }).classes()).toEqual(expect.arrayContaining(['px-4', 'sm:px-6']));
+        expect(wrapper.findComponent({ name: 'CardContent' }).classes()).toEqual(expect.arrayContaining(['pb-4', 'sm:pb-6']));
+        expect(wrapper.get('button').element.parentElement?.classList).toContain('w-full');
     });
 });

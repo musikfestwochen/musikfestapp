@@ -32,4 +32,30 @@ describe('WidgetChartLegend', () => {
             ['gust', true],
         ]);
     });
+
+    it('renders formatted statistics for visible and hidden series', () => {
+        const wrapper = mount(WidgetChartLegend, {
+            props: {
+                series,
+                hiddenSeriesKeys: new Set(['gust']),
+                statisticsEnabled: true,
+                statistics: {
+                    average: {
+                        count: 2,
+                        minimum: { date: new Date('2026-08-06T10:00:00Z'), value: 10 },
+                        maximum: { date: new Date('2026-08-06T10:05:00Z'), value: 20 },
+                        average: 15,
+                    },
+                    gust: null,
+                },
+                formatValue: (value: number) => `${value.toFixed(1)} km/h`,
+            },
+        });
+
+        expect(wrapper.get('[data-series="average"]').text()).toContain('10.0 km/h');
+        expect(wrapper.get('[data-series="average"]').text()).toContain('15.0 km/h');
+        expect(wrapper.get('[data-series="average"]').text()).toContain('20.0 km/h');
+        expect(wrapper.get('[data-series="gust"]').text()).toContain('N/A');
+        expect(wrapper.get('[data-series="gust"]').attributes('aria-pressed')).toBe('false');
+    });
 });

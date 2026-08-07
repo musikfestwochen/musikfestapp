@@ -1,6 +1,8 @@
-export type WidgetTimeRange = '30m' | '1h' | '3h' | '6h' | '12h' | '24h';
+type CalendarWidgetTimeRange = 'today' | 'yesterday' | 'day-before-yesterday' | 'this-day-last-week';
+export type WidgetTimeRange = '30m' | '1h' | '3h' | '6h' | '12h' | '24h' | CalendarWidgetTimeRange;
+type RelativeWidgetTimeRange = Exclude<WidgetTimeRange, CalendarWidgetTimeRange>;
 
-export const WIDGET_TIME_RANGE_MINUTES: Record<WidgetTimeRange, number> = {
+const WIDGET_TIME_RANGE_MINUTES: Record<RelativeWidgetTimeRange, number> = {
     '30m': 30,
     '1h': 60,
     '3h': 180,
@@ -9,11 +11,83 @@ export const WIDGET_TIME_RANGE_MINUTES: Record<WidgetTimeRange, number> = {
     '24h': 1440,
 };
 
+export function widgetTimeRangeParams(range: WidgetTimeRange, now = new Date()): { from: string; to: string } {
+    if (range === 'today') {
+        const from = new Date(now);
+        from.setHours(0, 0, 0, 0);
+
+        return { from: from.toISOString(), to: now.toISOString() };
+    }
+
+    if (range === 'yesterday' || range === 'day-before-yesterday' || range === 'this-day-last-week') {
+        const daysAgo = range === 'yesterday' ? 1 : range === 'day-before-yesterday' ? 2 : 7;
+        const from = new Date(now);
+        from.setHours(0, 0, 0, 0);
+        from.setDate(from.getDate() - daysAgo);
+        const to = new Date(from);
+        to.setDate(to.getDate() + 1);
+
+        return { from: from.toISOString(), to: to.toISOString() };
+    }
+
+    const to = new Date(now);
+    const from = new Date(to.getTime() - WIDGET_TIME_RANGE_MINUTES[range] * 60 * 1000);
+
+    return { from: from.toISOString(), to: to.toISOString() };
+}
+
+export function widgetTimeRangeShowsDate(range: WidgetTimeRange): boolean {
+    return range === '12h' || range === '24h' || !Object.hasOwn(WIDGET_TIME_RANGE_MINUTES, range);
+}
+
 export interface WidgetChartSeries {
     key: string;
     label: string;
     color: string;
     dash?: number[];
+}
+
+export interface WidgetChartValue {
+    date: Date;
+    value: number;
+}
+
+export interface WidgetChartStatistics {
+    count: number;
+    minimum: WidgetChartValue;
+    maximum: WidgetChartValue;
+    average: number;
+}
+
+export function calculateWidgetChartStatistics(values: WidgetChartValue[]): WidgetChartStatistics | null {
+    const validValues = values.filter((point) => Number.isFinite(point.value) && Number.isFinite(point.date.getTime()));
+
+    if (validValues.length === 0) {
+        return null;
+    }
+
+    let minimum = validValues[0];
+    let maximum = validValues[0];
+    let total = 0;
+
+    for (const point of validValues) {
+        if (point.value < minimum.value || (point.value === minimum.value && point.date < minimum.date)) {
+            minimum = point;
+        }
+
+        if (point.value > maximum.value || (point.value === maximum.value && point.date > maximum.date)) {
+            maximum = point;
+        }
+
+        total += point.value;
+    }
+
+    return {
+        count: validValues.length,
+        minimum,
+        maximum,
+        average: total / validValues.length,
+    };
 }
 
 export const WIDGET_CHART_COLORS = [

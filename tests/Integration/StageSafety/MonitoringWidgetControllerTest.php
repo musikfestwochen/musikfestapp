@@ -112,8 +112,8 @@ it('rejects invalid history ranges', function (array $query, array $invalidField
         ->assertUnprocessable()
         ->assertJsonValidationErrors($invalidFields);
 })->with([
-    'longer than 24 hours' => [[
-        'from' => '2026-07-24T11:59:59.000Z',
+    'longer than 25 hours' => [[
+        'from' => '2026-07-24T10:59:59.000Z',
         'to' => '2026-07-25T12:00:00.000Z',
     ], ['to']],
     'reversed' => [[

@@ -28,9 +28,11 @@ vi.mock('@vueuse/core', async (importOriginal) => ({
 }));
 
 vi.mock('@unovis/vue', () => ({
-    VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
+    VisXYContainer: { name: 'VisXYContainer', props: ['data', 'margin'], template: '<div><slot /></div>' },
     VisLine: { name: 'VisLine', props: ['color', 'lineDashArray', 'y'], template: '<div />' },
     VisAxis: { template: '<div />' },
+    VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div />' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: { name: 'VisCrosshair', props: ['color'], template: '<div />' },
 }));
@@ -49,12 +51,20 @@ const globalStubs = {
         props: ['value'],
         template: '<option :value="value"><slot /></option>',
     },
-    VisXYContainer: { name: 'VisXYContainer', props: ['data'], template: '<div><slot /></div>' },
+    VisXYContainer: { name: 'VisXYContainer', props: ['data', 'margin'], template: '<div><slot /></div>' },
     VisLine: { name: 'VisLine', props: ['color', 'lineDashArray', 'y'], template: '<div></div>' },
     VisAxis: { template: '<div></div>' },
+    VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div></div>' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div></div>' },
     ChartContainer: { name: 'ChartContainer', props: ['config'], template: '<div><slot /></div>' },
     ChartCrosshair: { name: 'ChartCrosshair', props: ['color'], template: '<div></div>' },
     ChartTooltip: { template: '<div></div>' },
+    Switch: {
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+        template:
+            '<button aria-label="Show chart statistics" :aria-pressed="modelValue" @click="$emit(\'update:modelValue\', !modelValue)">Statistics</button>',
+    },
 };
 
 describe('AreaCountHistoryWidget', () => {
@@ -177,6 +187,32 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.findAllComponents({ name: 'VisLine' })).toHaveLength(2);
     });
 
+    it('shows statistics and focused extrema for the visible series', async () => {
+        mocks.get.mockResolvedValue(mockSeries);
+        const wrapper = mount(AreaCountHistoryWidget, {
+            props: { organization: mockOrganization },
+            global: { stubs: globalStubs },
+        });
+        await flushPromises();
+
+        expect(wrapper.findComponent({ name: 'VisPlotline' }).exists()).toBe(false);
+        expect(wrapper.getComponent({ name: 'VisXYContainer' }).props('margin')).toBeUndefined();
+        expect(wrapper.getComponent({ name: 'ChartContainer' }).classes()).toContain('h-[240px]');
+
+        await wrapper.get('[aria-label="Show chart statistics"]').trigger('click');
+
+        expect(wrapper.getComponent({ name: 'ChartContainer' }).classes()).toContain('h-[220px]');
+        expect(wrapper.get('[data-series="area_1"]').text()).toContain('10');
+        expect(wrapper.get('[data-series="area_1"]').text()).toContain('12.5');
+        expect(wrapper.get('[data-series="area_1"]').text()).toContain('15');
+        expect(wrapper.getComponent({ name: 'VisPlotline' }).props('value')).toBe(12.5);
+        expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 12.5');
+
+        const scatter = wrapper.getComponent({ name: 'VisScatter' });
+        const markers = scatter.props('data') as Array<{ label: string }>;
+        expect(markers.map((marker) => marker.label)).toEqual(['Min 10', 'Max 15']);
+    });
+
     it('keeps the empty state visible while another range loads', async () => {
         mocks.get.mockResolvedValueOnce([]).mockReturnValueOnce(new Promise(() => {}));
         const wrapper = mount(AreaCountHistoryWidget, {
@@ -234,6 +270,17 @@ describe('AreaCountHistoryWidget', () => {
         expect(mocks.get).toHaveBeenCalledWith('peoplecount.area-count-history.index');
         expect(mocks.request.from).toBe('2025-08-04T21:38:00.000Z');
         expect(mocks.request.to).toBe('2025-08-04T22:08:00.000Z');
+
+        await wrapper.find('[data-testid="range-select"]').setValue('yesterday');
+        await flushPromises();
+
+        const expectedTo = new Date();
+        expectedTo.setHours(0, 0, 0, 0);
+        const expectedFrom = new Date(expectedTo);
+        expectedFrom.setDate(expectedFrom.getDate() - 1);
+
+        expect(mocks.request.from).toBe(expectedFrom.toISOString());
+        expect(mocks.request.to).toBe(expectedTo.toISOString());
     });
 
     it('queues a range change while a request is active', async () => {

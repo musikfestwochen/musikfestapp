@@ -2,14 +2,23 @@
 import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, componentToString, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import WidgetChartLegend from '@/components/widgets/WidgetChartLegend.vue';
+import WidgetHistoryControls from '@/components/widgets/WidgetHistoryControls.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
-import WidgetTimeRangeSelect from '@/components/widgets/WidgetTimeRangeSelect.vue';
-import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
+import {
+    calculateWidgetChartStatistics,
+    WIDGET_CHART_COLORS,
+    widgetTimeRangeParams,
+    widgetTimeRangeShowsDate,
+    type WidgetChartSeries,
+    type WidgetChartStatistics,
+    type WidgetChartValue,
+    type WidgetTimeRange,
+} from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import { APP_LOCALE } from '@/utils/dateTimeHelpers';
-import { CurveType } from '@unovis/ts';
-import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
+import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, Position } from '@unovis/ts';
+import { VisAxis, VisLine, VisPlotline, VisScatter, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -31,11 +40,17 @@ interface ChartDataPoint {
     [key: `area_${number}`]: number | null | undefined;
 }
 
+interface StatisticMarker extends WidgetChartValue {
+    label: string;
+    position: Position;
+}
+
 const props = defineProps<{
     organization: { id: number; slug: string; name: string };
 }>();
 
 const timeRange = ref<WidgetTimeRange>('1h');
+const statisticsEnabled = ref(false);
 const request = useHttp<{ from: string; to: string }, AreaSeries[]>({ from: '', to: '' });
 const {
     data: series,
@@ -52,9 +67,7 @@ const {
 });
 
 function timeParams(): { from: string; to: string } {
-    const to = new Date();
-    const from = new Date(to.getTime() - WIDGET_TIME_RANGE_MINUTES[timeRange.value] * 60 * 1000);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return widgetTimeRangeParams(timeRange.value);
 }
 
 function shortenName(name: string, maxLength = 18): string {
@@ -87,9 +100,36 @@ const chartData = computed<ChartDataPoint[]>(() => {
 
     return Array.from(buckets.values()).sort((left, right) => left.date.getTime() - right.date.getTime());
 });
+const statistics = computed<Record<string, WidgetChartStatistics | null>>(() =>
+    Object.fromEntries(
+        (series.value ?? []).map((area) => [
+            `area_${area.id}`,
+            calculateWidgetChartStatistics(area.data.map((point) => ({ date: new Date(point.time), value: point.count }))),
+        ]),
+    ),
+);
 const hasData = computed(() => chartData.value.length > 0);
 const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
+const focusedSeries = computed(() => (statisticsEnabled.value && visibleChartSeries.value.length === 1 ? visibleChartSeries.value[0] : null));
+const focusedStatistics = computed(() => (focusedSeries.value ? statistics.value[focusedSeries.value.key] : null));
+const countFormatter = new Intl.NumberFormat(APP_LOCALE, { maximumFractionDigits: 1 });
+const statisticMarkers = computed<StatisticMarker[]>(() => {
+    const summary = focusedStatistics.value;
+
+    if (!summary) {
+        return [];
+    }
+
+    if (summary.minimum.date.getTime() === summary.maximum.date.getTime()) {
+        return [{ ...summary.minimum, label: `Min / max ${formatCount(summary.minimum.value)}`, position: Position.Top }];
+    }
+
+    return [
+        { ...summary.minimum, label: `Min ${formatCount(summary.minimum.value)}`, position: Position.Top },
+        { ...summary.maximum, label: `Max ${formatCount(summary.maximum.value)}`, position: Position.Bottom },
+    ];
+});
 
 function seriesValue(point: ChartDataPoint, key: string): number | undefined {
     const value = point[key as `area_${number}`];
@@ -97,7 +137,15 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
+    if (widgetTimeRangeShowsDate(timeRange.value)) {
+        return new Date(value).toLocaleString(APP_LOCALE, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
     return new Date(value).toLocaleTimeString(APP_LOCALE, { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatCount(value: number): string {
+    return countFormatter.format(value);
 }
 
 watch(timeRange, refresh);
@@ -106,7 +154,9 @@ watch(timeRange, refresh);
 <template>
     <WidgetShell title="Area Count History" :error="error" :last-updated="latestDataAt" span="full">
         <template #icon><Users /></template>
-        <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
+        <template #actions>
+            <WidgetHistoryControls v-model:time-range="timeRange" v-model:statistics-enabled="statisticsEnabled" />
+        </template>
 
         <div v-if="loading && !hasData" class="flex h-[280px] items-center justify-center sm:h-[350px]">
             <Skeleton class="h-full w-full" />
@@ -120,8 +170,13 @@ watch(timeRange, refresh);
             <p class="sr-only" aria-live="polite">
                 Area count history chart with {{ chartSeries.length }} series across {{ series?.length ?? 0 }} areas.
             </p>
-            <ChartContainer :config="chartConfig" class="h-[280px] w-full min-w-0 sm:h-[350px]" role="img" aria-label="Area count history">
-                <VisXYContainer :data="chartData" :margin="{ top: 8, right: 8, bottom: 24, left: 32 }">
+            <ChartContainer
+                :config="chartConfig"
+                :class="[statisticsEnabled ? 'h-[220px]' : 'h-[240px]', 'w-full min-w-0 sm:h-[350px]']"
+                role="img"
+                aria-label="Area count history"
+            >
+                <VisXYContainer :data="chartData">
                     <template v-for="item in chartSeries" :key="item.key">
                         <VisLine
                             v-if="isSeriesVisible(item.key)"
@@ -132,12 +187,47 @@ watch(timeRange, refresh);
                             :line-width="2"
                         />
                     </template>
-                    <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
+                    <VisPlotline
+                        v-if="focusedSeries && focusedStatistics"
+                        axis="y"
+                        :value="focusedStatistics.average"
+                        :color="focusedSeries.color"
+                        :line-width="1"
+                        :line-style="PlotlineLineStylePresets.ShortDash"
+                        :label-text="`Avg ${formatCount(focusedStatistics.average)}`"
+                        :label-position="PlotlineLabelPosition.TopRight"
+                        :exclude-from-domain-calculation="true"
+                    />
+                    <VisScatter
+                        v-if="focusedSeries && statisticMarkers.length"
+                        :data="statisticMarkers"
+                        :x="(point: StatisticMarker) => point.date.getTime()"
+                        :y="(point: StatisticMarker) => point.value"
+                        :color="focusedSeries.color"
+                        :label="(point: StatisticMarker) => point.label"
+                        :label-position="(point: StatisticMarker) => point.position"
+                        :label-hide-overlapping="false"
+                        :size="8"
+                        stroke-color="var(--background)"
+                        :stroke-width="2"
+                        :exclude-from-domain-calculation="true"
+                    />
+                    <VisAxis
+                        type="x"
+                        :tick-line="false"
+                        :domain-line="false"
+                        :grid-line="false"
+                        :num-ticks="5"
+                        :min-max-ticks-only-when-width-is-less="500"
+                        :tick-text-hide-overlapping="true"
+                        :tick-format="formatTickDate"
+                    />
                     <VisAxis
                         type="y"
                         :tick-line="false"
                         :domain-line="false"
                         :grid-line="true"
+                        :num-ticks="4"
                         :tick-format="(value: number) => Math.round(value).toString()"
                     />
                     <ChartTooltip />
@@ -158,7 +248,14 @@ watch(timeRange, refresh);
                     />
                 </VisXYContainer>
             </ChartContainer>
-            <WidgetChartLegend :series="chartSeries" :hidden-series-keys="hiddenSeriesKeys" @select="selectSeries" />
+            <WidgetChartLegend
+                :series="chartSeries"
+                :hidden-series-keys="hiddenSeriesKeys"
+                :statistics-enabled="statisticsEnabled"
+                :statistics="statisticsEnabled ? statistics : undefined"
+                :format-value="formatCount"
+                @select="selectSeries"
+            />
         </div>
     </WidgetShell>
 </template>

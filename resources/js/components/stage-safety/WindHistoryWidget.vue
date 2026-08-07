@@ -2,16 +2,25 @@
 import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import WidgetChartLegend from '@/components/widgets/WidgetChartLegend.vue';
+import WidgetHistoryControls from '@/components/widgets/WidgetHistoryControls.vue';
 import WidgetShell from '@/components/widgets/WidgetShell.vue';
-import WidgetTimeRangeSelect from '@/components/widgets/WidgetTimeRangeSelect.vue';
-import { WIDGET_CHART_COLORS, WIDGET_TIME_RANGE_MINUTES, type WidgetChartSeries, type WidgetTimeRange } from '@/components/widgets/widgetChart';
+import {
+    calculateWidgetChartStatistics,
+    WIDGET_CHART_COLORS,
+    widgetTimeRangeParams,
+    widgetTimeRangeShowsDate,
+    type WidgetChartSeries,
+    type WidgetChartStatistics,
+    type WidgetChartValue,
+    type WidgetTimeRange,
+} from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyReadingKind, StageSafetyWindHistoryPayload } from '@/types';
 import { APP_LOCALE } from '@/utils/dateTimeHelpers';
 import { metersPerSecondToKilometersPerHour, stageSafetySensorName } from '@/utils/stageSafety';
-import { CurveType, type Crosshair } from '@unovis/ts';
-import { VisAxis, VisLine, VisXYContainer } from '@unovis/vue';
+import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, Position, type Crosshair } from '@unovis/ts';
+import { VisAxis, VisLine, VisPlotline, VisScatter, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
 import { Wind } from 'lucide-vue-next';
 import { computed, h, nextTick, ref, render, watch } from 'vue';
@@ -21,8 +30,14 @@ interface ChartDataPoint {
     [key: string]: Date | number | undefined;
 }
 
+interface StatisticMarker extends WidgetChartValue {
+    label: string;
+    position: Position;
+}
+
 const props = defineProps<{ organization: Organization }>();
 const timeRange = ref<WidgetTimeRange>('1h');
+const statisticsEnabled = ref(false);
 const request = useHttp<{ from: string; to: string }, StageSafetyWindHistoryPayload>({ from: '', to: '' });
 const { data, loading, error, refresh } = useWidgetPolling({
     interval: 60_000,
@@ -34,9 +49,7 @@ const { data, loading, error, refresh } = useWidgetPolling({
 });
 
 function timeParams(): { from: string; to: string } {
-    const to = new Date();
-    const from = new Date(to.getTime() - WIDGET_TIME_RANGE_MINUTES[timeRange.value] * 60 * 1000);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return widgetTimeRangeParams(timeRange.value);
 }
 
 function seriesKey(sensorId: number, kind: StageSafetyReadingKind): string {
@@ -93,9 +106,37 @@ const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const chartDataBySeries = computed<Record<string, ChartDataPoint[]>>(() =>
     Object.fromEntries(chartSeries.value.map((item) => [item.key, chartData.value.filter((point) => seriesValue(point, item.key) !== undefined)])),
 );
+const statistics = computed<Record<string, WidgetChartStatistics | null>>(() =>
+    Object.fromEntries(
+        chartSeries.value.map((item) => [
+            item.key,
+            calculateWidgetChartStatistics(
+                chartDataBySeries.value[item.key].map((point) => ({ date: point.date, value: seriesValue(point, item.key) as number })),
+            ),
+        ]),
+    ),
+);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
 const crosshairRef = ref<{ component: Crosshair<ChartDataPoint> } | null>(null);
 const windValueFormatter = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const focusedSeries = computed(() => (statisticsEnabled.value && visibleChartSeries.value.length === 1 ? visibleChartSeries.value[0] : null));
+const focusedStatistics = computed(() => (focusedSeries.value ? statistics.value[focusedSeries.value.key] : null));
+const statisticMarkers = computed<StatisticMarker[]>(() => {
+    const summary = focusedStatistics.value;
+
+    if (!summary) {
+        return [];
+    }
+
+    if (summary.minimum.date.getTime() === summary.maximum.date.getTime()) {
+        return [{ ...summary.minimum, label: `Min / max ${formatWind(summary.minimum.value)}`, position: Position.Top }];
+    }
+
+    return [
+        { ...summary.minimum, label: `Min ${formatWind(summary.minimum.value)}`, position: Position.Top },
+        { ...summary.maximum, label: `Max ${formatWind(summary.maximum.value)}`, position: Position.Bottom },
+    ];
+});
 
 function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: number | Date): string {
     const container = document.createElement('div');
@@ -137,11 +178,19 @@ function seriesValue(point: ChartDataPoint, key: string): number | undefined {
 }
 
 function formatTickDate(value: number): string {
+    if (widgetTimeRangeShowsDate(timeRange.value)) {
+        return new Date(value).toLocaleString(APP_LOCALE, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
     return new Date(value).toLocaleTimeString(APP_LOCALE, { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatWindTick(value: number): string {
     return value.toLocaleString([], { maximumFractionDigits: 1 });
+}
+
+function formatWind(value: number): string {
+    return `${windValueFormatter.format(value)} km/h`;
 }
 
 watch(timeRange, refresh);
@@ -151,7 +200,9 @@ watch(chartData, () => void syncCrosshair());
 <template>
     <WidgetShell title="Wind History" subtitle="Average and gust speed in km/h" :error="error" :last-updated="latestDataAt" span="full">
         <template #icon><Wind /></template>
-        <template #actions><WidgetTimeRangeSelect v-model="timeRange" /></template>
+        <template #actions>
+            <WidgetHistoryControls v-model:time-range="timeRange" v-model:statistics-enabled="statisticsEnabled" />
+        </template>
 
         <div v-if="loading && !hasData" class="flex h-[280px] items-center justify-center sm:h-[350px]">
             <Skeleton class="h-full w-full" />
@@ -167,11 +218,11 @@ watch(chartData, () => void syncCrosshair());
             </p>
             <ChartContainer
                 :config="chartConfig"
-                class="h-[280px] w-full min-w-0 sm:h-[350px]"
+                :class="[statisticsEnabled ? 'h-[220px]' : 'h-[240px]', 'w-full min-w-0 sm:h-[350px]']"
                 role="img"
                 aria-label="Wind history in kilometers per hour"
             >
-                <VisXYContainer :margin="{ top: 8, right: 8, bottom: 24, left: 38 }">
+                <VisXYContainer>
                     <template v-for="item in chartSeries" :key="item.key">
                         <VisLine
                             v-if="isSeriesVisible(item.key)"
@@ -184,13 +235,54 @@ watch(chartData, () => void syncCrosshair());
                             :line-dash-array="item.dash"
                         />
                     </template>
-                    <VisAxis type="x" :tick-line="false" :domain-line="false" :grid-line="false" :tick-format="formatTickDate" />
-                    <VisAxis type="y" :tick-line="false" :domain-line="false" :grid-line="true" :tick-format="formatWindTick" />
+                    <VisPlotline
+                        v-if="focusedSeries && focusedStatistics"
+                        axis="y"
+                        :value="focusedStatistics.average"
+                        :color="focusedSeries.color"
+                        :line-width="1"
+                        :line-style="PlotlineLineStylePresets.ShortDash"
+                        :label-text="`Avg ${formatWind(focusedStatistics.average)}`"
+                        :label-position="PlotlineLabelPosition.TopRight"
+                        :exclude-from-domain-calculation="true"
+                    />
+                    <VisScatter
+                        v-if="focusedSeries && statisticMarkers.length"
+                        :data="statisticMarkers"
+                        :x="(point: StatisticMarker) => point.date.getTime()"
+                        :y="(point: StatisticMarker) => point.value"
+                        :color="focusedSeries.color"
+                        :label="(point: StatisticMarker) => point.label"
+                        :label-position="(point: StatisticMarker) => point.position"
+                        :label-hide-overlapping="false"
+                        :size="8"
+                        stroke-color="var(--background)"
+                        :stroke-width="2"
+                        :exclude-from-domain-calculation="true"
+                    />
+                    <VisAxis
+                        type="x"
+                        :tick-line="false"
+                        :domain-line="false"
+                        :grid-line="false"
+                        :num-ticks="5"
+                        :min-max-ticks-only-when-width-is-less="500"
+                        :tick-text-hide-overlapping="true"
+                        :tick-format="formatTickDate"
+                    />
+                    <VisAxis type="y" :tick-line="false" :domain-line="false" :grid-line="true" :num-ticks="4" :tick-format="formatWindTick" />
                     <ChartTooltip />
                     <ChartCrosshair ref="crosshairRef" :template="crosshairTemplate" :color="seriesColors" />
                 </VisXYContainer>
             </ChartContainer>
-            <WidgetChartLegend :series="chartSeries" :hidden-series-keys="hiddenSeriesKeys" @select="selectSeries" />
+            <WidgetChartLegend
+                :series="chartSeries"
+                :hidden-series-keys="hiddenSeriesKeys"
+                :statistics-enabled="statisticsEnabled"
+                :statistics="statisticsEnabled ? statistics : undefined"
+                :format-value="formatWind"
+                @select="selectSeries"
+            />
         </div>
     </WidgetShell>
 </template>

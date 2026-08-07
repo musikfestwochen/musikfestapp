@@ -30,7 +30,7 @@ function formatLastUpdated(date: Date): string {
 
 <template>
     <Card :class="cardClass" class="flex h-full min-w-0 flex-col">
-        <CardHeader class="flex flex-col gap-3 pb-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+        <CardHeader class="flex flex-col gap-3 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:px-6 sm:pt-6 sm:pb-4">
             <div class="min-w-0">
                 <CardTitle class="flex items-center gap-2">
                     <span v-if="$slots.icon" class="shrink-0 [&>svg]:size-4" aria-hidden="true">
@@ -40,16 +40,16 @@ function formatLastUpdated(date: Date): string {
                 </CardTitle>
                 <p v-if="subtitle" class="text-muted-foreground mt-1 text-sm">{{ subtitle }}</p>
             </div>
-            <div v-if="$slots.actions" class="shrink-0">
+            <div v-if="$slots.actions" class="w-full shrink-0 sm:w-auto">
                 <slot name="actions" />
             </div>
         </CardHeader>
 
-        <CardContent class="flex min-w-0 flex-1 flex-col">
+        <CardContent class="flex min-w-0 flex-1 flex-col px-4 pb-4 sm:px-6 sm:pb-6">
             <WidgetNotice v-if="error" class="mb-4" variant="error">{{ error }}</WidgetNotice>
             <slot />
-            <div v-if="lastUpdated" class="mt-auto pt-4">
-                <div class="text-muted-foreground border-t pt-3 text-center text-xs">
+            <div v-if="lastUpdated" class="mt-auto pt-2 sm:pt-4">
+                <div class="text-muted-foreground border-t pt-2 text-center text-xs sm:pt-3">
                     Latest data:
                     <time :datetime="lastUpdated.toISOString()">{{ formatLastUpdated(lastUpdated) }}</time>
                 </div>

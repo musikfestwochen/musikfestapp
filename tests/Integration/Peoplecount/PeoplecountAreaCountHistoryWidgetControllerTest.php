@@ -240,7 +240,7 @@ it('rejects history ranges above maximum allowed duration', function () {
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-count-history.index', [
             'organization' => $org->slug,
-            'from' => Date::now()->subHours(25)->toIso8601ZuluString('millisecond'),
+            'from' => Date::now()->subHours(26)->toIso8601ZuluString('millisecond'),
             'to' => Date::now()->toIso8601ZuluString('millisecond'),
         ]));
 
@@ -305,7 +305,7 @@ it('allows history ranges at maximum allowed duration', function () {
     $response = $this->actingAs($admin)
         ->getJson(route('peoplecount.area-count-history.index', [
             'organization' => $org->slug,
-            'from' => Date::now()->subHours(24)->toIso8601ZuluString('millisecond'),
+            'from' => Date::now()->subHours(25)->toIso8601ZuluString('millisecond'),
             'to' => Date::now()->toIso8601ZuluString('millisecond'),
         ]));
 
