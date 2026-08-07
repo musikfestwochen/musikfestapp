@@ -7,11 +7,12 @@ import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import {
     calculateWidgetChartStatistics,
     WIDGET_CHART_COLORS,
+    widgetChartStatisticMarkers,
     widgetTimeRangeParams,
     widgetTimeRangeShowsDate,
     type WidgetChartSeries,
+    type WidgetChartStatisticMarker,
     type WidgetChartStatistics,
-    type WidgetChartValue,
     type WidgetTimeRange,
 } from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
@@ -19,7 +20,7 @@ import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import type { Organization, StageSafetyReadingKind, StageSafetyWindHistoryPayload } from '@/types';
 import { DATE_TIME_LOCALE, formatChartTick, formatChartTooltip } from '@/utils/dateTimeHelpers';
 import { metersPerSecondToKilometersPerHour, stageSafetySensorName } from '@/utils/stageSafety';
-import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, Position, type Crosshair } from '@unovis/ts';
+import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, type Crosshair } from '@unovis/ts';
 import { VisAxis, VisLine, VisPlotline, VisScatter, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
 import { Wind } from 'lucide-vue-next';
@@ -28,11 +29,6 @@ import { computed, h, nextTick, ref, render, watch } from 'vue';
 interface ChartDataPoint {
     date: Date;
     [key: string]: Date | number | undefined;
-}
-
-interface StatisticMarker extends WidgetChartValue {
-    label: string;
-    position: Position;
 }
 
 const props = defineProps<{ organization: Organization }>();
@@ -122,22 +118,7 @@ const windValueFormatter = new Intl.NumberFormat(DATE_TIME_LOCALE, { minimumFrac
 const windTickFormatter = new Intl.NumberFormat(DATE_TIME_LOCALE, { maximumFractionDigits: 1 });
 const focusedSeries = computed(() => (statisticsEnabled.value && visibleChartSeries.value.length === 1 ? visibleChartSeries.value[0] : null));
 const focusedStatistics = computed(() => (focusedSeries.value ? statistics.value[focusedSeries.value.key] : null));
-const statisticMarkers = computed<StatisticMarker[]>(() => {
-    const summary = focusedStatistics.value;
-
-    if (!summary) {
-        return [];
-    }
-
-    if (summary.minimum.date.getTime() === summary.maximum.date.getTime()) {
-        return [{ ...summary.minimum, label: `Min / max ${formatWind(summary.minimum.value)}`, position: Position.Top }];
-    }
-
-    return [
-        { ...summary.minimum, label: `Min ${formatWind(summary.minimum.value)}`, position: Position.Top },
-        { ...summary.maximum, label: `Max ${formatWind(summary.maximum.value)}`, position: Position.Bottom },
-    ];
-});
+const statisticMarkers = computed(() => widgetChartStatisticMarkers(focusedStatistics.value, formatWind));
 
 function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: number | Date): string {
     const container = document.createElement('div');
@@ -161,7 +142,7 @@ function crosshairTemplate(datum: ChartDataPoint | { data: ChartDataPoint }, x: 
 }
 
 async function syncCrosshair(): Promise<void> {
-    // Unovis creates the exposed Crosshair one tick after its Vue wrapper mounts.
+    // The Vue wrapper omits its typed data prop at runtime and creates the core Crosshair in its own nextTick callback.
     await nextTick();
     await nextTick();
     crosshairRef.value?.component.setData(chartData.value);
@@ -208,6 +189,7 @@ watch(chartData, () => void syncCrosshair());
                 Wind history chart with {{ chartSeries.length }} series across {{ data?.sensors.length ?? 0 }} sensors.
             </p>
             <ChartContainer
+                class="widget-history-chart"
                 :config="chartConfig"
                 :class="[statisticsEnabled ? 'h-[220px]' : 'h-[240px]', 'w-full min-w-0 sm:h-[350px]']"
                 role="img"
@@ -240,14 +222,15 @@ watch(chartData, () => void syncCrosshair());
                     <VisScatter
                         v-if="focusedSeries && statisticMarkers.length"
                         :data="statisticMarkers"
-                        :x="(point: StatisticMarker) => point.date.getTime()"
-                        :y="(point: StatisticMarker) => point.value"
-                        :color="focusedSeries.color"
-                        :label="(point: StatisticMarker) => point.label"
-                        :label-position="(point: StatisticMarker) => point.position"
+                        :x="(point: WidgetChartStatisticMarker) => point.date.getTime()"
+                        :y="(point: WidgetChartStatisticMarker) => point.value"
+                        color="hsl(var(--foreground))"
+                        :label="(point: WidgetChartStatisticMarker) => point.label"
+                        label-color="hsl(var(--foreground))"
+                        :label-position="(point: WidgetChartStatisticMarker) => point.position"
                         :label-hide-overlapping="false"
                         :size="8"
-                        stroke-color="var(--background)"
+                        stroke-color="hsl(var(--background))"
                         :stroke-width="2"
                         :exclude-from-domain-calculation="true"
                     />

@@ -96,6 +96,14 @@
     }
 }
 
+.widget-history-chart g[class*='point-group'] text,
+.widget-history-chart g[class*='plotline-component'] text {
+    paint-order: stroke;
+    stroke: hsl(var(--card) / 95%);
+    stroke-width: 8px;
+    stroke-linejoin: round;
+}
+
 @layer utilities {
     body,
     html {

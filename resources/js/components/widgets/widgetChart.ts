@@ -1,3 +1,6 @@
+import { formatChartTooltip } from '@/utils/dateTimeHelpers';
+import { Position } from '@unovis/ts';
+
 type CalendarWidgetTimeRange = 'today' | 'yesterday' | 'day-before-yesterday' | 'this-day-last-week';
 export type WidgetTimeRange = '30m' | '1h' | '3h' | '6h' | '12h' | '24h' | CalendarWidgetTimeRange;
 type RelativeWidgetTimeRange = Exclude<WidgetTimeRange, CalendarWidgetTimeRange>;
@@ -59,6 +62,11 @@ export interface WidgetChartStatistics {
     average: number;
 }
 
+export interface WidgetChartStatisticMarker extends WidgetChartValue {
+    label: string;
+    position: Position;
+}
+
 export function calculateWidgetChartStatistics(values: WidgetChartValue[]): WidgetChartStatistics | null {
     const validValues = values.filter((point) => Number.isFinite(point.value) && Number.isFinite(point.date.getTime()));
 
@@ -88,6 +96,26 @@ export function calculateWidgetChartStatistics(values: WidgetChartValue[]): Widg
         maximum,
         average: total / validValues.length,
     };
+}
+
+export function widgetChartStatisticMarkers(
+    statistics: WidgetChartStatistics | null,
+    formatValue: (value: number) => string,
+): WidgetChartStatisticMarker[] {
+    if (!statistics) {
+        return [];
+    }
+
+    const label = (kind: string, point: WidgetChartValue): string => `${kind} ${formatValue(point.value)} | ${formatChartTooltip(point.date)}`;
+
+    if (statistics.minimum.date.getTime() === statistics.maximum.date.getTime()) {
+        return [{ ...statistics.minimum, label: label('Min / max', statistics.minimum), position: Position.Top }];
+    }
+
+    return [
+        { ...statistics.minimum, label: label('Min', statistics.minimum), position: Position.Top },
+        { ...statistics.maximum, label: label('Max', statistics.maximum), position: Position.Bottom },
+    ];
 }
 
 export const WIDGET_CHART_COLORS = [

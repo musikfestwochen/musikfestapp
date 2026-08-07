@@ -29,10 +29,10 @@ vi.mock('@vueuse/core', async (importOriginal) => ({
 
 vi.mock('@unovis/vue', () => ({
     VisXYContainer: { name: 'VisXYContainer', props: ['data', 'margin'], template: '<div><slot /></div>' },
-    VisLine: { name: 'VisLine', props: ['color', 'lineDashArray', 'y'], template: '<div />' },
+    VisLine: { name: 'VisLine', props: ['data', 'color', 'lineDashArray', 'y'], template: '<div />' },
     VisAxis: { template: '<div />' },
     VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div />' },
-    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div />' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label', 'color'], template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: { name: 'VisCrosshair', props: ['color'], template: '<div />' },
 }));
@@ -52,10 +52,10 @@ const globalStubs = {
         template: '<option :value="value"><slot /></option>',
     },
     VisXYContainer: { name: 'VisXYContainer', props: ['data', 'margin'], template: '<div><slot /></div>' },
-    VisLine: { name: 'VisLine', props: ['color', 'lineDashArray', 'y'], template: '<div></div>' },
+    VisLine: { name: 'VisLine', props: ['data', 'color', 'lineDashArray', 'y'], template: '<div></div>' },
     VisAxis: { template: '<div></div>' },
     VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div></div>' },
-    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div></div>' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label', 'color'], template: '<div></div>' },
     ChartContainer: { name: 'ChartContainer', props: ['config'], template: '<div><slot /></div>' },
     ChartCrosshair: { name: 'ChartCrosshair', props: ['color'], template: '<div></div>' },
     ChartTooltip: { template: '<div></div>' },
@@ -198,6 +198,7 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.findComponent({ name: 'VisPlotline' }).exists()).toBe(false);
         expect(wrapper.getComponent({ name: 'VisXYContainer' }).props('margin')).toBeUndefined();
         expect(wrapper.getComponent({ name: 'ChartContainer' }).classes()).toContain('h-[240px]');
+        expect(wrapper.getComponent({ name: 'ChartContainer' }).classes()).toContain('widget-history-chart');
 
         await wrapper.get('[aria-label="Show chart statistics"]').trigger('click');
 
@@ -209,8 +210,10 @@ describe('AreaCountHistoryWidget', () => {
         expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 12.5');
 
         const scatter = wrapper.getComponent({ name: 'VisScatter' });
-        const markers = scatter.props('data') as Array<{ label: string }>;
-        expect(markers.map((marker) => marker.label)).toEqual(['Min 10', 'Max 15']);
+        const rows = wrapper.getComponent({ name: 'VisXYContainer' }).props('data') as Array<{ statistic?: { label: string } }>;
+        const markers = rows.flatMap((point) => (point.statistic ? [point.statistic] : []));
+        expect(markers.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min 10 \| .+$/), expect.stringMatching(/^Max 15 \| .+$/)]);
+        expect(scatter.props('color')).toBe('hsl(var(--foreground))');
     });
 
     it('keeps the empty state visible while another range loads', async () => {

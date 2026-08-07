@@ -7,17 +7,18 @@ import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import {
     calculateWidgetChartStatistics,
     WIDGET_CHART_COLORS,
+    widgetChartStatisticMarkers,
     widgetTimeRangeParams,
     widgetTimeRangeShowsDate,
     type WidgetChartSeries,
+    type WidgetChartStatisticMarker,
     type WidgetChartStatistics,
-    type WidgetChartValue,
     type WidgetTimeRange,
 } from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import { DATE_TIME_LOCALE, formatChartTick, formatChartTooltip } from '@/utils/dateTimeHelpers';
-import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, Position } from '@unovis/ts';
+import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets } from '@unovis/ts';
 import { VisAxis, VisLine, VisPlotline, VisScatter, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
@@ -37,12 +38,8 @@ interface AreaSeries {
 
 interface ChartDataPoint {
     date: Date;
+    statistic?: WidgetChartStatisticMarker;
     [key: `area_${number}`]: number | null | undefined;
-}
-
-interface StatisticMarker extends WidgetChartValue {
-    label: string;
-    position: Position;
 }
 
 const props = defineProps<{
@@ -114,21 +111,11 @@ const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.
 const focusedSeries = computed(() => (statisticsEnabled.value && visibleChartSeries.value.length === 1 ? visibleChartSeries.value[0] : null));
 const focusedStatistics = computed(() => (focusedSeries.value ? statistics.value[focusedSeries.value.key] : null));
 const countFormatter = new Intl.NumberFormat(DATE_TIME_LOCALE, { maximumFractionDigits: 1 });
-const statisticMarkers = computed<StatisticMarker[]>(() => {
-    const summary = focusedStatistics.value;
+const statisticMarkers = computed(() => widgetChartStatisticMarkers(focusedStatistics.value, formatCount));
+const annotatedChartData = computed(() => {
+    const markers = new Map(statisticMarkers.value.map((marker) => [marker.date.getTime(), marker]));
 
-    if (!summary) {
-        return [];
-    }
-
-    if (summary.minimum.date.getTime() === summary.maximum.date.getTime()) {
-        return [{ ...summary.minimum, label: `Min / max ${formatCount(summary.minimum.value)}`, position: Position.Top }];
-    }
-
-    return [
-        { ...summary.minimum, label: `Min ${formatCount(summary.minimum.value)}`, position: Position.Top },
-        { ...summary.maximum, label: `Max ${formatCount(summary.maximum.value)}`, position: Position.Bottom },
-    ];
+    return chartData.value.map((point) => ({ ...point, statistic: markers.get(point.date.getTime()) }));
 });
 
 function seriesValue(point: ChartDataPoint, key: string): number | undefined {
@@ -167,12 +154,13 @@ watch(timeRange, refresh);
                 Area count history chart with {{ chartSeries.length }} series across {{ series?.length ?? 0 }} areas.
             </p>
             <ChartContainer
+                class="widget-history-chart"
                 :config="chartConfig"
                 :class="[statisticsEnabled ? 'h-[220px]' : 'h-[240px]', 'w-full min-w-0 sm:h-[350px]']"
                 role="img"
                 aria-label="Area count history"
             >
-                <VisXYContainer :data="chartData">
+                <VisXYContainer :data="annotatedChartData">
                     <template v-for="item in chartSeries" :key="item.key">
                         <VisLine
                             v-if="isSeriesVisible(item.key)"
@@ -196,15 +184,15 @@ watch(timeRange, refresh);
                     />
                     <VisScatter
                         v-if="focusedSeries && statisticMarkers.length"
-                        :data="statisticMarkers"
-                        :x="(point: StatisticMarker) => point.date.getTime()"
-                        :y="(point: StatisticMarker) => point.value"
-                        :color="focusedSeries.color"
-                        :label="(point: StatisticMarker) => point.label"
-                        :label-position="(point: StatisticMarker) => point.position"
+                        :x="(point: ChartDataPoint) => point.date.getTime()"
+                        :y="(point: ChartDataPoint) => point.statistic?.value"
+                        color="hsl(var(--foreground))"
+                        :label="(point: ChartDataPoint) => point.statistic?.label ?? ''"
+                        label-color="hsl(var(--foreground))"
+                        :label-position="(point: ChartDataPoint) => point.statistic?.position"
                         :label-hide-overlapping="false"
                         :size="8"
-                        stroke-color="var(--background)"
+                        stroke-color="hsl(var(--background))"
                         :stroke-width="2"
                         :exclude-from-domain-calculation="true"
                     />
