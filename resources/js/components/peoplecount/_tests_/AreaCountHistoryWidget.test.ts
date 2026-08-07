@@ -274,8 +274,13 @@ describe('AreaCountHistoryWidget', () => {
         await wrapper.find('[data-testid="range-select"]').setValue('yesterday');
         await flushPromises();
 
-        expect(mocks.request.from).toBe(new Date(2025, 7, 4).toISOString());
-        expect(mocks.request.to).toBe(new Date(2025, 7, 5).toISOString());
+        const expectedTo = new Date();
+        expectedTo.setHours(0, 0, 0, 0);
+        const expectedFrom = new Date(expectedTo);
+        expectedFrom.setDate(expectedFrom.getDate() - 1);
+
+        expect(mocks.request.from).toBe(expectedFrom.toISOString());
+        expect(mocks.request.to).toBe(expectedTo.toISOString());
     });
 
     it('queues a range change while a request is active', async () => {
