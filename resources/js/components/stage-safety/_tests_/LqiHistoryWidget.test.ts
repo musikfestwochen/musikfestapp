@@ -30,7 +30,7 @@ vi.mock('@unovis/vue', () => ({
     },
     VisAxis: { template: '<div />' },
     VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div />' },
-    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div />' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label', 'color'], template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: {
         name: 'VisCrosshair',
@@ -162,6 +162,7 @@ describe('LqiHistoryWidget', () => {
 
         await wrapper.get('[aria-label="Show chart statistics"]').trigger('click');
 
+        expect(wrapper.getComponent({ name: 'ChartContainer' }).classes()).toContain('widget-history-chart');
         expect(wrapper.get('[data-series="sensor_1_lqi"]').text()).toContain('0.0%');
         expect(wrapper.get('[data-series="sensor_1_lqi"]').text()).toContain('25.4%');
         expect(wrapper.get('[data-series="sensor_1_lqi"]').text()).toContain('50.9%');
@@ -171,7 +172,9 @@ describe('LqiHistoryWidget', () => {
 
         expect(wrapper.getComponent({ name: 'VisPlotline' }).props('value')).toBeCloseTo(25.4487179487);
         expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 25.4%');
-        const markers = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
-        expect(markers.map((marker) => marker.label)).toEqual(['Min 0.0%', 'Max 50.9%']);
+        const scatter = wrapper.getComponent({ name: 'VisScatter' });
+        const markers = scatter.props('data') as Array<{ label: string }>;
+        expect(markers.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min 0\.0%  \|  .+$/), expect.stringMatching(/^Max 50\.9%  \|  .+$/)]);
+        expect(scatter.props('color')).toBe('hsl(var(--foreground))');
     });
 });

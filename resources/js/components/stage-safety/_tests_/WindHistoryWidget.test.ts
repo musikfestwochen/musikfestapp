@@ -32,7 +32,7 @@ vi.mock('@unovis/vue', () => ({
     },
     VisAxis: { template: '<div />' },
     VisPlotline: { name: 'VisPlotline', props: ['value', 'labelText'], template: '<div />' },
-    VisScatter: { name: 'VisScatter', props: ['data', 'label'], template: '<div />' },
+    VisScatter: { name: 'VisScatter', props: ['data', 'label', 'color'], template: '<div />' },
     VisTooltip: { template: '<div />' },
     VisCrosshair: {
         name: 'VisCrosshair',
@@ -176,6 +176,7 @@ describe('WindHistoryWidget', () => {
 
         await wrapper.get('[aria-label="Show chart statistics"]').trigger('click');
 
+        expect(wrapper.getComponent({ name: 'ChartContainer' }).classes()).toContain('widget-history-chart');
         expect(wrapper.get('[data-series="sensor_1_wind_average"]').text()).toContain('18.0 km/h');
         expect(wrapper.get('[data-series="sensor_1_wind_average"]').text()).toContain('19.8 km/h');
         expect(wrapper.get('[data-series="sensor_1_wind_average"]').text()).toContain('21.6 km/h');
@@ -185,12 +186,17 @@ describe('WindHistoryWidget', () => {
 
         expect(wrapper.getComponent({ name: 'VisPlotline' }).props('value')).toBeCloseTo(19.8);
         expect(wrapper.getComponent({ name: 'VisPlotline' }).props('labelText')).toBe('Avg 19.8 km/h');
-        const markers = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
-        expect(markers.map((marker) => marker.label)).toEqual(['Min 18.0 km/h', 'Max 21.6 km/h']);
+        const scatter = wrapper.getComponent({ name: 'VisScatter' });
+        const markers = scatter.props('data') as Array<{ label: string }>;
+        expect(markers.map((marker) => marker.label)).toEqual([
+            expect.stringMatching(/^Min 18\.0 km\/h  \|  .+$/),
+            expect.stringMatching(/^Max 21\.6 km\/h  \|  .+$/),
+        ]);
+        expect(scatter.props('color')).toBe('hsl(var(--foreground))');
 
         await wrapper.get('[data-series="sensor_1_wind_gust"]').trigger('click');
         const singleMarker = wrapper.getComponent({ name: 'VisScatter' }).props('data') as Array<{ label: string }>;
-        expect(singleMarker.map((marker) => marker.label)).toEqual(['Min / max 28.8 km/h']);
+        expect(singleMarker.map((marker) => marker.label)).toEqual([expect.stringMatching(/^Min \/ max 28\.8 km\/h  \|  .+$/)]);
     });
 
     it('isolates a legend series and restores all when selected again', async () => {

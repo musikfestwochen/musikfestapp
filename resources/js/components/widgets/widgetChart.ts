@@ -59,6 +59,11 @@ export interface WidgetChartStatistics {
     average: number;
 }
 
+export interface WidgetChartStatisticMarker extends WidgetChartValue {
+    label: string;
+    position: Position;
+}
+
 export function calculateWidgetChartStatistics(values: WidgetChartValue[]): WidgetChartStatistics | null {
     const validValues = values.filter((point) => Number.isFinite(point.value) && Number.isFinite(point.date.getTime()));
 
@@ -90,6 +95,27 @@ export function calculateWidgetChartStatistics(values: WidgetChartValue[]): Widg
     };
 }
 
+export function widgetChartStatisticMarkers(
+    statistics: WidgetChartStatistics | null,
+    formatValue: (value: number) => string,
+): WidgetChartStatisticMarker[] {
+    if (!statistics) {
+        return [];
+    }
+
+    const label = (kind: string, point: WidgetChartValue): string =>
+        `${kind} ${formatValue(point.value)}  |  ${formatChartTooltip(point.date)}`;
+
+    if (statistics.minimum.date.getTime() === statistics.maximum.date.getTime()) {
+        return [{ ...statistics.minimum, label: label('Min / max', statistics.minimum), position: Position.Top }];
+    }
+
+    return [
+        { ...statistics.minimum, label: label('Min', statistics.minimum), position: Position.Top },
+        { ...statistics.maximum, label: label('Max', statistics.maximum), position: Position.Bottom },
+    ];
+}
+
 export const WIDGET_CHART_COLORS = [
     'var(--color-chart-1)',
     'var(--color-chart-2)',
@@ -97,3 +123,5 @@ export const WIDGET_CHART_COLORS = [
     'var(--color-chart-4)',
     'var(--color-chart-5)',
 ];
+import { formatChartTooltip } from '@/utils/dateTimeHelpers';
+import { Position } from '@unovis/ts';

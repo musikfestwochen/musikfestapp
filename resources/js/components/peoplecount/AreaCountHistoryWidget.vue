@@ -7,21 +7,21 @@ import WidgetShell from '@/components/widgets/WidgetShell.vue';
 import {
     calculateWidgetChartStatistics,
     WIDGET_CHART_COLORS,
+    widgetChartStatisticMarkers,
     widgetTimeRangeParams,
     widgetTimeRangeShowsDate,
     type WidgetChartSeries,
     type WidgetChartStatistics,
-    type WidgetChartValue,
     type WidgetTimeRange,
 } from '@/components/widgets/widgetChart';
 import { useChartSeriesVisibility } from '@/composables/useChartSeriesVisibility';
 import { useWidgetPolling } from '@/composables/useWidgetPolling';
 import { DATE_TIME_LOCALE, formatChartTick, formatChartTooltip } from '@/utils/dateTimeHelpers';
-import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, Position } from '@unovis/ts';
+import { CurveType, PlotlineLabelPosition, PlotlineLineStylePresets, type Crosshair } from '@unovis/ts';
 import { VisAxis, VisLine, VisPlotline, VisScatter, VisXYContainer } from '@unovis/vue';
 import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 interface DataPoint {
     time: string;
@@ -38,11 +38,6 @@ interface AreaSeries {
 interface ChartDataPoint {
     date: Date;
     [key: `area_${number}`]: number | null | undefined;
-}
-
-interface StatisticMarker extends WidgetChartValue {
-    label: string;
-    position: Position;
 }
 
 const props = defineProps<{
@@ -111,25 +106,11 @@ const statistics = computed<Record<string, WidgetChartStatistics | null>>(() =>
 const hasData = computed(() => chartData.value.length > 0);
 const latestDataAt = computed(() => chartData.value.at(-1)?.date ?? null);
 const seriesColors = computed(() => visibleChartSeries.value.map((item) => item.color));
+const crosshairRef = ref<{ component: Crosshair<ChartDataPoint> } | null>(null);
 const focusedSeries = computed(() => (statisticsEnabled.value && visibleChartSeries.value.length === 1 ? visibleChartSeries.value[0] : null));
 const focusedStatistics = computed(() => (focusedSeries.value ? statistics.value[focusedSeries.value.key] : null));
 const countFormatter = new Intl.NumberFormat(DATE_TIME_LOCALE, { maximumFractionDigits: 1 });
-const statisticMarkers = computed<StatisticMarker[]>(() => {
-    const summary = focusedStatistics.value;
-
-    if (!summary) {
-        return [];
-    }
-
-    if (summary.minimum.date.getTime() === summary.maximum.date.getTime()) {
-        return [{ ...summary.minimum, label: `Min / max ${formatCount(summary.minimum.value)}`, position: Position.Top }];
-    }
-
-    return [
-        { ...summary.minimum, label: `Min ${formatCount(summary.minimum.value)}`, position: Position.Top },
-        { ...summary.maximum, label: `Max ${formatCount(summary.maximum.value)}`, position: Position.Bottom },
-    ];
-});
+const statisticMarkers = computed(() => widgetChartStatisticMarkers(focusedStatistics.value, formatCount));
 
 function seriesValue(point: ChartDataPoint, key: string): number | undefined {
     const value = point[key as `area_${number}`];
@@ -144,7 +125,14 @@ function formatCount(value: number): string {
     return countFormatter.format(value);
 }
 
+async function syncCrosshair(): Promise<void> {
+    await nextTick();
+    await nextTick();
+    crosshairRef.value?.component?.setData(chartData.value);
+}
+
 watch(timeRange, refresh);
+watch(chartData, () => void syncCrosshair());
 </script>
 
 <template>
@@ -167,15 +155,17 @@ watch(timeRange, refresh);
                 Area count history chart with {{ chartSeries.length }} series across {{ series?.length ?? 0 }} areas.
             </p>
             <ChartContainer
+                class="widget-history-chart"
                 :config="chartConfig"
                 :class="[statisticsEnabled ? 'h-[220px]' : 'h-[240px]', 'w-full min-w-0 sm:h-[350px]']"
                 role="img"
                 aria-label="Area count history"
             >
-                <VisXYContainer :data="chartData">
+                <VisXYContainer>
                     <template v-for="item in chartSeries" :key="item.key">
                         <VisLine
                             v-if="isSeriesVisible(item.key)"
+                            :data="chartData"
                             :x="(point: ChartDataPoint) => point.date.getTime()"
                             :y="(point: ChartDataPoint) => seriesValue(point, item.key)"
                             :color="item.color"
@@ -197,14 +187,15 @@ watch(timeRange, refresh);
                     <VisScatter
                         v-if="focusedSeries && statisticMarkers.length"
                         :data="statisticMarkers"
-                        :x="(point: StatisticMarker) => point.date.getTime()"
-                        :y="(point: StatisticMarker) => point.value"
-                        :color="focusedSeries.color"
-                        :label="(point: StatisticMarker) => point.label"
-                        :label-position="(point: StatisticMarker) => point.position"
+                        :x="(point) => point.date.getTime()"
+                        :y="(point) => point.value"
+                        color="hsl(var(--foreground))"
+                        :label="(point) => point.label"
+                        label-color="hsl(var(--foreground))"
+                        :label-position="(point) => point.position"
                         :label-hide-overlapping="false"
                         :size="8"
-                        stroke-color="var(--background)"
+                        stroke-color="hsl(var(--background))"
                         :stroke-width="2"
                         :exclude-from-domain-calculation="true"
                     />
@@ -228,6 +219,7 @@ watch(timeRange, refresh);
                     />
                     <ChartTooltip />
                     <ChartCrosshair
+                        ref="crosshairRef"
                         :template="
                             componentToString(chartConfig, ChartTooltipContent, {
                                 indicator: 'line',
