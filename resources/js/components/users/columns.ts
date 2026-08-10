@@ -79,7 +79,7 @@ export function usersColumns(organization?: Organization): ColumnDef<DataTableFe
                       cell: ({ row }) => h('div', {}, row.getValue('organizations_count') ?? 0),
                       enableSorting: true,
                       enableHiding: true,
-                   } satisfies ColumnDef<DataTableFeatures, User>,
+                  } satisfies ColumnDef<DataTableFeatures, User>,
               ]
             : []),
         ...(organization
@@ -116,7 +116,7 @@ export function usersColumns(organization?: Organization): ColumnDef<DataTableFe
                       },
                       enableSorting: false,
                       enableHiding: true,
-                   } satisfies ColumnDef<DataTableFeatures, User>,
+                  } satisfies ColumnDef<DataTableFeatures, User>,
               ]
             : []),
         {
