@@ -78,7 +78,7 @@ export function usersColumns(organization?: Organization): ColumnDef<StockFeatur
                       cell: ({ row }) => h('div', {}, row.getValue('organizations_count') ?? 0),
                       enableSorting: true,
                       enableHiding: true,
-                   } satisfies ColumnDef<StockFeatures, User>,
+                  } satisfies ColumnDef<StockFeatures, User>,
               ]
             : []),
         ...(organization
@@ -115,7 +115,7 @@ export function usersColumns(organization?: Organization): ColumnDef<StockFeatur
                       },
                       enableSorting: false,
                       enableHiding: true,
-                   } satisfies ColumnDef<StockFeatures, User>,
+                  } satisfies ColumnDef<StockFeatures, User>,
               ]
             : []),
         {
