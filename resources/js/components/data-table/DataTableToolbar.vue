@@ -1,10 +1,12 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TData extends RowData">
+import type { RowData, Table } from '@tanstack/vue-table';
 import DataTableFilter from './DataTableFilter.vue';
 import DataTableViewOptions from './DataTableViewOptions.vue';
+import type { DataTableFeatures } from './features';
 
 withDefaults(
     defineProps<{
-        table: any;
+        table: Table<DataTableFeatures, TData>;
         filterColumn?: string;
         searchPlaceholder?: string;
         showFilter?: boolean;

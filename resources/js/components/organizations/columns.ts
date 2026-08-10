@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
+import type { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../data-table/DataTableColumnHeader.vue';
+import type { DataTableFeatures } from '../data-table/features';
 
-export const organizationsColumns: ColumnDef<StockFeatures, Organization>[] = [
+export const organizationsColumns: ColumnDef<DataTableFeatures, Organization>[] = [
     {
         accessorKey: 'name',
         header: ({ column }) =>

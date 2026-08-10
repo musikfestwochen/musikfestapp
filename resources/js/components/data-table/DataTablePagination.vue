@@ -1,20 +1,23 @@
-<script lang="ts" setup>
+<script lang="ts" setup generic="TData extends RowData">
+import type { RowData, Table } from '@tanstack/vue-table';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next';
+import { computed } from 'vue';
+import type { DataTableFeatures } from './features';
 
-defineProps<{
-    table: any;
+const props = defineProps<{
+    table: Table<DataTableFeatures, TData>;
 }>();
+
+const table = props.table;
+const pageIndex = computed(() => table.atoms.pagination.get().pageIndex);
 </script>
 
 <template>
-    <div class="flex items-center justify-between px-2 py-4">
-        <div class="text-muted-foreground flex-1 text-sm">
-            {{ table.getFilteredSelectedRowModel().rows.length }} of {{ table.getFilteredRowModel().rows.length }} row(s) selected.
-        </div>
+    <div class="flex items-center justify-end px-2 py-4">
         <div class="flex items-center space-x-6 lg:space-x-8">
             <div class="flex w-[100px] items-center justify-center text-sm font-medium">
-                Page {{ table.store.get().pagination.pageIndex + 1 }} of
+                Page {{ pageIndex + 1 }} of
                 {{ table.getPageCount() }}
             </div>
             <div class="flex items-center space-x-2">

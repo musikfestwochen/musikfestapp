@@ -1,19 +1,6 @@
 <script setup lang="ts" generic="TData extends RowData">
-import type { ColumnDef, ColumnFiltersState, ColumnVisibilityState, RowData, SortingState, StockFeatures } from '@tanstack/vue-table';
-import {
-    columnFilteringFeature,
-    columnVisibilityFeature,
-    createFilteredRowModel,
-    createPaginatedRowModel,
-    createSortedRowModel,
-    FlexRender,
-    rowPaginationFeature,
-    rowSelectionFeature,
-    rowSortingFeature,
-    stockFeatures,
-    tableFeatures,
-    useTable,
-} from '@tanstack/vue-table';
+import type { ColumnDef, ColumnFiltersState, ColumnVisibilityState, RowData, SortingState } from '@tanstack/vue-table';
+import { FlexRender, useTable } from '@tanstack/vue-table';
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -22,10 +9,11 @@ import Heading from '@/components/Heading.vue';
 import { valueUpdater } from '@/lib/utils';
 import DataTablePagination from './DataTablePagination.vue';
 import DataTableToolbar from './DataTableToolbar.vue';
+import { dataTableFeatures, type DataTableFeatures } from './features';
 
 const props = withDefaults(
     defineProps<{
-        columns: ColumnDef<StockFeatures, TData>[];
+        columns: ColumnDef<DataTableFeatures, TData>[];
         data: TData[];
         title?: string;
         description?: string;
@@ -47,22 +35,9 @@ const props = withDefaults(
 const sorting = ref<SortingState>([...props.initialSorting]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<ColumnVisibilityState>({});
-const rowSelection = ref({});
-
-const features = tableFeatures({
-    ...stockFeatures,
-    columnFilteringFeature,
-    columnVisibilityFeature,
-    rowPaginationFeature,
-    rowSelectionFeature,
-    rowSortingFeature,
-    filteredRowModel: createFilteredRowModel(),
-    paginatedRowModel: createPaginatedRowModel(),
-    sortedRowModel: createSortedRowModel(),
-});
 
 const table = useTable({
-    features,
+    features: dataTableFeatures,
     get data() {
         return props.data;
     },
@@ -72,7 +47,6 @@ const table = useTable({
     onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
     onColumnFiltersChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnFilters),
     onColumnVisibilityChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnVisibility),
-    onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
     state: {
         get sorting() {
             return sorting.value;
@@ -82,9 +56,6 @@ const table = useTable({
         },
         get columnVisibility() {
             return columnVisibility.value;
-        },
-        get rowSelection() {
-            return rowSelection.value;
         },
     },
 });
@@ -127,7 +98,7 @@ function openRow(row: TData, event: MouseEvent | KeyboardEvent): void {
                 <TableHeader>
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
                         <TableHead v-for="header in headerGroup.headers" :key="header.id">
-                            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
+                            <FlexRender v-if="!header.isPlaceholder" :header="header" />
                         </TableHead>
                     </TableRow>
                 </TableHeader>
@@ -137,14 +108,13 @@ function openRow(row: TData, event: MouseEvent | KeyboardEvent): void {
                             v-for="row in table.getRowModel().rows"
                             :key="row.id"
                             :class="rowHref ? 'cursor-pointer' : undefined"
-                            :data-state="row.getIsSelected() ? 'selected' : undefined"
                             :tabindex="rowHref ? 0 : undefined"
                             @click="openRow(row.original, $event)"
                             @keydown.enter="openRow(row.original, $event)"
                             @keydown.space.prevent="openRow(row.original, $event)"
                         >
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                <FlexRender :cell="cell" />
                             </TableCell>
                         </TableRow>
                     </template>

@@ -18,7 +18,7 @@ vi.mock('@/composables/usePermissions', () => ({
 
 const organization = { id: 1, slug: 'test', name: 'Test', created_at: '', updated_at: '' };
 const area = { id: 1, name: 'Main Area' };
-const DataTableStub = { name: 'DataTable', props: ['initialSorting'], template: '<div />' };
+const DataTableStub = { name: 'DataTable', props: ['filterColumn', 'initialSorting'], template: '<div />' };
 
 function getInitialSorting(component: Component, props: Record<string, unknown>): SortingState {
     const wrapper: VueWrapper = mount(component, {
@@ -27,6 +27,15 @@ function getInitialSorting(component: Component, props: Record<string, unknown>)
     });
 
     return wrapper.findComponent(DataTableStub).props('initialSorting') as SortingState;
+}
+
+function getFilterColumn(component: Component, props: Record<string, unknown>): string | undefined {
+    const wrapper: VueWrapper = mount(component, {
+        props,
+        global: { stubs: { DataTable: DataTableStub } },
+    });
+
+    return wrapper.findComponent(DataTableStub).props('filterColumn') as string | undefined;
 }
 
 describe('resource table default sorting', () => {
@@ -42,5 +51,9 @@ describe('resource table default sorting', () => {
         ['recurring resets', RecurringResetTable, { resets: [], organization, area }, [{ id: 'reset_time', desc: false }]],
     ])('configures %s', (_name, component, props, expected) => {
         expect(getInitialSorting(component as Component, props as Record<string, unknown>)).toEqual(expected);
+    });
+
+    it('uses a real column for Peoplecount sensor search', () => {
+        expect(getFilterColumn(PeoplecountSensorsTable, { sensors: [], organization })).toBe('name');
     });
 });

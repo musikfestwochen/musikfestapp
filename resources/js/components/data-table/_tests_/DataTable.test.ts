@@ -57,4 +57,24 @@ describe('DataTable responsive actions', () => {
 
         expect(wrapper.findAll('tbody tr').map((row) => row.text())).toEqual(['Charlie', 'Bravo', 'Alpha']);
     });
+
+    it('filters rows through the configured filter column', async () => {
+        const wrapper = mount(DataTable, {
+            props: {
+                columns: [
+                    {
+                        accessorKey: 'name',
+                        header: 'Name',
+                        cell: ({ getValue }) => getValue(),
+                    },
+                ],
+                data: [{ name: 'Alpha' }, { name: 'Charlie' }],
+                filterColumn: 'name',
+            },
+        });
+
+        await wrapper.get('input').setValue('charlie');
+
+        expect(wrapper.findAll('tbody tr').map((row) => row.text())).toEqual(['Charlie']);
+    });
 });

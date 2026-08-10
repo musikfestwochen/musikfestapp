@@ -26,7 +26,7 @@ const { can } = usePermissions();
                     ? route('peoplecount.sensors.edit', { organization: props.organization.slug, sensor: sensor.id })
                     : null
         "
-        filter-column="sensors"
+        filter-column="name"
         search-placeholder="Search sensors..."
         title="Sensors"
         description="See all your sensors and manage their API tokens"

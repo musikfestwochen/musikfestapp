@@ -4,12 +4,13 @@ import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
 import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
-import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
+import type { ColumnDef } from '@tanstack/vue-table';
 import { Edit, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
+import type { DataTableFeatures } from '../../data-table/features';
 
-export function singleResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<StockFeatures, PeoplecountAreaSingleReset>[] {
+export function singleResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<DataTableFeatures, PeoplecountAreaSingleReset>[] {
     return [
         {
             accessorKey: 'reset_value',
@@ -38,6 +39,7 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
         },
         {
             id: 'created_by',
+            accessorFn: (reset) => reset.created_by?.name || '',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
@@ -51,7 +53,7 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
             enableHiding: true,
         },
         {
-            id: 'notes',
+            accessorKey: 'notes',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
@@ -98,7 +100,10 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
     ];
 }
 
-export function recurringResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<StockFeatures, PeoplecountAreaRecurringReset>[] {
+export function recurringResetColumns(
+    organization: Organization,
+    area: PeoplecountArea,
+): ColumnDef<DataTableFeatures, PeoplecountAreaRecurringReset>[] {
     return [
         {
             accessorKey: 'reset_value',
@@ -127,7 +132,7 @@ export function recurringResetColumns(organization: Organization, area: Peopleco
             enableHiding: true,
         },
         {
-            id: 'notes',
+            accessorKey: 'notes',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
