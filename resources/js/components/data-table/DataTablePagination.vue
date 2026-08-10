@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import { Button } from '@/components/ui/button';
-import { type Table } from '@tanstack/vue-table';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next';
 
 defineProps<{
-    table: Table<any>;
+    table: any;
 }>();
 </script>
 
@@ -15,7 +14,7 @@ defineProps<{
         </div>
         <div class="flex items-center space-x-6 lg:space-x-8">
             <div class="flex w-[100px] items-center justify-center text-sm font-medium">
-                Page {{ table.getState().pagination.pageIndex + 1 }} of
+                Page {{ table.store.get().pagination.pageIndex + 1 }} of
                 {{ table.getPageCount() }}
             </div>
             <div class="flex items-center space-x-2">
