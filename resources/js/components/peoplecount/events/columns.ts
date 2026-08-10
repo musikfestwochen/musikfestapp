@@ -5,12 +5,13 @@ import { Organization, PeoplecountEvent } from '@/types';
 import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { getEventDuration, getEventStatus } from '@/utils/eventHelpers';
 import { Link } from '@inertiajs/vue3';
-import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
+import type { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
+import type { DataTableFeatures } from '../../data-table/features';
 
-export function eventsColumns(organization: Organization): ColumnDef<StockFeatures, PeoplecountEvent>[] {
+export function eventsColumns(organization: Organization): ColumnDef<DataTableFeatures, PeoplecountEvent>[] {
     return [
         {
             accessorKey: 'name',

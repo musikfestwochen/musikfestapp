@@ -1,4 +1,5 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TData extends RowData">
+import type { RowData, Table } from '@tanstack/vue-table';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -10,16 +11,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SlidersHorizontal } from 'lucide-vue-next';
 import { computed } from 'vue';
+import type { DataTableFeatures } from './features';
 
-interface DataTableViewOptionsProps {
-    table: any;
+interface DataTableViewOptionsProps<TData extends RowData> {
+    table: Table<DataTableFeatures, TData>;
 }
 
-const props = withDefaults(defineProps<DataTableViewOptionsProps & { compact?: boolean }>(), {
+const props = withDefaults(defineProps<DataTableViewOptionsProps<TData> & { compact?: boolean }>(), {
     compact: false,
 });
 
-const columns = computed(() => props.table.getAllColumns().filter((column: any) => typeof column.accessorFn !== 'undefined' && column.getCanHide()));
+const columns = computed(() => props.table.getAllColumns().filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide()));
 </script>
 
 <template>

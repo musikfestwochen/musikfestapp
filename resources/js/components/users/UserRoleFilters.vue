@@ -2,10 +2,12 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { User } from '@/types';
+import type { Table } from '@tanstack/vue-table';
 import { computed } from 'vue';
+import type { DataTableFeatures } from '../data-table/features';
 
 const props = defineProps<{
-    table: any;
+    table: Table<DataTableFeatures, User>;
     users: User[];
 }>();
 

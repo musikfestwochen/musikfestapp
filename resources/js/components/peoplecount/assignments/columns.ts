@@ -4,15 +4,17 @@ import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountAssignment } from '@/types';
 import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
-import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
+import type { ColumnDef } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
+import type { DataTableFeatures } from '../../data-table/features';
 
-export function assignmentsColumns(organization: Organization): ColumnDef<StockFeatures, PeoplecountAssignment>[] {
+export function assignmentsColumns(organization: Organization): ColumnDef<DataTableFeatures, PeoplecountAssignment>[] {
     return [
         {
-            accessorKey: 'event',
+            id: 'event',
+            accessorFn: (assignment) => assignment.event?.name || '',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
@@ -26,7 +28,8 @@ export function assignmentsColumns(organization: Organization): ColumnDef<StockF
             enableHiding: true,
         },
         {
-            accessorKey: 'area',
+            id: 'area',
+            accessorFn: (assignment) => assignment.area?.name || '',
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,
@@ -40,7 +43,12 @@ export function assignmentsColumns(organization: Organization): ColumnDef<StockF
             enableHiding: true,
         },
         {
-            accessorKey: 'sensor',
+            id: 'sensor',
+            accessorFn: (assignment) => {
+                const sensor = assignment.sensor;
+
+                return sensor ? `${sensor.name || ''} ${sensor.vendor} ${sensor.model} ${sensor.serial}`.trim() : '';
+            },
             header: ({ column }) =>
                 h(DataTableColumnHeader, {
                     column,

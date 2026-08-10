@@ -1,8 +1,10 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TData extends RowData">
+import type { RowData, Table } from '@tanstack/vue-table';
 import { Input } from '@/components/ui/input';
+import type { DataTableFeatures } from './features';
 
 defineProps<{
-    table: any;
+    table: Table<DataTableFeatures, TData>;
     filterColumn: string;
     placeholder?: string;
 }>();

@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-// import is not needed as cn is not used in this component
+import type { Column, RowData } from '@tanstack/vue-table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff } from 'lucide-vue-next';
+import type { DataTableFeatures } from './features';
 
 interface DataTableColumnHeaderProps {
-    column: any;
+    column: Pick<Column<DataTableFeatures, RowData, unknown>, 'getCanSort' | 'getIsSorted' | 'toggleSorting' | 'toggleVisibility'>;
     title: string;
 }
 
