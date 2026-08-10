@@ -29,7 +29,7 @@ erDiagram
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    organizations["organizations (11)"] {
+    organizations["organizations (11) · Organization"] {
         integer id PK
         varchar name UK
         varchar slug UK
@@ -38,7 +38,7 @@ erDiagram
         varchar phone "nullable"
         varchar website "nullable"
         varchar logo "nullable"
-        datetime deleted_at "soft-delete, nullable"
+        datetime deleted_at "soft-delete, cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
@@ -48,109 +48,109 @@ erDiagram
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_alerts["peoplecount_alerts (10)"] {
+    peoplecount_alerts["peoplecount_alerts (10) · Alert"] {
         integer id PK
         integer area_id FK
-        varchar type
-        varchar channel
+        varchar type "cast: AlertType"
+        varchar channel "cast: AlertChannel"
         integer cooldown_minutes
         integer occupancy_alert_threshold "nullable"
         integer created_by FK "nullable"
-        datetime last_triggered_at "nullable"
+        datetime last_triggered_at "cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_area_aggregated_counts["peoplecount_area_aggregated_counts (6)"] {
+    peoplecount_area_aggregated_counts["peoplecount_area_aggregated_counts (6) · AreaAggregatedCount"] {
         integer id PK
         integer area_id FK
         integer count "default: '0'"
-        datetime period_start "nullable"
-        datetime period_end "nullable"
-        blob checksum
+        datetime period_start "cast: datetime, nullable"
+        datetime period_end "cast: datetime, nullable"
+        blob checksum "cast: BinaryHexCast"
     }
-    peoplecount_area_recurring_resets["peoplecount_area_recurring_resets (8)"] {
+    peoplecount_area_recurring_resets["peoplecount_area_recurring_resets (8) · AreaRecurringReset"] {
         integer id PK
         integer area_id FK
-        integer reset_value
-        time reset_time
+        integer reset_value "cast: integer"
+        time reset_time "cast: string"
         varchar timezone
         text notes "nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_area_single_resets["peoplecount_area_single_resets (8)"] {
+    peoplecount_area_single_resets["peoplecount_area_single_resets (8) · AreaSingleReset"] {
         integer id PK
         integer area_id FK
         integer reset_value
-        datetime effective_at
+        datetime effective_at "cast: datetime"
         integer created_by FK "nullable"
         text notes "nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_areas["peoplecount_areas (7)"] {
+    peoplecount_areas["peoplecount_areas (7) · Area"] {
         integer id PK
         varchar name
         integer event_id FK
-        datetime deleted_at "soft-delete, nullable"
+        datetime deleted_at "soft-delete, cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
-        datetime data_watermark "nullable"
+        datetime data_watermark "cast: datetime, nullable"
     }
-    peoplecount_assignments["peoplecount_assignments (12)"] {
+    peoplecount_assignments["peoplecount_assignments (12) · Assignment"] {
         integer id PK
         integer event_id FK
         integer area_id FK
         integer sensor_id FK
-        tinyint direction_flipped "default: '0'"
-        datetime active_from
-        datetime active_to
-        datetime deleted_at "soft-delete, nullable"
+        tinyint direction_flipped "cast: boolean, default: '0'"
+        datetime active_from "cast: datetime"
+        datetime active_to "cast: datetime"
+        datetime deleted_at "soft-delete, cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
         integer sensor_share_id FK "nullable"
         varchar label "nullable"
     }
-    peoplecount_events["peoplecount_events (8)"] {
+    peoplecount_events["peoplecount_events (8) · Event"] {
         integer id PK
         varchar name
         integer organization_id FK
-        datetime starts_at
-        datetime ends_at
-        datetime deleted_at "soft-delete, nullable"
+        datetime starts_at "cast: datetime"
+        datetime ends_at "cast: datetime"
+        datetime deleted_at "soft-delete, cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_interval_counts["peoplecount_interval_counts (7)"] {
+    peoplecount_interval_counts["peoplecount_interval_counts (7) · IntervalCount"] {
         integer id PK
         integer sensor_id FK
-        datetime ts_from
-        datetime ts_to
-        integer count_in
-        integer count_out
-        datetime received_at
+        datetime ts_from "cast: immutable_datetime"
+        datetime ts_to "cast: immutable_datetime"
+        integer count_in "cast: integer"
+        integer count_out "cast: integer"
+        datetime received_at "cast: immutable_datetime"
     }
-    peoplecount_sensor_shares["peoplecount_sensor_shares (9)"] {
+    peoplecount_sensor_shares["peoplecount_sensor_shares (9) · SensorShare"] {
         integer id PK
         integer sensor_id FK
         integer owner_organization_id FK
         integer borrower_organization_id FK
         integer created_by FK "nullable"
-        datetime starts_at
-        datetime ends_at
+        datetime starts_at "cast: datetime"
+        datetime ends_at "cast: datetime"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    peoplecount_sensors["peoplecount_sensors (10)"] {
+    peoplecount_sensors["peoplecount_sensors (10) · Sensor"] {
         integer id PK
         varchar vendor
         varchar model
         varchar serial
         integer organization_id FK
-        datetime deleted_at "soft-delete, nullable"
+        datetime deleted_at "soft-delete, cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
-        datetime archived_at "nullable"
+        datetime archived_at "cast: datetime, nullable"
         varchar name "nullable"
     }
     permissions["permissions (5)"] {
@@ -201,20 +201,20 @@ erDiagram
         varchar display_name "nullable"
         text description "nullable"
     }
-    stage_safety_readings["stage_safety_readings (11)"] {
+    stage_safety_readings["stage_safety_readings (11) · Reading"] {
         integer id PK
         integer sensor_id FK
-        varchar kind
-        double value
+        varchar kind "cast: ReadingKind"
+        double value "cast: float"
         varchar unit
-        datetime observed_at
-        datetime received_at
-        integer window_seconds "nullable"
-        tinyint battery_low "nullable"
-        integer rssi_dbm "nullable"
-        integer cv "nullable"
+        datetime observed_at "cast: immutable_datetime"
+        datetime received_at "cast: immutable_datetime"
+        integer window_seconds "cast: integer, nullable"
+        tinyint battery_low "cast: boolean, nullable"
+        integer rssi_dbm "cast: integer, nullable"
+        integer cv "cast: integer, nullable"
     }
-    stage_safety_sensors["stage_safety_sensors (12)"] {
+    stage_safety_sensors["stage_safety_sensors (12) · Sensor"] {
         integer id PK
         integer organization_id FK
         varchar manufacturer
@@ -222,23 +222,23 @@ erDiagram
         varchar identifier
         varchar name "nullable"
         varchar location "nullable"
-        integer stale_after_seconds "default: '300'"
-        datetime archived_at "nullable"
-        datetime deleted_at "soft-delete, nullable"
+        integer stale_after_seconds "cast: integer, default: '300'"
+        datetime archived_at "cast: datetime, nullable"
+        datetime deleted_at "soft-delete, cast: datetime, nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
     }
-    users["users (10)"] {
+    users["users (10) · User"] {
         integer id PK
         varchar name
         varchar email UK
-        varchar phone UK "nullable"
-        datetime email_verified_at "nullable"
-        varchar password
+        varchar phone UK "mutator, nullable"
+        datetime email_verified_at "cast: datetime, nullable"
+        varchar password "cast: hashed"
         varchar remember_token "nullable"
         datetime created_at "nullable"
         datetime updated_at "nullable"
-        tinyint eastereggs_activated "default: '1'"
+        tinyint eastereggs_activated "cast: boolean, default: '1'"
     }
     permissions ||--o{ model_has_permissions : "has many via permission_id, cascade delete"
     organizations ||--o{ model_has_permissions : "guessed has many via organization_id"
