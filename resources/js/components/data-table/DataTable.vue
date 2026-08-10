@@ -1,6 +1,19 @@
-<script setup lang="ts" generic="TData, TValue">
-import type { ColumnDef, ColumnFiltersState, SortingState, VisibilityState } from '@tanstack/vue-table';
-import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable } from '@tanstack/vue-table';
+<script setup lang="ts" generic="TData extends RowData">
+import type { ColumnDef, ColumnFiltersState, ColumnVisibilityState, RowData, SortingState, StockFeatures } from '@tanstack/vue-table';
+import {
+    columnFilteringFeature,
+    columnVisibilityFeature,
+    createFilteredRowModel,
+    createPaginatedRowModel,
+    createSortedRowModel,
+    FlexRender,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    stockFeatures,
+    tableFeatures,
+    useTable,
+} from '@tanstack/vue-table';
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -12,7 +25,7 @@ import DataTableToolbar from './DataTableToolbar.vue';
 
 const props = withDefaults(
     defineProps<{
-        columns: ColumnDef<TData, TValue>[];
+        columns: ColumnDef<StockFeatures, TData>[];
         data: TData[];
         title?: string;
         description?: string;
@@ -33,20 +46,29 @@ const props = withDefaults(
 
 const sorting = ref<SortingState>([...props.initialSorting]);
 const columnFilters = ref<ColumnFiltersState>([]);
-const columnVisibility = ref<VisibilityState>({});
+const columnVisibility = ref<ColumnVisibilityState>({});
 const rowSelection = ref({});
 
-const table = useVueTable({
+const features = tableFeatures({
+    ...stockFeatures,
+    columnFilteringFeature,
+    columnVisibilityFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    filteredRowModel: createFilteredRowModel(),
+    paginatedRowModel: createPaginatedRowModel(),
+    sortedRowModel: createSortedRowModel(),
+});
+
+const table = useTable({
+    features,
     get data() {
         return props.data;
     },
     get columns() {
         return props.columns;
     },
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
     onColumnFiltersChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnFilters),
     onColumnVisibilityChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnVisibility),

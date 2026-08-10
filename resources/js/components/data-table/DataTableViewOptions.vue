@@ -8,19 +8,18 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Table } from '@tanstack/vue-table';
 import { SlidersHorizontal } from 'lucide-vue-next';
 import { computed } from 'vue';
 
-interface DataTableViewOptionsProps<TData> {
-    table: Table<TData>;
+interface DataTableViewOptionsProps {
+    table: any;
 }
 
-const props = withDefaults(defineProps<DataTableViewOptionsProps<any> & { compact?: boolean }>(), {
+const props = withDefaults(defineProps<DataTableViewOptionsProps & { compact?: boolean }>(), {
     compact: false,
 });
 
-const columns = computed(() => props.table.getAllColumns().filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide()));
+const columns = computed(() => props.table.getAllColumns().filter((column: any) => typeof column.accessorFn !== 'undefined' && column.getCanHide()));
 </script>
 
 <template>

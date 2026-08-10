@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { Organization, User } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../data-table/DataTableColumnHeader.vue';
 
-export function usersColumns(organization?: Organization): ColumnDef<User>[] {
+export function usersColumns(organization?: Organization): ColumnDef<StockFeatures, User>[] {
     return [
         {
             accessorKey: 'name',
@@ -78,7 +78,7 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                       cell: ({ row }) => h('div', {}, row.getValue('organizations_count') ?? 0),
                       enableSorting: true,
                       enableHiding: true,
-                  } satisfies ColumnDef<User>,
+                   } satisfies ColumnDef<StockFeatures, User>,
               ]
             : []),
         ...(organization
@@ -115,7 +115,7 @@ export function usersColumns(organization?: Organization): ColumnDef<User>[] {
                       },
                       enableSorting: false,
                       enableHiding: true,
-                  } satisfies ColumnDef<User>,
+                   } satisfies ColumnDef<StockFeatures, User>,
               ]
             : []),
         {

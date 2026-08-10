@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Input } from '@/components/ui/input';
-import { type Table } from '@tanstack/vue-table';
 
 defineProps<{
-    table: Table<any>;
+    table: any;
     filterColumn: string;
     placeholder?: string;
 }>();

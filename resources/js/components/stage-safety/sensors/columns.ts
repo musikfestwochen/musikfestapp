@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import type { Organization, StageSafetySensor } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import type { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 
-export function sensorColumns(organization: Organization): ColumnDef<StageSafetySensor>[] {
+export function sensorColumns(organization: Organization): ColumnDef<StockFeatures, StageSafetySensor>[] {
     return [
         {
             id: 'name',

@@ -4,12 +4,12 @@ import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountAssignment } from '@/types';
 import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
-import { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
 
-export function assignmentsColumns(organization: Organization): ColumnDef<PeoplecountAssignment>[] {
+export function assignmentsColumns(organization: Organization): ColumnDef<StockFeatures, PeoplecountAssignment>[] {
     return [
         {
             accessorKey: 'event',

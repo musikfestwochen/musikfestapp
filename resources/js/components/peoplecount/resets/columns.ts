@@ -4,12 +4,12 @@ import { usePermissions } from '@/composables/usePermissions';
 import { Organization, PeoplecountArea, PeoplecountAreaRecurringReset, PeoplecountAreaSingleReset } from '@/types';
 import { formatDateTime } from '@/utils/dateTimeHelpers';
 import { Link } from '@inertiajs/vue3';
-import { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, StockFeatures } from '@tanstack/vue-table';
 import { Edit, Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import DataTableColumnHeader from '../../data-table/DataTableColumnHeader.vue';
 
-export function singleResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<PeoplecountAreaSingleReset>[] {
+export function singleResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<StockFeatures, PeoplecountAreaSingleReset>[] {
     return [
         {
             accessorKey: 'reset_value',
@@ -98,7 +98,7 @@ export function singleResetColumns(organization: Organization, area: Peoplecount
     ];
 }
 
-export function recurringResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<PeoplecountAreaRecurringReset>[] {
+export function recurringResetColumns(organization: Organization, area: PeoplecountArea): ColumnDef<StockFeatures, PeoplecountAreaRecurringReset>[] {
     return [
         {
             accessorKey: 'reset_value',

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { type Table } from '@tanstack/vue-table';
 import DataTableFilter from './DataTableFilter.vue';
 import DataTableViewOptions from './DataTableViewOptions.vue';
 
 withDefaults(
     defineProps<{
-        table: Table<any>;
+        table: any;
         filterColumn?: string;
         searchPlaceholder?: string;
         showFilter?: boolean;
