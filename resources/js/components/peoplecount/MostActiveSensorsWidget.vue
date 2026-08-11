@@ -57,17 +57,39 @@ const sortedAreas = computed(() => {
     });
 });
 
+function summarizeSensors(sensors: SensorItem[]): SensorSums {
+    return sensors.reduce(
+        (totals, sensor) => {
+            const sums = sensor.sums[selectedRange.value];
+            totals.in += sums.in;
+            totals.out += sums.out;
+            totals.total += sums.total;
+
+            return totals;
+        },
+        { in: 0, out: 0, total: 0 },
+    );
+}
+
+const summarizedAreas = computed(() => sortedAreas.value.map((area) => ({ ...area, summary: summarizeSensors(area.sensors) })));
+const totalSummary = computed(() => summarizeSensors(sortedAreas.value.flatMap((area) => area.sensors)));
+const summaryMetricDefinitions = [
+    { key: 'in', label: 'In', class: 'text-emerald-700 dark:text-emerald-300/80' },
+    { key: 'out', label: 'Out', class: 'text-rose-700 dark:text-rose-300/80' },
+    { key: 'total', label: 'Total', class: 'text-foreground' },
+] as const;
+
 // Keep only one area open at a time (Accordion handles this), but ensure a sensible default
 watch(
     () => sortedAreas.value.map((a) => a.id).join(','),
     () => {
-        const areas = sortedAreas.value;
+        const areas = summarizedAreas.value;
         if (areas.length <= 1) {
             openArea.value = undefined;
             return;
         }
-        // preserve currently open if still present, else open the first
-        if (!openArea.value || !areas.some((a) => String(a.id) === openArea.value)) {
+        // preserve currently open if still present, else open first area
+        if (!openArea.value || (openArea.value !== 'total' && !areas.some((a) => String(a.id) === openArea.value))) {
             openArea.value = String(areas[0].id);
         }
     },
@@ -76,7 +98,7 @@ watch(
 </script>
 
 <template>
-    <WidgetShell title="Most Active Sensors" :error="error" :last-updated="latestDataAt">
+    <WidgetShell title="Recent Activity" :error="error" :last-updated="latestDataAt">
         <template #icon><Users /></template>
         <template #actions>
             <div class="flex flex-wrap items-center gap-1">
@@ -123,17 +145,23 @@ watch(
 
         <div v-else-if="data?.length" class="flex flex-1 flex-col space-y-4">
             <!-- Single area: show expanded content without collapsible -->
-            <div v-if="sortedAreas.length === 1" class="rounded border">
+            <div v-if="summarizedAreas.length === 1" class="rounded border">
                 <div class="mb-2 flex items-center justify-between p-3">
                     <div>
-                        <div class="text-sm font-medium">{{ sortedAreas[0].name }}</div>
-                        <div class="text-muted-foreground text-xs">{{ sortedAreas[0].event_name }}</div>
+                        <div class="text-sm font-medium">{{ summarizedAreas[0].name }}</div>
+                        <div class="text-muted-foreground text-xs">{{ summarizedAreas[0].event_name }}</div>
                     </div>
                     <div class="text-muted-foreground text-xs">Sorted by total ({{ selectedRange }})</div>
                 </div>
-                <div v-if="!sortedAreas[0].sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
+                <dl class="bg-muted/30 mx-3 mb-3 grid grid-cols-3 divide-x rounded py-2 text-center" aria-label="Area sensor counts">
+                    <div v-for="metric in summaryMetricDefinitions" :key="metric.key">
+                        <dt class="text-muted-foreground text-[11px]">{{ metric.label }}</dt>
+                        <dd :class="metric.class" class="text-sm font-semibold tabular-nums">{{ summarizedAreas[0].summary[metric.key] }}</dd>
+                    </div>
+                </dl>
+                <div v-if="!summarizedAreas[0].sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
                 <ul v-else class="divide-y px-3 pb-3 text-sm">
-                    <li v-for="s in sortedAreas[0].sensors" :key="s.id" class="py-2">
+                    <li v-for="s in summarizedAreas[0].sensors" :key="s.id" class="py-2">
                         <div class="flex flex-col">
                             <div class="truncate">{{ s.label || s.name || `${s.vendor} ${s.model}` }}</div>
                             <div class="mt-1 flex gap-3 text-xs">
@@ -148,9 +176,9 @@ watch(
 
             <!-- Multiple areas: use Accordion so only one open at a time -->
             <Accordion v-else v-model="openArea" class="w-full" collapsible type="single">
-                <AccordionItem v-for="area in sortedAreas" :key="area.id" :value="String(area.id)">
+                <AccordionItem v-for="area in summarizedAreas" :key="area.id" :value="String(area.id)">
                     <AccordionTrigger class="px-3 py-2">
-                        <div class="flex w-full items-center justify-between">
+                        <div class="flex w-full items-center justify-between gap-2">
                             <div class="text-left">
                                 <div class="text-sm font-medium">{{ area.name }}</div>
                                 <div class="text-muted-foreground text-xs">{{ area.event_name }}</div>
@@ -159,6 +187,15 @@ watch(
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
+                        <dl
+                            class="bg-muted/30 mx-3 mb-3 grid grid-cols-3 divide-x rounded py-2 text-center"
+                            :aria-label="`${area.name} sensor counts`"
+                        >
+                            <div v-for="metric in summaryMetricDefinitions" :key="metric.key">
+                                <dt class="text-muted-foreground text-[11px]">{{ metric.label }}</dt>
+                                <dd :class="metric.class" class="text-sm font-semibold tabular-nums">{{ area.summary[metric.key] }}</dd>
+                            </div>
+                        </dl>
                         <div v-if="!area.sensors.length" class="text-muted-foreground px-3 pb-3 text-xs">No sensors assigned.</div>
                         <ul v-else class="divide-y px-3 pb-3 text-sm">
                             <li v-for="s in area.sensors" :key="s.id" class="py-2">
@@ -172,6 +209,28 @@ watch(
                                 </div>
                             </li>
                         </ul>
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="total">
+                    <AccordionTrigger class="px-3 py-2">
+                        <div class="flex w-full items-center justify-between gap-2">
+                            <div class="text-left">
+                                <div class="text-sm font-medium">All areas</div>
+                                <div class="text-muted-foreground text-xs">Combined sensor totals</div>
+                            </div>
+                            <div class="text-muted-foreground text-xs">{{ selectedRange }}</div>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <dl class="bg-muted/30 mx-3 mb-3 grid grid-cols-3 divide-x rounded py-2 text-center" aria-label="Total sensor counts">
+                            <div v-for="metric in summaryMetricDefinitions" :key="metric.key">
+                                <dt class="text-muted-foreground text-[11px]">{{ metric.label }}</dt>
+                                <dd :class="metric.class" class="text-sm font-semibold tabular-nums">{{ totalSummary[metric.key] }}</dd>
+                            </div>
+                        </dl>
+                        <div class="text-muted-foreground px-3 pb-3 text-xs">
+                            Combined counts across active assignments. Sensors assigned to multiple areas count once per assignment.
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
