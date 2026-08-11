@@ -21,7 +21,8 @@ vi.mock('@inertiajs/vue3', () => ({
     }),
 }));
 
-vi.mock('@vueuse/core', () => ({
+vi.mock('@vueuse/core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@vueuse/core')>()),
     useIntervalFn: mocks.useIntervalFn,
 }));
 
@@ -131,6 +132,12 @@ describe('MostActiveSensorsWidget', () => {
         expect(items[0].text()).toContain('Total: 3');
         expect(
             wrapper
+                .get('[aria-label="Area sensor counts"]')
+                .findAll('dd')
+                .map((dd) => dd.text()),
+        ).toEqual(['4', '1', '5']);
+        expect(
+            wrapper
                 .findAll('button')
                 .find((button) => button.text() === '10m')!
                 .attributes('aria-pressed'),
@@ -164,6 +171,12 @@ describe('MostActiveSensorsWidget', () => {
         expect(items[0].text()).toContain('Total: 4');
         expect(
             wrapper
+                .get('[aria-label="Area sensor counts"]')
+                .findAll('dd')
+                .map((dd) => dd.text()),
+        ).toEqual(['3', '3', '6']);
+        expect(
+            wrapper
                 .findAll('button')
                 .find((button) => button.text() === '30m')!
                 .attributes('aria-pressed'),
@@ -177,6 +190,63 @@ describe('MostActiveSensorsWidget', () => {
         await flushPromises();
         items = wrapper.findAll('li');
         expect(items[0].text()).toContain('Total: 10');
+    });
+
+    it('shows summaries for each area and all areas in the accordion', async () => {
+        const sensorSums = (inCount: number, outCount: number) => ({
+            '10m': { in: inCount, out: outCount, total: inCount + outCount },
+            '30m': { in: inCount, out: outCount, total: inCount + outCount },
+            '1h': { in: inCount, out: outCount, total: inCount + outCount },
+            '2h': { in: inCount, out: outCount, total: inCount + outCount },
+        });
+        const area = (id: number, name: string, sensorId: number, inCount: number, outCount: number) =>
+            baseArea({
+                id,
+                name,
+                sensors: [{ id: sensorId, serial: `S-${sensorId}`, vendor: 'Axis', model: 'P8815-2', sums: sensorSums(inCount, outCount) }],
+            });
+
+        mocks.get.mockResolvedValue([area(1, 'Area 1', 1, 2, 1), area(2, 'Area 2', 2, 4, 3)]);
+        const wrapper = mount(MostActiveSensorsWidget, { props: { organization: mockOrganization } });
+        await flushPromises();
+
+        expect(wrapper.find('[aria-label="Area 1 sensor counts"]').exists()).toBe(true);
+        expect(wrapper.find('[aria-label="Area 2 sensor counts"]').exists()).toBe(false);
+        expect(wrapper.find('[aria-label="Total sensor counts"]').exists()).toBe(false);
+        expect(
+            wrapper
+                .findAll('[data-reka-collection-item]')
+                .map((trigger) => trigger.text())
+                .filter((text) => text.includes('Area') || text.includes('All areas')),
+        ).toEqual([expect.stringContaining('Area 1'), expect.stringContaining('Area 2'), expect.stringContaining('All areas')]);
+
+        await wrapper
+            .findAll('[data-reka-collection-item]')
+            .find((trigger) => trigger.text().includes('Area 2'))!
+            .trigger('click');
+        await flushPromises();
+
+        expect(
+            wrapper
+                .get('[aria-label="Area 2 sensor counts"]')
+                .findAll('dd')
+                .map((dd) => dd.text()),
+        ).toEqual(['4', '3', '7']);
+
+        await wrapper
+            .findAll('[data-reka-collection-item]')
+            .find((trigger) => trigger.text().includes('All areas'))!
+            .trigger('click');
+        await flushPromises();
+
+        expect(
+            wrapper
+                .get('[aria-label="Total sensor counts"]')
+                .findAll('dd')
+                .map((dd) => dd.text()),
+        ).toEqual(['6', '4', '10']);
+        expect(wrapper.text()).toContain('All areas');
+        expect(wrapper.text()).toContain('Sensors assigned to multiple areas count once per assignment.');
     });
 
     it('shows error banner when API fails', async () => {
