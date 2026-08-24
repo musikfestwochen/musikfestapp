@@ -23,12 +23,12 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@faker-js/faker": "10.5.0",
+        "@faker-js/faker": "10.6.0",
         "@playwright/test": "^1.62.0",
         "@tailwindcss/vite": "^4.3.3",
         "@testing-library/vue": "^8.1.0",
         "@types/node": "26.2.0",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.11",
         "@vitest/ui": "^4.1.5",
         "@vue/eslint-config-typescript": "^14.9.0",
         "@vue/test-utils": "2.4.11",
@@ -37,7 +37,7 @@
         "eslint-config-prettier": "^10.0.1",
         "eslint-formatter-compact": "^9.0.1",
         "eslint-plugin-vue": "^10.10.0",
-        "happy-dom": "20.11.2",
+        "happy-dom": "20.11.6",
         "prettier": "^3.9.6",
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.8.1",
@@ -46,12 +46,12 @@
         "typescript-eslint": "^8.67.0",
         "vite-plugin-image-optimizer": "^2.0.3",
         "vitest": "^4.1.5",
-        "vue-tsc": "3.3.9"
+        "vue-tsc": "3.3.10"
     },
     "dependencies": {
         "@headlessui/vue": "^1.7.23",
-        "@inertiajs/vue3": "^3.6.1",
-        "@lucide/vue": "^1.30.0",
+        "@inertiajs/vue3": "^3.7.0",
+        "@lucide/vue": "^1.33.0",
         "@tailwindcss/forms": "^0.5.3",
         "@tanstack/vue-table": "^9.1.2",
         "@unovis/ts": "^1.6.7",
@@ -61,9 +61,9 @@
         "autoprefixer": "^10.5.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
-        "concurrently": "^10.0.4",
+        "concurrently": "^10.0.5",
         "laravel-vite-plugin": "^3.2.0",
-        "lucide": "1.31.0",
+        "lucide": "1.33.0",
         "lucide-vue-next": "1.0.0",
         "radix-vue": "^1.9.11",
         "reka-ui": "^2.10.3",
@@ -71,12 +71,12 @@
         "tailwindcss": "^4.3.3",
         "tailwindcss-animate": "^1.0.7",
         "typescript": "^6.0.3",
-        "vite": "^8.2.1",
+        "vite": "^8.2.2",
         "vue": "^3.5.41",
-        "ziggy-js": "^2.6.3"
+        "ziggy-js": "^2.6.4"
     },
     "optionalDependencies": {
-        "@rollup/rollup-linux-x64-gnu": "4.62.4",
+        "@rollup/rollup-linux-x64-gnu": "4.62.5",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.33.0"
     },
