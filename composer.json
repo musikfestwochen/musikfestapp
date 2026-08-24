@@ -24,7 +24,7 @@
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {
-        "bambamboole/laravel-mermaid-erd": "^0.5.0",
+        "bambamboole/laravel-mermaid-erd": "^0.6.0",
         "barryvdh/laravel-debugbar": "^4.2",
         "driftingly/rector-laravel": "^2.0",
         "jasonmccreary/laravel-test-assertions": "^2.8",
