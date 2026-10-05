@@ -1,10 +1,10 @@
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
+import vueTsEslintConfig from '@vue/eslint-config-typescript';
 import prettier from 'eslint-config-prettier';
 import vue from 'eslint-plugin-vue';
 
-export default defineConfigWithVueTs(
-    vue.configs['flat/strongly-recommended'],
-    vueTsConfigs.recommended,
+export default [
+    ...vue.configs['flat/strongly-recommended'],
+    ...vueTsEslintConfig(),
     {
         ignores: ['.venv', 'site', 'vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js', 'resources/js/components/ui/*'],
     },
@@ -15,4 +15,4 @@ export default defineConfigWithVueTs(
         },
     },
     prettier,
-);
+];
