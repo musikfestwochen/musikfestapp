@@ -396,17 +396,14 @@ class AreaAggregationService
      */
     protected function buildAssignmentsBySensor(Area $area): Collection
     {
-        /** @var Collection<int, Collection<int, Assignment>> $bySensor */
-        $bySensor = collect();
+        $assignmentsBySensor = [];
 
         foreach ($area->assignments as $assignment) {
-            $sensorId = $assignment->sensor_id;
-            $group = $bySensor->get($sensorId, collect());
-            $group->push($assignment);
-            $bySensor->put($sensorId, $group);
+            $assignmentsBySensor[$assignment->sensor_id][] = $assignment;
         }
 
-        return $bySensor;
+        return collect($assignmentsBySensor)
+            ->map(fn (array $assignments): Collection => collect($assignments));
     }
 
     /**
@@ -518,7 +515,7 @@ class AreaAggregationService
         $initialCount = $previousCount ? $previousCount->count : 0;
         $lateRecalculateFrom = $area->exists ? $this->getLateArrivalRecalculateFrom($area, $runWatermark) : null;
 
-        if ($lateRecalculateFrom && $lateRecalculateFrom->lessThan($recalculateFrom)) {
+        if ($lateRecalculateFrom instanceof Carbon && $lateRecalculateFrom->lessThan($recalculateFrom)) {
             $recalculateFrom = $lateRecalculateFrom;
             $initialCount = $this->getInitialCountBefore($area, $recalculateFrom);
         }
@@ -531,7 +528,7 @@ class AreaAggregationService
 
     protected function getLateArrivalRecalculateFrom(Area $area, ?Carbon $runWatermark): ?Carbon
     {
-        if (! $area->data_watermark || ! $runWatermark) {
+        if (! $area->data_watermark || ! $runWatermark instanceof Carbon) {
             return null;
         }
 
@@ -622,7 +619,6 @@ class AreaAggregationService
             ->orderBy('id')
             ->get(['id', 'name', 'event_id']);
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, Area> $areas */
         return $areas->map(function (Area $area) use ($now): array {
             return [
                 'id' => $area->id,
@@ -683,7 +679,6 @@ class AreaAggregationService
                 ->with('event:id,name')
                 ->get();
 
-            /** @var \Illuminate\Database\Eloquent\Collection<int, Area> $areas */
             return $areas->map(function (Area $area) use ($now): array {
                 $latestCount = $area->getAttribute('latest_count');
                 $latestPeriodEnd = $area->getAttribute('latest_period_end');

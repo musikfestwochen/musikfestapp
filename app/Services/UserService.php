@@ -90,7 +90,7 @@ class UserService
     }
 
     /**
-     * @return Collection<int, non-empty-array<string, mixed>>
+     * @return Collection<int, covariant non-empty-array<string, mixed>>
      */
     public function getOrganizationUsersWithRoles(Organization $organization): Collection
     {

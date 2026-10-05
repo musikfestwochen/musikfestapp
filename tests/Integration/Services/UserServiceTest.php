@@ -255,6 +255,32 @@ describe('getOrganizationUsersWithRoles', function () {
             ->and(getPermissionsOrgId())->toBe(GLOBAL_ORG_ID);
     });
 
+    it('preserves serialized user attributes and hides credentials', function () {
+        $organization = Organization::factory()->create();
+        $user = User::factory()->create([
+            'phone' => null,
+            'eastereggs_activated' => false,
+            'email_verified_at' => '2026-01-01 12:00:00',
+            'created_at' => '2026-01-01 12:00:00',
+            'updated_at' => '2026-01-01 12:00:00',
+        ]);
+        $organization->users()->attach($user);
+
+        $result = $this->service->getOrganizationUsersWithRoles($organization)->first();
+
+        expect($result)->toBe([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => null,
+            'email_verified_at' => '2026-01-01T12:00:00.000000Z',
+            'created_at' => '2026-01-01T12:00:00.000000Z',
+            'updated_at' => '2026-01-01T12:00:00.000000Z',
+            'eastereggs_activated' => false,
+            'organization_roles' => [],
+        ]);
+    });
+
     it('eager loads roles with a fixed query count', function () {
         $organization = Organization::factory()->create();
         $users = User::factory()->count(3)->create();

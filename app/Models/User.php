@@ -60,7 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Route notifications for the Vonage channel.
      */
-    public function routeNotificationForVonage(Notification $notification): string
+    public function routeNotificationForVonage(Notification $notification): ?string
     {
         return $this->phone;
     }
@@ -82,7 +82,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Set the phone attribute with automatic formatting cleanup.
      *
-     * @return Attribute<string, array<string, string|null>>
+     * @return Attribute<string|null, array{phone: string|null}>
      */
     protected function phone(): Attribute
     {

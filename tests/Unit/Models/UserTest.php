@@ -99,3 +99,10 @@ it('routeNotificationForVonage returns cleaned phone number', function () {
     $notification = Mockery::mock(Notification::class);
     expect($user->routeNotificationForVonage($notification))->toBe('+41791234567');
 });
+
+it('routeNotificationForVonage returns null when phone is missing', function () {
+    $user = User::factory()->make(['phone' => null]);
+    $notification = Mockery::mock(Notification::class);
+
+    expect($user->routeNotificationForVonage($notification))->toBeNull();
+});
