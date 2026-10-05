@@ -8,6 +8,7 @@ use App\Listeners\Permissions\PermissionAttachedListener;
 use App\Listeners\Permissions\PermissionDetachedListener;
 use App\Listeners\Permissions\RoleAttachedListener;
 use App\Listeners\Permissions\RoleDetachedListener;
+use App\Models\Peoplecount\Sensor as PeoplecountSensor;
 use App\Models\StageSafety\Sensor as StageSafetySensor;
 use App\Models\User;
 use App\Services\GlobalPermissionService;
@@ -42,6 +43,17 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('stage-safety-readings', function (Request $request): Limit {
             $sensor = auth('sanctum')->user();
             $tokenId = $sensor instanceof StageSafetySensor
+                ? $sensor->currentAccessToken()->getKey()
+                : null;
+
+            return Limit::perMinute(60)->by(
+                $tokenId === null ? 'ip:'.$request->ip() : 'token:'.$tokenId,
+            );
+        });
+
+        RateLimiter::for('peoplecount-interval-counts', function (Request $request): Limit {
+            $sensor = auth('sanctum')->user();
+            $tokenId = $sensor instanceof PeoplecountSensor
                 ? $sensor->currentAccessToken()->getKey()
                 : null;
 

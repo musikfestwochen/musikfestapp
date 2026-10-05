@@ -474,6 +474,6 @@ it('uses the correct form requests', function () {
     // middleware
     test()->assertRouteUsesMiddleware(
         'peoplecount.interval-count.store',
-        ['auth:sanctum'],
+        ['auth:sanctum', 'throttle:peoplecount-interval-counts'],
     );
 });

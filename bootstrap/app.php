@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AddNoIndexHeader;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\Permissions\GlobalOrganizationMiddleware;
 use App\Http\Middleware\Permissions\OrganizationSlugMiddleware;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(AddNoIndexHeader::class);
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

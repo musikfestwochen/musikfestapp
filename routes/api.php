@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('peoplecount')->name('peoplecount.')->group(function () {
         Route::post('interval-count', [IntervalCountController::class, 'store'])
+            ->middleware('throttle:peoplecount-interval-counts')
             ->name('interval-count.store');
     });
 

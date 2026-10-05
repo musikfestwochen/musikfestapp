@@ -22,7 +22,6 @@ class IntervalCountController extends Controller
      * performs structural validation instead and rejects invalid payloads
      * with an exception.
      *
-     * TODO: Consider adding rate limiting for API endpoints
      * TODO: Consider adding request logging for debugging sensor issues
      */
     public function store(Request $request): JsonResponse
