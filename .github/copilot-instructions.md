@@ -1,3 +1,5 @@
+Follow `.ai/guidelines/security-audit.md` for security guidance and audits.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

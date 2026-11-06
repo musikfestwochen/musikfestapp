@@ -1,0 +1,71 @@
+name: Security audit skill
+
+on:
+  schedule:
+    - cron: '20 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.agents/skills/security-audit/**'
+      - 'skills-lock.json'
+      - '.github/workflows/security-audit-skill.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.agents/skills/security-audit/**'
+      - 'skills-lock.json'
+      - '.github/workflows/security-audit-skill.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-audit-skill-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Test skill validators
+        run: node --test .agents/skills/security-audit/validate-findings.test.cjs .agents/skills/security-audit/validate-coverage-ledger.test.cjs
+
+  update:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Update Cloudflare skill
+        run: npx --yes skills@1.7.6 update security-audit --project --yes
+      - name: Test updated skill validators
+        run: node --test .agents/skills/security-audit/validate-findings.test.cjs .agents/skills/security-audit/validate-coverage-ledger.test.cjs
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.SKILL_UPDATE_TOKEN || github.token }}
+          branch: chore/update-security-audit-skill
+          base: main
+          add-paths: |
+            .agents/skills/security-audit/
+            skills-lock.json
+          commit-message: 'chore: update Cloudflare security audit skill'
+          title: 'chore: update Cloudflare security audit skill'
+          body: |
+            Refreshes the Cloudflare security-audit skill and project lockfile.
+            Upstream validator tests passed before opening this PR. Review the instruction and validator changes before merging.
+
+            With the default GITHUB_TOKEN, this PR does not trigger other workflows automatically. Set SKILL_UPDATE_TOKEN (contents/pull-requests write) to enable normal PR checks, or close/reopen the PR manually to trigger them.
+          draft: true
+          delete-branch: true

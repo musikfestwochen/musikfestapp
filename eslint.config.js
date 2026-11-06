@@ -6,7 +6,17 @@ export default [
     ...vue.configs['flat/strongly-recommended'],
     ...vueTsEslintConfig(),
     {
-        ignores: ['.venv', 'site', 'vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js', 'resources/js/components/ui/*'],
+        ignores: [
+            '.venv',
+            'site',
+            'vendor',
+            'node_modules',
+            'public',
+            'bootstrap/ssr',
+            'tailwind.config.js',
+            'resources/js/components/ui/*',
+            '**/skills/security-audit/**',
+        ],
     },
     {
         rules: {
