@@ -20,6 +20,7 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Sleep;
 use Laravel\Prompts\Support\Logger;
@@ -757,7 +758,7 @@ class BenchmarkAggregationCommand extends Command
         DB::disconnect('sqlite');
 
         if (is_file($this->temporarySqlitePath)) {
-            unlink($this->temporarySqlitePath);
+            File::delete($this->temporarySqlitePath);
         }
 
         $this->temporarySqlitePath = null;

@@ -376,17 +376,20 @@ class AreaService
     /**
      * Get single resets that fall within the event time period.
      *
-     * @return Collection<int, array{at: Carbon, reset_value: int, type: 'single_reset'}>
+     * @return array<int, array{at: Carbon, reset_value: int, type: 'single_reset'}>
      */
-    protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): Collection
+    protected function getSingleResets(Area $area, Carbon $eventStartTime, Carbon $eventEndTime): array
     {
-        return $area->areaSingleResets
-            ->filter(fn (AreaSingleReset $reset): bool => $this->isResetWithinEventPeriod($reset->effective_at, $eventStartTime, $eventEndTime))
-            ->map(fn (AreaSingleReset $reset): array => [
+        return array_map(
+            fn (AreaSingleReset $reset): array => [
                 'at' => $reset->effective_at,
                 'reset_value' => $reset->reset_value,
                 'type' => 'single_reset',
-            ]);
+            ],
+            $area->areaSingleResets
+                ->filter(fn (AreaSingleReset $reset): bool => $this->isResetWithinEventPeriod($reset->effective_at, $eventStartTime, $eventEndTime))
+                ->all(),
+        );
     }
 
     /**
