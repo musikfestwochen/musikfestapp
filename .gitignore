@@ -55,5 +55,4 @@ __pycache__/
 /junie/
 /opencode.json
 /.ai/*
-!/.ai/guidelines/
 !/.ai/skills/
