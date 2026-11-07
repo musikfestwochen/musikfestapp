@@ -1,0 +1,203 @@
+name: Security audit skill
+
+on:
+  schedule:
+    - cron: '20 6 * * 1'
+  workflow_dispatch:
+  pull_request_target:
+    paths:
+      - '.agents/skills/security-audit/**'
+      - 'skills-lock.json'
+      - '.github/workflows/security-audit-skill.yml'
+      - '.github/scripts/*security_audit_update.py'
+  push:
+    branches: [main]
+    paths:
+      - '.agents/skills/security-audit/**'
+      - 'skills-lock.json'
+      - '.github/workflows/security-audit-skill.yml'
+      - '.github/scripts/*security_audit_update.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-audit-skill-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request_target' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
+          allow-unsafe-pr-checkout: true
+          persist-credentials: false
+      - name: Test contributed code in an isolated container
+        env:
+          TEST_IMAGE: node:24-bookworm@sha256:8fa96264f302f58bbb13aa7339c541547b56975766ce956c875da149452a3e40
+        run: |
+          set +e
+          docker run --rm \
+            --platform linux/amd64 \
+            --network none \
+            --read-only \
+            --user 65532:65532 \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --pids-limit 64 \
+            --memory 1g \
+            --cpus 2 \
+            --ulimit fsize=10485760:10485760 \
+            --tmpfs /tmp:rw,nosuid,nodev,size=128m,mode=1777 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace,readonly" \
+            --workdir /workspace \
+            "$TEST_IMAGE" \
+            sh -euc '
+              mkdir -p /tmp/home
+              env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/tmp/home TMPDIR=/tmp node --test .agents/skills/security-audit/validate-findings.test.cjs .agents/skills/security-audit/validate-coverage-ledger.test.cjs
+              env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/tmp/home TMPDIR=/tmp PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s .github/scripts -p test_promote_security_audit_update.py
+            ' 2>&1 | python3 -c '
+          import json
+          import sys
+
+          limit = 1024 * 1024
+          captured = bytearray()
+          truncated = False
+          while True:
+              chunk = sys.stdin.buffer.read(65536)
+              if not chunk:
+                  break
+              if len(captured) < limit:
+                  captured.extend(chunk[:limit - len(captured)])
+              if len(captured) == limit:
+                  truncated = True
+
+          for line in captured.decode("utf-8", errors="replace").splitlines()[-20:]:
+              print("sandbox-test-output: " + json.dumps(line, ensure_ascii=True))
+          if truncated:
+              print("sandbox-test-output: output capped at 1 MiB")
+          '
+          test_statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( test_statuses[0] != 0 )); then
+            exit "${test_statuses[0]}"
+          fi
+          exit "${test_statuses[1]}"
+
+  prepare-update:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Update Cloudflare skill
+        run: npx --yes skills@1.7.6 update security-audit --project --yes
+      - name: Test updated validators in an isolated container
+        env:
+          TEST_IMAGE: node:24-bookworm@sha256:8fa96264f302f58bbb13aa7339c541547b56975766ce956c875da149452a3e40
+        run: |
+          set +e
+          docker run --rm \
+            --platform linux/amd64 \
+            --network none \
+            --read-only \
+            --user 65532:65532 \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --pids-limit 64 \
+            --memory 1g \
+            --cpus 2 \
+            --ulimit fsize=10485760:10485760 \
+            --tmpfs /tmp:rw,nosuid,nodev,size=128m,mode=1777 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace,readonly" \
+            --workdir /workspace \
+            "$TEST_IMAGE" \
+            sh -euc '
+              mkdir -p /tmp/home
+              env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/tmp/home TMPDIR=/tmp node --test .agents/skills/security-audit/validate-findings.test.cjs .agents/skills/security-audit/validate-coverage-ledger.test.cjs
+            ' 2>&1 | python3 -c '
+          import json
+          import sys
+
+          limit = 1024 * 1024
+          captured = bytearray()
+          truncated = False
+          while True:
+              chunk = sys.stdin.buffer.read(65536)
+              if not chunk:
+                  break
+              if len(captured) < limit:
+                  captured.extend(chunk[:limit - len(captured)])
+              if len(captured) == limit:
+                  truncated = True
+
+          for line in captured.decode("utf-8", errors="replace").splitlines()[-20:]:
+              print("sandbox-test-output: " + json.dumps(line, ensure_ascii=True))
+          if truncated:
+              print("sandbox-test-output: output capped at 1 MiB")
+          '
+          test_statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( test_statuses[0] != 0 )); then
+            exit "${test_statuses[0]}"
+          fi
+          exit "${test_statuses[1]}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: security-audit-update
+          path: |
+            .agents/skills/security-audit/
+            skills-lock.json
+          include-hidden-files: true
+          retention-days: 1
+
+  publish-update:
+    needs: prepare-update
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: security-audit-update
+          path: ${{ runner.temp }}/security-audit-update
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Promote allowlisted regular files without executing upstream code
+        env:
+          UPDATE_DIRECTORY: ${{ runner.temp }}/security-audit-update
+        run: python3 .github/scripts/promote_security_audit_update.py "$UPDATE_DIRECTORY" .
+      - uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
+        with:
+          token: ${{ secrets.SKILL_UPDATE_TOKEN || github.token }}
+          branch: chore/update-security-audit-skill
+          base: main
+          add-paths: |
+            .agents/skills/security-audit/
+            skills-lock.json
+          commit-message: 'chore: update Cloudflare security audit skill'
+          title: 'chore: update Cloudflare security audit skill'
+          body: |
+            Refreshes the Cloudflare security-audit skill and project lockfile.
+            Upstream validator tests passed before opening this PR. Review the instruction and validator changes before merging.
+
+            With the default GITHUB_TOKEN, this PR does not trigger other workflows automatically. Set SKILL_UPDATE_TOKEN (contents/pull-requests write) to enable normal PR checks, or close/reopen the PR manually to trigger them.
+          draft: true
+          delete-branch: true

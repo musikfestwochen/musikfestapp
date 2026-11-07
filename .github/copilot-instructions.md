@@ -1,3 +1,5 @@
+For security guidance or audits, use `.agents/skills/security-audit/SKILL.md`.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

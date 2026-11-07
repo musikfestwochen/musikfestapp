@@ -54,9 +54,14 @@ describe('basic functionality', function () {
     });
 
     it('authorizes all users', function () {
-        $request = new LoginRequest;
+        $request = createLoginRequest('guest@example.com', 'password');
 
-        expect($request->authorize())->toBeTrue();
+        $request->validateResolved();
+
+        expect($request->validated())->toMatchArray([
+            'email' => 'guest@example.com',
+            'password' => 'password',
+        ]);
     });
 
     it('generates correct throttle key', function () {

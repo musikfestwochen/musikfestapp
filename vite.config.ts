@@ -1,7 +1,7 @@
+import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
 import path from 'path';
-import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
@@ -34,7 +34,13 @@ export default defineConfig({
         // simulate DOM with happy-dom
         // (requires installing happy-dom as a peer dependency)
         environment: 'happy-dom',
-        // exclude e2e tests from vitest
-        exclude: ['**/node_modules/**', '**/vendor/**', '**/e2e/**', '**/dist/**'],
+        // Exclude e2e and vendored Node.js validator tests from Vitest.
+        exclude: [
+            '**/node_modules/**',
+            '**/vendor/**',
+            '**/e2e/**',
+            '**/dist/**',
+            '**/skills/security-audit/**',
+        ],
     },
 });

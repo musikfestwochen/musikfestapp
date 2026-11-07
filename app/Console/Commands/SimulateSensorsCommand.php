@@ -329,8 +329,8 @@ class SimulateSensorsCommand extends Command
     {
         if (! $wizardMode) {
             return [
-                'type' => (string) $this->option('type'),
-                'history' => (string) $this->option('history'),
+                'type' => $this->input()->string('type')->toString(),
+                'history' => $this->input()->string('history')->toString(),
                 'live' => ! (bool) $this->option('once'),
             ];
         }
@@ -341,12 +341,12 @@ class SimulateSensorsCommand extends Command
             'type' => (string) select(
                 label: 'Sensor type',
                 options: self::SENSOR_TYPES,
-                default: $this->option('type'),
+                default: $this->input()->string('type')->toString(),
             ),
             'history' => (string) select(
                 label: 'Historical data',
                 options: self::HISTORY_OPTIONS,
-                default: (string) $this->option('history'),
+                default: $this->input()->string('history')->toString(),
             ),
             'live' => confirm(
                 label: 'Continue generating live data?',

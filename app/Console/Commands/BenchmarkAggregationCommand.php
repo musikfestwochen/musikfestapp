@@ -20,6 +20,7 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Sleep;
 use Laravel\Prompts\Support\Logger;
@@ -227,11 +228,11 @@ class BenchmarkAggregationCommand extends Command
     {
         if (! $wizardMode) {
             return [
-                'scenario' => (string) $this->option('scenario'),
-                'db' => (string) $this->option('db'),
-                'mariadb' => (string) $this->option('mariadb'),
+                'scenario' => $this->input()->string('scenario')->toString(),
+                'db' => $this->input()->string('db')->toString(),
+                'mariadb' => $this->input()->string('mariadb')->toString(),
                 'iterations' => (int) $this->option('iterations'),
-                'output' => (string) $this->option('output'),
+                'output' => $this->input()->string('output')->toString(),
             ];
         }
 
@@ -240,12 +241,12 @@ class BenchmarkAggregationCommand extends Command
         $scenario = (string) select(
             label: 'Scenario',
             options: collect(self::SCENARIOS)->mapWithKeys(fn (array $v, string $k): array => [$k => $v['description']])->all(),
-            default: $this->option('scenario'),
+            default: $this->input()->string('scenario')->toString(),
         );
         $dbConnection = (string) select(
             label: 'Database',
             options: self::DATABASES,
-            default: $this->option('db'),
+            default: $this->input()->string('db')->toString(),
         );
 
         return [
@@ -255,19 +256,19 @@ class BenchmarkAggregationCommand extends Command
                 ? (string) select(
                     label: 'MariaDB source',
                     options: self::MARIADB_SOURCES,
-                    default: $this->option('mariadb'),
+                    default: $this->input()->string('mariadb')->toString(),
                 )
-                : (string) $this->option('mariadb'),
+                : $this->input()->string('mariadb')->toString(),
             'iterations' => (int) number(
                 label: 'Iterations',
-                default: (string) $this->option('iterations'),
+                default: $this->input()->string('iterations')->toString(),
                 min: 1,
                 max: 50,
             ),
             'output' => (string) select(
                 label: 'Output format',
                 options: self::OUTPUT_FORMATS,
-                default: $this->option('output'),
+                default: $this->input()->string('output')->toString(),
             ),
         ];
     }
@@ -756,8 +757,8 @@ class BenchmarkAggregationCommand extends Command
 
         DB::disconnect('sqlite');
 
-        if (is_file($this->temporarySqlitePath)) {
-            unlink($this->temporarySqlitePath);
+        if (is_file($this->temporarySqlitePath) && ! File::delete($this->temporarySqlitePath)) {
+            warning('Could not delete temporary benchmark database: '.$this->temporarySqlitePath);
         }
 
         $this->temporarySqlitePath = null;

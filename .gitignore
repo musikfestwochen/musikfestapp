@@ -46,7 +46,10 @@ __pycache__/
 /boost.json
 /AGENTS.md
 /CLAUDE.md
-/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/security-audit/
 /.junie/
 /.claude/
 /junie/

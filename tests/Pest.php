@@ -25,6 +25,10 @@ pest()->extend(TestCase::class)
 pest()->extend(TestCase::class)
     ->in('Unit');
 
+// Benchmark commands manage their own disposable databases, without test transactions.
+pest()->extend(TestCase::class)
+    ->in('Console');
+
 pest()->extend(TestCase::class)
     ->in('Architecture');
 
