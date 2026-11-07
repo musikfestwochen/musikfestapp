@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 
 test('it rejects an unknown benchmark scenario before running', function () {
     $this->artisan('peoplecount:benchmark', [
@@ -91,4 +92,35 @@ test('it supports table only output and removes the disposable sqlite benchmark 
 
     expect($sqliteFilesAfter)->toEqualCanonicalizing($sqliteFilesBefore)
         ->and($jsonFilesAfter)->toEqualCanonicalizing($jsonFilesBefore);
+});
+
+test('it warns when temporary database cleanup fails without failing the benchmark', function () {
+    $filesystem = File::getFacadeRoot();
+    $sqlitePath = null;
+    File::partialMock()->shouldReceive('delete')->once()->andReturnUsing(function (string $path) use (&$sqlitePath): bool {
+        $sqlitePath = $path;
+
+        return false;
+    });
+
+    try {
+        $this->artisan('peoplecount:benchmark', [
+            '--scenario' => 'small',
+            '--iterations' => 1,
+            '--db' => 'sqlite',
+            '--output' => 'table',
+            '--allow-xdebug' => true,
+            '--no-interaction' => true,
+        ])
+            ->expectsOutputToContain('Could not delete temporary benchmark database:')
+            ->assertExitCode(Command::SUCCESS);
+
+        expect($sqlitePath)->toBeString()
+            ->and($filesystem->exists($sqlitePath))->toBeTrue();
+    } finally {
+        File::swap($filesystem);
+        if ($sqlitePath !== null) {
+            $filesystem->delete($sqlitePath);
+        }
+    }
 });

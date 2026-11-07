@@ -757,8 +757,8 @@ class BenchmarkAggregationCommand extends Command
 
         DB::disconnect('sqlite');
 
-        if (is_file($this->temporarySqlitePath)) {
-            File::delete($this->temporarySqlitePath);
+        if (is_file($this->temporarySqlitePath) && ! File::delete($this->temporarySqlitePath)) {
+            warning('Could not delete temporary benchmark database: '.$this->temporarySqlitePath);
         }
 
         $this->temporarySqlitePath = null;
