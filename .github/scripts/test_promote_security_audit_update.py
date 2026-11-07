@@ -18,8 +18,18 @@ class PromoteSkillUpdateTest(unittest.TestCase):
             self.assertFalse((destination / SKILL / "obsolete.md").exists())
             self.assertTrue((destination / LOCK).is_file())
 
-    def test_rejects_unexpected_paths_and_links_before_writing(self):
-        for kind in ("outside", "symlink", "hardlink", "git", "wrong-source"):
+    def test_rejects_unexpected_paths_links_and_hashes_before_writing(self):
+        for kind in (
+            "outside",
+            "symlink",
+            "hardlink",
+            "git",
+            "node_modules",
+            "wrong-source",
+            "missing-hash",
+            "wrong-hash",
+            "content-changed",
+        ):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as root:
                 source, destination = self.fixture(Path(root))
                 if kind == "outside":
@@ -30,9 +40,19 @@ class PromoteSkillUpdateTest(unittest.TestCase):
                     os.link(source / LOCK, source / SKILL / "linked")
                 elif kind == "git":
                     (source / SKILL / ".git").mkdir()
+                elif kind == "node_modules":
+                    (source / SKILL / "node_modules").mkdir()
+                elif kind == "content-changed":
+                    (source / SKILL / "SKILL.md").write_text("modified skill")
                 else:
                     lock = json.loads((source / LOCK).read_text())
-                    lock["skills"]["security-audit"]["source"] = "other/repo"
+                    entry = lock["skills"]["security-audit"]
+                    if kind == "wrong-source":
+                        entry["source"] = "other/repo"
+                    elif kind == "missing-hash":
+                        del entry["computedHash"]
+                    elif kind == "wrong-hash":
+                        entry["computedHash"] = "0" * 64
                     (source / LOCK).write_text(json.dumps(lock))
                 with self.assertRaises(ValueError):
                     promote(source, destination)
@@ -47,6 +67,7 @@ class PromoteSkillUpdateTest(unittest.TestCase):
         (source / LOCK).write_text(json.dumps({"skills": {"security-audit": {
             "source": "cloudflare/security-audit-skill", "sourceType": "github",
             "skillPath": "skills/security-audit/SKILL.md",
+            "computedHash": "23ef6bd59617fdb2b0abbc0db90b0f8a96fc8cdf8bae05edf711c6383c99aeab",
         }}}))
         return source, destination
 
