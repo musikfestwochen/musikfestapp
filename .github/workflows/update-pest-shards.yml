@@ -37,7 +37,7 @@ jobs:
         run: composer test:update-shards
     
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@v8.1.2
         with:
           token: ${{ steps.app-token.outputs.token }}
           commit-message: 'chore: update Pest shard timings'
