@@ -152,12 +152,15 @@ jobs:
             exit "${test_statuses[0]}"
           fi
           exit "${test_statuses[1]}"
+      - name: Record executable paths before artifact upload strips permissions
+        run: python3 .github/scripts/promote_security_audit_update.py --write-executables .
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: security-audit-update
           path: |
             .agents/skills/security-audit/
             skills-lock.json
+            skill-executables.json
           include-hidden-files: true
           retention-days: 1
 

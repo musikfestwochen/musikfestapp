@@ -11,6 +11,7 @@ import sys
 
 SKILL = Path(".agents/skills/security-audit")
 LOCK = Path("skills-lock.json")
+EXECUTABLES = Path("skill-executables.json")
 SKILL_HASH_SCRIPT = r"""
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
@@ -58,6 +59,15 @@ def skill_content_hash(skill_directory: Path) -> str:
     return result.stdout.strip()
 
 
+def write_executables(source: Path) -> None:
+    executables = []
+    for path in (source / SKILL).rglob("*"):
+        info = path.lstat()
+        if stat.S_ISREG(info.st_mode) and info.st_mode & 0o111:
+            executables.append(path.relative_to(source).as_posix())
+    (source / EXECUTABLES).write_text(json.dumps(sorted(executables)))
+
+
 def promote(source: Path, destination: Path) -> None:
     files = []
     total_size = 0
@@ -69,14 +79,14 @@ def promote(source: Path, destination: Path) -> None:
         if relative != Path("."):
             if "node_modules" in relative.parts:
                 raise ValueError(f"Unexpected generated dependency path: {relative}")
-            allowed = relative in (LOCK, SKILL) or SKILL in relative.parents or relative in SKILL.parents
+            allowed = relative in (LOCK, EXECUTABLES, SKILL) or SKILL in relative.parents or relative in SKILL.parents
             if not allowed or ".git" in relative.parts:
                 raise ValueError(f"Unexpected artifact path: {relative}")
         if stat.S_ISDIR(info.st_mode):
             for child in path.iterdir():
                 inspect(child)
         elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
-            if relative != LOCK and SKILL not in relative.parents:
+            if relative not in (LOCK, EXECUTABLES) and SKILL not in relative.parents:
                 raise ValueError(f"Unexpected artifact file: {relative}")
             total_size += info.st_size
             if total_size > 5 * 1024 * 1024:
@@ -88,6 +98,16 @@ def promote(source: Path, destination: Path) -> None:
     inspect(source)
     if LOCK not in files or SKILL / "SKILL.md" not in files:
         raise ValueError("Artifact must contain skill entry point and lockfile")
+    if EXECUTABLES not in files:
+        raise ValueError("Artifact must contain executable manifest")
+    executables = json.loads((source / EXECUTABLES).read_text())
+    skill_files = {relative.as_posix() for relative in files if SKILL in relative.parents}
+    if (
+        not isinstance(executables, list)
+        or any(not isinstance(entry, str) or entry not in skill_files for entry in executables)
+        or len(set(executables)) != len(executables)
+    ):
+        raise ValueError("Invalid executable manifest")
     locked = json.loads((source / LOCK).read_text())
     entry = locked["skills"]["security-audit"]
     if set(locked["skills"]) != {"security-audit"} or (
@@ -106,10 +126,16 @@ def promote(source: Path, destination: Path) -> None:
     if (destination / SKILL).exists():
         shutil.rmtree(destination / SKILL)
     for relative in files:
+        if relative == EXECUTABLES:
+            continue
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source / relative, target)
+        target.chmod(0o755 if relative.as_posix() in executables else 0o644)
 
 
 if __name__ == "__main__":
-    promote(Path(sys.argv[1]), Path(sys.argv[2]))
+    if sys.argv[1] == "--write-executables":
+        write_executables(Path(sys.argv[2]))
+    else:
+        promote(Path(sys.argv[1]), Path(sys.argv[2]))

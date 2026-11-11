@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from promote_security_audit_update import LOCK, SKILL, promote
+from promote_security_audit_update import EXECUTABLES, LOCK, SKILL, promote, write_executables
 
 
 class PromoteSkillUpdateTest(unittest.TestCase):
@@ -29,6 +29,11 @@ class PromoteSkillUpdateTest(unittest.TestCase):
             "missing-hash",
             "wrong-hash",
             "content-changed",
+            "missing-manifest",
+            "invalid-manifest",
+            "duplicate-manifest",
+            "non-list-manifest",
+            "non-string-manifest",
         ):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as root:
                 source, destination = self.fixture(Path(root))
@@ -44,6 +49,16 @@ class PromoteSkillUpdateTest(unittest.TestCase):
                     (source / SKILL / "node_modules").mkdir()
                 elif kind == "content-changed":
                     (source / SKILL / "SKILL.md").write_text("modified skill")
+                elif kind == "missing-manifest":
+                    (source / EXECUTABLES).unlink()
+                elif kind == "invalid-manifest":
+                    (source / EXECUTABLES).write_text('["../outside"]')
+                elif kind == "duplicate-manifest":
+                    (source / EXECUTABLES).write_text(json.dumps([str(SKILL / "SKILL.md")] * 2))
+                elif kind == "non-list-manifest":
+                    (source / EXECUTABLES).write_text('{}')
+                elif kind == "non-string-manifest":
+                    (source / EXECUTABLES).write_text('[null]')
                 else:
                     lock = json.loads((source / LOCK).read_text())
                     entry = lock["skills"]["security-audit"]
@@ -58,12 +73,38 @@ class PromoteSkillUpdateTest(unittest.TestCase):
                     promote(source, destination)
                 self.assertEqual(list(destination.iterdir()), [])
 
+    def test_applies_upstream_modes_after_artifact_permission_loss(self):
+        with tempfile.TemporaryDirectory() as root:
+            source, destination = self.fixture(Path(root))
+            (destination / SKILL).mkdir(parents=True)
+            (destination / SKILL / "SKILL.md").write_text("old")
+            (source / SKILL / "SKILL.md").chmod(0o755)
+            write_executables(source)
+            (source / SKILL / "SKILL.md").chmod(0o644)
+            promote(source, destination)
+            self.assertEqual((destination / SKILL / "SKILL.md").read_text(), "skill")
+            self.assertEqual((destination / SKILL / "SKILL.md").stat().st_mode & 0o777, 0o755)
+            self.assertFalse((destination / EXECUTABLES).exists())
+            write_executables(source)
+            promote(source, destination)
+            self.assertEqual((destination / SKILL / "SKILL.md").stat().st_mode & 0o777, 0o644)
+
+    def test_applies_executable_mode_to_new_files(self):
+        with tempfile.TemporaryDirectory() as root:
+            source, destination = self.fixture(Path(root))
+            (source / SKILL / "SKILL.md").chmod(0o755)
+            write_executables(source)
+            (source / SKILL / "SKILL.md").chmod(0o644)
+            promote(source, destination)
+            self.assertEqual((destination / SKILL / "SKILL.md").stat().st_mode & 0o777, 0o755)
+
     @staticmethod
     def fixture(root):
         source, destination = root / "source", root / "destination"
         (source / SKILL).mkdir(parents=True)
         destination.mkdir()
         (source / SKILL / "SKILL.md").write_text("skill")
+        (source / EXECUTABLES).write_text("[]")
         (source / LOCK).write_text(json.dumps({"skills": {"security-audit": {
             "source": "cloudflare/security-audit-skill", "sourceType": "github",
             "skillPath": "skills/security-audit/SKILL.md",
