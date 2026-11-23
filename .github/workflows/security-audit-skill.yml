@@ -187,7 +187,7 @@ jobs:
         env:
           UPDATE_DIRECTORY: ${{ runner.temp }}/security-audit-update
         run: python3 .github/scripts/promote_security_audit_update.py "$UPDATE_DIRECTORY" .
-      - uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.2
+      - uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           token: ${{ secrets.SKILL_UPDATE_TOKEN || github.token }}
           branch: chore/update-security-audit-skill
